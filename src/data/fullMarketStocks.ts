@@ -14,6 +14,11 @@ export interface StockFundamentalData {
   volume: string;
   aiInsight: string;
   description: string;
+  // Professional Financial Extensions
+  sparkline7d: number[]; // 7 data points for SVG charting
+  analystRating: 'Strong Buy' | 'Buy' | 'Hold' | 'Sell';
+  targetPrice: number;
+  sentimentScore: number; // 0 to 100
 }
 
 export const fullMarketStocks: StockFundamentalData[] = [
@@ -33,7 +38,11 @@ export const fullMarketStocks: StockFundamentalData[] = [
     low52w: 31.00,
     volume: '45.2M',
     aiInsight: 'Strong cash flow driven by energy sector diversification and LNG hub expansion.',
-    description: 'Thailand\'s national oil and gas conglomerate engaging in upstream, downstream, and renewable energy investments.'
+    description: 'Thailand\'s national oil and gas conglomerate engaging in upstream, downstream, and renewable energy investments.',
+    sparkline7d: [33.2, 33.5, 33.8, 33.6, 34.1, 34.0, 34.5],
+    analystRating: 'Strong Buy',
+    targetPrice: 39.00,
+    sentimentScore: 84
   },
   {
     ticker: 'CPALL',
@@ -50,7 +59,11 @@ export const fullMarketStocks: StockFundamentalData[] = [
     low52w: 52.50,
     volume: '22.8M',
     aiInsight: 'Retail sales momentum surging following tourism recovery and digital wallet stimulus policy.',
-    description: 'Sole operator of 7-Eleven convenience stores in Thailand and parent company of CPAXT (Makro/Lotus\'s).'
+    description: 'Sole operator of 7-Eleven convenience stores in Thailand and parent company of CPAXT (Makro/Lotus\'s).',
+    sparkline7d: [66.0, 65.8, 65.5, 65.2, 65.0, 65.25, 64.75],
+    analystRating: 'Buy',
+    targetPrice: 74.00,
+    sentimentScore: 72
   },
   {
     ticker: 'AOT',
@@ -67,7 +80,11 @@ export const fullMarketStocks: StockFundamentalData[] = [
     low52w: 56.00,
     volume: '31.4M',
     aiInsight: 'Passenger traffic at Suvarnabhumi and Don Mueang airports back to 95% pre-pandemic capacity.',
-    description: 'State-enterprise managing 6 major international airports in Thailand handling primary tourist flows.'
+    description: 'State-enterprise managing 6 major international airports in Thailand handling primary tourist flows.',
+    sparkline7d: [58.5, 59.0, 59.5, 60.0, 60.5, 60.0, 61.25],
+    analystRating: 'Strong Buy',
+    targetPrice: 72.50,
+    sentimentScore: 89
   },
   {
     ticker: 'KBANK',
@@ -84,7 +101,11 @@ export const fullMarketStocks: StockFundamentalData[] = [
     low52w: 121.50,
     volume: '14.1M',
     aiInsight: 'Digital banking leader in Thailand leveraging K PLUS for AI-driven retail micro-lending.',
-    description: 'Leading Thai commercial bank specializing in SME financing, digital transactions, and wealth management.'
+    description: 'Leading Thai commercial bank specializing in SME financing, digital transactions, and wealth management.',
+    sparkline7d: [151.0, 152.0, 152.5, 153.0, 153.5, 153.0, 154.5],
+    analystRating: 'Buy',
+    targetPrice: 170.00,
+    sentimentScore: 78
   },
   {
     ticker: 'DELTA',
@@ -101,7 +122,11 @@ export const fullMarketStocks: StockFundamentalData[] = [
     low52w: 68.00,
     volume: '68.9M',
     aiInsight: 'High demand for AI data center power supplies and EV components propelling mega market cap.',
-    description: 'Global provider of power electronics, thermal management components, and automation solutions.'
+    description: 'Global provider of power electronics, thermal management components, and automation solutions.',
+    sparkline7d: [132.0, 134.0, 136.0, 135.0, 138.0, 136.0, 142.0],
+    analystRating: 'Buy',
+    targetPrice: 155.00,
+    sentimentScore: 92
   },
   {
     ticker: 'BDMS',
@@ -118,7 +143,11 @@ export const fullMarketStocks: StockFundamentalData[] = [
     low52w: 25.00,
     volume: '18.3M',
     aiInsight: 'International medical tourism hub experiencing double-digit revenue growth from Middle East and Asia.',
-    description: 'Thailand\'s largest private hospital network operating 50+ facilities under Bangkok Hospital, Samitivej, and Phyathai brands.'
+    description: 'Thailand\'s largest private hospital network operating 50+ facilities under Bangkok Hospital, Samitivej, and Phyathai brands.',
+    sparkline7d: [28.2, 28.0, 27.9, 27.8, 27.7, 27.75, 27.50],
+    analystRating: 'Buy',
+    targetPrice: 32.00,
+    sentimentScore: 68
   },
   {
     ticker: 'SCB',
@@ -135,7 +164,11 @@ export const fullMarketStocks: StockFundamentalData[] = [
     low52w: 98.00,
     volume: '12.6M',
     aiInsight: 'High dividend payout strategy attracting institutional investors alongside Fintech venture growth.',
-    description: 'Financial technology holding company overseeing Siam Commercial Bank, Robinhood, and digital lending subsidiaries.'
+    description: 'Financial technology holding company overseeing Siam Commercial Bank, Robinhood, and digital lending subsidiaries.',
+    sparkline7d: [111.0, 111.5, 112.0, 112.5, 113.0, 112.5, 114.0],
+    analystRating: 'Strong Buy',
+    targetPrice: 126.00,
+    sentimentScore: 85
   },
   {
     ticker: 'GULF',
@@ -152,41 +185,11 @@ export const fullMarketStocks: StockFundamentalData[] = [
     low52w: 40.25,
     volume: '29.7M',
     aiInsight: 'Synergies with INTUCH and AIS positioning GULF as a cloud infrastructure and data center leader.',
-    description: 'Leading power producer expanding into telecommunications, digital asset exchange, and cloud services.'
-  },
-  {
-    ticker: 'SCC',
-    name: 'Siam Cement Public Co., Ltd.',
-    market: 'SET',
-    sector: 'Industrial Materials',
-    price: 212.00,
-    currency: 'THB',
-    change: -1.40,
-    marketCap: '254.4B THB',
-    peRatio: 18.2,
-    dividendYield: 4.2,
-    high52w: 304.00,
-    low52w: 200.00,
-    volume: '5.4M',
-    aiInsight: 'Petrochemical cycle bottoming out with strategic focus shifting to green building materials.',
-    description: 'Thailand\'s premier industrial group engaged in cement, building materials, chemicals, and packaging (SCGP).'
-  },
-  {
-    ticker: 'ADVANC',
-    name: 'Advanced Info Service PCL',
-    market: 'SET',
-    sector: 'Telecommunications',
-    price: 286.00,
-    currency: 'THB',
-    change: 0.70,
-    marketCap: '850.7B THB',
-    peRatio: 26.5,
-    dividendYield: 3.8,
-    high52w: 292.00,
-    low52w: 205.00,
-    volume: '8.9M',
-    aiInsight: '5G network monetization and ARPU uplift cementing market dominance over TRUE-DTAC merged entity.',
-    description: 'Thailand\'s largest telecom mobile operator providing 5G cellular, fiber broadband, and enterprise cloud.'
+    description: 'Leading power producer expanding into telecommunications, digital asset exchange, and cloud services.',
+    sparkline7d: [62.0, 63.0, 63.5, 64.0, 65.0, 64.5, 66.50],
+    analystRating: 'Strong Buy',
+    targetPrice: 75.00,
+    sentimentScore: 91
   },
 
   // --- US / Global Stocks ---
@@ -205,7 +208,11 @@ export const fullMarketStocks: StockFundamentalData[] = [
     low52w: 45.90,
     volume: '52.4M',
     aiInsight: 'Blackwell architecture GPUs seeing historic demand across hyperscaler data centers worldwide.',
-    description: 'Pioneer of GPU computing driving breakthroughs in generative artificial intelligence, robotics, and high-performance computing.'
+    description: 'Pioneer of GPU computing driving breakthroughs in generative artificial intelligence, robotics, and high-performance computing.',
+    sparkline7d: [118.0, 120.5, 122.0, 121.5, 125.0, 123.7, 128.50],
+    analystRating: 'Strong Buy',
+    targetPrice: 150.00,
+    sentimentScore: 96
   },
   {
     ticker: 'AAPL',
@@ -222,7 +229,11 @@ export const fullMarketStocks: StockFundamentalData[] = [
     low52w: 164.08,
     volume: '41.1M',
     aiInsight: 'Apple Intelligence rollout creating upgrade cycle across 1.5B active iPhone install base.',
-    description: 'Global technology icon producing iPhone, Mac, iPad, Apple Watch, and expanding Services ecosystem.'
+    description: 'Global technology icon producing iPhone, Mac, iPad, Apple Watch, and expanding Services ecosystem.',
+    sparkline7d: [220.0, 221.5, 223.0, 222.0, 224.5, 223.9, 226.40],
+    analystRating: 'Buy',
+    targetPrice: 250.00,
+    sentimentScore: 82
   },
   {
     ticker: 'TSLA',
@@ -239,7 +250,11 @@ export const fullMarketStocks: StockFundamentalData[] = [
     low52w: 138.80,
     volume: '78.3M',
     aiInsight: 'FSD V12 autonomous driving progress and Robotaxi deployment key drivers for valuation re-rating.',
-    description: 'Electric vehicle innovator, solar energy provider, and developer of humanoid robotics (Optimus).'
+    description: 'Electric vehicle innovator, solar energy provider, and developer of humanoid robotics (Optimus).',
+    sparkline7d: [225.0, 223.0, 221.0, 219.0, 220.0, 221.0, 215.80],
+    analystRating: 'Hold',
+    targetPrice: 235.00,
+    sentimentScore: 58
   },
   {
     ticker: 'MSFT',
@@ -256,7 +271,11 @@ export const fullMarketStocks: StockFundamentalData[] = [
     low52w: 309.45,
     volume: '21.5M',
     aiInsight: 'Azure AI Cloud revenues growing 30%+ YoY with Copilot enterprise adoption expanding rapidly.',
-    description: 'Global tech leader developing Windows, Office 365, Azure Cloud, Xbox, and lead investor in OpenAI.'
+    description: 'Global tech leader developing Windows, Office 365, Azure Cloud, Xbox, and lead investor in OpenAI.',
+    sparkline7d: [412.0, 413.5, 415.0, 414.0, 416.5, 415.8, 418.20],
+    analystRating: 'Strong Buy',
+    targetPrice: 480.00,
+    sentimentScore: 90
   },
   {
     ticker: 'GOOGL',
@@ -273,24 +292,11 @@ export const fullMarketStocks: StockFundamentalData[] = [
     low52w: 120.21,
     volume: '28.9M',
     aiInsight: 'Gemini 1.5 Pro AI model integration into Google Search, YouTube, and Google Cloud driving margin expansion.',
-    description: 'Parent company of Google Search, YouTube, Android OS, Waymo self-driving, and Google Cloud.'
-  },
-  {
-    ticker: 'AMZN',
-    name: 'Amazon.com, Inc.',
-    market: 'US',
-    sector: 'E-Commerce & Cloud',
-    price: 178.40,
-    currency: 'USD',
-    change: -0.45,
-    marketCap: '$1.86T',
-    peRatio: 41.5,
-    dividendYield: 0.0,
-    high52w: 201.20,
-    low52w: 118.35,
-    volume: '34.7M',
-    aiInsight: 'AWS cloud re-acceleration and digital ad revenue margins boosting free cash flow to record highs.',
-    description: 'World\'s largest e-commerce platform and provider of Amazon Web Services (AWS) cloud infrastructure.'
+    description: 'Parent company of Google Search, YouTube, Android OS, Waymo self-driving, and Google Cloud.',
+    sparkline7d: [160.0, 161.5, 163.0, 162.5, 164.0, 163.5, 165.90],
+    analystRating: 'Buy',
+    targetPrice: 195.00,
+    sentimentScore: 83
   },
   {
     ticker: 'META',
@@ -307,6 +313,10 @@ export const fullMarketStocks: StockFundamentalData[] = [
     low52w: 279.40,
     volume: '15.8M',
     aiInsight: 'Llama 3 open-source AI model powering Meta AI assistant across Facebook, Instagram, and WhatsApp.',
-    description: 'Social networking leader operating Facebook, Instagram, WhatsApp, Messenger, and Quest VR.'
+    description: 'Social networking leader operating Facebook, Instagram, WhatsApp, Messenger, and Quest VR.',
+    sparkline7d: [490.0, 495.0, 500.0, 498.0, 505.0, 502.0, 512.30],
+    analystRating: 'Strong Buy',
+    targetPrice: 580.00,
+    sentimentScore: 94
   }
 ];

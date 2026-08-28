@@ -1,13 +1,53 @@
 import React, { useState, useMemo } from 'react';
 import { fullMarketStocks, type StockFundamentalData } from '../data/fullMarketStocks';
-import { Search, TrendingUp, TrendingDown, Filter, Sparkles, Code2, LayoutGrid, Table as TableIcon, X, Globe } from 'lucide-react';
+import { Search, Filter, Sparkles, LayoutGrid, Table as TableIcon, X, Activity, ArrowUpRight, ArrowDownRight, Award, Flame } from 'lucide-react';
 
 interface StockMarketExplorerProps {
-  onOpenDevApi: () => void;
   onRequestPreview: () => void;
 }
 
-export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onOpenDevApi, onRequestPreview }) => {
+// Mini SVG Sparkline Component
+const Sparkline: React.FC<{ data: number[]; isPositive: boolean; width?: number; height?: number }> = ({
+  data,
+  isPositive,
+  width = 120,
+  height = 36
+}) => {
+  if (!data || data.length < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+
+  const points = data
+    .map((val, idx) => {
+      const x = (idx / (data.length - 1)) * width;
+      const y = height - ((val - min) / range) * (height - 8) - 4;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(' ');
+
+  const strokeColor = isPositive ? '#10b981' : '#ef4444';
+
+  const firstX = 0;
+  const lastX = width;
+  const bottomY = height;
+  const areaPoints = `${firstX},${bottomY} ${points} ${lastX},${bottomY}`;
+
+  return (
+    <svg width={width} height={height} style={{ overflow: 'visible' }}>
+      <defs>
+        <linearGradient id={`grad-${isPositive ? 'up' : 'down'}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={strokeColor} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
+        </linearGradient>
+      </defs>
+      <polygon points={areaPoints} fill={`url(#grad-${isPositive ? 'up' : 'down'})`} />
+      <polyline fill="none" stroke={strokeColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" points={points} />
+    </svg>
+  );
+};
+
+export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onRequestPreview }) => {
   const [selectedMarket, setSelectedMarket] = useState<'ALL' | 'SET' | 'US'>('ALL');
   const [selectedSector, setSelectedSector] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<'gainers' | 'losers' | 'marketCap' | 'peRatio'>('gainers');
@@ -38,71 +78,103 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onOpen
         if (sortBy === 'gainers') return b.change - a.change;
         if (sortBy === 'losers') return a.change - b.change;
         if (sortBy === 'peRatio') return a.peRatio - b.peRatio;
-        // Default marketCap or fallback
         return b.price - a.price;
       });
   }, [selectedMarket, selectedSector, sortBy, searchQuery]);
 
+  // Market Leaders Highlight
+  const topGainer = useMemo(() => [...fullMarketStocks].sort((a, b) => b.change - a.change)[0], []);
+  const topLoser = useMemo(() => [...fullMarketStocks].sort((a, b) => a.change - b.change)[0], []);
+  const topAiRating = useMemo(() => [...fullMarketStocks].sort((a, b) => b.sentimentScore - a.sentimentScore)[0], []);
+
   return (
-    <div style={{ padding: '24px 0', width: '100%' }}>
-      {/* Banner / Header */}
-      <div className="glass-card" style={{ padding: '24px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+    <div style={{ padding: '20px 0', width: '100%' }}>
+      {/* Executive Market Summary Highlights */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        {/* Card 1: Top Gainer */}
+        <div className="glass-card" style={{ padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-              <span className="badge-sentiment badge-bullish" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <Globe size={14} /> Full Market Coverage
-              </span>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>SET & US Exchanges</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+              <Flame size={14} color="#10b981" /> TOP GAINER LEADER
             </div>
-            <h2 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '4px 0' }}>
-              ตลาดหุ้นไทยและต่างประเทศ (Stock Directory)
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              ค้นหาหุ้น ปัจจัยพื้นฐาน บทวิเคราะห์ AI และเชื่อมต่อ Developer API สำหรับนักพัฒนา
-            </p>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>
+              {topGainer.ticker} <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{topGainer.market}</span>
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--accent-bullish)', fontWeight: 700, marginTop: '2px' }}>
+              +{topGainer.change}% ({topGainer.currency === 'USD' ? '$' : '฿'}{topGainer.price})
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              onClick={onOpenDevApi}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 18px',
-                borderRadius: '100px',
-                background: 'linear-gradient(135deg, rgba(0, 122, 255, 0.2), rgba(139, 92, 246, 0.2))',
-                border: '1px solid var(--accent-blue-glow)',
-                color: '#ffffff',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <Code2 size={16} /> Developer REST API
-            </button>
-            <button
-              onClick={onRequestPreview}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 18px',
-                borderRadius: '100px',
-                background: 'var(--glass-bg)',
-                border: '1px solid var(--glass-border)',
-                color: 'var(--text-primary)',
-                fontWeight: 500,
-                cursor: 'pointer'
-              }}
-            >
-              <Sparkles size={16} color="var(--accent-neutral)" /> Request Preview Tier
-            </button>
-          </div>
+          <Sparkline data={topGainer.sparkline7d} isPositive={true} width={90} height={36} />
         </div>
 
-        {/* Filter Controls Bar */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid var(--glass-border)' }}>
+        {/* Card 2: Top Loser */}
+        <div className="glass-card" style={{ padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+              <Activity size={14} color="#ef4444" /> LARGEST RETRACE
+            </div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>
+              {topLoser.ticker} <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{topLoser.market}</span>
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--accent-bearish)', fontWeight: 700, marginTop: '2px' }}>
+              {topLoser.change}% ({topLoser.currency === 'USD' ? '$' : '฿'}{topLoser.price})
+            </div>
+          </div>
+          <Sparkline data={topLoser.sparkline7d} isPositive={false} width={90} height={36} />
+        </div>
+
+        {/* Card 3: Top AI Sentiment */}
+        <div className="glass-card" style={{ padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+              <Award size={14} color="#f59e0b" /> HIGHEST AI RATING
+            </div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>
+              {topAiRating.ticker} <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{topAiRating.market}</span>
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--accent-neutral)', fontWeight: 700, marginTop: '2px' }}>
+              AI Score: {topAiRating.sentimentScore}/100 ({topAiRating.analystRating})
+            </div>
+          </div>
+          <Sparkline data={topAiRating.sparkline7d} isPositive={true} width={90} height={36} />
+        </div>
+      </div>
+
+      {/* Main Directory Filter Bar & Controls */}
+      <div className="glass-card" style={{ padding: '20px 24px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="live-pulse-dot" />
+              <span style={{ fontSize: '0.8rem', color: 'var(--accent-bullish)', fontWeight: 700, letterSpacing: '0.04em' }}>LIVE MARKET INTELLIGENCE FEED</span>
+            </div>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '4px 0', color: 'var(--text-primary)' }}>
+              ดัชนีและหุ้นทั้งตลาด (Stock Directory)
+            </h2>
+          </div>
+          <button
+            onClick={onRequestPreview}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '100px',
+              background: 'var(--accent-blue-gradient)',
+              border: 'none',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 14px var(--accent-blue-glow)'
+            }}
+          >
+            <Sparkles size={15} /> Request Pro Access
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', paddingTop: '14px', borderTop: '1px solid var(--glass-border)' }}>
           {/* Market Tab Switcher */}
           <div className="ios-segmented-control" style={{ padding: '3px' }}>
             {(['ALL', 'SET', 'US'] as const).map((m) => (
@@ -110,7 +182,7 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onOpen
                 key={m}
                 className={`ios-segment-btn ${selectedMarket === m ? 'active' : ''}`}
                 onClick={() => setSelectedMarket(m)}
-                style={{ padding: '6px 14px', fontSize: '0.8rem' }}
+                style={{ padding: '6px 16px', fontSize: '0.82rem' }}
               >
                 {m === 'ALL' ? '🌐 ทั้งหมด' : m === 'SET' ? '🇹🇭 ตลาด SET' : '🇺🇸 ตลาด US'}
               </button>
@@ -118,19 +190,19 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onOpen
           </div>
 
           {/* Search Box */}
-          <div style={{ position: 'relative', flex: '1 1 200px' }}>
-            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+          <div style={{ position: 'relative', flex: '1 1 220px' }}>
+            <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
             <input
               type="text"
-              placeholder="ค้นหาชื่อหุ้น (เช่น PTT, NVDA, AAPL)..."
+              placeholder="ค้นหาชื่อหุ้นหรือ Ticker (เช่น PTT, NVDA, AAPL)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
                 width: '100%',
-                padding: '8px 12px 8px 36px',
+                padding: '9px 14px 9px 38px',
                 borderRadius: '100px',
                 border: '1px solid var(--glass-border)',
-                background: 'rgba(0, 0, 0, 0.15)',
+                background: 'rgba(0, 0, 0, 0.25)',
                 color: 'var(--text-primary)',
                 fontSize: '0.875rem',
                 outline: 'none'
@@ -145,10 +217,10 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onOpen
               value={selectedSector}
               onChange={(e) => setSelectedSector(e.target.value)}
               style={{
-                padding: '8px 14px',
+                padding: '9px 14px',
                 borderRadius: '100px',
                 border: '1px solid var(--glass-border)',
-                background: 'rgba(0, 0, 0, 0.2)',
+                background: 'rgba(0, 0, 0, 0.3)',
                 color: 'var(--text-primary)',
                 fontSize: '0.85rem',
                 outline: 'none',
@@ -156,7 +228,7 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onOpen
               }}
             >
               {availableSectors.map((sec) => (
-                <option key={sec} value={sec} style={{ background: '#1a1e29', color: '#fff' }}>
+                <option key={sec} value={sec} style={{ background: '#0d121f', color: '#fff' }}>
                   {sec === 'ALL' ? 'ทุกกลุ่มอุตสาหกรรม (Sectors)' : sec}
                 </option>
               ))}
@@ -168,19 +240,19 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onOpen
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
             style={{
-              padding: '8px 14px',
+              padding: '9px 14px',
               borderRadius: '100px',
               border: '1px solid var(--glass-border)',
-              background: 'rgba(0, 0, 0, 0.2)',
+              background: 'rgba(0, 0, 0, 0.3)',
               color: 'var(--text-primary)',
               fontSize: '0.85rem',
               outline: 'none',
               cursor: 'pointer'
             }}
           >
-            <option value="gainers" style={{ background: '#1a1e29' }}>📈 หุ้นบวกสูงสุด (Top Gainers)</option>
-            <option value="losers" style={{ background: '#1a1e29' }}>📉 หุ้นลบสูงสุด (Top Losers)</option>
-            <option value="peRatio" style={{ background: '#1a1e29' }}>📊 ค่า P/E ต่ำสุด</option>
+            <option value="gainers" style={{ background: '#0d121f' }}>📈 หุ้นบวกสูงสุด (Top Gainers)</option>
+            <option value="losers" style={{ background: '#0d121f' }}>📉 หุ้นลบสูงสุด (Top Losers)</option>
+            <option value="peRatio" style={{ background: '#0d121f' }}>📊 ค่า P/E ต่ำสุด</option>
           </select>
 
           {/* Grid / Table View Switcher */}
@@ -188,10 +260,10 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onOpen
             <button
               onClick={() => setViewMode('grid')}
               style={{
-                padding: '6px 10px',
+                padding: '7px 11px',
                 borderRadius: '8px',
                 border: 'none',
-                background: viewMode === 'grid' ? 'var(--accent-blue)' : 'transparent',
+                background: viewMode === 'grid' ? 'var(--accent-blue-gradient)' : 'transparent',
                 color: viewMode === 'grid' ? '#fff' : 'var(--text-secondary)',
                 cursor: 'pointer'
               }}
@@ -201,10 +273,10 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onOpen
             <button
               onClick={() => setViewMode('table')}
               style={{
-                padding: '6px 10px',
+                padding: '7px 11px',
                 borderRadius: '8px',
                 border: 'none',
-                background: viewMode === 'table' ? 'var(--accent-blue)' : 'transparent',
+                background: viewMode === 'table' ? 'var(--accent-blue-gradient)' : 'transparent',
                 color: viewMode === 'table' ? '#fff' : 'var(--text-secondary)',
                 cursor: 'pointer'
               }}
@@ -217,7 +289,7 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onOpen
 
       {/* Stock Cards Grid or Table View */}
       {viewMode === 'grid' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '16px' }}>
           {filteredStocks.map((stock) => {
             const isPositive = stock.change >= 0;
             return (
@@ -230,13 +302,14 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onOpen
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '12px'
+                  gap: '14px'
                 }}
               >
+                {/* Header info */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      <span style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                         {stock.ticker}
                       </span>
                       <span className="ticker-pill">{stock.market}</span>
@@ -247,41 +320,41 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onOpen
                   </div>
                   <span
                     className={`badge-sentiment ${isPositive ? 'badge-bullish' : 'badge-bearish'}`}
-                    style={{ fontSize: '0.8rem', padding: '3px 8px' }}
+                    style={{ fontSize: '0.8rem', padding: '4px 10px' }}
                   >
-                    {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                    {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                     {isPositive ? `+${stock.change.toFixed(2)}%` : `${stock.change.toFixed(2)}%`}
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '4px' }}>
+                {/* Price & Sparkline Row */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', margin: '4px 0' }}>
                   <div>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
                       {stock.currency === 'USD' ? '$' : '฿'}{stock.price.toFixed(2)}
-                    </span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginLeft: '4px' }}>
-                      {stock.currency}
-                    </span>
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                      Analyst: <strong style={{ color: 'var(--accent-blue)' }}>{stock.analystRating}</strong>
+                    </div>
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    P/E: <strong>{stock.peRatio}</strong>
-                  </span>
+                  <Sparkline data={stock.sparkline7d} isPositive={isPositive} width={110} height={40} />
                 </div>
 
                 {/* AI Snippet Preview */}
-                <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '10px', borderRadius: '10px', border: '1px solid var(--glass-border)', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-neutral)', fontWeight: 600, marginBottom: '2px' }}>
-                    <Sparkles size={12} /> AI Insight:
+                <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '10px 12px', borderRadius: '12px', border: '1px solid var(--glass-border)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#c084fc', fontWeight: 700, marginBottom: '3px' }}>
+                    <Sparkles size={13} /> AI Intelligence:
                   </div>
-                  <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.4 }}>
                     {stock.aiInsight}
                   </div>
                 </div>
 
                 {/* Footer Metrics */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-tertiary)', paddingTop: '4px' }}>
-                  <span>Vol: {stock.volume}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-tertiary)', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                   <span>Cap: {stock.marketCap}</span>
+                  <span>P/E: {stock.peRatio}</span>
+                  <span>Div: {stock.dividendYield}%</span>
                 </div>
               </div>
             );
@@ -291,16 +364,16 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onOpen
         <div className="glass-card" style={{ padding: '0', overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(0, 0, 0, 0.2)', color: 'var(--text-secondary)' }}>
-                <th style={{ padding: '14px 16px' }}>Ticker / Name</th>
-                <th style={{ padding: '14px 16px' }}>Market</th>
-                <th style={{ padding: '14px 16px' }}>Sector</th>
-                <th style={{ padding: '14px 16px' }}>Price</th>
-                <th style={{ padding: '14px 16px' }}>24h Change</th>
-                <th style={{ padding: '14px 16px' }}>P/E Ratio</th>
-                <th style={{ padding: '14px 16px' }}>Dividend</th>
-                <th style={{ padding: '14px 16px' }}>Market Cap</th>
-                <th style={{ padding: '14px 16px' }}>Action</th>
+              <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(0, 0, 0, 0.3)', color: 'var(--text-secondary)' }}>
+                <th style={{ padding: '14px 18px' }}>Symbol / Company</th>
+                <th style={{ padding: '14px 18px' }}>Market</th>
+                <th style={{ padding: '14px 18px' }}>7D Trend</th>
+                <th style={{ padding: '14px 18px' }}>Price</th>
+                <th style={{ padding: '14px 18px' }}>24h Change</th>
+                <th style={{ padding: '14px 18px' }}>Target Price</th>
+                <th style={{ padding: '14px 18px' }}>P/E Ratio</th>
+                <th style={{ padding: '14px 18px' }}>Market Cap</th>
+                <th style={{ padding: '14px 18px' }}>Consensus</th>
               </tr>
             </thead>
             <tbody>
@@ -309,47 +382,36 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onOpen
                 return (
                   <tr
                     key={stock.ticker}
-                    style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', cursor: 'pointer' }}
+                    style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', cursor: 'pointer', transition: 'background 0.2s' }}
                     onClick={() => setActiveStock(stock)}
                   >
-                    <td style={{ padding: '14px 16px' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{stock.ticker}</div>
+                    <td style={{ padding: '14px 18px' }}>
+                      <div style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '1rem' }}>{stock.ticker}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{stock.name}</div>
                     </td>
-                    <td style={{ padding: '14px 16px' }}>
+                    <td style={{ padding: '14px 18px' }}>
                       <span className="ticker-pill">{stock.market}</span>
                     </td>
-                    <td style={{ padding: '14px 16px', color: 'var(--text-secondary)' }}>{stock.sector}</td>
-                    <td style={{ padding: '14px 16px', fontWeight: 600 }}>
+                    <td style={{ padding: '14px 18px' }}>
+                      <Sparkline data={stock.sparkline7d} isPositive={isPositive} width={90} height={30} />
+                    </td>
+                    <td style={{ padding: '14px 18px', fontWeight: 700, fontSize: '0.95rem' }}>
                       {stock.currency === 'USD' ? '$' : '฿'}{stock.price.toFixed(2)}
                     </td>
-                    <td style={{ padding: '14px 16px' }}>
+                    <td style={{ padding: '14px 18px' }}>
                       <span className={`badge-sentiment ${isPositive ? 'badge-bullish' : 'badge-bearish'}`}>
                         {isPositive ? `+${stock.change.toFixed(2)}%` : `${stock.change.toFixed(2)}%`}
                       </span>
                     </td>
-                    <td style={{ padding: '14px 16px', color: 'var(--text-secondary)' }}>{stock.peRatio}</td>
-                    <td style={{ padding: '14px 16px', color: 'var(--text-secondary)' }}>{stock.dividendYield}%</td>
-                    <td style={{ padding: '14px 16px', color: 'var(--text-secondary)' }}>{stock.marketCap}</td>
-                    <td style={{ padding: '14px 16px' }}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveStock(stock);
-                        }}
-                        style={{
-                          padding: '4px 10px',
-                          borderRadius: '100px',
-                          background: 'rgba(0, 122, 255, 0.15)',
-                          border: '1px solid var(--accent-blue-glow)',
-                          color: 'var(--accent-blue)',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        View AI
-                      </button>
+                    <td style={{ padding: '14px 18px', color: 'var(--accent-blue)', fontWeight: 600 }}>
+                      {stock.currency === 'USD' ? '$' : '฿'}{stock.targetPrice.toFixed(2)}
+                    </td>
+                    <td style={{ padding: '14px 18px', color: 'var(--text-secondary)' }}>{stock.peRatio}</td>
+                    <td style={{ padding: '14px 18px', color: 'var(--text-secondary)' }}>{stock.marketCap}</td>
+                    <td style={{ padding: '14px 18px' }}>
+                      <span style={{ fontSize: '0.75rem', padding: '3px 8px', borderRadius: '100px', background: 'rgba(0, 122, 255, 0.15)', color: 'var(--accent-blue)', fontWeight: 700 }}>
+                        {stock.analystRating}
+                      </span>
                     </td>
                   </tr>
                 );
@@ -359,98 +421,102 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onOpen
         </div>
       )}
 
-      {/* Stock Detail Modal */}
+      {/* Stock Detail Modal with Interactive 7D Chart */}
       {activeStock && (
         <div className="ios-sheet-overlay" onClick={() => setActiveStock(null)}>
-          <div className="ios-sheet-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{activeStock.ticker}</h3>
+          <div className="ios-sheet-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '680px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <h3 style={{ fontSize: '1.75rem', fontWeight: 800 }}>{activeStock.ticker}</h3>
                 <span className="ticker-pill">{activeStock.market}</span>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{activeStock.sector}</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '100px' }}>
+                  {activeStock.sector}
+                </span>
               </div>
               <button
                 onClick={() => setActiveStock(null)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
               >
-                <X size={20} />
+                <X size={22} />
               </button>
             </div>
 
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '20px', lineHeight: '1.5' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '22px', lineHeight: '1.6' }}>
               {activeStock.description}
             </p>
 
-            {/* Price Banner */}
-            <div className="glass-card" style={{ padding: '16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Current Market Price</div>
-                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  {activeStock.currency === 'USD' ? '$' : '฿'}{activeStock.price.toFixed(2)}
+            {/* Price & Chart Canvas Header */}
+            <div className="glass-card" style={{ padding: '20px', marginBottom: '22px', background: 'radial-gradient(circle at 10% 10%, rgba(0, 122, 255, 0.1), rgba(18, 24, 38, 0.6))' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '16px' }}>
+                <div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Realtime Price</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                    {activeStock.currency === 'USD' ? '$' : '฿'}{activeStock.price.toFixed(2)}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span className={`badge-sentiment ${activeStock.change >= 0 ? 'badge-bullish' : 'badge-bearish'}`} style={{ fontSize: '1rem', padding: '6px 14px' }}>
+                    {activeStock.change >= 0 ? `+${activeStock.change.toFixed(2)}%` : `${activeStock.change.toFixed(2)}%`}
+                  </span>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>7 Days Historical Trend</div>
                 </div>
               </div>
-              <div className={`badge-sentiment ${activeStock.change >= 0 ? 'badge-bullish' : 'badge-bearish'}`} style={{ fontSize: '1rem', padding: '6px 14px' }}>
-                {activeStock.change >= 0 ? `+${activeStock.change.toFixed(2)}%` : `${activeStock.change.toFixed(2)}%`}
+
+              {/* Large Interactive SVG Chart */}
+              <div style={{ width: '100%', height: '120px', marginTop: '10px' }}>
+                <Sparkline data={activeStock.sparkline7d} isPositive={activeStock.change >= 0} width={600} height={120} />
               </div>
             </div>
 
-            {/* Fundamentals Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '20px' }}>
-              <div className="glass-card" style={{ padding: '12px' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Market Capitalization</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{activeStock.marketCap}</div>
+            {/* Financial Metrics Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginBottom: '22px' }}>
+              <div className="glass-card" style={{ padding: '14px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Market Cap</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>{activeStock.marketCap}</div>
               </div>
-              <div className="glass-card" style={{ padding: '12px' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>P/E Ratio</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{activeStock.peRatio}</div>
-              </div>
-              <div className="glass-card" style={{ padding: '12px' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Dividend Yield</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent-bullish)' }}>{activeStock.dividendYield}%</div>
-              </div>
-              <div className="glass-card" style={{ padding: '12px' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>52-Week Range</div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  {activeStock.low52w} - {activeStock.high52w} {activeStock.currency}
+              <div className="glass-card" style={{ padding: '14px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Target Price</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-blue)', marginTop: '2px' }}>
+                  {activeStock.currency === 'USD' ? '$' : '฿'}{activeStock.targetPrice.toFixed(2)}
                 </div>
+              </div>
+              <div className="glass-card" style={{ padding: '14px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Consensus</div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--accent-bullish)', marginTop: '2px' }}>{activeStock.analystRating}</div>
+              </div>
+              <div className="glass-card" style={{ padding: '14px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>AI Score</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-neutral)', marginTop: '2px' }}>{activeStock.sentimentScore}/100</div>
               </div>
             </div>
 
-            {/* AI Insight Box */}
-            <div style={{ background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.15))', border: '1px solid rgba(139, 92, 246, 0.3)', padding: '16px', borderRadius: '16px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#c084fc', fontWeight: 700, marginBottom: '6px' }}>
-                <Sparkles size={16} /> StockHome AI Analyst Insight
+            {/* AI Analysis Box */}
+            <div style={{ background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(0, 122, 255, 0.12))', border: '1px solid rgba(139, 92, 246, 0.25)', padding: '18px', borderRadius: '18px', marginBottom: '22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#c084fc', fontWeight: 800, marginBottom: '6px' }}>
+                <Sparkles size={18} /> StockHome Executive AI Digest
               </div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: '1.5' }}>
+              <p style={{ fontSize: '0.92rem', color: 'var(--text-primary)', lineHeight: '1.6' }}>
                 "{activeStock.aiInsight}"
               </p>
             </div>
 
-            {/* Developer API Trigger for this stock */}
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={() => {
-                  setActiveStock(null);
-                  onOpenDevApi();
-                }}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  borderRadius: '100px',
-                  background: 'var(--accent-blue)',
-                  border: 'none',
-                  color: '#fff',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-              >
-                <Code2 size={16} /> Call `GET /api/v1/stocks/{activeStock.ticker}`
-              </button>
-            </div>
+            <button
+              onClick={() => setActiveStock(null)}
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: '100px',
+                background: 'var(--accent-blue-gradient)',
+                border: 'none',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px var(--accent-blue-glow)'
+              }}
+            >
+              ปิดหน้าต่างวิเคราะห์หุ้น
+            </button>
           </div>
         </div>
       )}

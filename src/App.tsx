@@ -9,9 +9,8 @@ import { NewsDetailSheet } from './components/NewsDetailSheet';
 import { AudioPlayerWidget } from './components/AudioPlayerWidget';
 import { ApiKeyModal } from './components/ApiKeyModal';
 
-// New Components
+// Components
 import { StockMarketExplorer } from './components/StockMarketExplorer';
-import { DeveloperApiPortal } from './components/DeveloperApiPortal';
 import { AuthModal, type UserAuthData } from './components/AuthModal';
 
 import { mockMarketIndices } from './data/mockMarketData';
@@ -28,7 +27,7 @@ const AUTH_USER_KEY = 'stock_home_current_user';
 
 export function App() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [activeView, setActiveView] = useState<'news' | 'explorer' | 'dev_api'>('news');
+  const [activeView, setActiveView] = useState<'explorer' | 'news'>('explorer');
   
   const [timeframe, setTimeframe] = useState<TimeframeType>('daily');
   const [region, setRegion] = useState<MarketRegion>('all');
@@ -44,7 +43,7 @@ export function App() {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState<boolean>(false);
 
-  // Auth & Developer Portal States
+  // Auth States
   const [currentUser, setCurrentUser] = useState<UserAuthData | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalTab, setAuthModalTab] = useState<'login' | 'preview'>('login');
@@ -52,7 +51,7 @@ export function App() {
   const [selectedNewsDetail, setSelectedNewsDetail] = useState<StockNewsItem | null>(null);
   const [playingAudioItem, setPlayingAudioItem] = useState<StockNewsItem | null>(null);
 
-  // Load Initial News, API Key, and User from LocalStorage on mount
+  // Load Initial Data on Mount
   useEffect(() => {
     const loadedNews = storageService.loadNewsItems();
     setNewsList(loadedNews);
@@ -65,7 +64,7 @@ export function App() {
         setCurrentUser(JSON.parse(storedUser));
       }
     } catch (e) {
-      console.error('Failed to load user', e);
+      console.error('Failed to load user session', e);
     }
   }, []);
 
@@ -138,7 +137,7 @@ export function App() {
     }
   };
 
-  // Active Executive Summary (Daily vs Weekly)
+  // Active Executive Summary
   const currentDigestSummary = timeframe === 'daily' ? mockDailyDigestSummary : mockWeeklyDigestSummary;
 
   // Filtered News Items
@@ -184,24 +183,16 @@ export function App() {
         onLogout={handleLogout}
       />
 
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+      <main style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 20px' }}>
         
-        {/* VIEW 1: Stock Market Explorer (หุ้นทั้งตลาด SET & US) */}
+        {/* VIEW 1: Ultra-Professional Stock Market Explorer (SET & US) */}
         {activeView === 'explorer' && (
           <StockMarketExplorer
-            onOpenDevApi={() => setActiveView('dev_api')}
             onRequestPreview={() => handleOpenAuthModal('preview')}
           />
         )}
 
-        {/* VIEW 2: Developer REST API Portal */}
-        {activeView === 'dev_api' && (
-          <DeveloperApiPortal
-            onRequestPreview={() => handleOpenAuthModal('preview')}
-          />
-        )}
-
-        {/* VIEW 3: AI Financial News Feed */}
+        {/* VIEW 2: AI Financial News Feed */}
         {activeView === 'news' && (
           <>
             {/* Real-time Market Indices Ticker Bar */}
@@ -230,8 +221,8 @@ export function App() {
 
             {/* News Feed Grid Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {timeframe === 'daily' ? '📰 ข่าวสรุปประจำวันล่าสุด' : '🗓️ ข่าวสรุปประจำสัปดาห์ล่าสุด'}
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                {timeframe === 'daily' ? '📰 ข่าวสรุปการเงินประจำวันล่าสุด' : '🗓️ ข่าวสรุปการเงินประจำสัปดาห์ล่าสุด'}
               </h2>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
                 พบทั้งหมด {filteredNews.length} รายการ
@@ -266,12 +257,13 @@ export function App() {
                   }}
                   style={{
                     marginTop: '12px',
-                    background: 'var(--accent-blue)',
+                    background: 'var(--accent-blue-gradient)',
                     color: '#fff',
                     border: 'none',
-                    padding: '8px 18px',
+                    padding: '9px 20px',
                     borderRadius: '100px',
                     fontSize: '0.85rem',
+                    fontWeight: 700,
                     cursor: 'pointer'
                   }}
                 >
@@ -307,7 +299,7 @@ export function App() {
         onSaveApiKey={handleSaveApiKey}
       />
 
-      {/* Multi-Provider Auth Modal (Google, Facebook, Discord, Apple, X, Preview Access) */}
+      {/* Multi-Provider Auth Modal */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
