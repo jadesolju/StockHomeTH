@@ -1,12 +1,36 @@
 import express from 'express';
 import cors from 'cors';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
+import { randomBytes, scryptSync, timingSafeEqual, createHmac } from 'crypto';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+app.use(cors({ origin: process.env.WEB_ORIGIN || 'http://localhost:5173', credentials: true }));
 app.use(express.json());
+
+const DATA_DIR = './server/data';
+const USERS_FILE = `${DATA_DIR}/users.json`;
+const SESSION_SECRET = process.env.SESSION_SECRET || 'change-me-in-production';
+if (process.env.NODE_ENV === 'production' && SESSION_SECRET === 'change-me-in-production') throw new Error('SESSION_SECRET is required in production.');
+if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+if (!existsSync(USERS_FILE)) writeFileSync(USERS_FILE, '[]', 'utf8');
+const readUsers = () => JSON.parse(readFileSync(USERS_FILE, 'utf8'));
+const saveUsers = (users) => writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+const publicUser = ({ id, name, email, plan, subscriptionStatus, createdAt }) => ({ id, name, email, plan, subscriptionStatus, createdAt });
+const hashPassword = (password, salt = randomBytes(16).toString('hex')) => ({ salt, hash: scryptSync(password, salt, 64).toString('hex') });
+const verifyPassword = (password, user) => timingSafeEqual(Buffer.from(hashPassword(password, user.salt).hash, 'hex'), Buffer.from(user.passwordHash, 'hex'));
+const signSession = (id) => `${id}.${createHmac('sha256', SESSION_SECRET).update(id).digest('hex')}`;
+const getSessionUser = (req) => {
+  const cookie = req.headers.cookie?.split(';').map(v => v.trim()).find(v => v.startsWith('stockhome_session='));
+  if (!cookie) return null;
+  const [id, signature] = decodeURIComponent(cookie.split('=').slice(1).join('=')).split('.');
+  const expected = createHmac('sha256', SESSION_SECRET).update(id).digest('hex');
+  if (!id || !signature || signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
+  return readUsers().find(user => user.id === id) || null;
+};
+const setSession = (res, user) => res.setHeader('Set-Cookie', `stockhome_session=${encodeURIComponent(signSession(user.id))}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+const requireUser = (req, res, next) => { const user = getSessionUser(req); if (!user) return res.status(401).json({ error: 'Authentication required' }); req.user = user; next(); };
 
 // ─── Stock Universe ────────────────────────────────────────────────────────────
 const STOCK_TICKERS = [
@@ -164,22 +188,62 @@ app.get('/api/stocks/live', async (_req, res) => {
 });
 
 // ─── POST /api/auth/oauth ─────────────────────────────────────────────────────
-app.post('/api/auth/oauth', (req, res) => {
-  const { provider } = req.body;
-  if (!provider) return res.status(400).json({ error: 'provider is required' });
+// Authentication: password hashes and signed HTTP-only sessions. OAuth callbacks
+// can be added here once provider credentials are configured; never simulate them.
+app.post('/api/auth/register', (req, res) => {
+  const { name, email, password } = req.body || {};
+  if (!name?.trim() || !/^\S+@\S+\.\S+$/.test(email || '') || typeof password !== 'string' || password.length < 8) {
+    return res.status(400).json({ error: 'Name, valid email, and password of at least 8 characters are required.' });
+  }
+  const users = readUsers();
+  const normalizedEmail = email.trim().toLowerCase();
+  if (users.some(user => user.email === normalizedEmail)) return res.status(409).json({ error: 'An account already exists for this email.' });
+  const { salt, hash } = hashPassword(password);
+  const user = { id: `usr_${randomBytes(10).toString('hex')}`, name: name.trim(), email: normalizedEmail, salt, passwordHash: hash, plan: 'free', subscriptionStatus: 'inactive', createdAt: new Date().toISOString() };
+  users.push(user); saveUsers(users); setSession(res, user);
+  res.status(201).json({ user: publicUser(user) });
+});
 
-  const uid = Math.random().toString(36).slice(2, 10);
-  res.json({
-    status: 200,
-    user: {
-      userId: `usr_${uid}`,
-      name: `${provider} User`,
-      email: `user.${uid}@stockhometh.com`,
-      provider,
-      tier: 'Pro Intelligence Tier',
-      authenticatedAt: new Date().toISOString(),
-    },
-  });
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body || {};
+  const user = readUsers().find(candidate => candidate.email === String(email || '').trim().toLowerCase());
+  if (!user || typeof password !== 'string' || !verifyPassword(password, user)) return res.status(401).json({ error: 'Email or password is incorrect.' });
+  setSession(res, user); res.json({ user: publicUser(user) });
+});
+
+app.post('/api/auth/logout', (_req, res) => {
+  res.setHeader('Set-Cookie', 'stockhome_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+  res.status(204).end();
+});
+
+app.get('/api/auth/me', (req, res) => {
+  const user = getSessionUser(req);
+  if (!user) return res.status(401).json({ error: 'Not signed in' });
+  res.json({ user: publicUser(user) });
+});
+
+const PLANS = {
+  free: { name: 'Free', price: 0, features: ['Delayed market data', 'Daily briefing', '5 watchlist symbols'] },
+  pro: { name: 'Pro', price: 490, features: ['Live market data', 'Unlimited watchlist', 'AI briefing and API access'] },
+  team: { name: 'Team', price: 1490, features: ['Everything in Pro', '5 seats', 'Shared API workspace'] },
+};
+app.get('/api/subscriptions/plans', (_req, res) => res.json({ currency: 'THB', interval: 'month', plans: PLANS }));
+app.get('/api/subscriptions/me', requireUser, (req, res) => res.json({ plan: req.user.plan, status: req.user.subscriptionStatus }));
+app.post('/api/subscriptions/checkout', requireUser, (req, res) => {
+  const { plan } = req.body || {};
+  if (!PLANS[plan] || plan === 'free') return res.status(400).json({ error: 'Choose a paid plan.' });
+  // Replace with Stripe Checkout Session creation when STRIPE_SECRET_KEY is present.
+  res.status(501).json({ error: 'Payments are not configured yet.', plan, integration: 'stripe_checkout', requiredEnv: ['STRIPE_SECRET_KEY', 'STRIPE_PRICE_PRO', 'STRIPE_PRICE_TEAM'] });
+});
+
+// Versioned, provider-agnostic market endpoint. Yahoo is the default adapter;
+// TradingView feeds should be connected server-side with licensed credentials.
+app.get('/api/v1/market/quote/:symbol', async (req, res) => {
+  const symbol = String(req.params.symbol || '').toUpperCase().replace(/[^A-Z0-9.^-]/g, '');
+  if (!symbol) return res.status(400).json({ error: 'Valid symbol is required.' });
+  const quote = await fetchYahooChart(symbol);
+  if (!quote) return res.status(502).json({ error: 'Yahoo Finance is currently unavailable.', provider: 'yahoo' });
+  res.json({ symbol, provider: 'yahoo', delayed: true, asOf: new Date().toISOString(), quote });
 });
 
 // ─── GET /api/health ──────────────────────────────────────────────────────────

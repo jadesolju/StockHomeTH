@@ -1,5 +1,16 @@
 # React + TypeScript + Vite
 
+## Local product API
+
+Run the UI and API in separate terminals:
+
+```bash
+npm run server:dev
+npm run dev
+```
+
+The API provides persistent email/password accounts (`/api/auth/*`), signed HTTP-only sessions, subscription-plan contracts (`/api/subscriptions/*`), and a Yahoo-backed quote adapter (`/api/v1/market/quote/:symbol`). Configure `SESSION_SECRET` and `WEB_ORIGIN` before deployment. Payment checkout intentionally responds as unconfigured until Stripe price IDs and `STRIPE_SECRET_KEY` are supplied; this prevents a misleading fake payment flow.
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:

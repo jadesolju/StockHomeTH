@@ -5,7 +5,7 @@
   --font-family: 'Prompt', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   /* Dark Glass Theme Default */
-  --bg-gradient: radial-gradient(circle at 15% 15%, #1a1e29 0%, #0f1219 50%, #080a0f 100%);
+  --bg-gradient: #0f1219;
   --bg-mesh-1: rgba(59, 130, 246, 0.12);
   --bg-mesh-2: rgba(16, 185, 129, 0.08);
   --bg-mesh-3: rgba(139, 92, 246, 0.1);
@@ -23,6 +23,7 @@
   --text-tertiary: #64748b;
 
   --accent-blue: #007AFF;
+  --accent-blue-gradient: #007AFF;
   --accent-blue-glow: rgba(0, 122, 255, 0.3);
 
   --accent-bullish: #34C759;
@@ -43,7 +44,7 @@
 }
 
 [data-theme='light'] {
-  --bg-gradient: radial-gradient(circle at 15% 15%, #f1f5f9 0%, #e2e8f0 50%, #cbd5e1 100%);
+  --bg-gradient: #f5f7fa;
   --bg-mesh-1: rgba(59, 130, 246, 0.2);
   --bg-mesh-2: rgba(16, 185, 129, 0.15);
   --bg-mesh-3: rgba(139, 92, 246, 0.15);
@@ -94,7 +95,7 @@ body::before {
   height: 500px;
   top: -100px;
   left: -100px;
-  background: var(--bg-mesh-1);
+  background: transparent;
 }
 
 body::after {
@@ -102,7 +103,7 @@ body::after {
   height: 600px;
   bottom: -150px;
   right: -100px;
-  background: var(--bg-mesh-3);
+  background: transparent;
 }
 
 #root {
@@ -271,6 +272,24 @@ body::after {
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
   animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* Product UI: solid surfaces, restrained contrast, no decorative gradients. */
+.auth-dialog { position: relative; width: min(440px, calc(100% - 32px)); background: var(--bg-gradient); border: 1px solid var(--glass-border); border-radius: 18px; padding: 32px; box-shadow: var(--glass-shadow); }
+.auth-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 10px; background: var(--accent-blue); color: #fff; margin-bottom: 20px; }
+.auth-dialog h2 { font-size: 1.65rem; font-weight: 750; margin: 4px 0 8px; color: var(--text-primary); }
+.eyebrow { font-size: .72rem; color: var(--text-tertiary); letter-spacing: .12em; font-weight: 700; }
+.auth-copy { color: var(--text-secondary); font-size: .88rem; line-height: 1.55; }
+.auth-form { display: grid; gap: 15px; margin-top: 24px; text-align: left; }
+.auth-form label { color: var(--text-secondary); font-size: .78rem; font-weight: 600; display: grid; gap: 7px; }
+.auth-form input { background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 9px; padding: 11px 12px; font: inherit; font-size: .9rem; outline: none; }
+.auth-form input:focus { border-color: var(--accent-blue); }
+.solid-button { border: 0; border-radius: 9px; padding: 12px 14px; background: var(--accent-blue); color: #fff; font: inherit; font-size: .9rem; font-weight: 700; cursor: pointer; }
+.solid-button:disabled { opacity: .65; cursor: progress; }
+.auth-switch { margin-top: 20px; color: var(--text-secondary); text-align: center; font-size: .84rem; }.auth-switch button { border: 0; background: transparent; color: var(--accent-blue); font: inherit; font-weight: 700; cursor: pointer; }.auth-error { color: var(--accent-bearish); font-size: .8rem; }.auth-close { position: absolute; right: 18px; top: 18px; }
+.icon-button { background: transparent; border: 0; color: var(--text-secondary); cursor: pointer; }
+.subscription-dialog { position: relative; width: min(900px, calc(100% - 32px)); background: var(--bg-gradient); border: 1px solid var(--glass-border); border-radius: 18px; padding: 32px; box-shadow: var(--glass-shadow); }
+.subscription-dialog h2 { color: var(--text-primary); margin: 5px 0 7px; }.plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 24px; }.plan-card { border: 1px solid var(--glass-border); padding: 18px; border-radius: 12px; text-align: left; }.plan-card.featured { border-color: var(--accent-blue); }.plan-card h3 { color: var(--text-primary); }.plan-price { color: var(--text-primary); font-size: 1.5rem; font-weight: 750; margin: 10px 0; }.plan-price small { color: var(--text-secondary); font-size: .7rem; font-weight: 500; }.plan-card ul { list-style: none; display: grid; gap: 8px; color: var(--text-secondary); font-size: .78rem; margin: 18px 0; min-height: 80px; }.plan-card li { display: flex; gap: 7px; align-items: flex-start; }.plan-card li svg { color: var(--accent-bullish); flex: 0 0 auto; }.outline-button { border: 1px solid var(--glass-border); border-radius: 9px; padding: 11px; width: 100%; background: transparent; color: var(--text-primary); font: inherit; font-size: .8rem; cursor: pointer; }.plan-card .solid-button { width: 100%; }.subscription-message { color: var(--accent-neutral); text-align: center; font-size: .82rem; margin-top: 16px; }
+@media (max-width: 720px) { .plan-grid { grid-template-columns: 1fr; }.subscription-dialog { max-height: 90vh; overflow: auto; } }
 
 @keyframes fadeIn {
   from {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, Moon, Sun, RefreshCw, Bookmark, Sparkles, Key, Globe, User, LogOut, ShieldCheck, Newspaper } from 'lucide-react';
+import { TrendingUp, Moon, Sun, RefreshCw, Bookmark, Sparkles, Key, Globe, User, LogOut, ShieldCheck, Newspaper, CreditCard } from 'lucide-react';
 import type { UserAuthData } from './AuthModal';
 
 interface HeaderProps {
@@ -16,8 +16,9 @@ interface HeaderProps {
   activeView: 'news' | 'explorer';
   onSelectView: (view: 'news' | 'explorer') => void;
   currentUser: UserAuthData | null;
-  onOpenAuthModal: (tab?: 'login' | 'preview') => void;
+  onOpenAuthModal: (tab?: 'login' | 'register') => void;
   onLogout: () => void;
+  onOpenSubscription: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -36,6 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
   currentUser,
   onOpenAuthModal,
   onLogout,
+  onOpenSubscription,
 }) => {
   const currentDate = new Date().toLocaleDateString('th-TH', {
     weekday: 'long',
@@ -56,7 +58,7 @@ export const Header: React.FC<HeaderProps> = ({
               width: '46px',
               height: '46px',
               borderRadius: '14px',
-              background: 'linear-gradient(135deg, #007AFF 0%, #3b82f6 100%)',
+              background: '#007AFF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -67,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h1 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: 'var(--text-primary)' }}>
-                  StockHome<span style={{ background: 'linear-gradient(90deg, #10b981, #007AFF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>TH</span>
+                  StockHome<span style={{ color: '#007AFF' }}>TH</span>
                 </h1>
                 <span style={{
                   background: 'rgba(16, 185, 129, 0.15)',
@@ -122,19 +124,20 @@ export const Header: React.FC<HeaderProps> = ({
                   border: '1px solid var(--glass-border)'
                 }}
               >
-                <img
-                  src={currentUser.avatar}
-                  alt={currentUser.name}
-                  style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#fff' }}
-                />
+                <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--accent-blue)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: '0.75rem', fontWeight: 800 }}>{currentUser.name.slice(0, 1).toUpperCase()}</div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
                     {currentUser.name}
                   </span>
                   <span style={{ fontSize: '0.68rem', color: 'var(--accent-bullish)', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
-                    <ShieldCheck size={10} /> {currentUser.provider} ({currentUser.tier})
+                    <ShieldCheck size={10} /> {currentUser.plan.toUpperCase()} PLAN
                   </span>
                 </div>
+                <button
+                  onClick={onOpenSubscription}
+                  title="Manage subscription"
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', marginLeft: '4px' }}
+                ><CreditCard size={16} /></button>
                 <button
                   onClick={onLogout}
                   title="Log out"
@@ -162,7 +165,7 @@ export const Header: React.FC<HeaderProps> = ({
                     boxShadow: '0 4px 14px var(--accent-blue-glow)'
                   }}
                 >
-                  <User size={15} /> Sign In / OAuth
+                  <User size={15} /> Sign in
                 </button>
               </div>
             )}
@@ -195,7 +198,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onGenerateAiSummary}
               disabled={isGeneratingAi}
               style={{
-                background: 'linear-gradient(135deg, #007AFF 0%, #10b981 100%)',
+                background: '#007AFF',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '100px',

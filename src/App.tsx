@@ -12,6 +12,7 @@ import { ApiKeyModal } from './components/ApiKeyModal';
 // Components
 import { StockMarketExplorer } from './components/StockMarketExplorer';
 import { AuthModal, type UserAuthData } from './components/AuthModal';
+import { SubscriptionModal } from './components/SubscriptionModal';
 
 import { mockMarketIndices } from './data/mockMarketData';
 import { mockDailyDigestSummary, mockWeeklyDigestSummary } from './data/mockNewsData';
@@ -20,10 +21,9 @@ import type { StockNewsItem, MarketRegion, TimeframeType, NewsCategory, Sentimen
 import { storageService } from './services/storageService';
 import { newsFetcher } from './services/newsFetcher';
 import { aiSummarizer } from './services/aiSummarizer';
+import { authService } from './services/authService';
 
 import './styles/glass-ios.css';
-
-const AUTH_USER_KEY = 'stock_home_current_user';
 
 export function App() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -46,7 +46,8 @@ export function App() {
   // Auth States
   const [currentUser, setCurrentUser] = useState<UserAuthData | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-  const [authModalTab, setAuthModalTab] = useState<'login' | 'preview'>('login');
+  const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<'login' | 'register'>('login');
 
   const [selectedNewsDetail, setSelectedNewsDetail] = useState<StockNewsItem | null>(null);
   const [playingAudioItem, setPlayingAudioItem] = useState<StockNewsItem | null>(null);
@@ -58,14 +59,7 @@ export function App() {
     const loadedKey = storageService.loadApiKey();
     setApiKey(loadedKey);
 
-    try {
-      const storedUser = localStorage.getItem(AUTH_USER_KEY);
-      if (storedUser) {
-        setCurrentUser(JSON.parse(storedUser));
-      }
-    } catch (e) {
-      console.error('Failed to load user session', e);
-    }
+    authService.me().then(({ user }) => setCurrentUser(user)).catch(() => undefined);
   }, []);
 
   // Toggle Theme Handler
@@ -76,19 +70,18 @@ export function App() {
   };
 
   // Auth Handlers
-  const handleOpenAuthModal = (tab: 'login' | 'preview' = 'login') => {
+  const handleOpenAuthModal = (tab: 'login' | 'register' = 'login') => {
     setAuthModalTab(tab);
     setIsAuthModalOpen(true);
   };
 
   const handleLoginSuccess = (user: UserAuthData) => {
     setCurrentUser(user);
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
-    localStorage.removeItem(AUTH_USER_KEY);
+    authService.logout().catch(() => undefined);
   };
 
   // Bookmark Toggle Handler
@@ -181,6 +174,7 @@ export function App() {
         currentUser={currentUser}
         onOpenAuthModal={handleOpenAuthModal}
         onLogout={handleLogout}
+        onOpenSubscription={() => setIsSubscriptionOpen(true)}
       />
 
       <main style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 20px' }}>
@@ -188,7 +182,7 @@ export function App() {
         {/* VIEW 1: Ultra-Professional Stock Market Explorer (SET & US) */}
         {activeView === 'explorer' && (
           <StockMarketExplorer
-            onRequestPreview={() => handleOpenAuthModal('preview')}
+            onRequestPreview={() => handleOpenAuthModal('register')}
           />
         )}
 
@@ -306,6 +300,7 @@ export function App() {
         onLoginSuccess={handleLoginSuccess}
         initialTab={authModalTab}
       />
+      <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} />
 
     </div>
   );
