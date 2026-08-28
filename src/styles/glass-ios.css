@@ -1,0 +1,301 @@
+/* Glassmorphism + iOS Minimal Clean UI Stylesheet */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --font-family: 'Prompt', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  
+  /* Dark Glass Theme Default */
+  --bg-gradient: radial-gradient(circle at 15% 15%, #1a1e29 0%, #0f1219 50%, #080a0f 100%);
+  --bg-mesh-1: rgba(59, 130, 246, 0.12);
+  --bg-mesh-2: rgba(16, 185, 129, 0.08);
+  --bg-mesh-3: rgba(139, 92, 246, 0.1);
+
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-bg-hover: rgba(255, 255, 255, 0.07);
+  --glass-bg-active: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-glow: rgba(255, 255, 255, 0.22);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --glass-blur: blur(24px) saturate(180%);
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+
+  --accent-blue: #007AFF;
+  --accent-blue-glow: rgba(0, 122, 255, 0.3);
+  
+  --accent-bullish: #34C759;
+  --accent-bullish-bg: rgba(52, 199, 89, 0.12);
+  --accent-bullish-border: rgba(52, 199, 89, 0.3);
+  
+  --accent-bearish: #FF3B30;
+  --accent-bearish-bg: rgba(255, 59, 48, 0.12);
+  --accent-bearish-border: rgba(255, 59, 48, 0.3);
+  
+  --accent-neutral: #FFCC00;
+  --accent-neutral-bg: rgba(255, 204, 0, 0.12);
+  --accent-neutral-border: rgba(255, 204, 0, 0.3);
+
+  --ios-radius: 20px;
+  --ios-radius-sm: 12px;
+  --ios-radius-lg: 28px;
+}
+
+[data-theme='light'] {
+  --bg-gradient: radial-gradient(circle at 15% 15%, #f1f5f9 0%, #e2e8f0 50%, #cbd5e1 100%);
+  --bg-mesh-1: rgba(59, 130, 246, 0.2);
+  --bg-mesh-2: rgba(16, 185, 129, 0.15);
+  --bg-mesh-3: rgba(139, 92, 246, 0.15);
+
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-bg-hover: rgba(255, 255, 255, 0.85);
+  --glass-bg-active: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-border-glow: rgba(0, 122, 255, 0.25);
+  --glass-shadow: 0 10px 30px 0 rgba(31, 38, 135, 0.08);
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--bg-gradient);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  -webkit-font-smoothing: antialiasing;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ambient Ambient Glow Orbs in Background */
+body::before, body::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(100px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+body::before {
+  width: 500px;
+  height: 500px;
+  top: -100px;
+  left: -100px;
+  background: var(--bg-mesh-1);
+}
+
+body::after {
+  width: 600px;
+  height: 600px;
+  bottom: -150px;
+  right: -100px;
+  background: var(--bg-mesh-3);
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* Glassmorphism Card Container */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--ios-radius);
+  box-shadow: var(--glass-shadow);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-glow);
+  transform: translateY(-2px);
+}
+
+/* iOS Segmented Control Switcher */
+.ios-segmented-control {
+  display: inline-flex;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px;
+  border-radius: 100px;
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  position: relative;
+}
+
+[data-theme='light'] .ios-segmented-control {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.ios-segment-btn {
+  padding: 8px 18px;
+  border-radius: 100px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-family);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 1;
+}
+
+.ios-segment-btn.active {
+  color: #ffffff;
+  background: var(--accent-blue);
+  box-shadow: 0 4px 12px var(--accent-blue-glow);
+  font-weight: 600;
+}
+
+/* Sentiment Badges */
+.badge-sentiment {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-bullish {
+  background: var(--accent-bullish-bg);
+  color: var(--accent-bullish);
+  border: 1px solid var(--accent-bullish-border);
+}
+
+.badge-bearish {
+  background: var(--accent-bearish-bg);
+  color: var(--accent-bearish);
+  border: 1px solid var(--accent-bearish-border);
+}
+
+.badge-neutral {
+  background: var(--accent-neutral-bg);
+  color: var(--accent-neutral);
+  border: 1px solid var(--accent-neutral-border);
+}
+
+/* Ticker Pill Tags */
+.ticker-pill {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+}
+
+[data-theme='light'] .ticker-pill {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Key Takeaway Bullet Items */
+.takeaway-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.takeaway-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.takeaway-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  margin-top: 7px;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px var(--accent-blue);
+}
+
+/* iOS Sheet Backdrop & Modal */
+.ios-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.ios-sheet-content {
+  background: var(--bg-gradient);
+  border: 1px solid var(--glass-border-glow);
+  border-radius: var(--ios-radius-lg) var(--ios-radius-lg) 0 0;
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 28px;
+  position: relative;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Custom Glass Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
