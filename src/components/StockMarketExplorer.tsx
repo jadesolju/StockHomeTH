@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { fullMarketStocks, type StockFundamentalData } from '../data/fullMarketStocks';
-import { Search, Filter, Sparkles, LayoutGrid, Table as TableIcon, X, Activity, ArrowUpRight, ArrowDownRight, Award, Flame } from 'lucide-react';
+import { Search, Filter, Sparkles, LayoutGrid, Table as TableIcon, X, Activity, ArrowUpRight, ArrowDownRight, Award, Flame, RefreshCw } from 'lucide-react';
+import { realStockDataFetcher } from '../services/realStockDataFetcher';
 
 interface StockMarketExplorerProps {
   onRequestPreview: () => void;
@@ -54,17 +55,35 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onRequ
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [activeStock, setActiveStock] = useState<StockFundamentalData | null>(null);
+  const [stockData, setStockData] = useState<StockFundamentalData[]>(fullMarketStocks);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [dataSource, setDataSource] = useState<'live' | 'fallback'>('fallback');
+
+  const loadLiveData = async () => {
+    setIsLoading(true);
+    const result = await realStockDataFetcher.fetchLiveStocks();
+    setStockData(result);
+    setDataSource(result === fullMarketStocks ? 'fallback' : 'live');
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadLiveData();
+    // Auto-refresh every 90 seconds
+    const interval = setInterval(loadLiveData, 90_000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Extract unique sectors
   const availableSectors = useMemo(() => {
     const sectors = new Set<string>();
-    fullMarketStocks.forEach((s) => sectors.add(s.sector));
+    stockData.forEach((s) => sectors.add(s.sector));
     return ['ALL', ...Array.from(sectors)];
-  }, []);
+  }, [stockData]);
 
   // Filter and sort stocks
   const filteredStocks = useMemo(() => {
-    return fullMarketStocks
+    return stockData
       .filter((stock) => {
         const matchesMarket = selectedMarket === 'ALL' || stock.market === selectedMarket;
         const matchesSector = selectedSector === 'ALL' || stock.sector === selectedSector;
@@ -83,12 +102,27 @@ export const StockMarketExplorer: React.FC<StockMarketExplorerProps> = ({ onRequ
   }, [selectedMarket, selectedSector, sortBy, searchQuery]);
 
   // Market Leaders Highlight
-  const topGainer = useMemo(() => [...fullMarketStocks].sort((a, b) => b.change - a.change)[0], []);
-  const topLoser = useMemo(() => [...fullMarketStocks].sort((a, b) => a.change - b.change)[0], []);
-  const topAiRating = useMemo(() => [...fullMarketStocks].sort((a, b) => b.sentimentScore - a.sentimentScore)[0], []);
+  const topGainer = useMemo(() => [...stockData].sort((a, b) => b.change - a.change)[0], [stockData]);
+  const topLoser = useMemo(() => [...stockData].sort((a, b) => a.change - b.change)[0], [stockData]);
+  const topAiRating = useMemo(() => [...stockData].sort((a, b) => b.sentimentScore - a.sentimentScore)[0], [stockData]);
 
   return (
     <div style={{ padding: '20px 0', width: '100%' }}>
+      {/* Live/Fallback data status bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', padding: '10px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', borderRadius: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
+          {isLoading ? (
+            <><RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> <span style={{ color: 'var(--text-tertiary)' }}>กำลังดึงข้อมูลตลาดสด...</span></>
+          ) : dataSource === 'live' ? (
+            <><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block', boxShadow: '0 0 8px #10b981' }} /><span style={{ color: '#10b981' }}>LIVE — Yahoo Finance Real Data</span></>
+          ) : (
+            <><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }} /><span style={{ color: '#f59e0b' }}>STATIC — Server Offline (ข้อมูลอ้างอิง)</span></>
+          )}
+        </div>
+        <button onClick={loadLiveData} disabled={isLoading} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 12px', borderRadius: '100px', border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600 }}>
+          <RefreshCw size={13} /> รีเฟรชข้อมูล
+        </button>
+      </div>
       {/* Executive Market Summary Highlights */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         {/* Card 1: Top Gainer */}
