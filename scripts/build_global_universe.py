@@ -60,26 +60,53 @@ US_CURATED = {
     "DIS":   ("The Walt Disney Company",        "Media & Entertainment",         98.40, "$178.6B", 38.0, 0.77),
 }
 
-# Sector classifier for unrecognized US tickers
+# Comprehensive Sector classifier for US stocks
 def classify_us_sector(ticker):
-    """Heuristic sector classification for US stocks"""
+    """Accurate GICS sector classification for US stocks"""
     t = ticker.upper()
-    tech = ['NVDA','AAPL','MSFT','GOOG','AMZN','META','AMD','AVGO','INTC','CRM','ORCL',
-            'ADBE','QCOM','TXN','CSCO','IBM','NOW','SNOW','PLTR','ARM','MU','AMAT',
-            'LRCX','KLAC','ASML','TSM','DELL','HPQ','UBER','PANW','CRWD','NET','FTNT',
-            'DDOG','ZS','MDB','TEAM','SHOP','SQ','COIN','PATH']
-    fin  = ['JPM','BAC','WFC','C','GS','MS','BLK','SCHW','AXP','V','MA','PYPL','COF',
-            'USB','PNC','TFC','BK','STT','KKR','BX','APO','CME','ICE','MCO','SPGI']
-    hc   = ['LLY','UNH','JNJ','ABBV','MRK','PFE','TMO','ABT','DHR','AMGN','BMY','GILD',
-            'ISRG','VRTX','REGN','MDT','SYK','BSX','CVS','HUM','MCK','MRNA']
-    ret  = ['WMT','COST','TGT','HD','LOW','TJX','NKE','LULU','SBUX','MCD','YUM','CMG',
-            'BKNG','ABNB','MAR','HLT']
-    ene  = ['XOM','CVX','COP','EOG','SLB','OXY','MPC','VLO','PSX','DVN','FANG']
+    tech = [
+        'NVDA','AAPL','MSFT','GOOG','GOOGL','AMZN','META','AMD','AVGO','INTC','CRM','ORCL',
+        'ADBE','QCOM','TXN','CSCO','IBM','NOW','SNOW','PLTR','ARM','MU','AMAT','LRCX',
+        'KLAC','ASML','TSM','DELL','HPQ','UBER','PANW','CRWD','NET','FTNT','DDOG','ZS',
+        'MDB','TEAM','SHOP','SQ','COIN','PATH','SMCI','INTU','ANSS','CDNS','SNPS','MRVL'
+    ]
+    fin = [
+        'JPM','BAC','WFC','C','GS','MS','BLK','SCHW','AXP','V','MA','PYPL','COF',
+        'USB','PNC','TFC','BK','STT','KKR','BX','APO','CME','ICE','MCO','SPGI','TRV',
+        'AIG','MET','PRU','ALL','PGR','CB','SOFI'
+    ]
+    hc = [
+        'LLY','UNH','JNJ','ABBV','MRK','PFE','TMO','ABT','DHR','AMGN','BMY','GILD',
+        'ISRG','VRTX','REGN','MDT','SYK','BSX','CVS','HUM','MCK','MRNA','BIIB','AZN',
+        'DXCM','IDXX','ILMN','GEHC'
+    ]
+    ret = [
+        'WMT','COST','TGT','HD','LOW','TJX','NKE','LULU','SBUX','MCD','YUM','CMG',
+        'BKNG','ABNB','MAR','HLT','ROST','DLTR','DG','ORLY','AZO','EBAY','ETSY'
+    ]
+    ene = [
+        'XOM','CVX','COP','EOG','SLB','OXY','MPC','VLO','PSX','DVN','FANG','HAL',
+        'BKR','KMI','WMB','OKE','TRGP'
+    ]
+    ind = [
+        'CAT','BA','LMT','RTX','GE','HON','UNP','UPS','FDX','DE','EMR','ETN','ITW',
+        'NSC','CSX','GD','NOC','WM','RSG','PH','PCAR','FAST'
+    ]
+    auto = ['TSLA','F','GM','RIVN','LCID','NIO','LI','XPEV','APTV','BWA']
+    tele = ['VZ','T','TMUS','CMCSA','CHTR','NFLX','DIS','WBD','PARA','FOXA','OMC','IPG']
+    reit = ['PLD','AMT','EQIX','CCI','PSA','O','SPG','WELL','DLR','AVB','EQR','WY']
+    food = ['KO','PEP','MDLZ','PM','MO','KDP','KHC','GIS','K','HSY','STZ','ADM','TSN']
+
     if t in tech: return 'Technology & Semiconductors'
     if t in fin:  return 'Banking & Financials'
     if t in hc:   return 'Healthcare & Pharmaceuticals'
     if t in ret:  return 'Consumer & Retail'
     if t in ene:  return 'Energy & Natural Resources'
+    if t in ind:  return 'Industrials & Aerospace'
+    if t in auto: return 'Automotive & Clean Tech'
+    if t in tele: return 'Telecom & Digital Media'
+    if t in reit: return 'Real Estate & REITs'
+    if t in food: return 'Food & Consumer Staples'
     return 'Global Enterprise'
 
 

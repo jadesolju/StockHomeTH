@@ -5,7 +5,7 @@ import type { StockFundamental } from '../../lib/schemas/marketSchema';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { Sparkline } from '../ui/Sparkline';
-import { getStockTags, getMarketScopedTagFilters, THAI_7_GIANTS, MAGNIFICENT_7, SET50_TICKERS, SET100_TICKERS } from '../../lib/utils/stockTagHelper';
+import { getStockTags, getMarketScopedTagFilters, THAI_7_GIANTS, MAGNIFICENT_7, SET50_TICKERS, SET100_TICKERS, DOW_JONES_30, NASDAQ_100 } from '../../lib/utils/stockTagHelper';
 import {
   Search,
   Filter,
@@ -248,8 +248,20 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
         if (targetTag.includes('set100') || targetTag.includes('หุ้นใหญ่')) {
           return s.market === 'SET' && (SET100_TICKERS.has(tickerUpper) || tags.some((t) => t.toLowerCase().includes('set100') || t.toLowerCase().includes('set50')));
         }
+        if (targetTag.includes('sset') || targetTag.includes('mai')) {
+          return s.market === 'SET' && (!SET50_TICKERS.has(tickerUpper) && !SET100_TICKERS.has(tickerUpper) || tags.some((t) => t.toLowerCase().includes('sset') || t.toLowerCase().includes('mai')));
+        }
         if (targetTag.includes('magnificent') || targetTag.includes('mag 7')) {
           return s.market === 'US' && (MAGNIFICENT_7.has(tickerUpper) || tags.some((t) => t.toLowerCase().includes('magnificent')));
+        }
+        if (targetTag.includes('dow') || targetTag.includes('djia')) {
+          return s.market === 'US' && (DOW_JONES_30.has(tickerUpper) || tags.some((t) => t.toLowerCase().includes('dow')));
+        }
+        if (targetTag.includes('nasdaq')) {
+          return s.market === 'US' && (NASDAQ_100.has(tickerUpper) || tags.some((t) => t.toLowerCase().includes('nasdaq')));
+        }
+        if (targetTag.includes('s&p') || targetTag.includes('sp500')) {
+          return s.market === 'US' && tags.some((t) => t.toLowerCase().includes('s&p') || t.toLowerCase().includes('sp500'));
         }
         return tags.some((t) => t.toLowerCase() === targetTag || t.toLowerCase().includes(targetTag));
       });

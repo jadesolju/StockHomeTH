@@ -64,8 +64,20 @@ export async function GET(request: NextRequest) {
         if (targetTag.includes('set100') || targetTag.includes('หุ้นใหญ่')) {
           return s.market === 'SET' && stockTags.some((t) => t.toLowerCase().includes('set100') || t.toLowerCase().includes('set50'));
         }
+        if (targetTag.includes('sset') || targetTag.includes('mai')) {
+          return s.market === 'SET' && stockTags.some((t) => t.toLowerCase().includes('sset') || t.toLowerCase().includes('mai'));
+        }
         if (targetTag.includes('magnificent') || targetTag.includes('mag 7')) {
           return s.market === 'US' && stockTags.some((t) => t.toLowerCase().includes('magnificent'));
+        }
+        if (targetTag.includes('dow') || targetTag.includes('djia')) {
+          return s.market === 'US' && stockTags.some((t) => t.toLowerCase().includes('dow'));
+        }
+        if (targetTag.includes('nasdaq')) {
+          return s.market === 'US' && stockTags.some((t) => t.toLowerCase().includes('nasdaq'));
+        }
+        if (targetTag.includes('s&p') || targetTag.includes('sp500')) {
+          return s.market === 'US' && stockTags.some((t) => t.toLowerCase().includes('s&p') || t.toLowerCase().includes('sp500'));
         }
         return stockTags.some((t) => t.toLowerCase() === targetTag || t.toLowerCase().includes(targetTag));
       });
