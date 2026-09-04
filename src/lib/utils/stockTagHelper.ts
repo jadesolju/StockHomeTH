@@ -197,13 +197,13 @@ export function getStockTags(stock: StockFundamental): string[] {
 
   // Enforce strict market isolation on output
   if (market === 'US') {
-    return unique.filter((tg) => !tg.includes('SET') && !tg.includes('mai') && !tg.includes('นางฟ้า')).slice(0, 5);
+    return unique.filter((tg) => !tg.includes('SET') && !tg.includes('mai') && !tg.includes('นางฟ้า')).slice(0, 7);
   }
   if (market === 'SET') {
-    return unique.filter((tg) => !tg.includes('Magnificent') && !tg.includes('S&P') && !tg.includes('NASDAQ') && !tg.includes('Dow')).slice(0, 5);
+    return unique.filter((tg) => !tg.includes('Magnificent') && !tg.includes('S&P') && !tg.includes('NASDAQ') && !tg.includes('Dow')).slice(0, 7);
   }
 
-  return unique.slice(0, 5);
+  return unique.slice(0, 7);
 }
 
 /**

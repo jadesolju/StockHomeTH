@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchLiveStockFundamentals, fetchStockByTicker } from '../../../../lib/services/stockDataService';
-import { getStockTags } from '../../../../lib/utils/stockTagHelper';
+import { getStockTags, DOW_JONES_30, NASDAQ_100, MAGNIFICENT_7, THAI_7_GIANTS, SET50_TICKERS, SET100_TICKERS } from '../../../../lib/utils/stockTagHelper';
 import type { StockFundamental } from '../../../../lib/schemas/marketSchema';
 
 /**
@@ -56,28 +56,28 @@ export async function GET(request: NextRequest) {
         const tickerUpper = s.ticker.toUpperCase();
 
         if (targetTag.includes('นางฟ้า') || targetTag.includes('thai 7')) {
-          return s.market === 'SET' && stockTags.some((t) => t.toLowerCase().includes('นางฟ้า') || t.toLowerCase().includes('thai 7'));
+          return s.market === 'SET' && (THAI_7_GIANTS.has(tickerUpper) || stockTags.some((t) => t.toLowerCase().includes('นางฟ้า') || t.toLowerCase().includes('thai 7')));
         }
         if (targetTag.includes('set50') || targetTag.includes('บลูชิพ')) {
-          return s.market === 'SET' && stockTags.some((t) => t.toLowerCase().includes('set50') || t.toLowerCase().includes('blue chip'));
+          return s.market === 'SET' && (SET50_TICKERS.has(tickerUpper) || stockTags.some((t) => t.toLowerCase().includes('set50') || t.toLowerCase().includes('blue chip')));
         }
         if (targetTag.includes('set100') || targetTag.includes('หุ้นใหญ่')) {
-          return s.market === 'SET' && stockTags.some((t) => t.toLowerCase().includes('set100') || t.toLowerCase().includes('set50'));
+          return s.market === 'SET' && (SET100_TICKERS.has(tickerUpper) || stockTags.some((t) => t.toLowerCase().includes('set100') || t.toLowerCase().includes('set50')));
         }
         if (targetTag.includes('sset') || targetTag.includes('mai')) {
-          return s.market === 'SET' && stockTags.some((t) => t.toLowerCase().includes('sset') || t.toLowerCase().includes('mai'));
+          return s.market === 'SET' && (!SET50_TICKERS.has(tickerUpper) && !SET100_TICKERS.has(tickerUpper) || stockTags.some((t) => t.toLowerCase().includes('sset') || t.toLowerCase().includes('mai')));
         }
         if (targetTag.includes('magnificent') || targetTag.includes('mag 7')) {
-          return s.market === 'US' && stockTags.some((t) => t.toLowerCase().includes('magnificent'));
+          return s.market === 'US' && (MAGNIFICENT_7.has(tickerUpper) || stockTags.some((t) => t.toLowerCase().includes('magnificent')));
         }
         if (targetTag.includes('dow') || targetTag.includes('djia')) {
-          return s.market === 'US' && stockTags.some((t) => t.toLowerCase().includes('dow'));
+          return s.market === 'US' && (DOW_JONES_30.has(tickerUpper) || stockTags.some((t) => t.toLowerCase().includes('dow')));
         }
         if (targetTag.includes('nasdaq')) {
-          return s.market === 'US' && stockTags.some((t) => t.toLowerCase().includes('nasdaq'));
+          return s.market === 'US' && (NASDAQ_100.has(tickerUpper) || stockTags.some((t) => t.toLowerCase().includes('nasdaq')));
         }
         if (targetTag.includes('s&p') || targetTag.includes('sp500')) {
-          return s.market === 'US' && stockTags.some((t) => t.toLowerCase().includes('s&p') || t.toLowerCase().includes('sp500'));
+          return s.market === 'US' && (stockTags.some((t) => t.toLowerCase().includes('s&p') || t.toLowerCase().includes('sp500')) || DOW_JONES_30.has(tickerUpper) || NASDAQ_100.has(tickerUpper));
         }
         return stockTags.some((t) => t.toLowerCase() === targetTag || t.toLowerCase().includes(targetTag));
       });
