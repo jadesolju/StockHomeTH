@@ -280,6 +280,7 @@ body::after {
 .eyebrow { font-size: .72rem; color: var(--text-tertiary); letter-spacing: .12em; font-weight: 700; }
 .auth-copy { color: var(--text-secondary); font-size: .88rem; line-height: 1.55; }
 .auth-form { display: grid; gap: 15px; margin-top: 24px; text-align: left; }
+.google-button { width: 100%; margin-top: 22px; border: 1px solid var(--glass-border); border-radius: 9px; padding: 11px; background: #fff; color: #1f2937; font: inherit; font-size: .88rem; font-weight: 650; display: flex; align-items: center; justify-content: center; gap: 9px; cursor: pointer; }.auth-divider { display: flex; align-items: center; gap: 10px; color: var(--text-tertiary); font-size: .72rem; margin-top: 20px; }.auth-divider::before,.auth-divider::after { content: ''; height: 1px; background: var(--glass-border); flex: 1; }.auth-form .auth-divider + * { margin-top: 0; }
 .auth-form label { color: var(--text-secondary); font-size: .78rem; font-weight: 600; display: grid; gap: 7px; }
 .auth-form input { background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 9px; padding: 11px 12px; font: inherit; font-size: .9rem; outline: none; }
 .auth-form input:focus { border-color: var(--accent-blue); }

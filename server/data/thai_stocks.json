@@ -1,0 +1,547 @@
+{
+  "last_updated": "2026-09-04T17:20:40.529492",
+  "source": "Stock Exchange of Thailand (SET) via yfinance resilient engine",
+  "total": 30,
+  "stocks": [
+    {
+      "ticker": "PTT",
+      "symbol": "PTT.BK",
+      "name": "PTT Public Company Limited",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Energy & Utilities",
+      "price": 41.5,
+      "change": -0.6,
+      "sparkline": [
+        40.75,
+        41.5,
+        41.0,
+        41.75,
+        41.5
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "CPALL",
+      "symbol": "CPALL.BK",
+      "name": "CP ALL Public Company Limited",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Commerce & Retail",
+      "price": 46.25,
+      "change": 0.54,
+      "sparkline": [
+        46.25,
+        45.5,
+        45.5,
+        46.0,
+        46.25
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "AOT",
+      "symbol": "AOT.BK",
+      "name": "Airports of Thailand PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Transportation & Logistics",
+      "price": 63.5,
+      "change": 1.2,
+      "sparkline": [
+        63.5,
+        62.5,
+        61.75,
+        62.75,
+        63.5
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "KBANK",
+      "symbol": "KBANK.BK",
+      "name": "Kasikornbank PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Banking & Financials",
+      "price": 248.0,
+      "change": -0.4,
+      "sparkline": [
+        248.0,
+        248.0,
+        248.0,
+        249.0,
+        248.0
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "DELTA",
+      "symbol": "DELTA.BK",
+      "name": "Delta Electronics (Thailand) PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Electronics & Tech",
+      "price": 256.0,
+      "change": 5.35,
+      "sparkline": [
+        249.0,
+        251.0,
+        246.0,
+        243.0,
+        256.0
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "BDMS",
+      "symbol": "BDMS.BK",
+      "name": "Bangkok Dusit Medical Services PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Healthcare & Hospitals",
+      "price": 20.4,
+      "change": -0.97,
+      "sparkline": [
+        19.6,
+        20.0,
+        19.8,
+        20.6,
+        20.4
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "SCB",
+      "symbol": "SCB.BK",
+      "name": "SCB X Public Company Limited",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Banking & Financials",
+      "price": 151.5,
+      "change": 0.0,
+      "sparkline": [
+        151.0,
+        152.0,
+        151.5,
+        151.5,
+        151.5
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "GULF",
+      "symbol": "GULF.BK",
+      "name": "Gulf Energy Development PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Energy & Utilities",
+      "price": 61.75,
+      "change": 0.82,
+      "sparkline": [
+        63.25,
+        62.0,
+        61.25,
+        61.25,
+        61.75
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "ADVANC",
+      "symbol": "ADVANC.BK",
+      "name": "Advanced Info Service PCL (AIS)",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Telecommunication & Digital",
+      "price": 346.0,
+      "change": 0.58,
+      "sparkline": [
+        355.0,
+        354.0,
+        349.0,
+        344.0,
+        346.0
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "TRUE",
+      "symbol": "TRUE.BK",
+      "name": "True Corporation PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Telecommunication & Digital",
+      "price": 13.0,
+      "change": 0.78,
+      "sparkline": [
+        13.1,
+        13.0,
+        12.8,
+        12.9,
+        13.0
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "MINT",
+      "symbol": "MINT.BK",
+      "name": "Minor International PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Tourism, Hospitality & Food",
+      "price": 22.2,
+      "change": 1.37,
+      "sparkline": [
+        22.2,
+        22.1,
+        21.9,
+        21.9,
+        22.2
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "BBL",
+      "symbol": "BBL.BK",
+      "name": "Bangkok Bank PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Banking & Financials",
+      "price": 193.5,
+      "change": 0.26,
+      "sparkline": [
+        191.0,
+        192.0,
+        192.0,
+        193.0,
+        193.5
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "KTB",
+      "symbol": "KTB.BK",
+      "name": "Krung Thai Bank PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Banking & Financials",
+      "price": 43.5,
+      "change": -0.57,
+      "sparkline": [
+        43.25,
+        43.5,
+        43.75,
+        43.75,
+        43.5
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "CRC",
+      "symbol": "CRC.BK",
+      "name": "Central Retail Corporation PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Commerce & Retail",
+      "price": 28.25,
+      "change": 0.0,
+      "sparkline": [
+        29.0,
+        29.0,
+        28.75,
+        28.25,
+        28.25
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "HMPRO",
+      "symbol": "HMPRO.BK",
+      "name": "Home Product Center PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Commerce & Retail",
+      "price": 6.4,
+      "change": 0.79,
+      "sparkline": [
+        6.45,
+        6.35,
+        6.4,
+        6.35,
+        6.4
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "CPN",
+      "symbol": "CPN.BK",
+      "name": "Central Pattana PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Property & Real Estate",
+      "price": 64.75,
+      "change": 0.78,
+      "sparkline": [
+        67.25,
+        65.0,
+        64.75,
+        64.25,
+        64.75
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "OR",
+      "symbol": "OR.BK",
+      "name": "PTT Oil and Retail Business PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Energy & Retail",
+      "price": 12.8,
+      "change": 1.59,
+      "sparkline": [
+        12.5,
+        12.6,
+        12.5,
+        12.6,
+        12.8
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "GPSC",
+      "symbol": "GPSC.BK",
+      "name": "Global Power Synergy PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Energy & Utilities",
+      "price": 50.25,
+      "change": 1.01,
+      "sparkline": [
+        53.0,
+        51.25,
+        50.75,
+        49.75,
+        50.25
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "EA",
+      "symbol": "EA.BK",
+      "name": "Energy Absolute PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Renewable Energy & EV",
+      "price": 2.88,
+      "change": 0.7,
+      "sparkline": [
+        2.88,
+        2.86,
+        2.86,
+        2.86,
+        2.88
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "BGRIM",
+      "symbol": "BGRIM.BK",
+      "name": "B.Grimm Power PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Energy & Utilities",
+      "price": 19.7,
+      "change": 2.07,
+      "sparkline": [
+        20.3,
+        19.6,
+        19.8,
+        19.3,
+        19.7
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "TOP",
+      "symbol": "TOP.BK",
+      "name": "Thai Oil PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Refinery & Energy",
+      "price": 62.75,
+      "change": -1.95,
+      "sparkline": [
+        64.0,
+        64.75,
+        64.75,
+        64.0,
+        62.75
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "LH",
+      "symbol": "LH.BK",
+      "name": "Land and Houses PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Property & Real Estate",
+      "price": 3.66,
+      "change": 0.0,
+      "sparkline": [
+        3.66,
+        3.64,
+        3.64,
+        3.66,
+        3.66
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "WHA",
+      "symbol": "WHA.BK",
+      "name": "WHA Corporation PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Industrial Estate & Logistics",
+      "price": 4.78,
+      "change": 0.84,
+      "sparkline": [
+        4.82,
+        4.76,
+        4.62,
+        4.74,
+        4.78
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "IVL",
+      "symbol": "IVL.BK",
+      "name": "Indorama Ventures PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Petrochemicals & Chemicals",
+      "price": 25.5,
+      "change": 2.0,
+      "sparkline": [
+        24.4,
+        25.0,
+        25.0,
+        25.0,
+        25.5
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "TU",
+      "symbol": "TU.BK",
+      "name": "Thai Union Group PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Food & Beverage",
+      "price": 13.1,
+      "change": -0.76,
+      "sparkline": [
+        12.6,
+        12.7,
+        12.9,
+        13.2,
+        13.1
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "CBG",
+      "symbol": "CBG.BK",
+      "name": "Carabao Group PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Food & Beverage",
+      "price": 53.75,
+      "change": 0.94,
+      "sparkline": [
+        54.5,
+        53.75,
+        53.75,
+        53.25,
+        53.75
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "BTS",
+      "symbol": "BTS.BK",
+      "name": "BTS Group Holdings PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Transportation & Logistics",
+      "price": 2.04,
+      "change": 0.99,
+      "sparkline": [
+        2.08,
+        2.06,
+        2.02,
+        2.02,
+        2.04
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "BEM",
+      "symbol": "BEM.BK",
+      "name": "Bangkok Expressway and Metro PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Transportation & Infrastructure",
+      "price": 6.7,
+      "change": 1.52,
+      "sparkline": [
+        6.9,
+        6.9,
+        6.65,
+        6.6,
+        6.7
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "BCH",
+      "symbol": "BCH.BK",
+      "name": "Bangkok Chain Hospital PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Healthcare & Hospitals",
+      "price": 10.9,
+      "change": -2.68,
+      "sparkline": [
+        10.7,
+        11.1,
+        10.8,
+        11.2,
+        10.9
+      ],
+      "status": "Active"
+    },
+    {
+      "ticker": "BH",
+      "symbol": "BH.BK",
+      "name": "Bumrungrad Hospital PCL",
+      "market": "SET",
+      "currency": "THB",
+      "sector": "Healthcare & Hospitals",
+      "price": 192.5,
+      "change": -0.77,
+      "sparkline": [
+        191.5,
+        192.0,
+        190.5,
+        194.0,
+        192.5
+      ],
+      "status": "Active"
+    }
+  ]
+}

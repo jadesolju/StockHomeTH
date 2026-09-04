@@ -102,10 +102,44 @@ export const developerApiService = {
 
     const timestamp = new Date().toISOString();
 
+    if (endpoint.startsWith('/api/v1/chart/')) {
+      const parts = endpoint.split('/api/v1/chart/')[1]?.split('?');
+      const sym = (parts?.[0] || 'PTT.BK').toUpperCase();
+      return {
+        status: 200,
+        message: `High-resolution OHLCV Candlestick Feed for ${sym}`,
+        timestamp,
+        meta: { rateLimitRemaining: 995, quota: 'Anti-Block Bulk Engine Active' },
+        data: {
+          symbol: sym,
+          period: '1mo',
+          interval: '1d',
+          current_price: 34.50,
+          previous_close: 33.75,
+          change: 0.75,
+          change_percent: 2.22,
+          high52w: 39.50,
+          low52w: 29.00,
+          candles_count: 30,
+          sample_candle: {
+            date: '2026-09-04',
+            open: 34.00,
+            high: 34.75,
+            low: 33.90,
+            close: 34.50,
+            volume: 18500000,
+            ma20: 33.80,
+            ma50: 33.20,
+            isUp: true
+          }
+        }
+      };
+    }
+
     if (endpoint === '/api/v1/stocks' || endpoint.startsWith('/api/v1/stocks?')) {
       return {
         status: 200,
-        message: 'Success',
+        message: 'Success (Anti-Block Chunking Active)',
         timestamp,
         meta: { total: fullMarketStocks.length, rateLimitRemaining: 998, quota: '1,000 req/min' },
         data: fullMarketStocks

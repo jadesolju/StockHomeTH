@@ -43,7 +43,7 @@ export interface StockNewsItem {
   sentiment: SentimentType;
   tickers: string[];  // e.g. ['PTT', 'BDMS'], ['NVDA', 'AAPL']
   readTime: string;   // e.g. '3 นาที'
-  audioDuration: string; // e.g. '1:45'
+  audioDuration?: string; // Optional (audio purged)
   source: string;
   category: NewsCategory;
   impactAnalysis: ImpactAnalysis;

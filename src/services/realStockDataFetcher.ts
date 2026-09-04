@@ -1,7 +1,8 @@
 import type { StockFundamentalData } from '../data/fullMarketStocks';
 import { fullMarketStocks } from '../data/fullMarketStocks';
 
-const BACKEND_API_URL = 'http://localhost:3001/api/stocks/live';
+// Use Vite's same-origin proxy locally, avoiding localhost/IPv6 and CORS mismatches.
+const BACKEND_API_URL = '/api/stocks/live';
 
 export const realStockDataFetcher = {
   /** Fetch live stocks from Express backend, fallback to static data gracefully */

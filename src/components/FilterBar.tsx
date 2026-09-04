@@ -1,6 +1,6 @@
 import React from 'react';
 import type { NewsCategory, SentimentType } from '../types/stockNews';
-import { Search, Filter, Layers } from 'lucide-react';
+import { Search, Filter, Layers, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface FilterBarProps {
   selectedCategory: NewsCategory;
@@ -14,7 +14,7 @@ interface FilterBarProps {
 const CATEGORIES: { id: NewsCategory; label: string }[] = [
   { id: 'all', label: 'ทุกอุตสาหกรรม' },
   { id: 'macro', label: 'เศรษฐกิจมหภาค' },
-  { id: 'tech', label: 'เทคฯ & ชิป AI' },
+  { id: 'tech', label: 'เทคโนโลยี & ชิป AI' },
   { id: 'energy', label: 'พลังงาน & น้ำมัน' },
   { id: 'finance', label: 'การเงิน & ธนาคาร' },
   { id: 'retail', label: 'ค้าปลีก & ท่องเที่ยว' },
@@ -31,10 +31,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 }) => {
   return (
     <div style={{ marginBottom: '24px' }}>
-      
       {/* Top Search & Sentiment Filters */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
-        
         {/* Search Input Box */}
         <div style={{ position: 'relative', flex: '1', minWidth: '240px' }}>
           <Search size={16} color="var(--text-tertiary)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
@@ -85,7 +83,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             className={`badge-sentiment badge-bullish`}
             style={{ cursor: 'pointer', opacity: selectedSentiment === 'all' || selectedSentiment === 'bullish' ? 1 : 0.4 }}
           >
-            🟢 บวก (Bullish)
+            <TrendingUp size={12} /> บวก (Bullish)
           </button>
 
           <button
@@ -93,7 +91,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             className={`badge-sentiment badge-bearish`}
             style={{ cursor: 'pointer', opacity: selectedSentiment === 'all' || selectedSentiment === 'bearish' ? 1 : 0.4 }}
           >
-            🔴 ลบ (Bearish)
+            <TrendingDown size={12} /> ลบ (Bearish)
           </button>
 
           <button
@@ -101,10 +99,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             className={`badge-sentiment badge-neutral`}
             style={{ cursor: 'pointer', opacity: selectedSentiment === 'all' || selectedSentiment === 'neutral' ? 1 : 0.4 }}
           >
-            ⚪ ปานกลาง
+            <Minus size={12} /> ปานกลาง
           </button>
         </div>
-
       </div>
 
       {/* Category Pills Slider */}
@@ -137,7 +134,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           );
         })}
       </div>
-
     </div>
   );
 };

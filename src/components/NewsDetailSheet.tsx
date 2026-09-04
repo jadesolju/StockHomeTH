@@ -1,21 +1,17 @@
 import React from 'react';
 import type { StockNewsItem } from '../types/stockNews';
-import { X, Volume2, Bookmark, Share2, TrendingUp, AlertTriangle, ShieldCheck, Target } from 'lucide-react';
+import { X, Bookmark, Share2, TrendingUp, AlertTriangle, ShieldCheck, Target, Newspaper, Compass } from 'lucide-react';
 
 interface NewsDetailSheetProps {
   item: StockNewsItem | null;
   onClose: () => void;
-  onPlayAudio: (item: StockNewsItem) => void;
   onToggleBookmark: (id: string, e: React.MouseEvent) => void;
-  isPlayingThisAudio?: boolean;
 }
 
 export const NewsDetailSheet: React.FC<NewsDetailSheetProps> = ({
   item,
   onClose,
-  onPlayAudio,
   onToggleBookmark,
-  isPlayingThisAudio,
 }) => {
   if (!item) return null;
 
@@ -124,40 +120,10 @@ export const NewsDetailSheet: React.FC<NewsDetailSheetProps> = ({
           {item.title}
         </h2>
 
-        {/* Audio Player Quick Bar */}
-        <div style={{ background: 'rgba(0, 122, 255, 0.1)', border: '1px solid rgba(0, 122, 255, 0.25)', padding: '12px 16px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Volume2 size={20} color="var(--accent-blue)" />
-            <div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                ฟังคลิปเสียงสรุปข่าวด่วน AI Voice
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                ความยาว {item.audioDuration} นาที • บรรยายโดย AI Stock Assistant
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={() => onPlayAudio(item)}
-            style={{
-              background: 'var(--accent-blue)',
-              color: '#ffffff',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '100px',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            {isPlayingThisAudio ? 'กำลังเล่น...' : 'ฟังเลย'}
-          </button>
-        </div>
-
         {/* Key Takeaways Box */}
         <div style={{ background: 'rgba(0, 0, 0, 0.2)', padding: '16px 18px', borderRadius: '16px', marginBottom: '20px', border: '1px solid var(--glass-border)' }}>
           <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-blue)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Target size={16} /> สรุปสาระสำคัญ 360 องศา (Key Takeaways):
+            <Target size={16} /> สรุปสาระสำคัญ (Key Takeaways):
           </div>
           <div className="takeaway-list">
             {item.keyTakeaways.map((takeaway, idx) => (
@@ -200,16 +166,17 @@ export const NewsDetailSheet: React.FC<NewsDetailSheetProps> = ({
           </div>
 
           {item.impactAnalysis.priceTrendOutlook && (
-            <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              🎯 <strong>แนวโน้มราคา:</strong> {item.impactAnalysis.priceTrendOutlook}
+            <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Compass size={14} color="var(--accent-blue)" />
+              <span><strong>แนวโน้มราคา:</strong> {item.impactAnalysis.priceTrendOutlook}</span>
             </div>
           )}
         </div>
 
         {/* Full Article Text */}
         <div style={{ marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '10px' }}>
-            เนื้อหาข่าวฉบับเต็ม
+          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Newspaper size={16} /> เนื้อหาข่าวฉบับเต็ม
           </h3>
           <div style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
             {item.fullContent}

@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
-import { randomBytes, scryptSync, timingSafeEqual, createHmac } from 'crypto';
+import { randomBytes, scryptSync, timingSafeEqual, createHmac, createHash } from 'crypto';
+import 'dotenv/config';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,9 +18,11 @@ if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
 if (!existsSync(USERS_FILE)) writeFileSync(USERS_FILE, '[]', 'utf8');
 const readUsers = () => JSON.parse(readFileSync(USERS_FILE, 'utf8'));
 const saveUsers = (users) => writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
-const publicUser = ({ id, name, email, plan, subscriptionStatus, createdAt }) => ({ id, name, email, plan, subscriptionStatus, createdAt });
+const DEVELOPER_EMAIL = String(process.env.DEVELOPER_EMAIL || '').trim().toLowerCase();
+const accountRole = (email) => email.toLowerCase() === DEVELOPER_EMAIL ? 'developer' : 'member';
+const publicUser = ({ id, name, email, plan, subscriptionStatus, createdAt, provider = 'password', role = 'member' }) => ({ id, name, email, plan, subscriptionStatus, createdAt, provider, role });
 const hashPassword = (password, salt = randomBytes(16).toString('hex')) => ({ salt, hash: scryptSync(password, salt, 64).toString('hex') });
-const verifyPassword = (password, user) => timingSafeEqual(Buffer.from(hashPassword(password, user.salt).hash, 'hex'), Buffer.from(user.passwordHash, 'hex'));
+const verifyPassword = (password, user) => Boolean(user.salt && user.passwordHash) && timingSafeEqual(Buffer.from(hashPassword(password, user.salt).hash, 'hex'), Buffer.from(user.passwordHash, 'hex'));
 const signSession = (id) => `${id}.${createHmac('sha256', SESSION_SECRET).update(id).digest('hex')}`;
 const getSessionUser = (req) => {
   const cookie = req.headers.cookie?.split(';').map(v => v.trim()).find(v => v.startsWith('stockhome_session='));
@@ -31,6 +34,13 @@ const getSessionUser = (req) => {
 };
 const setSession = (res, user) => res.setHeader('Set-Cookie', `stockhome_session=${encodeURIComponent(signSession(user.id))}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
 const requireUser = (req, res, next) => { const user = getSessionUser(req); if (!user) return res.status(401).json({ error: 'Authentication required' }); req.user = user; next(); };
+
+// Provision the configured developer without an unsafe preset password.
+if (DEVELOPER_EMAIL) {
+  const users = readUsers(); let developer = users.find(user => user.email === DEVELOPER_EMAIL);
+  if (!developer) { users.push({ id: `usr_${randomBytes(10).toString('hex')}`, name: 'Developer', email: DEVELOPER_EMAIL, provider: 'password', role: 'developer', plan: 'team', subscriptionStatus: 'active', createdAt: new Date().toISOString() }); saveUsers(users); }
+  else if (developer.role !== 'developer' || developer.plan !== 'team') { developer.role = 'developer'; developer.plan = 'team'; developer.subscriptionStatus = 'active'; saveUsers(users); }
+}
 
 // ─── Stock Universe ────────────────────────────────────────────────────────────
 const STOCK_TICKERS = [
@@ -189,7 +199,42 @@ app.get('/api/stocks/live', async (_req, res) => {
 
 // ─── POST /api/auth/oauth ─────────────────────────────────────────────────────
 // Authentication: password hashes and signed HTTP-only sessions. OAuth callbacks
-// can be added here once provider credentials are configured; never simulate them.
+// use server-side tokens only; no provider secret is ever sent to the browser.
+app.get('/api/auth/google', (req, res) => {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) return res.status(503).json({ error: 'Google OAuth is not configured.' });
+  const state = randomBytes(32).toString('hex');
+  res.setHeader('Set-Cookie', `google_oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`);
+  const params = new URLSearchParams({
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    redirect_uri: process.env.GOOGLE_REDIRECT_URI || `http://127.0.0.1:${PORT}/api/auth/google/callback`,
+    response_type: 'code', scope: 'openid email profile', state, prompt: 'select_account',
+  });
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
+});
+
+app.get('/api/auth/google/callback', async (req, res) => {
+  const appUrl = process.env.WEB_APP_URL || 'http://127.0.0.1:5173';
+  const cookieState = req.headers.cookie?.split(';').map(v => v.trim()).find(v => v.startsWith('google_oauth_state='))?.split('=').slice(1).join('=');
+  if (!req.query.code || !req.query.state || !cookieState || req.query.state !== cookieState) return res.redirect(`${appUrl}?auth_error=google_state`);
+  try {
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({
+      code: String(req.query.code), client_id: process.env.GOOGLE_CLIENT_ID, client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: process.env.GOOGLE_REDIRECT_URI || `http://127.0.0.1:${PORT}/api/auth/google/callback`, grant_type: 'authorization_code',
+    }) });
+    const tokens = await tokenResponse.json();
+    if (!tokenResponse.ok || !tokens.access_token) throw new Error('Google token exchange failed');
+    const profileResponse = await fetch('https://openidconnect.googleapis.com/v1/userinfo', { headers: { Authorization: `Bearer ${tokens.access_token}` } });
+    const profile = await profileResponse.json();
+    if (!profileResponse.ok || !profile.email_verified || !profile.email) throw new Error('Google account email is not verified');
+    const users = readUsers(); const email = profile.email.toLowerCase();
+    let user = users.find(candidate => candidate.email === email);
+    if (!user) { user = { id: `usr_${randomBytes(10).toString('hex')}`, name: profile.name || email.split('@')[0], email, provider: 'google', role: accountRole(email), plan: accountRole(email) === 'developer' ? 'team' : 'free', subscriptionStatus: accountRole(email) === 'developer' ? 'active' : 'inactive', createdAt: new Date().toISOString() }; users.push(user); saveUsers(users); }
+    setSession(res, user);
+    res.setHeader('Set-Cookie', [`stockhome_session=${encodeURIComponent(signSession(user.id))}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`, 'google_oauth_state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0']);
+    res.redirect(appUrl);
+  } catch (error) { console.error('Google OAuth error:', error.message); res.redirect(`${appUrl}?auth_error=google`); }
+});
+
 app.post('/api/auth/register', (req, res) => {
   const { name, email, password } = req.body || {};
   if (!name?.trim() || !/^\S+@\S+\.\S+$/.test(email || '') || typeof password !== 'string' || password.length < 8) {
@@ -199,7 +244,8 @@ app.post('/api/auth/register', (req, res) => {
   const normalizedEmail = email.trim().toLowerCase();
   if (users.some(user => user.email === normalizedEmail)) return res.status(409).json({ error: 'An account already exists for this email.' });
   const { salt, hash } = hashPassword(password);
-  const user = { id: `usr_${randomBytes(10).toString('hex')}`, name: name.trim(), email: normalizedEmail, salt, passwordHash: hash, plan: 'free', subscriptionStatus: 'inactive', createdAt: new Date().toISOString() };
+  const isDeveloper = accountRole(normalizedEmail) === 'developer';
+  const user = { id: `usr_${randomBytes(10).toString('hex')}`, name: name.trim(), email: normalizedEmail, provider: 'password', role: accountRole(normalizedEmail), salt, passwordHash: hash, plan: isDeveloper ? 'team' : 'free', subscriptionStatus: isDeveloper ? 'active' : 'inactive', createdAt: new Date().toISOString() };
   users.push(user); saveUsers(users); setSession(res, user);
   res.status(201).json({ user: publicUser(user) });
 });
@@ -208,6 +254,25 @@ app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body || {};
   const user = readUsers().find(candidate => candidate.email === String(email || '').trim().toLowerCase());
   if (!user || typeof password !== 'string' || !verifyPassword(password, user)) return res.status(401).json({ error: 'Email or password is incorrect.' });
+  setSession(res, user); res.json({ user: publicUser(user) });
+});
+
+app.post('/api/auth/forgot-password', (req, res) => {
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const users = readUsers(); const user = users.find(candidate => candidate.email === email);
+  const generic = { message: 'If an account exists, password-reset instructions have been sent.' };
+  if (!user || user.provider === 'google') return res.json(generic);
+  const token = randomBytes(32).toString('hex'); user.resetTokenHash = createHash('sha256').update(token).digest('hex'); user.resetExpiresAt = Date.now() + 15 * 60 * 1000; saveUsers(users);
+  if (process.env.NODE_ENV !== 'production') return res.json({ ...generic, resetUrl: `${process.env.WEB_APP_URL || 'http://127.0.0.1:5173'}?reset_token=${token}` });
+  res.json(generic);
+});
+
+app.post('/api/auth/reset-password', (req, res) => {
+  const { token, password } = req.body || {};
+  if (typeof token !== 'string' || typeof password !== 'string' || password.length < 8) return res.status(400).json({ error: 'A valid reset token and password of at least 8 characters are required.' });
+  const tokenHash = createHash('sha256').update(token).digest('hex'); const users = readUsers(); const user = users.find(candidate => candidate.resetTokenHash === tokenHash && candidate.resetExpiresAt > Date.now());
+  if (!user) return res.status(400).json({ error: 'This reset link is invalid or has expired.' });
+  const { salt, hash } = hashPassword(password); user.salt = salt; user.passwordHash = hash; user.provider = 'password'; delete user.resetTokenHash; delete user.resetExpiresAt; saveUsers(users);
   setSession(res, user); res.json({ user: publicUser(user) });
 });
 
@@ -234,6 +299,120 @@ app.post('/api/subscriptions/checkout', requireUser, (req, res) => {
   if (!PLANS[plan] || plan === 'free') return res.status(400).json({ error: 'Choose a paid plan.' });
   // Replace with Stripe Checkout Session creation when STRIPE_SECRET_KEY is present.
   res.status(501).json({ error: 'Payments are not configured yet.', plan, integration: 'stripe_checkout', requiredEnv: ['STRIPE_SECRET_KEY', 'STRIPE_PRICE_PRO', 'STRIPE_PRICE_TEAM'] });
+});
+
+// ─── GET /api/v1/chart/:symbol (OHLCV Candles for Custom Stock Chart) ────────
+app.get('/api/v1/chart/:symbol', async (req, res) => {
+  try {
+    let symbol = String(req.params.symbol || '').toUpperCase().replace(/[^A-Z0-9.^-]/g, '');
+    const country = String(req.query.country || '').toLowerCase();
+    const period = String(req.query.period || '1mo');
+
+    if (!symbol) return res.status(400).json({ error: 'Valid symbol is required.' });
+
+    // Suffix resolution
+    if (!symbol.includes('.') && !symbol.includes('^')) {
+      if (country === 'th' || ['PTT', 'CPALL', 'DELTA', 'AOT', 'KBANK', 'GULF', 'BDMS', 'SCB', 'ADVANC', 'TRUE'].includes(symbol)) {
+        symbol = `${symbol}.BK`;
+      } else if (country === 'jp') {
+        symbol = `${symbol}.T`;
+      } else if (country === 'hk') {
+        symbol = `${symbol}.HK`;
+      } else if (country === 'uk') {
+        symbol = `${symbol}.L`;
+      } else if (country === 'sg') {
+        symbol = `${symbol}.SI`;
+      }
+    }
+
+    const rangeMap = { '1d': '1d', '5d': '5d', '1mo': '1mo', '3mo': '3mo', '6mo': '6mo', '1y': '1y', 'max': '5y' };
+    const intervalMap = { '1d': '15m', '5d': '1h', '1mo': '1d', '3mo': '1d', '6mo': '1d', '1y': '1wk', 'max': '1wk' };
+    const range = rangeMap[period] || '1mo';
+    const interval = intervalMap[period] || '1d';
+
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=${range}`;
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+    });
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: 'Failed to query Yahoo chart feed', symbol });
+    }
+
+    const json = await response.json();
+    const result = json?.chart?.result?.[0];
+    if (!result) return res.status(404).json({ error: 'No chart data found for symbol', symbol });
+
+    const meta = result.meta;
+    const timestamps = result.timestamp || [];
+    const quote = result.indicators?.quote?.[0] || {};
+    const closes = quote.close || [];
+    const opens = quote.open || [];
+    const highs = quote.high || [];
+    const lows = quote.low || [];
+    const volumes = quote.volume || [];
+
+    const candles = [];
+    const closesClean = [];
+
+    for (let i = 0; i < timestamps.length; i++) {
+      const c = closes[i];
+      if (typeof c !== 'number' || isNaN(c)) continue;
+      const o = typeof opens[i] === 'number' && !isNaN(opens[i]) ? opens[i] : c;
+      const h = typeof highs[i] === 'number' && !isNaN(highs[i]) ? highs[i] : Math.max(o, c);
+      const l = typeof lows[i] === 'number' && !isNaN(lows[i]) ? lows[i] : Math.min(o, c);
+      const v = typeof volumes[i] === 'number' && !isNaN(volumes[i]) ? volumes[i] : 0;
+      const ts = timestamps[i] * 1000;
+      const d = new Date(ts);
+      const dateStr = interval === '15m' || interval === '1h'
+        ? `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+        : `${d.getDate()} ${d.toLocaleString('en-US', { month: 'short' })}`;
+
+      closesClean.push(c);
+      const ma20Slice = closesClean.slice(Math.max(0, closesClean.length - 20));
+      const ma20 = +(ma20Slice.reduce((a, b) => a + b, 0) / ma20Slice.length).toFixed(2);
+      const ma50Slice = closesClean.slice(Math.max(0, closesClean.length - 50));
+      const ma50 = +(ma50Slice.reduce((a, b) => a + b, 0) / ma50Slice.length).toFixed(2);
+
+      candles.push({
+        time: ts,
+        date: dateStr,
+        open: +o.toFixed(2),
+        high: +h.toFixed(2),
+        low: +l.toFixed(2),
+        close: +c.toFixed(2),
+        volume: v,
+        ma20,
+        ma50,
+        isUp: c >= o
+      });
+    }
+
+    const currentPrice = meta.regularMarketPrice || (candles.length ? candles[candles.length - 1].close : 0);
+    const prevClose = meta.chartPreviousClose || meta.previousClose || (candles.length > 1 ? candles[candles.length - 2].close : currentPrice);
+    const change = +(currentPrice - prevClose).toFixed(2);
+    const changePct = prevClose ? +(((currentPrice - prevClose) / prevClose) * 100).toFixed(2) : 0;
+
+    res.json({
+      status: 'success',
+      symbol,
+      ticker: symbol.replace(/\..+$/, ''),
+      country: symbol.endsWith('.BK') ? 'TH' : symbol.endsWith('.T') ? 'JP' : symbol.endsWith('.HK') ? 'HK' : symbol.endsWith('.L') ? 'UK' : symbol.endsWith('.SI') ? 'SG' : 'US',
+      currency: meta.currency || (symbol.endsWith('.BK') ? 'THB' : 'USD'),
+      period,
+      interval,
+      current_price: +currentPrice.toFixed(2),
+      previous_close: +prevClose.toFixed(2),
+      change,
+      change_percent: changePct,
+      high52w: +(meta.fiftyTwoWeekHigh || currentPrice * 1.15).toFixed(2),
+      low52w: +(meta.fiftyTwoWeekLow || currentPrice * 0.85).toFixed(2),
+      market_cap: meta.marketCap,
+      candles
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Versioned, provider-agnostic market endpoint. Yahoo is the default adapter;

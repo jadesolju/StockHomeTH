@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DailyWeeklyDigestSummary } from '../types/stockNews';
-import { Zap, CheckCircle2 } from 'lucide-react';
+import { Zap, CheckCircle2, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface DigestHeaderBannerProps {
   summary: DailyWeeklyDigestSummary;
@@ -33,7 +33,6 @@ export const DigestHeaderBanner: React.FC<DigestHeaderBannerProps> = ({ summary 
 
       {/* Grid of Sentiment & Key Catalysts */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', background: 'rgba(0,0,0,0.15)', padding: '16px', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
-        
         {/* Sentiment Gauge Bar */}
         <div>
           <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-tertiary)', marginBottom: '8px' }}>
@@ -45,9 +44,15 @@ export const DigestHeaderBanner: React.FC<DigestHeaderBannerProps> = ({ summary 
             <div style={{ width: `${bearishPercent}%`, background: 'var(--accent-bearish)' }} title={`Bearish ${bearishPercent}%`} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 600 }}>
-            <span style={{ color: 'var(--accent-bullish)' }}>🟢 บวก {bullishPercent}%</span>
-            <span style={{ color: 'var(--accent-neutral)' }}>⚪ ปานกลาง {neutralPercent}%</span>
-            <span style={{ color: 'var(--accent-bearish)' }}>🔴 ลบ {bearishPercent}%</span>
+            <span style={{ color: 'var(--accent-bullish)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+              <TrendingUp size={12} /> บวก {bullishPercent}%
+            </span>
+            <span style={{ color: 'var(--accent-neutral)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+              <Minus size={12} /> ปานกลาง {neutralPercent}%
+            </span>
+            <span style={{ color: 'var(--accent-bearish)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+              <TrendingDown size={12} /> ลบ {bearishPercent}%
+            </span>
           </div>
         </div>
 
@@ -59,13 +64,12 @@ export const DigestHeaderBanner: React.FC<DigestHeaderBannerProps> = ({ summary 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {summary.keyCatalysts.map((cat, idx) => (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                <CheckCircle2 size={13} color="var(--accent-blue)" flex-shrink={0} />
+                <CheckCircle2 size={13} color="var(--accent-blue)" style={{ flexShrink: 0 }} />
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat}</span>
               </div>
             ))}
           </div>
         </div>
-
       </div>
     </div>
   );

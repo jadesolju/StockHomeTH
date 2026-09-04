@@ -1,45 +1,62 @@
 import React from 'react';
-import { TrendingUp, Moon, Sun, RefreshCw, Bookmark, Sparkles, Key, Globe, User, LogOut, ShieldCheck, Newspaper, CreditCard } from 'lucide-react';
+import {
+  TrendingUp,
+  Moon,
+  Sun,
+  Monitor,
+  RefreshCw,
+  Bookmark,
+  Sparkles,
+  User,
+  LogOut,
+  ShieldCheck,
+  Newspaper,
+  BarChart3,
+  CreditCard,
+  Building,
+  Landmark
+} from 'lucide-react';
 import type { UserAuthData } from './AuthModal';
+import { useLanguage } from '../lib/context/LanguageContext';
+import { useTheme } from '../lib/context/ThemeContext';
 
 interface HeaderProps {
-  theme: 'dark' | 'light';
-  onToggleTheme: () => void;
   showBookmarkedOnly: boolean;
   onToggleBookmarkedOnly: () => void;
   onRefresh: () => void;
   isRefreshing: boolean;
-  onOpenApiKeyModal: () => void;
   onGenerateAiSummary: () => void;
   isGeneratingAi: boolean;
-  hasApiKey: boolean;
   activeView: 'news' | 'explorer';
   onSelectView: (view: 'news' | 'explorer') => void;
   currentUser: UserAuthData | null;
   onOpenAuthModal: (tab?: 'login' | 'register') => void;
   onLogout: () => void;
   onOpenSubscription: () => void;
+  selectedMarket?: 'ALL' | 'SET' | 'US';
+  onSelectMarket?: (market: 'ALL' | 'SET' | 'US') => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  theme,
-  onToggleTheme,
   showBookmarkedOnly,
   onToggleBookmarkedOnly,
   onRefresh,
   isRefreshing,
-  onOpenApiKeyModal,
   onGenerateAiSummary,
   isGeneratingAi,
-  hasApiKey,
   activeView,
   onSelectView,
   currentUser,
   onOpenAuthModal,
   onLogout,
   onOpenSubscription,
+  selectedMarket = 'ALL',
+  onSelectMarket,
 }) => {
-  const currentDate = new Date().toLocaleDateString('th-TH', {
+  const { language, setLanguage, t } = useLanguage();
+  const { theme, resolvedTheme, cycleTheme } = useTheme();
+
+  const currentDate = new Date().toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -58,7 +75,7 @@ export const Header: React.FC<HeaderProps> = ({
               width: '46px',
               height: '46px',
               borderRadius: '14px',
-              background: '#007AFF',
+              background: 'linear-gradient(135deg, #007AFF 0%, #00C6FF 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -83,7 +100,7 @@ export const Header: React.FC<HeaderProps> = ({
                   alignItems: 'center',
                   gap: '4px'
                 }}>
-                  <Sparkles size={11} /> PRO INTELLIGENCE
+                  <Sparkles size={11} /> {t('brandSubtitle')}
                 </span>
               </div>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
@@ -92,26 +109,67 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Navigation View Switcher (Clean Enterprise Tabs) */}
+          {/* Navigation View & Section Switcher */}
           <div className="ios-segmented-control" style={{ padding: '4px' }}>
             <button
-              className={`ios-segment-btn ${activeView === 'explorer' ? 'active' : ''}`}
-              onClick={() => onSelectView('explorer')}
-              style={{ padding: '8px 20px' }}
+              className={`ios-segment-btn ${activeView === 'explorer' && selectedMarket === 'ALL' ? 'active' : ''}`}
+              onClick={() => {
+                onSelectView('explorer');
+                onSelectMarket?.('ALL');
+              }}
+              style={{ padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              <Globe size={15} /> ภาพรวมตลาดหุ้น (SET/US)
+              <BarChart3 size={15} /> {t('marketAndCharts')}
+            </button>
+            <button
+              className={`ios-segment-btn ${activeView === 'explorer' && selectedMarket === 'SET' ? 'active' : ''}`}
+              onClick={() => {
+                onSelectView('explorer');
+                onSelectMarket?.('SET');
+              }}
+              style={{ padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Landmark size={15} /> {t('thaiStocks')}
+            </button>
+            <button
+              className={`ios-segment-btn ${activeView === 'explorer' && selectedMarket === 'US' ? 'active' : ''}`}
+              onClick={() => {
+                onSelectView('explorer');
+                onSelectMarket?.('US');
+              }}
+              style={{ padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Building size={15} /> {t('foreignStocks')}
             </button>
             <button
               className={`ios-segment-btn ${activeView === 'news' ? 'active' : ''}`}
               onClick={() => onSelectView('news')}
-              style={{ padding: '8px 20px' }}
+              style={{ padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              <Newspaper size={15} /> ข่าวสรุปการเงิน AI
+              <Newspaper size={15} /> {t('newsDigest')}
             </button>
           </div>
 
-          {/* User Auth & Theme Toggle */}
+          {/* User Auth, Language Toggle & Theme Toggle */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* TH / ENG Language Toggle */}
+            <div className="ios-segmented-control" style={{ padding: '3px' }}>
+              <button
+                onClick={() => setLanguage('th')}
+                className={`ios-segment-btn ${language === 'th' ? 'active' : ''}`}
+                style={{ padding: '4px 10px', fontSize: '0.78rem', fontWeight: 700 }}
+              >
+                TH
+              </button>
+              <button
+                onClick={() => setLanguage('en')}
+                className={`ios-segment-btn ${language === 'en' ? 'active' : ''}`}
+                style={{ padding: '4px 10px', fontSize: '0.78rem', fontWeight: 700 }}
+              >
+                ENG
+              </button>
+            </div>
+
             {currentUser ? (
               <div
                 style={{
@@ -130,7 +188,7 @@ export const Header: React.FC<HeaderProps> = ({
                     {currentUser.name}
                   </span>
                   <span style={{ fontSize: '0.68rem', color: 'var(--accent-bullish)', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
-                    <ShieldCheck size={10} /> {currentUser.plan.toUpperCase()} PLAN
+                    <ShieldCheck size={10} /> {currentUser.plan.toUpperCase()} {t('member')}
                   </span>
                 </div>
                 <button
@@ -140,7 +198,7 @@ export const Header: React.FC<HeaderProps> = ({
                 ><CreditCard size={16} /></button>
                 <button
                   onClick={onLogout}
-                  title="Log out"
+                  title={t('logout')}
                   style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', marginLeft: '6px' }}
                 >
                   <LogOut size={16} />
@@ -165,15 +223,15 @@ export const Header: React.FC<HeaderProps> = ({
                     boxShadow: '0 4px 14px var(--accent-blue-glow)'
                   }}
                 >
-                  <User size={15} /> Sign in
+                  <User size={15} /> {t('login')}
                 </button>
               </div>
             )}
 
-            {/* Dark / Light Mode Toggle */}
+            {/* Dark / Light / System Theme Switcher */}
             <button
-              onClick={onToggleTheme}
-              title="สลับธีม"
+              onClick={cycleTheme}
+              title={`${t('themeDark')} / ${t('themeLight')} / ${t('themeSystem')}`}
               style={{
                 background: 'var(--glass-bg)',
                 border: '1px solid var(--glass-border)',
@@ -186,7 +244,13 @@ export const Header: React.FC<HeaderProps> = ({
                 justifyContent: 'center',
               }}
             >
-              {theme === 'dark' ? <Sun size={17} color="#f59e0b" /> : <Moon size={17} color="#007AFF" />}
+              {theme === 'system' ? (
+                <Monitor size={17} color="var(--text-secondary)" />
+              ) : resolvedTheme === 'dark' ? (
+                <Sun size={17} color="#f59e0b" />
+              ) : (
+                <Moon size={17} color="#007AFF" />
+              )}
             </button>
           </div>
         </div>
@@ -198,7 +262,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onGenerateAiSummary}
               disabled={isGeneratingAi}
               style={{
-                background: '#007AFF',
+                background: 'linear-gradient(135deg, #007AFF 0%, #00C6FF 100%)',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '100px',
@@ -214,33 +278,12 @@ export const Header: React.FC<HeaderProps> = ({
               }}
             >
               <Sparkles size={15} className={isGeneratingAi ? 'spin-anim' : ''} />
-              <span>{isGeneratingAi ? 'Gemini กำลังสรุปข่าว...' : '✨ สรุปข่าวใหม่ด้วย AI'}</span>
-            </button>
-
-            <button
-              onClick={onOpenApiKeyModal}
-              title="ตั้งค่า Gemini API Key"
-              style={{
-                background: hasApiKey ? 'rgba(16, 185, 129, 0.15)' : 'var(--glass-bg)',
-                border: hasApiKey ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--glass-border)',
-                borderRadius: '100px',
-                padding: '8px 14px',
-                color: hasApiKey ? 'var(--accent-bullish)' : 'var(--text-secondary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '0.85rem',
-                fontWeight: 600
-              }}
-            >
-              <Key size={14} />
-              <span>{hasApiKey ? 'Gemini Active' : 'Gemini Key'}</span>
+              <span>{isGeneratingAi ? t('generatingAi') : t('liveAiDigest')}</span>
             </button>
 
             <button
               onClick={onRefresh}
-              title="อัปเดตข่าวสาร"
+              title={t('refreshData')}
               style={{
                 background: 'var(--glass-bg)',
                 border: '1px solid var(--glass-border)',
@@ -274,7 +317,7 @@ export const Header: React.FC<HeaderProps> = ({
               }}
             >
               <Bookmark size={15} fill={showBookmarkedOnly ? '#f59e0b' : 'none'} />
-              <span>ข่าวที่เซฟไว้</span>
+              <span>{t('bookmarked')}</span>
             </button>
           </div>
         )}

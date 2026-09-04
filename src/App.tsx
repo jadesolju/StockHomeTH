@@ -6,8 +6,6 @@ import { DigestHeaderBanner } from './components/DigestHeaderBanner';
 import { FilterBar } from './components/FilterBar';
 import { NewsCard } from './components/NewsCard';
 import { NewsDetailSheet } from './components/NewsDetailSheet';
-import { AudioPlayerWidget } from './components/AudioPlayerWidget';
-import { ApiKeyModal } from './components/ApiKeyModal';
 
 // Components
 import { StockMarketExplorer } from './components/StockMarketExplorer';
@@ -22,12 +20,15 @@ import { storageService } from './services/storageService';
 import { newsFetcher } from './services/newsFetcher';
 import { aiSummarizer } from './services/aiSummarizer';
 import { authService } from './services/authService';
+import { LanguageProvider, useLanguage } from './lib/context/LanguageContext';
+import { ThemeProvider } from './lib/context/ThemeContext';
 
 import './styles/glass-ios.css';
 
-export function App() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+function MainAppContent() {
+  const { t } = useLanguage();
   const [activeView, setActiveView] = useState<'explorer' | 'news'>('explorer');
+  const [selectedMarket, setSelectedMarket] = useState<'ALL' | 'SET' | 'US'>('ALL');
   
   const [timeframe, setTimeframe] = useState<TimeframeType>('daily');
   const [region, setRegion] = useState<MarketRegion>('all');
@@ -39,8 +40,6 @@ export function App() {
 
   // Storage & AI Generator States
   const [newsList, setNewsList] = useState<StockNewsItem[]>([]);
-  const [apiKey, setApiKey] = useState<string>('');
-  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState<boolean>(false);
 
   // Auth States
@@ -50,24 +49,14 @@ export function App() {
   const [authModalTab, setAuthModalTab] = useState<'login' | 'register'>('login');
 
   const [selectedNewsDetail, setSelectedNewsDetail] = useState<StockNewsItem | null>(null);
-  const [playingAudioItem, setPlayingAudioItem] = useState<StockNewsItem | null>(null);
 
   // Load Initial Data on Mount
   useEffect(() => {
     const loadedNews = storageService.loadNewsItems();
     setNewsList(loadedNews);
-    const loadedKey = storageService.loadApiKey();
-    setApiKey(loadedKey);
 
     authService.me().then(({ user }) => setCurrentUser(user)).catch(() => undefined);
   }, []);
-
-  // Toggle Theme Handler
-  const handleToggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-    document.documentElement.setAttribute('data-theme', nextTheme);
-  };
 
   // Auth Handlers
   const handleOpenAuthModal = (tab: 'login' | 'register' = 'login') => {
@@ -108,19 +97,13 @@ export function App() {
     }, 800);
   };
 
-  // Save API Key Handler
-  const handleSaveApiKey = (key: string) => {
-    setApiKey(key);
-    storageService.saveApiKey(key);
-  };
-
   // AI News Generator Handler
   const handleGenerateAiNews = async () => {
     setIsGeneratingAi(true);
     try {
       const rawArticles = await newsFetcher.fetchLatestRawArticles();
       const randomArticle = rawArticles[Math.floor(Math.random() * rawArticles.length)];
-      const generatedNews = await aiSummarizer.summarizeArticleWithGemini(randomArticle, apiKey);
+      const generatedNews = await aiSummarizer.summarizeArticleWithGemini(randomArticle, '');
       const updatedList = storageService.addNewNewsItem(generatedNews);
       setNewsList(updatedList);
     } catch (err) {
@@ -137,6 +120,8 @@ export function App() {
   const filteredNews = useMemo(() => {
     return newsList.filter((item) => {
       if (item.timeframe !== timeframe) return false;
+      if (selectedMarket === 'SET' && item.region !== 'thai') return false;
+      if (selectedMarket === 'US' && item.region !== 'global') return false;
       if (region !== 'all' && item.region !== region) return false;
       if (category !== 'all' && item.category !== category) return false;
       if (sentiment !== 'all' && item.sentiment !== sentiment) return false;
@@ -152,29 +137,27 @@ export function App() {
 
       return true;
     });
-  }, [newsList, timeframe, region, category, sentiment, showBookmarkedOnly, searchQuery]);
+  }, [newsList, timeframe, selectedMarket, region, category, sentiment, showBookmarkedOnly, searchQuery]);
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '100px' }}>
       
       {/* Header Navigation Bar */}
       <Header
-        theme={theme}
-        onToggleTheme={handleToggleTheme}
         showBookmarkedOnly={showBookmarkedOnly}
         onToggleBookmarkedOnly={() => setShowBookmarkedOnly(!showBookmarkedOnly)}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
-        onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
         onGenerateAiSummary={handleGenerateAiNews}
         isGeneratingAi={isGeneratingAi}
-        hasApiKey={apiKey.length > 5}
         activeView={activeView}
         onSelectView={setActiveView}
         currentUser={currentUser}
         onOpenAuthModal={handleOpenAuthModal}
         onLogout={handleLogout}
         onOpenSubscription={() => setIsSubscriptionOpen(true)}
+        selectedMarket={selectedMarket}
+        onSelectMarket={setSelectedMarket}
       />
 
       <main style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 20px' }}>
@@ -182,6 +165,7 @@ export function App() {
         {/* VIEW 1: Ultra-Professional Stock Market Explorer (SET & US) */}
         {activeView === 'explorer' && (
           <StockMarketExplorer
+            initialMarket={selectedMarket}
             onRequestPreview={() => handleOpenAuthModal('register')}
           />
         )}
@@ -216,10 +200,10 @@ export function App() {
             {/* News Feed Grid Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {timeframe === 'daily' ? '📰 ข่าวสรุปการเงินประจำวันล่าสุด' : '🗓️ ข่าวสรุปการเงินประจำสัปดาห์ล่าสุด'}
+                {timeframe === 'daily' ? t('dailyNews') : t('weeklyNews')}
               </h2>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
-                พบทั้งหมด {filteredNews.length} รายการ
+                {t('foundItems')} {filteredNews.length} {t('itemsCount')}
               </span>
             </div>
 
@@ -231,16 +215,14 @@ export function App() {
                     key={news.id}
                     item={news}
                     onSelectNews={setSelectedNewsDetail}
-                    onPlayAudio={setPlayingAudioItem}
                     onToggleBookmark={handleToggleBookmark}
-                    isPlayingThisAudio={playingAudioItem?.id === news.id}
                   />
                 ))}
               </div>
             ) : (
               <div className="glass-card" style={{ padding: '40px', textAlign: 'center', margin: '20px 0' }}>
                 <p style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>
-                  ไม่พบรายการข่าวสรุปที่ตรงกับเงื่อนไขการกรอง
+                  {t('noNewsFound')}
                 </p>
                 <button
                   onClick={() => {
@@ -261,7 +243,7 @@ export function App() {
                     cursor: 'pointer'
                   }}
                 >
-                  ล้างการกรองทั้งหมด
+                  {t('clearFilters')}
                 </button>
               </div>
             )}
@@ -274,23 +256,7 @@ export function App() {
       <NewsDetailSheet
         item={selectedNewsDetail}
         onClose={() => setSelectedNewsDetail(null)}
-        onPlayAudio={setPlayingAudioItem}
         onToggleBookmark={handleToggleBookmark}
-        isPlayingThisAudio={playingAudioItem?.id === selectedNewsDetail?.id}
-      />
-
-      {/* Floating Audio Player Widget */}
-      <AudioPlayerWidget
-        item={playingAudioItem}
-        onClose={() => setPlayingAudioItem(null)}
-      />
-
-      {/* Gemini API Key Settings Modal */}
-      <ApiKeyModal
-        isOpen={isApiKeyModalOpen}
-        onClose={() => setIsApiKeyModalOpen(false)}
-        currentApiKey={apiKey}
-        onSaveApiKey={handleSaveApiKey}
       />
 
       {/* Multi-Provider Auth Modal */}
@@ -303,6 +269,16 @@ export function App() {
       <SubscriptionModal isOpen={isSubscriptionOpen} onClose={() => setIsSubscriptionOpen(false)} />
 
     </div>
+  );
+}
+
+export function App() {
+  return (
+    <ThemeProvider>
+      <LanguageProvider>
+        <MainAppContent />
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }
 

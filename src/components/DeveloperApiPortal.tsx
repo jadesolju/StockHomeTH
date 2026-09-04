@@ -346,6 +346,10 @@ axios.${selectedMethod.toLowerCase()}('${fullUrl}', ${selectedMethod === 'POST' 
                 outline: 'none'
               }}
             >
+              <option value="/api/v1/stocks?tickers=PTT,CPALL,DELTA,AOT&country=th&period=1mo">/api/v1/stocks?tickers=PTT,CPALL...&country=th (Anti-Block Bulk ดึงหุ้นไทย)</option>
+              <option value="/api/v1/stocks?tickers=NVDA,AAPL,TSLA,MSFT&country=us&period=1mo">/api/v1/stocks?tickers=NVDA,AAPL...&country=us (Anti-Block Bulk ดึงหุ้นสหรัฐฯ)</option>
+              <option value="/api/v1/chart/PTT.BK?period=1mo&interval=1d">/api/v1/chart/PTT.BK (ดึงแท่งเทียน OHLCV กราฟหุ้น ปตท.)</option>
+              <option value="/api/v1/chart/NVDA?period=1mo&interval=1d">/api/v1/chart/NVDA (ดึงแท่งเทียน OHLCV กราฟหุ้น NVIDIA)</option>
               <option value="/api/v1/stocks">/api/v1/stocks (ดึงหุ้นทั้งตลาด SET & US)</option>
               <option value="/api/v1/stocks/NVDA">/api/v1/stocks/NVDA (หุ้น NVIDIA)</option>
               <option value="/api/v1/stocks/PTT">/api/v1/stocks/PTT (หุ้น PTT)</option>
