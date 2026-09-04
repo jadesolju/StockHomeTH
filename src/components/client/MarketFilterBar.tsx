@@ -97,8 +97,8 @@ export function MarketFilterBar({
 
       {/* Category Pills & Sentiment Toggle */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-        {/* Category Horizontal Scrolling List */}
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none', flex: 1 }}>
+        {/* Category Pills List */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', flex: 1 }}>
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
@@ -109,7 +109,6 @@ export function MarketFilterBar({
                 color: selectedCategory === cat.id ? '#ffffff' : 'var(--text-secondary)',
                 border: selectedCategory === cat.id ? '1px solid rgba(0, 122, 255, 0.4)' : '1px solid var(--glass-border)',
                 fontWeight: selectedCategory === cat.id ? 700 : 500,
-                whiteSpace: 'nowrap',
                 padding: '6px 14px',
                 borderRadius: '100px',
                 fontSize: '0.8rem',

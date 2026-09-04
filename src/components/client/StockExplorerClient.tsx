@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback, useTransition } from 'react';
 import type { StockFundamental } from '../../lib/schemas/marketSchema';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { Sparkline } from '../ui/Sparkline';
+import { getStockTags, getMarketScopedTagFilters, THAI_7_GIANTS, MAGNIFICENT_7, SET50_TICKERS, SET100_TICKERS } from '../../lib/utils/stockTagHelper';
 import {
   Search,
   Filter,
@@ -23,40 +24,202 @@ import {
   Building,
   Globe,
   Flame,
-  Diamond
+  Diamond,
+  BarChart3,
+  Award,
+  ArrowUpDown,
+  Tag,
+  ExternalLink
 } from 'lucide-react';
+
+export type StockSortOption =
+  | 'popular'
+  | 'volume'
+  | 'marketCap'
+  | 'gainers'
+  | 'losers'
+  | 'aiScore'
+  | 'dividend'
+  | 'peRatio'
+  | 'marketThaiFirst'
+  | 'marketUsFirst'
+  | 'tickerAsc';
 
 interface StockExplorerClientProps {
   initialStocks?: StockFundamental[];
+  marketOverride?: 'ALL' | 'SET' | 'US';
+  hideMarketTabs?: boolean;
 }
 
-export function StockExplorerClient({ initialStocks }: StockExplorerClientProps) {
+/**
+ * Helper to parse string values like "12.5M", "450K", "$3.2T", "—" into raw numbers
+ */
+function parseNumericValue(val: string | number | undefined): number {
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  if (!val || val === '—' || val === '-') return 0;
+  const str = String(val).trim().toUpperCase();
+  const num = parseFloat(str.replace(/[^0-9.-]/g, ''));
+  if (isNaN(num)) return 0;
+  if (str.endsWith('T')) return num * 1_000_000_000_000;
+  if (str.endsWith('B')) return num * 1_000_000_000;
+  if (str.endsWith('M')) return num * 1_000_000;
+  if (str.endsWith('K')) return num * 1_000;
+  return num;
+}
+
+export function StockExplorerClient({ initialStocks, marketOverride, hideMarketTabs = false }: StockExplorerClientProps) {
   const {
     stocks: liveStocks,
     selectedTicker,
     setSelectedTicker,
-    selectedMarket,
+    selectedMarket: contextMarket,
     setSelectedMarket,
     activeStockModal,
     setActiveStockModal,
+    activeNewsModal,
+    setActiveNewsModal,
     isSyncing,
     refreshAll,
     getNewsByTicker,
+    stockPage,
+    totalStocksCount,
+    setUniverseCount,
+    usUniverseCount,
+    hasMoreStocks,
+    isLoadingMoreStocks,
+    loadNextStockChunk,
   } = useMarketSync();
-  const { t, language } = useLanguage();
+  const { t, tDynamic, language } = useLanguage();
 
-  const stocks = liveStocks && liveStocks.length > 0 ? liveStocks : initialStocks || [];
+  // Instant reactive market state (allows live market toggle and direct sorting in ALL view)
+  const [localMarket, setLocalMarket] = useState<'ALL' | 'SET' | 'US'>(
+    hideMarketTabs && marketOverride ? marketOverride : contextMarket || 'ALL'
+  );
+
+  const selectedMarket = hideMarketTabs && marketOverride ? marketOverride : localMarket;
+
+  const handleMarketChange = (m: 'ALL' | 'SET' | 'US') => {
+    startTransition(() => {
+      setLocalMarket(m);
+      setSelectedMarket(m);
+      setSelectedTag('ALL');
+      setVisibleCount(50);
+    });
+  };
+
+  useEffect(() => {
+    if (hideMarketTabs && marketOverride && contextMarket !== marketOverride) {
+      setSelectedMarket(marketOverride);
+    }
+  }, [hideMarketTabs, marketOverride, contextMarket, setSelectedMarket]);
+
+  const [localExtraStocks, setLocalExtraStocks] = useState<StockFundamental[]>([]);
+  const [isSearchingApi, setIsSearchingApi] = useState<boolean>(false);
+  const [modalStockNews, setModalStockNews] = useState<any[]>([]);
+  const [isLoadingModalNews, setIsLoadingModalNews] = useState<boolean>(false);
+
+  // Combine live stocks with any search-fetched extra stocks
+  const stocks = useMemo(() => {
+    const base = liveStocks && liveStocks.length > 0 ? liveStocks : initialStocks || [];
+    if (localExtraStocks.length === 0) return base;
+    const existingKeys = new Set(base.map((s) => `${s.market}-${s.ticker.toUpperCase()}`));
+    const extras = localExtraStocks.filter((s) => !existingKeys.has(`${s.market}-${s.ticker.toUpperCase()}`));
+    return [...extras, ...base];
+  }, [liveStocks, initialStocks, localExtraStocks]);
 
   const [selectedSector, setSelectedSector] = useState<string>('ALL');
-  const [sortBy, setSortBy] = useState<'gainers' | 'losers' | 'marketCap' | 'peRatio'>('gainers');
+  const [selectedTag, setSelectedTag] = useState<string>('ALL');
+  const [sortBy, setSortBy] = useState<StockSortOption>('popular');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [visibleCount, setVisibleCount] = useState<number>(50);
+  const [isPending, startTransition] = useTransition();
+
+  // Dynamically resolve market-scoped tag filters
+  const availableTags = useMemo(() => getMarketScopedTagFilters(selectedMarket), [selectedMarket]);
+
+  // Reset active tag when market changes to prevent cross-market filter contamination
+  useEffect(() => {
+    setSelectedTag('ALL');
+  }, [selectedMarket]);
+
+  // Memoized pre-parsed metrics for ultra-smooth O(1) sort comparator and tag retrieval
+  const stockMetricsMap = useMemo(() => {
+    const map = new Map<string, { numVol: number; numCap: number; tags: string[] }>();
+    for (const s of stocks) {
+      const key = `${s.market}-${s.ticker}`;
+      map.set(key, {
+        numVol: parseNumericValue(s.volume),
+        numCap: parseNumericValue(s.marketCap),
+        tags: getStockTags(s)
+      });
+    }
+    return map;
+  }, [stocks]);
+
+  const totalStats = useMemo(() => {
+    const setCount = setUniverseCount || stocks.filter((s) => s.market === 'SET').length;
+    const usCount = usUniverseCount || stocks.filter((s) => s.market === 'US').length;
+    return { setCount, usCount, total: totalStocksCount || stocks.length };
+  }, [stocks, setUniverseCount, usUniverseCount, totalStocksCount]);
 
   const availableSectors = useMemo(() => {
     const set = new Set<string>();
     stocks.forEach((s) => set.add(s.sector));
     return ['ALL', ...Array.from(set)];
   }, [stocks]);
+
+  // Instant Search Engine: If search query doesn't match locally loaded items, fetch from backend 1,500 universe immediately
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q) {
+      setLocalExtraStocks([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearchingApi(true);
+      try {
+        const res = await fetch(
+          `/api/stocks/live?search=${encodeURIComponent(q)}&market=${selectedMarket}&limit=50`
+        ).then((r) => (r.ok ? r.json() : null));
+
+        if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          setLocalExtraStocks(res.data);
+          setVisibleCount((prev) => Math.max(prev, res.data.length));
+        }
+      } catch (err) {
+        console.warn('[StockExplorer] Search API warning:', err);
+      } finally {
+        setIsSearchingApi(false);
+      }
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, selectedMarket]);
+
+  // On-Demand Tag Fetcher: If user selects a tag, fetch matching stocks from server if not already in local memory
+  useEffect(() => {
+    if (selectedTag === 'ALL') return;
+
+    let isCancelled = false;
+    fetch(`/api/stocks/live?tag=${encodeURIComponent(selectedTag)}&market=${selectedMarket}&limit=100`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (!isCancelled && res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          setLocalExtraStocks((prev) => {
+            const existingKeys = new Set(prev.map((s) => `${s.market}-${s.ticker.toUpperCase()}`));
+            const newItems = res.data.filter((s: StockFundamental) => !existingKeys.has(`${s.market}-${s.ticker.toUpperCase()}`));
+            return [...prev, ...newItems];
+          });
+        }
+      })
+      .catch((err) => console.warn('[StockExplorer] Tag fetch warning:', err));
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedTag, selectedMarket]);
 
   const filteredStocks = useMemo(() => {
     let list = [...stocks];
@@ -69,25 +232,197 @@ export function StockExplorerClient({ initialStocks }: StockExplorerClientProps)
       list = list.filter((s) => s.sector === selectedSector);
     }
 
-    if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase();
-      list = list.filter((s) => s.ticker.toLowerCase().includes(q) || s.name.toLowerCase().includes(q));
+    if (selectedTag !== 'ALL') {
+      const targetTag = selectedTag.toLowerCase().trim();
+      list = list.filter((s) => {
+        const metrics = stockMetricsMap.get(`${s.market}-${s.ticker}`);
+        const tags = metrics?.tags || getStockTags(s);
+        const tickerUpper = s.ticker.toUpperCase();
+
+        if (targetTag.includes('นางฟ้า') || targetTag.includes('thai 7')) {
+          return s.market === 'SET' && (THAI_7_GIANTS.has(tickerUpper) || tags.some((t) => t.toLowerCase().includes('นางฟ้า')));
+        }
+        if (targetTag.includes('set50') || targetTag.includes('บลูชิพ')) {
+          return s.market === 'SET' && (SET50_TICKERS.has(tickerUpper) || tags.some((t) => t.toLowerCase().includes('set50') || t.toLowerCase().includes('blue chip')));
+        }
+        if (targetTag.includes('set100') || targetTag.includes('หุ้นใหญ่')) {
+          return s.market === 'SET' && (SET100_TICKERS.has(tickerUpper) || tags.some((t) => t.toLowerCase().includes('set100') || t.toLowerCase().includes('set50')));
+        }
+        if (targetTag.includes('magnificent') || targetTag.includes('mag 7')) {
+          return s.market === 'US' && (MAGNIFICENT_7.has(tickerUpper) || tags.some((t) => t.toLowerCase().includes('magnificent')));
+        }
+        return tags.some((t) => t.toLowerCase() === targetTag || t.toLowerCase().includes(targetTag));
+      });
     }
 
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter((s) => {
+        if (s.ticker.toLowerCase().includes(q) || s.name.toLowerCase().includes(q)) return true;
+        const tags = stockMetricsMap.get(`${s.market}-${s.ticker}`)?.tags || [];
+        return tags.some((t) => t.toLowerCase().includes(q));
+      });
+
+      // Boost exact matches and prefix matches
+      list.sort((a, b) => {
+        const aExact = a.ticker.toLowerCase() === q ? 1 : 0;
+        const bExact = b.ticker.toLowerCase() === q ? 1 : 0;
+        if (aExact !== bExact) return bExact - aExact;
+
+        const aStarts = a.ticker.toLowerCase().startsWith(q) ? 1 : 0;
+        const bStarts = b.ticker.toLowerCase().startsWith(q) ? 1 : 0;
+        if (aStarts !== bStarts) return bStarts - aStarts;
+
+        const metricA = stockMetricsMap.get(`${a.market}-${a.ticker}`);
+        const metricB = stockMetricsMap.get(`${b.market}-${b.ticker}`);
+        return (metricB?.numVol ?? 0) - (metricA?.numVol ?? 0);
+      });
+
+      return list;
+    }
+
+    // Comprehensive Ultra-Smooth Sorting
     list.sort((a, b) => {
-      if (sortBy === 'gainers') return b.change - a.change;
-      if (sortBy === 'losers') return a.change - b.change;
-      if (sortBy === 'peRatio') return a.peRatio - b.peRatio;
-      return b.price - a.price;
+      const metricA = stockMetricsMap.get(`${a.market}-${a.ticker}`);
+      const metricB = stockMetricsMap.get(`${b.market}-${b.ticker}`);
+
+      switch (sortBy) {
+        case 'popular':
+        case 'volume': {
+          const volDiff = (metricB?.numVol ?? 0) - (metricA?.numVol ?? 0);
+          if (volDiff !== 0) return volDiff;
+          return (metricB?.numCap ?? 0) - (metricA?.numCap ?? 0);
+        }
+        case 'marketCap': {
+          return (metricB?.numCap ?? 0) - (metricA?.numCap ?? 0);
+        }
+        case 'gainers':
+          return b.change - a.change;
+        case 'losers':
+          return a.change - b.change;
+        case 'aiScore':
+          return (b.sentimentScore ?? 50) - (a.sentimentScore ?? 50);
+        case 'dividend':
+          return (b.dividendYield ?? 0) - (a.dividendYield ?? 0);
+        case 'peRatio':
+          return (a.peRatio || 999) - (b.peRatio || 999);
+        case 'marketThaiFirst': {
+          if (a.market !== b.market) {
+            return a.market === 'SET' ? -1 : 1;
+          }
+          return (metricB?.numVol ?? 0) - (metricA?.numVol ?? 0);
+        }
+        case 'marketUsFirst': {
+          if (a.market !== b.market) {
+            return a.market === 'US' ? -1 : 1;
+          }
+          return (metricB?.numVol ?? 0) - (metricA?.numVol ?? 0);
+        }
+        case 'tickerAsc':
+          return a.ticker.localeCompare(b.ticker);
+        default:
+          return (metricB?.numVol ?? 0) - (metricA?.numVol ?? 0);
+      }
     });
 
     return list;
-  }, [stocks, selectedMarket, selectedSector, searchQuery, sortBy]);
+  }, [stocks, selectedMarket, selectedSector, selectedTag, searchQuery, sortBy, stockMetricsMap]);
+
+  const displayedStocks = useMemo(() => {
+    return filteredStocks.slice(0, visibleCount);
+  }, [filteredStocks, visibleCount]);
+
+  // Fetch dedicated live stock news for the active modal from SET IR & Finnhub APIs
+  useEffect(() => {
+    if (!activeStockModal) {
+      setModalStockNews([]);
+      return;
+    }
+
+    let isCancelled = false;
+    setIsLoadingModalNews(true);
+
+    fetch(`/api/news/live?ticker=${encodeURIComponent(activeStockModal.ticker)}&market=${activeStockModal.market}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (!isCancelled && res && res.success && Array.isArray(res.data)) {
+          setModalStockNews(res.data);
+        }
+      })
+      .catch((err) => {
+        console.warn('[StockExplorer] Modal news fetch warning:', err);
+      })
+      .finally(() => {
+        if (!isCancelled) setIsLoadingModalNews(false);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeStockModal]);
 
   const relatedNews = useMemo(() => {
     if (!activeStockModal) return [];
+    if (modalStockNews.length > 0) return modalStockNews;
     return getNewsByTicker(activeStockModal.ticker);
-  }, [activeStockModal, getNewsByTicker]);
+  }, [activeStockModal, modalStockNews, getNewsByTicker]);
+
+  // Auto-scroll countdown state (1.5-second buffer)
+  const [isWaitingBuffer, setIsWaitingBuffer] = useState<boolean>(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const bufferTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Reset pagination when filter criteria changes
+  useEffect(() => {
+    setVisibleCount(50);
+  }, [selectedMarket, selectedSector, searchQuery, sortBy]);
+
+  // Protected auto-load on scroll (1.5-second delay buffer)
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (
+          entry.isIntersecting &&
+          (hasMoreStocks || visibleCount < filteredStocks.length) &&
+          !isLoadingMoreStocks
+        ) {
+          if (bufferTimerRef.current) return;
+
+          setIsWaitingBuffer(true);
+
+          bufferTimerRef.current = setTimeout(() => {
+            bufferTimerRef.current = null;
+            setIsWaitingBuffer(false);
+
+            if (visibleCount < filteredStocks.length) {
+              setVisibleCount((prev) => prev + 50);
+            } else if (hasMoreStocks) {
+              loadNextStockChunk();
+            }
+          }, 1500); // 1.5 second buffer
+        } else if (!entry.isIntersecting) {
+          if (bufferTimerRef.current) {
+            clearTimeout(bufferTimerRef.current);
+            bufferTimerRef.current = null;
+            setIsWaitingBuffer(false);
+          }
+        }
+      },
+      { rootMargin: '120px' }
+    );
+
+    observer.observe(sentinelRef.current);
+    return () => {
+      observer.disconnect();
+      if (bufferTimerRef.current) {
+        clearTimeout(bufferTimerRef.current);
+        bufferTimerRef.current = null;
+      }
+    };
+  }, [hasMoreStocks, visibleCount, filteredStocks.length, isLoadingMoreStocks, loadNextStockChunk]);
 
   return (
     <div id="stock-explorer-section" style={{ marginBottom: '40px', scrollMarginTop: '80px' }}>
@@ -95,29 +430,46 @@ export function StockExplorerClient({ initialStocks }: StockExplorerClientProps)
       <div className="glass-card" style={{ padding: '20px', borderRadius: '20px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '16px' }}>
           {/* Market Region Toggle */}
-          <div className="ios-segmented-control" style={{ padding: '3px' }}>
-            {(['ALL', 'SET', 'US'] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => setSelectedMarket(m)}
-                className={`ios-segment-btn ${selectedMarket === m ? 'active' : ''}`}
-                style={{ padding: '6px 18px', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-              >
-                {m === 'ALL' ? <Globe size={14} /> : m === 'SET' ? <Landmark size={14} /> : <Building size={14} />}
-                <span>{m === 'ALL' ? t('allMarkets') : m === 'SET' ? t('thaiMarketTab') : t('usMarketTab')}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* View Mode & Sorters */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {!hideMarketTabs ? (
             <div className="ios-segmented-control" style={{ padding: '3px' }}>
+              {(['ALL', 'SET', 'US'] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => handleMarketChange(m)}
+                  className={`ios-segment-btn ${selectedMarket === m ? 'active' : ''}`}
+                  style={{ padding: '6px 18px', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  {m === 'ALL' ? <Globe size={14} /> : m === 'SET' ? <Landmark size={14} /> : <Building size={14} />}
+                  <span>{m === 'ALL' ? t('allMarkets') : m === 'SET' ? t('thaiMarketTab') : t('usMarketTab')}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'var(--card-sub-bg)', padding: '6px 14px', borderRadius: '100px', border: '1px solid var(--card-sub-border)' }}>
+              {selectedMarket === 'SET' ? <Landmark size={15} color="#007AFF" /> : selectedMarket === 'US' ? <Building size={15} color="#8B5CF6" /> : <Globe size={15} color="#10B981" />}
+              <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                {selectedMarket === 'SET' ? t('thaiStocks') : selectedMarket === 'US' ? t('foreignStocks') : t('allMarkets')}
+              </span>
+            </div>
+          )}
+
+          {/* Quick Sort Shortcuts & View Mode */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div className="ios-segmented-control" style={{ padding: '3px' }}>
+              <button
+                onClick={() => setSortBy('popular')}
+                className={`ios-segment-btn ${sortBy === 'popular' ? 'active' : ''}`}
+                style={{ padding: '5px 12px', fontSize: '0.75rem', color: sortBy === 'popular' ? '#FF9500' : undefined, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                title="เรียงจากหุ้นยอดนิยมและสภาพคล่องสูงสุด (Default)"
+              >
+                <Flame size={13} /> ยอดนิยม
+              </button>
               <button
                 onClick={() => setSortBy('gainers')}
                 className={`ios-segment-btn ${sortBy === 'gainers' ? 'active' : ''}`}
                 style={{ padding: '5px 12px', fontSize: '0.75rem', color: sortBy === 'gainers' ? 'var(--accent-bullish)' : undefined, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
               >
-                <Flame size={13} /> {t('topGainers')}
+                <TrendingUp size={13} /> {t('topGainers')}
               </button>
               <button
                 onClick={() => setSortBy('losers')}
@@ -127,11 +479,12 @@ export function StockExplorerClient({ initialStocks }: StockExplorerClientProps)
                 <TrendingDown size={13} /> {t('topLosers')}
               </button>
               <button
-                onClick={() => setSortBy('peRatio')}
-                className={`ios-segment-btn ${sortBy === 'peRatio' ? 'active' : ''}`}
+                onClick={() => setSortBy('volume')}
+                className={`ios-segment-btn ${sortBy === 'volume' ? 'active' : ''}`}
                 style={{ padding: '5px 12px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                title="เรียงจากปริมาณการซื้อขายสูงสุด"
               >
-                <Diamond size={13} /> {t('lowPE')}
+                <BarChart3 size={13} /> ปริมาณเทรด
               </button>
             </div>
 
@@ -179,60 +532,311 @@ export function StockExplorerClient({ initialStocks }: StockExplorerClientProps)
           </div>
         </div>
 
-        {/* Search & Sector Filter */}
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: '1 1 280px' }}>
+        {/* Search, Sector Filter & Comprehensive Sort Dropdown */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+          {/* Instant Search Bar */}
+          <div style={{ position: 'relative' }}>
             <Search size={16} color="var(--text-tertiary)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('searchStockPlaceholder')}
+              placeholder="ค้นหาชื่อหุ้น / บริษัท (ดึงข้อมูลทันทีทุกตัว)..."
               style={{
                 width: '100%',
-                padding: '10px 14px 10px 38px',
+                padding: '10px 36px 10px 38px',
                 borderRadius: '12px',
-                border: '1px solid var(--glass-border)',
-                background: 'rgba(0,0,0,0.2)',
-                color: 'var(--text-primary)',
+                border: '1px solid var(--input-border)',
+                background: 'var(--input-bg)',
+                color: 'var(--input-text)',
                 fontSize: '0.85rem',
                 outline: 'none',
               }}
             />
+            {isSearchingApi && (
+              <Activity size={14} className="animate-spin" color="#007AFF" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            )}
+            {!isSearchingApi && searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-tertiary)',
+                  cursor: 'pointer',
+                  padding: '2px'
+                }}
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
 
+          {/* Sector Filter */}
           <select
             value={selectedSector}
             onChange={(e) => setSelectedSector(e.target.value)}
             style={{
               padding: '10px 14px',
               borderRadius: '12px',
-              border: '1px solid var(--glass-border)',
-              background: 'var(--glass-bg)',
-              color: 'var(--text-primary)',
+              border: '1px solid var(--input-border)',
+              background: 'var(--input-bg)',
+              color: 'var(--input-text)',
               fontSize: '0.85rem',
               outline: 'none',
               cursor: 'pointer',
             }}
           >
             {availableSectors.map((s) => (
-              <option key={s} value={s} style={{ background: '#0f172a', color: '#ffffff' }}>
+              <option key={s} value={s} style={{ background: 'var(--glass-bg)', color: 'var(--text-primary)' }}>
                 {s === 'ALL' ? t('allSectors') : s}
               </option>
             ))}
           </select>
+
+          {/* Comprehensive Sort Dropdown */}
+          <div style={{ position: 'relative' }}>
+            <select
+              value={sortBy}
+              onChange={(e) => {
+                const val = e.target.value as StockSortOption;
+                startTransition(() => {
+                  setSortBy(val);
+                });
+              }}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: '12px',
+                border: '1px solid var(--input-border)',
+                background: 'var(--input-bg)',
+                color: 'var(--input-text)',
+                fontSize: '0.85rem',
+                outline: 'none',
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+            >
+              <option value="popular">{language === 'en' ? 'Sort by: Most Popular & Liquidity (Default)' : 'เรียงตาม: หุ้นยอดนิยม & สภาพคล่อง (Default)'}</option>
+              <option value="volume">{language === 'en' ? 'Sort by: Highest Trading Volume' : 'เรียงตาม: ปริมาณซื้อขายสูงสุด (Volume)'}</option>
+              <option value="marketCap">{language === 'en' ? 'Sort by: Highest Market Cap' : 'เรียงตาม: มูลค่าตลาดสูงสุด (Market Cap)'}</option>
+              <option value="gainers">{language === 'en' ? 'Sort by: Top Gainers %' : 'เรียงตาม: บวกสูงสุด (Top Gainers %)'}</option>
+              <option value="losers">{language === 'en' ? 'Sort by: Top Losers %' : 'เรียงตาม: ลบมากสุด (Top Losers %)'}</option>
+              <option value="aiScore">{language === 'en' ? 'Sort by: Highest AI Sentiment Score' : 'เรียงตาม: คะแนน AI Sentiment สูงสุด'}</option>
+              <option value="dividend">{language === 'en' ? 'Sort by: Highest Dividend Yield' : 'เรียงตาม: เงินปันผลสูงสุด (Dividend Yield)'}</option>
+              <option value="peRatio">{language === 'en' ? 'Sort by: Lowest P/E Ratio (Value)' : 'เรียงตาม: P/E ต่ำสุด (Value Stocks)'}</option>
+              {selectedMarket === 'ALL' && (
+                <>
+                  <option value="marketThaiFirst">{language === 'en' ? 'Sort by Market: Thai Stocks (SET) First' : 'เรียงตามตลาด: หุ้นไทย (SET) ขึ้นก่อน'}</option>
+                  <option value="marketUsFirst">{language === 'en' ? 'Sort by Market: US Stocks (NYSE/NASDAQ) First' : 'เรียงตามตลาด: หุ้นสหรัฐฯ (US) ขึ้นก่อน'}</option>
+                </>
+              )}
+              <option value="tickerAsc">{language === 'en' ? 'Sort by: Symbol A - Z' : 'เรียงตาม: ตัวอักษร A - Z'}</option>
+            </select>
+          </div>
         </div>
+
+        {/* Popular Curated Tag Filter Bar */}
+        <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-tertiary)', display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: '4px' }}>
+            <Tag size={13} color="var(--accent-blue)" /> {language === 'en' ? 'Tags:' : 'แท็ก:'}
+          </span>
+          {availableTags.map((tag) => {
+            const isActive = selectedTag === tag.id;
+            return (
+              <button
+                key={tag.id}
+                onClick={() => {
+                  startTransition(() => {
+                    setSelectedTag(tag.id);
+                  });
+                }}
+                style={{
+                  background: isActive ? 'var(--accent-blue-gradient)' : 'var(--card-sub-bg)',
+                  color: isActive ? '#ffffff' : 'var(--text-secondary)',
+                  border: isActive ? '1px solid rgba(0, 122, 255, 0.4)' : '1px solid var(--card-sub-border)',
+                  borderRadius: '100px',
+                  padding: '4px 12px',
+                  fontSize: '0.75rem',
+                  fontWeight: isActive ? 700 : 500,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span>{language === 'en' ? tag.labelEn : tag.labelTh}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Active Tag Filter Notification Banner */}
+        {selectedTag !== 'ALL' && (
+          <div
+            style={{
+              marginTop: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'rgba(0, 122, 255, 0.12)',
+              border: '1px solid rgba(0, 122, 255, 0.3)',
+              borderRadius: '10px',
+              padding: '6px 12px',
+              fontSize: '0.8rem'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-blue)', fontWeight: 700 }}>
+              <Tag size={14} />
+              <span>{language === 'en' ? `Filtered by tag: #${selectedTag}` : `กำลังกรองเฉพาะหุ้นแท็ก: #${selectedTag}`} ({filteredStocks.length} {language === 'en' ? 'stocks' : 'หุ้น'})</span>
+            </div>
+            <button
+              onClick={() => setSelectedTag('ALL')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '0.75rem',
+                fontWeight: 600
+              }}
+            >
+              <X size={13} /> {language === 'en' ? 'Show All' : 'ดูทั้งหมด'}
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* Empty State when no matching stocks found */}
+      {filteredStocks.length === 0 && (
+        <div
+          className="glass-card"
+          style={{
+            padding: '48px 24px',
+            textAlign: 'center',
+            borderRadius: '24px',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+            border: '1px dashed rgba(255, 255, 255, 0.15)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '16px',
+            margin: '20px 0'
+          }}
+        >
+          <div
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              background: 'rgba(0, 122, 255, 0.12)',
+              border: '1px solid rgba(0, 122, 255, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--accent-blue)'
+            }}
+          >
+            <Search size={30} />
+          </div>
+
+          <div>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
+              {language === 'en'
+                ? `No stocks found for "${searchQuery || selectedTag}"`
+                : `ไม่พบข้อมูลหุ้นสำหรับ "${searchQuery || selectedTag}"`}
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '480px', margin: '0 auto', lineHeight: 1.6 }}>
+              {language === 'en'
+                ? 'System only retrieves real verified stocks listed on the Stock Exchange of Thailand (SET) or US Markets (NYSE/NASDAQ).'
+                : 'ระบบดึงเฉพาะข้อมูลหุ้นจริงที่มีการจดทะเบียนในตลาดหลักทรัพย์แห่งประเทศไทย (SET) และตลาดหุ้นสหรัฐฯ (US) เท่านั้น'}
+            </p>
+          </div>
+
+          {/* Quick Suggested Tickers */}
+          <div style={{ marginTop: '8px' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-tertiary)', marginBottom: '8px' }}>
+              {language === 'en' ? 'Try searching for verified symbols:' : 'ตัวอย่างชื่อย่อหุ้นที่ค้นหาได้:'}
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {['PTT', 'DELTA', 'BDMS', 'CPALL', 'NVDA', 'AAPL', 'TSLA', 'PORT', 'COCOCO'].map((suggested) => (
+                <button
+                  key={suggested}
+                  onClick={() => {
+                    startTransition(() => {
+                      setSearchQuery(suggested);
+                      setSelectedMarket('ALL');
+                      setSelectedTag('ALL');
+                      setSelectedSector('ALL');
+                    });
+                  }}
+                  style={{
+                    background: 'var(--card-sub-bg)',
+                    border: '1px solid var(--card-sub-border)',
+                    borderRadius: '8px',
+                    padding: '6px 12px',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    color: 'var(--accent-blue)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  ${suggested}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Reset Filters / Clear Search Button */}
+          <button
+            onClick={() => {
+              startTransition(() => {
+                setSearchQuery('');
+                setSelectedTag('ALL');
+                setSelectedSector('ALL');
+              });
+            }}
+            style={{
+              marginTop: '12px',
+              padding: '10px 20px',
+              borderRadius: '12px',
+              background: 'var(--accent-blue-gradient)',
+              color: '#ffffff',
+              border: 'none',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 14px rgba(0, 122, 255, 0.3)'
+            }}
+          >
+            <X size={15} />
+            <span>{language === 'en' ? 'Reset Filters & Search' : 'ล้างการค้นหาและตัวกรอง'}</span>
+          </button>
+        </div>
+      )}
+
       {/* Grid View */}
-      {viewMode === 'grid' && (
+      {filteredStocks.length > 0 && viewMode === 'grid' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
-          {filteredStocks.map((stock) => {
+          {displayedStocks.map((stock) => {
             const isUp = stock.change >= 0;
             const isSelected = selectedTicker?.toUpperCase() === stock.ticker.toUpperCase();
             return (
               <div
-                key={stock.ticker}
+                key={`${stock.market}-${stock.ticker}`}
                 className="glass-card"
                 onClick={() => {
                   setActiveStockModal(stock);
@@ -247,9 +851,9 @@ export function StockExplorerClient({ initialStocks }: StockExplorerClientProps)
                   justifyContent: 'space-between',
                   gap: '14px',
                   transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
-                  border: isSelected ? '2px solid var(--accent-blue)' : '1px solid rgba(255, 255, 255, 0.08)',
+                  border: isSelected ? '2px solid var(--accent-blue)' : '1px solid var(--glass-border)',
                   boxShadow: isSelected ? '0 0 20px rgba(0, 122, 255, 0.3)' : undefined,
-                  background: isSelected ? 'linear-gradient(135deg, rgba(0, 122, 255, 0.12) 0%, rgba(0,0,0,0.3) 100%)' : undefined
+                  background: isSelected ? 'linear-gradient(135deg, rgba(0, 122, 255, 0.12) 0%, var(--card-sub-bg) 100%)' : undefined
                 }}
               >
                 {/* Header Info */}
@@ -314,11 +918,35 @@ export function StockExplorerClient({ initialStocks }: StockExplorerClientProps)
                   </div>
                 </div>
 
-                {/* AI Insight Tag */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                  <span style={{ color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
-                    {stock.sector}
-                  </span>
+                {/* Smart Tags & AI Insight Tag */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px', fontSize: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                    {(stockMetricsMap.get(`${stock.market}-${stock.ticker}`)?.tags || getStockTags(stock)).slice(0, 2).map((tg) => (
+                      <span
+                        key={tg}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startTransition(() => {
+                            setSelectedTag(tg);
+                          });
+                        }}
+                        title={language === 'en' ? `Filter by #${tg}` : `คลิกเพื่อกรองเฉพาะหุ้นแท็ก #${tg}`}
+                        style={{
+                          fontSize: '0.65rem',
+                          padding: '2px 6px',
+                          borderRadius: '6px',
+                          background: tg.includes('SET50') || tg.includes('Magnificent') || tg.includes('นางฟ้า') ? 'rgba(0, 122, 255, 0.15)' : 'rgba(255, 255, 255, 0.06)',
+                          color: tg.includes('SET50') || tg.includes('Magnificent') || tg.includes('นางฟ้า') ? '#007AFF' : 'var(--text-secondary)',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          border: '1px solid rgba(255, 255, 255, 0.08)'
+                        }}
+                      >
+                        #{tg}
+                      </span>
+                    ))}
+                  </div>
+
                   <span
                     style={{
                       background: 'rgba(0, 122, 255, 0.1)',
@@ -341,7 +969,7 @@ export function StockExplorerClient({ initialStocks }: StockExplorerClientProps)
       )}
 
       {/* Table View */}
-      {viewMode === 'table' && (
+      {filteredStocks.length > 0 && viewMode === 'table' && (
         <div className="glass-card" style={{ overflowX: 'auto', borderRadius: '18px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
             <thead>
@@ -357,12 +985,12 @@ export function StockExplorerClient({ initialStocks }: StockExplorerClientProps)
               </tr>
             </thead>
             <tbody>
-              {filteredStocks.map((stock) => {
+              {displayedStocks.map((stock) => {
                 const isUp = stock.change >= 0;
                 const isSelected = selectedTicker?.toUpperCase() === stock.ticker.toUpperCase();
                 return (
                   <tr
-                    key={stock.ticker}
+                    key={`${stock.market}-${stock.ticker}`}
                     onClick={() => {
                       setActiveStockModal(stock);
                       setSelectedTicker(stock.ticker);
@@ -375,8 +1003,47 @@ export function StockExplorerClient({ initialStocks }: StockExplorerClientProps)
                     }}
                   >
                     <td style={{ padding: '14px 16px' }}>
-                      <div style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{stock.ticker}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{stock.ticker}</span>
+                        <span
+                          style={{
+                            fontSize: '0.65rem',
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            background: stock.market === 'SET' ? 'rgba(0, 122, 255, 0.15)' : 'rgba(139, 92, 246, 0.15)',
+                            color: stock.market === 'SET' ? '#007AFF' : '#8B5CF6',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {stock.market}
+                        </span>
+                      </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{stock.name}</div>
+                      <div style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap' }}>
+                        {(stockMetricsMap.get(`${stock.market}-${stock.ticker}`)?.tags || getStockTags(stock)).slice(0, 2).map((tg) => (
+                          <span
+                            key={tg}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startTransition(() => {
+                                setSelectedTag(tg);
+                              });
+                            }}
+                            title={language === 'en' ? `Filter by #${tg}` : `กรองเฉพาะหุ้นแท็ก #${tg}`}
+                            style={{
+                              fontSize: '0.62rem',
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              background: 'rgba(255, 255, 255, 0.06)',
+                              color: 'var(--text-secondary)',
+                              fontWeight: 600,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            #{tg}
+                          </span>
+                        ))}
+                      </div>
                     </td>
                     <td style={{ padding: '14px 16px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
                       {stock.currency === 'THB' ? '฿' : '$'}
@@ -403,18 +1070,19 @@ export function StockExplorerClient({ initialStocks }: StockExplorerClientProps)
                     <td style={{ padding: '14px 16px' }}>
                       <span
                         style={{
-                          background: stock.analystRating === 'Strong Buy' || stock.analystRating === 'Buy'
-                            ? 'rgba(16, 185, 129, 0.15)'
-                            : 'rgba(239, 68, 68, 0.15)',
-                          color: stock.analystRating === 'Strong Buy' || stock.analystRating === 'Buy'
-                            ? '#10b981'
-                            : '#ef4444',
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
                           fontWeight: 700,
+                          color:
+                            stock.analystRating === 'Strong Buy' || stock.analystRating === 'Buy'
+                              ? 'var(--accent-bullish)'
+                              : stock.analystRating === 'Sell'
+                              ? 'var(--accent-bearish)'
+                              : 'var(--accent-neutral)',
                         }}
                       >
+                        <Award size={14} />
                         {stock.analystRating}
                       </span>
                     </td>
@@ -429,11 +1097,93 @@ export function StockExplorerClient({ initialStocks }: StockExplorerClientProps)
         </div>
       )}
 
+      {/* Progressive Loading Status Bar */}
+      {filteredStocks.length > 0 && (
+        <div
+          className="glass-card"
+          style={{
+            marginTop: '20px',
+            padding: '14px 20px',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            <span>
+              {language === 'en' ? (
+                <>Showing <strong style={{ color: 'var(--text-primary)' }}>{displayedStocks.length}</strong> stocks</>
+              ) : (
+                <>แสดง <strong style={{ color: 'var(--text-primary)' }}>{displayedStocks.length}</strong> หุ้น</>
+              )}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Auto-Scroll 1.5-Second Delay Sentinel */}
+      {(hasMoreStocks || visibleCount < filteredStocks.length) && filteredStocks.length > 0 && (
+        <div
+          ref={sentinelRef}
+          style={{
+            marginTop: '16px',
+            padding: '16px 20px',
+            borderRadius: '16px',
+            background: 'rgba(255, 255, 255, 0.02)',
+            border: '1px dashed var(--glass-border)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            textAlign: 'center',
+          }}
+        >
+          {isLoadingMoreStocks ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#007AFF', fontSize: '0.85rem', fontWeight: 700 }}>
+              <Activity size={16} className="animate-spin" />
+              <span>{language === 'en' ? `Fetching stock batch ${stockPage + 1} (+50 stocks)...` : `กำลังดึงข้อมูลหุ้นชุดที่ ${stockPage + 1} (+50 หุ้น)...`}</span>
+            </div>
+          ) : isWaitingBuffer ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#007AFF', fontSize: '0.85rem', fontWeight: 700 }}>
+                <Activity size={15} className="animate-spin" />
+                <span>{language === 'en' ? '⏳ Preparing next batch (1.5s buffer)...' : '⏳ กำลังเตรียมโหลดหุ้นชุดถัดไป (1.5 วินาที)...'}</span>
+              </div>
+              <div style={{ width: '160px', height: '3px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '100px', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    height: '100%',
+                    width: '100%',
+                    background: 'linear-gradient(90deg, #007AFF 0%, #00F0FF 100%)',
+                    animation: 'pulse 1.5s ease-in-out infinite',
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>
+              <span>{language === 'en' ? 'Scroll down to load more (+50 stocks)' : 'เลื่อนลงมาเพื่อโหลดหุ้นเพิ่ม (+50 หุ้น)'}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Reached End State */}
+      {!hasMoreStocks && visibleCount >= filteredStocks.length && filteredStocks.length > 0 && (
+        <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>
+          {language === 'en' ? `✓ All matching stocks loaded (${displayedStocks.length} stocks)` : `✓ โหลดข้อมูลหุ้นครบถ้วนตามเงื่อนไขที่ค้นหาแล้ว (${displayedStocks.length} หุ้น)`}
+        </div>
+      )}
+
       {/* Stock Detail Sheet / Modal */}
       {activeStockModal && (
         <div className="ios-sheet-overlay" onClick={() => setActiveStockModal(null)}>
           <div className="ios-sheet-content" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '85vh', overflowY: 'auto' }}>
-            <div style={{ width: '40px', height: '4px', background: 'rgba(255, 255, 255, 0.3)', borderRadius: '100px', margin: '0 auto 20px auto' }} />
+            <div style={{ width: '40px', height: '4px', background: 'var(--text-tertiary)', borderRadius: '100px', margin: '0 auto 20px auto', opacity: 0.5 }} />
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -441,8 +1191,8 @@ export function StockExplorerClient({ initialStocks }: StockExplorerClientProps)
                 <span
                   style={{
                     fontSize: '0.75rem',
-                    padding: '3px 8px',
-                    borderRadius: '6px',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
                     background: activeStockModal.market === 'SET' ? 'rgba(0, 122, 255, 0.15)' : 'rgba(139, 92, 246, 0.15)',
                     color: activeStockModal.market === 'SET' ? '#007AFF' : '#8B5CF6',
                     fontWeight: 700,
@@ -450,127 +1200,283 @@ export function StockExplorerClient({ initialStocks }: StockExplorerClientProps)
                 >
                   {activeStockModal.market}
                 </span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>• {activeStockModal.sector}</span>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{activeStockModal.name}</span>
               </div>
               <button
                 onClick={() => setActiveStockModal(null)}
-                style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '50%', width: '36px', height: '36px', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                style={{
+                  background: 'var(--card-sub-bg)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'grid',
+                  placeItems: 'center',
+                }}
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
-            <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>{activeStockModal.name}</h3>
+            {/* Price Banner */}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '20px' }}>
+              <span style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+                {activeStockModal.currency === 'THB' ? '฿' : '$'}
+                {activeStockModal.price.toFixed(2)}
+              </span>
+              <span
+                style={{
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  color: activeStockModal.change >= 0 ? 'var(--accent-bullish)' : 'var(--accent-bearish)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                {activeStockModal.change >= 0 ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
+                {activeStockModal.change >= 0 ? '+' : ''}
+                {activeStockModal.change.toFixed(2)}%
+              </span>
+            </div>
 
-            {/* Price & Target */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-              <div className="glass-card" style={{ padding: '16px', borderRadius: '14px' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t('realtimePrice')}</div>
-                <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace', marginTop: '4px' }}>
-                  {activeStockModal.currency === 'THB' ? '฿' : '$'}{activeStockModal.price.toFixed(2)}
-                </div>
-                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: activeStockModal.change >= 0 ? '#00E676' : '#FF3B30', marginTop: '2px' }}>
-                  {activeStockModal.change >= 0 ? '+' : ''}{activeStockModal.change.toFixed(2)}% (24h)
-                </div>
+            {/* 52-Week Price Range Indicator */}
+            <div style={{ background: 'var(--card-sub-bg)', padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--card-sub-border)', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+                  {language === 'en' ? '52-Week Price Range' : 'กรอบราคารอบ 52 สัปดาห์ (52W Low - High)'}
+                </span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
+                  {activeStockModal.currency === 'THB' ? '฿' : '$'}{activeStockModal.low52w.toFixed(2)} - {activeStockModal.currency === 'THB' ? '฿' : '$'}{activeStockModal.high52w.toFixed(2)}
+                </span>
               </div>
-              <div className="glass-card" style={{ padding: '16px', borderRadius: '14px' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t('analystTarget')}</div>
-                <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-bullish)', fontFamily: 'monospace', marginTop: '4px' }}>
-                  {activeStockModal.currency === 'THB' ? '฿' : '$'}{activeStockModal.targetPrice.toFixed(2)}
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                  {t('recommendation')}: <strong>{activeStockModal.analystRating}</strong>
-                </div>
+              <div style={{ position: 'relative', height: '8px', background: 'rgba(255,255,255,0.08)', borderRadius: '100px', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    height: '100%',
+                    width: `${Math.min(100, Math.max(5, ((activeStockModal.price - activeStockModal.low52w) / Math.max(1, activeStockModal.high52w - activeStockModal.low52w)) * 100))}%`,
+                    background: 'linear-gradient(90deg, #007AFF 0%, #00F0FF 100%)',
+                    borderRadius: '100px'
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '6px' }}>
+                <span>52W Low: {activeStockModal.currency === 'THB' ? '฿' : '$'}{activeStockModal.low52w.toFixed(2)}</span>
+                <span>52W High: {activeStockModal.currency === 'THB' ? '฿' : '$'}{activeStockModal.high52w.toFixed(2)}</span>
               </div>
             </div>
 
-            {/* AI Insight */}
-            <div style={{ background: 'rgba(0, 122, 255, 0.08)', border: '1px solid rgba(0, 122, 255, 0.2)', padding: '16px', borderRadius: '16px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-blue)', marginBottom: '6px' }}>
-                <Sparkles size={15} /> {t('aiInsightTitle')}:
+            {/* Fundamental Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ background: 'var(--card-sub-bg)', padding: '12px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{t('colMarketCap')}</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>{activeStockModal.marketCap}</div>
               </div>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>
-                {activeStockModal.aiInsight}
+              <div style={{ background: 'var(--card-sub-bg)', padding: '12px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>P/E Ratio</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>{activeStockModal.peRatio}x</div>
+              </div>
+              <div style={{ background: 'var(--card-sub-bg)', padding: '12px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{t('colDivYield')}</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>{activeStockModal.dividendYield}%</div>
+              </div>
+              <div style={{ background: 'var(--card-sub-bg)', padding: '12px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>24h Volume</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>{activeStockModal.volume}</div>
+              </div>
+              <div style={{ background: 'var(--card-sub-bg)', padding: '12px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{t('colAnalyst')}</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent-bullish)', marginTop: '2px' }}>{activeStockModal.analystRating}</div>
+              </div>
+              <div style={{ background: 'var(--card-sub-bg)', padding: '12px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{language === 'en' ? 'Target Price' : 'ราคาเป้าหมาย'}</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent-blue)', marginTop: '2px' }}>{activeStockModal.currency === 'THB' ? '฿' : '$'}{activeStockModal.targetPrice.toFixed(2)}</div>
+              </div>
+            </div>
+
+            {/* Smart Tags in Modal Sheet */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '16px' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Tag size={13} color="var(--accent-blue)" /> {language === 'en' ? 'Tags:' : 'หมวดแท็ก:'}
+              </span>
+              {(stockMetricsMap.get(`${activeStockModal.market}-${activeStockModal.ticker}`)?.tags || getStockTags(activeStockModal)).map((tg) => (
+                <span
+                  key={tg}
+                  onClick={() => {
+                    setActiveStockModal(null);
+                    startTransition(() => {
+                      setSelectedTag(tg);
+                    });
+                  }}
+                  title={language === 'en' ? `Filter stocks with #${tg}` : `คลิกเพื่อกรองหุ้นแท็ก #${tg}`}
+                  style={{
+                    fontSize: '0.72rem',
+                    padding: '3px 10px',
+                    borderRadius: '100px',
+                    background: tg.includes('SET50') || tg.includes('Magnificent') || tg.includes('นางฟ้า') ? 'rgba(0, 122, 255, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                    color: tg.includes('SET50') || tg.includes('Magnificent') || tg.includes('นางฟ้า') ? '#007AFF' : 'var(--text-primary)',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    border: '1px solid var(--glass-border)',
+                  }}
+                >
+                  #{tg}
+                </span>
+              ))}
+            </div>
+
+            {/* AI Analysis Summary */}
+            <div style={{ background: 'rgba(0, 122, 255, 0.06)', border: '1px solid rgba(0, 122, 255, 0.2)', borderRadius: '14px', padding: '16px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-blue)', fontWeight: 700, marginBottom: '6px' }}>
+                <Sparkles size={16} /> {language === 'en' ? 'AI Fundamental & Sentiment Insight' : 'บทวิเคราะห์ AI อัจฉริยะ (AI Fundamental & Sentiment Insight)'}
+              </div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                {tDynamic(activeStockModal.aiInsight || activeStockModal.description)}
               </p>
             </div>
 
-            {/* Fundamentals Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '24px' }}>
-              <div className="glass-card" style={{ padding: '10px 14px' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{t('colMarketCap')}</div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{activeStockModal.marketCap}</div>
-              </div>
-              <div className="glass-card" style={{ padding: '10px 14px' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>P/E Ratio</div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{activeStockModal.peRatio}x</div>
-              </div>
-              <div className="glass-card" style={{ padding: '10px 14px' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{t('colDivYield')}</div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{activeStockModal.dividendYield}%</div>
-              </div>
-              <div className="glass-card" style={{ padding: '10px 14px' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{t('volume')}</div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{activeStockModal.volume}</div>
-              </div>
-            </div>
-
-            {/* Interlinked Related News Section */}
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  <Newspaper size={16} color="var(--accent-blue)" />
-                  <span>{t('relatedNewsTitle')} ${activeStockModal.ticker} ({relatedNews.length})</span>
-                </div>
-                <button
-                  onClick={() => {
-                    setSelectedTicker(activeStockModal.ticker);
-                    setActiveStockModal(null);
-                    window.scrollTo({ top: 400, behavior: 'smooth' });
-                  }}
+            {/* Dedicated Stock-Specific News & Filings Feed */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Newspaper size={16} color="#8B5CF6" />
+                  <span>{language === 'en' ? `Live News & Intelligence for $${activeStockModal.ticker}` : `ข่าวสาร & สารสนเทศสดของหุ้น $${activeStockModal.ticker}`}</span>
+                </h4>
+                <span
                   style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--accent-blue)',
-                    fontSize: '0.75rem',
+                    fontSize: '0.72rem',
+                    padding: '3px 10px',
+                    borderRadius: '100px',
+                    background: activeStockModal.market === 'SET' ? 'rgba(0, 122, 255, 0.15)' : 'rgba(139, 92, 246, 0.15)',
+                    color: activeStockModal.market === 'SET' ? '#007AFF' : '#8B5CF6',
                     fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '2px'
+                    border: '1px solid var(--glass-border)'
                   }}
                 >
-                  <span>{t('viewAllNews')}</span>
-                  <ChevronRight size={14} />
-                </button>
+                  {activeStockModal.market === 'SET' ? 'SET IR & Thai Media' : 'Finnhub & SEC Filings'}
+                </span>
               </div>
 
-              {relatedNews.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {relatedNews.slice(0, 3).map((item) => (
+              {isLoadingModalNews ? (
+                <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>
+                  <div className="spin" style={{ display: 'inline-block', marginBottom: '8px' }}>
+                    <Activity size={18} color="var(--accent-blue)" />
+                  </div>
+                  <div>{language === 'en' ? 'Fetching live real-time stock news & disclosures...' : 'กำลังดึงข่าวสารและสารสนเทศสดจากระบบตลาดทุน...'}</div>
+                </div>
+              ) : relatedNews.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', background: 'var(--card-sub-bg)', borderRadius: '14px', color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>
+                  {language === 'en' ? `No recent breaking news for $${activeStockModal.ticker}` : `ยังไม่มีข่าวด่วนหรือรายงานใหม่ของ $${activeStockModal.ticker}`}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {relatedNews.slice(0, 6).map((item) => (
                     <div
                       key={item.id}
-                      style={{
-                        padding: '10px 14px',
-                        background: 'rgba(255,255,255,0.02)',
-                        borderRadius: '10px',
-                        border: '1px solid rgba(255,255,255,0.05)',
+                      onClick={() => {
+                        setActiveStockModal(null);
+                        setActiveNewsModal(item);
                       }}
+                      style={{
+                        padding: '14px 16px',
+                        background: 'var(--card-sub-bg)',
+                        borderRadius: '14px',
+                        border: '1px solid var(--card-sub-border)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                      className="stock-news-mini-card"
                     >
-                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                        {item.title}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', marginBottom: '6px' }}>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>
+                          {tDynamic(item.title)}
+                        </div>
+                        {item.sentiment && (
+                          <span
+                            style={{
+                              fontSize: '0.68rem',
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              fontWeight: 700,
+                              flexShrink: 0,
+                              background: item.sentiment === 'bullish' ? 'rgba(0, 230, 118, 0.15)' : item.sentiment === 'bearish' ? 'rgba(255, 59, 48, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                              color: item.sentiment === 'bullish' ? '#00E676' : item.sentiment === 'bearish' ? '#FF3B30' : 'var(--text-secondary)'
+                            }}
+                          >
+                            {item.sentiment === 'bullish' ? (language === 'en' ? 'Bullish' : 'เชิงบวก') : item.sentiment === 'bearish' ? (language === 'en' ? 'Bearish' : 'เชิงลบ') : (language === 'en' ? 'Neutral' : 'ทรงตัว')}
+                          </span>
+                        )}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', display: 'flex', gap: '8px' }}>
-                        <span>{item.source}</span>
-                        <span>• {item.date}</span>
+
+                      {item.summary && (
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 10px 0' }}>
+                          {tDynamic(item.summary.slice(0, 140))}...
+                        </p>
+                      )}
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+                          {item.source} • {tDynamic(item.date || item.periodLabel || 'วันนี้')}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {(item.link || item.sourceUrl) && (
+                            <a
+                              href={item.link || item.sourceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                fontSize: '0.72rem',
+                                color: 'var(--accent-blue)',
+                                textDecoration: 'none',
+                                fontWeight: 700
+                              }}
+                            >
+                              <span>{language === 'en' ? 'Original Source' : 'เปิดอ่านต้นฉบับ'}</span>
+                              <ExternalLink size={11} />
+                            </a>
+                          )}
+                          <ChevronRight size={14} color="var(--text-tertiary)" />
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', padding: '10px 0' }}>
-                  {t('noDirectNews')}
-                </div>
               )}
+            </div>
+
+            {/* Live Yahoo Finance Source Verification */}
+            <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--glass-border)' }}>
+              <a
+                href={`https://finance.yahoo.com/quote/${activeStockModal.market === 'SET' ? `${activeStockModal.ticker}.BK` : activeStockModal.ticker}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  width: '100%',
+                  padding: '12px 18px',
+                  borderRadius: '12px',
+                  background: 'var(--card-sub-bg)',
+                  border: '1px solid var(--card-sub-border)',
+                  color: 'var(--accent-blue)',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  textDecoration: 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <ExternalLink size={16} />
+                <span>{language === 'en' ? `Verify Real-Time Quotes on Yahoo Finance (${activeStockModal.ticker})` : `ตรวจสอบข้อมูลสดบน Yahoo Finance (${activeStockModal.ticker})`}</span>
+              </a>
             </div>
           </div>
         </div>

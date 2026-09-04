@@ -49,6 +49,9 @@ export const StockNewsItemSchema = z.object({
   impactAnalysis: ImpactAnalysisSchema,
   isFeatured: z.boolean().optional(),
   isBookmarked: z.boolean().optional(),
+  link: z.string().optional(),
+  url: z.string().optional(),
+  sourceUrl: z.string().optional(),
 });
 export type StockNewsItem = z.infer<typeof StockNewsItemSchema>;
 

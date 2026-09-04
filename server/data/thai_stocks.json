@@ -1,547 +1,2500 @@
 {
-  "last_updated": "2026-09-04T17:20:40.529492",
-  "source": "Stock Exchange of Thailand (SET) via yfinance resilient engine",
-  "total": 30,
+  "last_updated": "2026-09-05T01:40:42.763378",
+  "source": "Stock Exchange of Thailand (SET / mai) Master Catalog",
+  "total": 277,
   "stocks": [
     {
-      "ticker": "PTT",
-      "symbol": "PTT.BK",
-      "name": "PTT Public Company Limited",
+      "ticker": "CPF",
+      "symbol": "CPF.BK",
+      "name": "Charoen Pokphand Foods PCL",
       "market": "SET",
-      "currency": "THB",
-      "sector": "Energy & Utilities",
-      "price": 41.5,
-      "change": -0.6,
-      "sparkline": [
-        40.75,
-        41.5,
-        41.0,
-        41.75,
-        41.5
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "CPALL",
-      "symbol": "CPALL.BK",
-      "name": "CP ALL Public Company Limited",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Commerce & Retail",
-      "price": 46.25,
-      "change": 0.54,
-      "sparkline": [
-        46.25,
-        45.5,
-        45.5,
-        46.0,
-        46.25
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "AOT",
-      "symbol": "AOT.BK",
-      "name": "Airports of Thailand PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Transportation & Logistics",
-      "price": 63.5,
-      "change": 1.2,
-      "sparkline": [
-        63.5,
-        62.5,
-        61.75,
-        62.75,
-        63.5
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "KBANK",
-      "symbol": "KBANK.BK",
-      "name": "Kasikornbank PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Banking & Financials",
-      "price": 248.0,
-      "change": -0.4,
-      "sparkline": [
-        248.0,
-        248.0,
-        248.0,
-        249.0,
-        248.0
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "DELTA",
-      "symbol": "DELTA.BK",
-      "name": "Delta Electronics (Thailand) PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Electronics & Tech",
-      "price": 256.0,
-      "change": 5.35,
-      "sparkline": [
-        249.0,
-        251.0,
-        246.0,
-        243.0,
-        256.0
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "BDMS",
-      "symbol": "BDMS.BK",
-      "name": "Bangkok Dusit Medical Services PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Healthcare & Hospitals",
-      "price": 20.4,
-      "change": -0.97,
-      "sparkline": [
-        19.6,
-        20.0,
-        19.8,
-        20.6,
-        20.4
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "SCB",
-      "symbol": "SCB.BK",
-      "name": "SCB X Public Company Limited",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Banking & Financials",
-      "price": 151.5,
-      "change": 0.0,
-      "sparkline": [
-        151.0,
-        152.0,
-        151.5,
-        151.5,
-        151.5
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "GULF",
-      "symbol": "GULF.BK",
-      "name": "Gulf Energy Development PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Energy & Utilities",
-      "price": 61.75,
-      "change": 0.82,
-      "sparkline": [
-        63.25,
-        62.0,
-        61.25,
-        61.25,
-        61.75
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "ADVANC",
-      "symbol": "ADVANC.BK",
-      "name": "Advanced Info Service PCL (AIS)",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Telecommunication & Digital",
-      "price": 346.0,
-      "change": 0.58,
-      "sparkline": [
-        355.0,
-        354.0,
-        349.0,
-        344.0,
-        346.0
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "TRUE",
-      "symbol": "TRUE.BK",
-      "name": "True Corporation PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Telecommunication & Digital",
-      "price": 13.0,
-      "change": 0.78,
-      "sparkline": [
-        13.1,
-        13.0,
-        12.8,
-        12.9,
-        13.0
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "MINT",
-      "symbol": "MINT.BK",
-      "name": "Minor International PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Tourism, Hospitality & Food",
-      "price": 22.2,
-      "change": 1.37,
-      "sparkline": [
-        22.2,
-        22.1,
-        21.9,
-        21.9,
-        22.2
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "BBL",
-      "symbol": "BBL.BK",
-      "name": "Bangkok Bank PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Banking & Financials",
-      "price": 193.5,
-      "change": 0.26,
-      "sparkline": [
-        191.0,
-        192.0,
-        192.0,
-        193.0,
-        193.5
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "KTB",
-      "symbol": "KTB.BK",
-      "name": "Krung Thai Bank PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Banking & Financials",
-      "price": 43.5,
-      "change": -0.57,
-      "sparkline": [
-        43.25,
-        43.5,
-        43.75,
-        43.75,
-        43.5
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "CRC",
-      "symbol": "CRC.BK",
-      "name": "Central Retail Corporation PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Commerce & Retail",
-      "price": 28.25,
-      "change": 0.0,
-      "sparkline": [
-        29.0,
-        29.0,
-        28.75,
-        28.25,
-        28.25
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "HMPRO",
-      "symbol": "HMPRO.BK",
-      "name": "Home Product Center PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Commerce & Retail",
-      "price": 6.4,
-      "change": 0.79,
-      "sparkline": [
-        6.45,
-        6.35,
-        6.4,
-        6.35,
-        6.4
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "CPN",
-      "symbol": "CPN.BK",
-      "name": "Central Pattana PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Property & Real Estate",
-      "price": 64.75,
-      "change": 0.78,
-      "sparkline": [
-        67.25,
-        65.0,
-        64.75,
-        64.25,
-        64.75
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "OR",
-      "symbol": "OR.BK",
-      "name": "PTT Oil and Retail Business PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Energy & Retail",
-      "price": 12.8,
-      "change": 1.59,
-      "sparkline": [
-        12.5,
-        12.6,
-        12.5,
-        12.6,
-        12.8
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "GPSC",
-      "symbol": "GPSC.BK",
-      "name": "Global Power Synergy PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Energy & Utilities",
-      "price": 50.25,
-      "change": 1.01,
-      "sparkline": [
-        53.0,
-        51.25,
-        50.75,
-        49.75,
-        50.25
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "EA",
-      "symbol": "EA.BK",
-      "name": "Energy Absolute PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Renewable Energy & EV",
-      "price": 2.88,
-      "change": 0.7,
-      "sparkline": [
-        2.88,
-        2.86,
-        2.86,
-        2.86,
-        2.88
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "BGRIM",
-      "symbol": "BGRIM.BK",
-      "name": "B.Grimm Power PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Energy & Utilities",
-      "price": 19.7,
-      "change": 2.07,
-      "sparkline": [
-        20.3,
-        19.6,
-        19.8,
-        19.3,
-        19.7
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "TOP",
-      "symbol": "TOP.BK",
-      "name": "Thai Oil PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Refinery & Energy",
-      "price": 62.75,
-      "change": -1.95,
-      "sparkline": [
-        64.0,
-        64.75,
-        64.75,
-        64.0,
-        62.75
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "LH",
-      "symbol": "LH.BK",
-      "name": "Land and Houses PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Property & Real Estate",
-      "price": 3.66,
-      "change": 0.0,
-      "sparkline": [
-        3.66,
-        3.64,
-        3.64,
-        3.66,
-        3.66
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "WHA",
-      "symbol": "WHA.BK",
-      "name": "WHA Corporation PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Industrial Estate & Logistics",
-      "price": 4.78,
-      "change": 0.84,
-      "sparkline": [
-        4.82,
-        4.76,
-        4.62,
-        4.74,
-        4.78
-      ],
-      "status": "Active"
-    },
-    {
-      "ticker": "IVL",
-      "symbol": "IVL.BK",
-      "name": "Indorama Ventures PCL",
-      "market": "SET",
-      "currency": "THB",
-      "sector": "Petrochemicals & Chemicals",
-      "price": 25.5,
-      "change": 2.0,
-      "sparkline": [
-        24.4,
-        25.0,
-        25.0,
-        25.0,
-        25.5
-      ],
-      "status": "Active"
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
     },
     {
       "ticker": "TU",
       "symbol": "TU.BK",
       "name": "Thai Union Group PCL",
       "market": "SET",
-      "currency": "THB",
       "sector": "Food & Beverage",
-      "price": 13.1,
-      "change": -0.76,
-      "sparkline": [
-        12.6,
-        12.7,
-        12.9,
-        13.2,
-        13.1
-      ],
-      "status": "Active"
+      "industry": "Agro & Food",
+      "currency": "THB"
     },
     {
       "ticker": "CBG",
       "symbol": "CBG.BK",
       "name": "Carabao Group PCL",
       "market": "SET",
-      "currency": "THB",
       "sector": "Food & Beverage",
-      "price": 53.75,
-      "change": 0.94,
-      "sparkline": [
-        54.5,
-        53.75,
-        53.75,
-        53.25,
-        53.75
-      ],
-      "status": "Active"
+      "industry": "Agro & Food",
+      "currency": "THB"
     },
     {
-      "ticker": "BTS",
-      "symbol": "BTS.BK",
-      "name": "BTS Group Holdings PCL",
+      "ticker": "OSP",
+      "symbol": "OSP.BK",
+      "name": "Osotspa Public Company Limited",
       "market": "SET",
-      "currency": "THB",
-      "sector": "Transportation & Logistics",
-      "price": 2.04,
-      "change": 0.99,
-      "sparkline": [
-        2.08,
-        2.06,
-        2.02,
-        2.02,
-        2.04
-      ],
-      "status": "Active"
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
     },
     {
-      "ticker": "BEM",
-      "symbol": "BEM.BK",
-      "name": "Bangkok Expressway and Metro PCL",
+      "ticker": "ICHI",
+      "symbol": "ICHI.BK",
+      "name": "Ichitan Group PCL",
       "market": "SET",
-      "currency": "THB",
-      "sector": "Transportation & Infrastructure",
-      "price": 6.7,
-      "change": 1.52,
-      "sparkline": [
-        6.9,
-        6.9,
-        6.65,
-        6.6,
-        6.7
-      ],
-      "status": "Active"
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
     },
     {
-      "ticker": "BCH",
-      "symbol": "BCH.BK",
-      "name": "Bangkok Chain Hospital PCL",
+      "ticker": "SAPPE",
+      "symbol": "SAPPE.BK",
+      "name": "Sappe Public Company Limited",
       "market": "SET",
-      "currency": "THB",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TKN",
+      "symbol": "TKN.BK",
+      "name": "Taokaenoi Food & Marketing PCL",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BTG",
+      "symbol": "BTG.BK",
+      "name": "Betagro Public Company Limited",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "GFPT",
+      "symbol": "GFPT.BK",
+      "name": "GFPT Public Company Limited",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ITC",
+      "symbol": "ITC.BK",
+      "name": "i-Tail Corporation PCL",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "XO",
+      "symbol": "XO.BK",
+      "name": "Exotic Food PCL",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "COCOCO",
+      "symbol": "COCOCO.BK",
+      "name": "Thai Coconut Public Company Limited",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PLUS",
+      "symbol": "PLUS.BK",
+      "name": "Royal Plus Public Company Limited",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "MALEE",
+      "symbol": "MALEE.BK",
+      "name": "Malee Group Public Company Limited",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TIPCO",
+      "symbol": "TIPCO.BK",
+      "name": "Tipco Foods Public Company Limited",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "APURE",
+      "symbol": "APURE.BK",
+      "name": "AgriPure Holdings PCL",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ASIAN",
+      "symbol": "ASIAN.BK",
+      "name": "Asian Alliance International PCL",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "KSL",
+      "symbol": "KSL.BK",
+      "name": "Khon Kaen Sugar Industry PCL",
+      "market": "SET",
+      "sector": "Agribusiness & Sugar",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "KBS",
+      "symbol": "KBS.BK",
+      "name": "Khonburi Sugar Public Company Limited",
+      "market": "SET",
+      "sector": "Agribusiness & Sugar",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "KTIS",
+      "symbol": "KTIS.BK",
+      "name": "Kaset Thai International Sugar Corp",
+      "market": "SET",
+      "sector": "Agribusiness & Sugar",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BRR",
+      "symbol": "BRR.BK",
+      "name": "Buriram Sugar Public Company Limited",
+      "market": "SET",
+      "sector": "Agribusiness & Sugar",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TWPC",
+      "symbol": "TWPC.BK",
+      "name": "Thai Wah Public Company Limited",
+      "market": "SET",
+      "sector": "Agribusiness & Starch",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TVO",
+      "symbol": "TVO.BK",
+      "name": "Thai Vegetable Oil PCL",
+      "market": "SET",
+      "sector": "Agribusiness & Oil",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SUN",
+      "symbol": "SUN.BK",
+      "name": "Sunsweet Public Company Limited",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TFG",
+      "symbol": "TFG.BK",
+      "name": "Thai Foods Group PCL",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "RBF",
+      "symbol": "RBF.BK",
+      "name": "R&B Food Supply PCL",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "NSL",
+      "symbol": "NSL.BK",
+      "name": "NSL Foods Public Company Limited",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CH",
+      "symbol": "CH.BK",
+      "name": "Charoen Industry PCL",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TTEET",
+      "symbol": "TTEET.BK",
+      "name": "Thai Eastern Group Holdings PCL",
+      "market": "SET",
+      "sector": "Agribusiness & Rubber",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "STA",
+      "symbol": "STA.BK",
+      "name": "Sri Trang Agro-Industry PCL",
+      "market": "SET",
+      "sector": "Agribusiness & Rubber",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "NER",
+      "symbol": "NER.BK",
+      "name": "North East Rubber PCL",
+      "market": "SET",
+      "sector": "Agribusiness & Rubber",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TRUBB",
+      "symbol": "TRUBB.BK",
+      "name": "Thai Rubber Latex Group PCL",
+      "market": "SET",
+      "sector": "Agribusiness & Rubber",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CM",
+      "symbol": "CM.BK",
+      "name": "Chiangmai Frozen Foods PCL",
+      "market": "SET",
+      "sector": "Food & Beverage",
+      "industry": "Agro & Food",
+      "currency": "THB"
+    },
+    {
+      "ticker": "KAMART",
+      "symbol": "KAMART.BK",
+      "name": "Karmarts Public Company Limited",
+      "market": "SET",
+      "sector": "Commerce & Retail",
+      "industry": "Consumer Products",
+      "currency": "THB"
+    },
+    {
+      "ticker": "MOSHI",
+      "symbol": "MOSHI.BK",
+      "name": "Moshi Moshi Retail Corp PCL",
+      "market": "SET",
+      "sector": "Commerce & Retail",
+      "industry": "Consumer Products",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BEAUTY",
+      "symbol": "BEAUTY.BK",
+      "name": "Beauty Community PCL",
+      "market": "SET",
+      "sector": "Commerce & Retail",
+      "industry": "Consumer Products",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SABINA",
+      "symbol": "SABINA.BK",
+      "name": "Sabina Public Company Limited",
+      "market": "SET",
+      "sector": "Fashion & Apparel",
+      "industry": "Consumer Products",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TACC",
+      "symbol": "TACC.BK",
+      "name": "T.A.C. Consumer PCL",
+      "market": "SET",
+      "sector": "Consumer Goods",
+      "industry": "Consumer Products",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TOG",
+      "symbol": "TOG.BK",
+      "name": "Thai Optical Group PCL",
+      "market": "SET",
+      "sector": "Personal Products",
+      "industry": "Consumer Products",
+      "currency": "THB"
+    },
+    {
+      "ticker": "WACOAL",
+      "symbol": "WACOAL.BK",
+      "name": "Thai Wacoal Public Company Limited",
+      "market": "SET",
+      "sector": "Fashion & Apparel",
+      "industry": "Consumer Products",
+      "currency": "THB"
+    },
+    {
+      "ticker": "OCC",
+      "symbol": "OCC.BK",
+      "name": "O.C.C. Public Company Limited",
+      "market": "SET",
+      "sector": "Personal Products",
+      "industry": "Consumer Products",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PG",
+      "symbol": "PG.BK",
+      "name": "People's Garment PCL",
+      "market": "SET",
+      "sector": "Fashion & Apparel",
+      "industry": "Consumer Products",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SAUCE",
+      "symbol": "SAUCE.BK",
+      "name": "Thai Theparos PCL",
+      "market": "SET",
+      "sector": "Food & Consumer",
+      "industry": "Consumer Products",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PB",
+      "symbol": "PB.BK",
+      "name": "President Bakery PCL",
+      "market": "SET",
+      "sector": "Food & Consumer",
+      "industry": "Consumer Products",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TF",
+      "symbol": "TF.BK",
+      "name": "Thai President Foods PCL",
+      "market": "SET",
+      "sector": "Food & Consumer",
+      "industry": "Consumer Products",
+      "currency": "THB"
+    },
+    {
+      "ticker": "KBANK",
+      "symbol": "KBANK.BK",
+      "name": "Kasikornbank Public Company Limited",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SCB",
+      "symbol": "SCB.BK",
+      "name": "SCB X Public Company Limited",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BBL",
+      "symbol": "BBL.BK",
+      "name": "Bangkok Bank Public Company Limited",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "KTB",
+      "symbol": "KTB.BK",
+      "name": "Krungthai Bank Public Company Limited",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TTB",
+      "symbol": "TTB.BK",
+      "name": "TMBThanachart Bank PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TISCO",
+      "symbol": "TISCO.BK",
+      "name": "TISCO Financial Group PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TCAP",
+      "symbol": "TCAP.BK",
+      "name": "Thanachart Capital PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "KKP",
+      "symbol": "KKP.BK",
+      "name": "Kiatnakin Phatra Bank PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BAY",
+      "symbol": "BAY.BK",
+      "name": "Bank of Ayudhya PCL (Krungsri)",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CIMBT",
+      "symbol": "CIMBT.BK",
+      "name": "CIMB Thai Bank PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "LHFG",
+      "symbol": "LHFG.BK",
+      "name": "LH Financial Group PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "KTC",
+      "symbol": "KTC.BK",
+      "name": "Krungthai Card PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SAWAD",
+      "symbol": "SAWAD.BK",
+      "name": "Srisawad Corporation PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "MTC",
+      "symbol": "MTC.BK",
+      "name": "Muangthai Capital PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TIDLOR",
+      "symbol": "TIDLOR.BK",
+      "name": "Ngern Tid Lor Public Co., Ltd.",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BAM",
+      "symbol": "BAM.BK",
+      "name": "Bangkok Commercial Asset Management",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "THANI",
+      "symbol": "THANI.BK",
+      "name": "Ratchthani Leasing PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "JMT",
+      "symbol": "JMT.BK",
+      "name": "JMT Network Services PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "JMART",
+      "symbol": "JMART.BK",
+      "name": "Jay Mart Public Company Limited",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TLI",
+      "symbol": "TLI.BK",
+      "name": "Thai Life Insurance PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "AEONTS",
+      "symbol": "AEONTS.BK",
+      "name": "AEON Thana Sinsap (Thailand) PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SAK",
+      "symbol": "SAK.BK",
+      "name": "Saksiam Leasing PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "HENG",
+      "symbol": "HENG.BK",
+      "name": "Heng Leasing and Capital PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "MICRO",
+      "symbol": "MICRO.BK",
+      "name": "Micro Leasing PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "NCAP",
+      "symbol": "NCAP.BK",
+      "name": "Next Capital Public Company Limited",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CHAYO",
+      "symbol": "CHAYO.BK",
+      "name": "Chayo Group Public Company Limited",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ECL",
+      "symbol": "ECL.BK",
+      "name": "Eastern Commercial Leasing PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ASK",
+      "symbol": "ASK.BK",
+      "name": "Asia Sermkij Leasing PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "IFS",
+      "symbol": "IFS.BK",
+      "name": "IFS Capital (Thailand) PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "S11",
+      "symbol": "S11.BK",
+      "name": "S11 Group Public Company Limited",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BYD",
+      "symbol": "BYD.BK",
+      "name": "Beyond Securities PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "KGI",
+      "symbol": "KGI.BK",
+      "name": "KGI Securities (Thailand) PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "FSS",
+      "symbol": "FSS.BK",
+      "name": "Finansia Syrus Securities PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ASP",
+      "symbol": "ASP.BK",
+      "name": "Asia Plus Group Holdings PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TIPH",
+      "symbol": "TIPH.BK",
+      "name": "Dhipaya Group Holdings PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BLA",
+      "symbol": "BLA.BK",
+      "name": "Bangkok Life Assurance PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BKI",
+      "symbol": "BKI.BK",
+      "name": "Bangkok Insurance Public Co., Ltd.",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "THREL",
+      "symbol": "THREL.BK",
+      "name": "Thaire Life Assurance PCL",
+      "market": "SET",
+      "sector": "Banking & Financials",
+      "industry": "Financials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "DELTA",
+      "symbol": "DELTA.BK",
+      "name": "Delta Electronics (Thailand) PCL",
+      "market": "SET",
+      "sector": "Electronics & Tech",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "HANA",
+      "symbol": "HANA.BK",
+      "name": "Hana Microelectronics PCL",
+      "market": "SET",
+      "sector": "Electronics & Tech",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "KCE",
+      "symbol": "KCE.BK",
+      "name": "KCE Electronics Public Company Limited",
+      "market": "SET",
+      "sector": "Electronics & Tech",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CCET",
+      "symbol": "CCET.BK",
+      "name": "Cal-Comp Electronics (Thailand) PCL",
+      "market": "SET",
+      "sector": "Electronics & Tech",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SVI",
+      "symbol": "SVI.BK",
+      "name": "SVI Public Company Limited",
+      "market": "SET",
+      "sector": "Electronics & Tech",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "FORTH",
+      "symbol": "FORTH.BK",
+      "name": "Forth Corporation PCL",
+      "market": "SET",
+      "sector": "Electronics & Tech",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TEAM",
+      "symbol": "TEAM.BK",
+      "name": "Team Precision Public Company Limited",
+      "market": "SET",
+      "sector": "Electronics & Tech",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SMT",
+      "symbol": "SMT.BK",
+      "name": "Stars Microelectronics (Thailand) PCL",
+      "market": "SET",
+      "sector": "Electronics & Tech",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SNC",
+      "symbol": "SNC.BK",
+      "name": "SNC Former Public Company Limited",
+      "market": "SET",
+      "sector": "Industrial Materials",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "IVL",
+      "symbol": "IVL.BK",
+      "name": "Indorama Ventures PCL",
+      "market": "SET",
+      "sector": "Petrochemicals & Chemicals",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PTTGC",
+      "symbol": "PTTGC.BK",
+      "name": "PTT Global Chemical PCL",
+      "market": "SET",
+      "sector": "Petrochemicals & Chemicals",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "STGT",
+      "symbol": "STGT.BK",
+      "name": "Sri Trang Gloves (Thailand) PCL",
+      "market": "SET",
+      "sector": "Healthcare & Rubber",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TPIPL",
+      "symbol": "TPIPL.BK",
+      "name": "TPI Polene Public Company Limited",
+      "market": "SET",
+      "sector": "Industrial Materials",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SCGP",
+      "symbol": "SCGP.BK",
+      "name": "SCG Packaging PCL",
+      "market": "SET",
+      "sector": "Packaging & Paper",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BGC",
+      "symbol": "BGC.BK",
+      "name": "BG Container Glass PCL",
+      "market": "SET",
+      "sector": "Packaging & Glass",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "AJ",
+      "symbol": "AJ.BK",
+      "name": "A.J. Plast Public Company Limited",
+      "market": "SET",
+      "sector": "Packaging Materials",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PTL",
+      "symbol": "PTL.BK",
+      "name": "Polyplex (Thailand) Public Co., Ltd.",
+      "market": "SET",
+      "sector": "Packaging Materials",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "UTP",
+      "symbol": "UTP.BK",
+      "name": "United Paper Public Company Limited",
+      "market": "SET",
+      "sector": "Packaging & Paper",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "EP",
+      "symbol": "EP.BK",
+      "name": "Eastern Power Group PCL",
+      "market": "SET",
+      "sector": "Industrial & Power",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "POLY",
+      "symbol": "POLY.BK",
+      "name": "Plantation Watch Poly PCL",
+      "market": "SET",
+      "sector": "Industrial Plastics",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PIMO",
+      "symbol": "PIMO.BK",
+      "name": "Pioneer Motor Public Company Limited",
+      "market": "SET",
+      "sector": "Industrial Machinery",
+      "industry": "Industrials",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CPN",
+      "symbol": "CPN.BK",
+      "name": "Central Pattana PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "LH",
+      "symbol": "LH.BK",
+      "name": "Land and Houses PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "AP",
+      "symbol": "AP.BK",
+      "name": "AP (Thailand) Public Company Limited",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SIRI",
+      "symbol": "SIRI.BK",
+      "name": "Sansiri Public Company Limited",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SPALI",
+      "symbol": "SPALI.BK",
+      "name": "Supalai Public Company Limited",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "WHA",
+      "symbol": "WHA.BK",
+      "name": "WHA Corporation PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "AMATA",
+      "symbol": "AMATA.BK",
+      "name": "Amata Corporation PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "AWC",
+      "symbol": "AWC.BK",
+      "name": "Asset World Corp PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "QH",
+      "symbol": "QH.BK",
+      "name": "Quality Houses PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ORI",
+      "symbol": "ORI.BK",
+      "name": "Origin Property PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BRI",
+      "symbol": "BRI.BK",
+      "name": "Britania Public Company Limited",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "NOBLE",
+      "symbol": "NOBLE.BK",
+      "name": "Noble Development PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ANAN",
+      "symbol": "ANAN.BK",
+      "name": "Ananda Development PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SC",
+      "symbol": "SC.BK",
+      "name": "SC Asset Corporation PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SENA",
+      "symbol": "SENA.BK",
+      "name": "Sena Development PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "LALIN",
+      "symbol": "LALIN.BK",
+      "name": "Lalin Property PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ASW",
+      "symbol": "ASW.BK",
+      "name": "AssetWise Public Company Limited",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PEACE",
+      "symbol": "PEACE.BK",
+      "name": "Peace and Living PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PRIN",
+      "symbol": "PRIN.BK",
+      "name": "Prinsiri Public Company Limited",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "RICHY",
+      "symbol": "RICHY.BK",
+      "name": "Richy Place 2002 PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CHEWA",
+      "symbol": "CHEWA.BK",
+      "name": "Chewathai Public Company Limited",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SAMCO",
+      "symbol": "SAMCO.BK",
+      "name": "Siam Agro-City PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "NCH",
+      "symbol": "NCH.BK",
+      "name": "N.C. Housing Public Company Limited",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ESTAR",
+      "symbol": "ESTAR.BK",
+      "name": "Eastern Star Real Estate PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PIN",
+      "symbol": "PIN.BK",
+      "name": "Pinthong Industrial Park PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ROJNA",
+      "symbol": "ROJNA.BK",
+      "name": "Rojana Industrial Park PCL",
+      "market": "SET",
+      "sector": "Property & Real Estate",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SCC",
+      "symbol": "SCC.BK",
+      "name": "The Siam Cement PCL",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SCCC",
+      "symbol": "SCCC.BK",
+      "name": "Siam City Cement PCL",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TASCO",
+      "symbol": "TASCO.BK",
+      "name": "Tipco Asphalt PCL",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "DCC",
+      "symbol": "DCC.BK",
+      "name": "Dynasty Ceramic Public Company Limited",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "COTTO",
+      "symbol": "COTTO.BK",
+      "name": "SCG Decor Public Company Limited",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TOA",
+      "symbol": "TOA.BK",
+      "name": "TOA Paint (Thailand) PCL",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CK",
+      "symbol": "CK.BK",
+      "name": "CH. Karnchang PCL",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "STEC",
+      "symbol": "STEC.BK",
+      "name": "Sino-Thai Engineering & Construction",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ITD",
+      "symbol": "ITD.BK",
+      "name": "Italian-Thai Development PCL",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "UNIQ",
+      "symbol": "UNIQ.BK",
+      "name": "Unique Engineering and Construction PCL",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SEAFCO",
+      "symbol": "SEAFCO.BK",
+      "name": "Seafco Public Company Limited",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PYLON",
+      "symbol": "PYLON.BK",
+      "name": "Pylon Public Company Limited",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TEAMG",
+      "symbol": "TEAMG.BK",
+      "name": "TEAM Consulting Engineering and Mgmt",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SYNTEC",
+      "symbol": "SYNTEC.BK",
+      "name": "Syntec Construction PCL",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "NWR",
+      "symbol": "NWR.BK",
+      "name": "Nawarat Patanakarn PCL",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TRC",
+      "symbol": "TRC.BK",
+      "name": "TRC Construction Public Company Limited",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PLE",
+      "symbol": "PLE.BK",
+      "name": "Power Line Engineering PCL",
+      "market": "SET",
+      "sector": "Construction & Materials",
+      "industry": "Property & Construction",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PTT",
+      "symbol": "PTT.BK",
+      "name": "PTT Public Company Limited",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PTTEP",
+      "symbol": "PTTEP.BK",
+      "name": "PTT Exploration and Production PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TOP",
+      "symbol": "TOP.BK",
+      "name": "Thai Oil Public Company Limited",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "GULF",
+      "symbol": "GULF.BK",
+      "name": "Gulf Energy Development PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "GPSC",
+      "symbol": "GPSC.BK",
+      "name": "Global Power Synergy PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BGRIM",
+      "symbol": "BGRIM.BK",
+      "name": "B.Grimm Power PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "OR",
+      "symbol": "OR.BK",
+      "name": "PTT Oil and Retail Business PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "EA",
+      "symbol": "EA.BK",
+      "name": "Energy Absolute Public Company Limited",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BANPU",
+      "symbol": "BANPU.BK",
+      "name": "Banpu Public Company Limited",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "RATCH",
+      "symbol": "RATCH.BK",
+      "name": "RATCH Group Public Company Limited",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "EGCO",
+      "symbol": "EGCO.BK",
+      "name": "Electricity Generating PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "IRPC",
+      "symbol": "IRPC.BK",
+      "name": "IRPC Public Company Limited",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BCP",
+      "symbol": "BCP.BK",
+      "name": "Bangchak Corporation PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BCPG",
+      "symbol": "BCPG.BK",
+      "name": "BCPG Public Company Limited",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SPRC",
+      "symbol": "SPRC.BK",
+      "name": "Star Petroleum Refining PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ACE",
+      "symbol": "ACE.BK",
+      "name": "Absolute Clean Energy PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CKP",
+      "symbol": "CKP.BK",
+      "name": "CK Power Public Company Limited",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TTW",
+      "symbol": "TTW.BK",
+      "name": "TTW Public Company Limited",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "WHAUP",
+      "symbol": "WHAUP.BK",
+      "name": "WHA Utilities and Power PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TPIPP",
+      "symbol": "TPIPP.BK",
+      "name": "TPI Polene Power PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PTG",
+      "symbol": "PTG.BK",
+      "name": "PTG Energy Public Company Limited",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BBGI",
+      "symbol": "BBGI.BK",
+      "name": "BBGI Public Company Limited",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SSP",
+      "symbol": "SSP.BK",
+      "name": "Sermsang Power Corporation PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "GUNKUL",
+      "symbol": "GUNKUL.BK",
+      "name": "Gunkul Engineering PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "DEMCO",
+      "symbol": "DEMCO.BK",
+      "name": "Demco Public Company Limited",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BPP",
+      "symbol": "BPP.BK",
+      "name": "Banpu Power Public Company Limited",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TPCH",
+      "symbol": "TPCH.BK",
+      "name": "TPC Power Holding PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PSTC",
+      "symbol": "PSTC.BK",
+      "name": "Power Solution Technology PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SUPER",
+      "symbol": "SUPER.BK",
+      "name": "Super Energy Corporation PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PRIME",
+      "symbol": "PRIME.BK",
+      "name": "Prime Road Power PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ETC",
+      "symbol": "ETC.BK",
+      "name": "Earth Tech Environment PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "7UP",
+      "symbol": "7UP.BK",
+      "name": "Seven Utilities and Power PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "EASTW",
+      "symbol": "EASTW.BK",
+      "name": "Eastern Water Resources Development",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SUSCO",
+      "symbol": "SUSCO.BK",
+      "name": "Susco Public Company Limited",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BAFS",
+      "symbol": "BAFS.BK",
+      "name": "Bangkok Aviation Fuel Services PCL",
+      "market": "SET",
+      "sector": "Energy & Utilities",
+      "industry": "Resources",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CPALL",
+      "symbol": "CPALL.BK",
+      "name": "CP ALL Public Company Limited",
+      "market": "SET",
+      "sector": "Commerce & Retail",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CPAXT",
+      "symbol": "CPAXT.BK",
+      "name": "CP Axtra Public Company Limited",
+      "market": "SET",
+      "sector": "Commerce & Retail",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CRC",
+      "symbol": "CRC.BK",
+      "name": "Central Retail Corporation PCL",
+      "market": "SET",
+      "sector": "Commerce & Retail",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "HMPRO",
+      "symbol": "HMPRO.BK",
+      "name": "Home Product Center PCL",
+      "market": "SET",
+      "sector": "Commerce & Retail",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "COM7",
+      "symbol": "COM7.BK",
+      "name": "COM7 Public Company Limited",
+      "market": "SET",
+      "sector": "Commerce & Retail",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BJC",
+      "symbol": "BJC.BK",
+      "name": "Berli Jucker Public Company Limited",
+      "market": "SET",
+      "sector": "Commerce & Retail",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "GLOBAL",
+      "symbol": "GLOBAL.BK",
+      "name": "Siam Global House PCL",
+      "market": "SET",
+      "sector": "Commerce & Retail",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "DOHOME",
+      "symbol": "DOHOME.BK",
+      "name": "Dohome Public Company Limited",
+      "market": "SET",
+      "sector": "Commerce & Retail",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "MEGA",
+      "symbol": "MEGA.BK",
+      "name": "Mega Lifesciences PCL",
+      "market": "SET",
+      "sector": "Commerce & Retail",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "AURA",
+      "symbol": "AURA.BK",
+      "name": "Aura Gold Public Company Limited",
+      "market": "SET",
+      "sector": "Commerce & Retail",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ILM",
+      "symbol": "ILM.BK",
+      "name": "Index Living Mall PCL",
+      "market": "SET",
+      "sector": "Commerce & Retail",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "MC",
+      "symbol": "MC.BK",
+      "name": "MC Group Public Company Limited",
+      "market": "SET",
+      "sector": "Commerce & Retail",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "RS",
+      "symbol": "RS.BK",
+      "name": "RS Public Company Limited",
+      "market": "SET",
+      "sector": "Media & Commerce",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "WORK",
+      "symbol": "WORK.BK",
+      "name": "Workpoint Entertainment PCL",
+      "market": "SET",
+      "sector": "Media & Entertainment",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "VGI",
+      "symbol": "VGI.BK",
+      "name": "VGI Public Company Limited",
+      "market": "SET",
+      "sector": "Media & Advertising",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PLANB",
+      "symbol": "PLANB.BK",
+      "name": "Plan B Media PCL",
+      "market": "SET",
+      "sector": "Media & Advertising",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "MAJOR",
+      "symbol": "MAJOR.BK",
+      "name": "Major Cineplex Group PCL",
+      "market": "SET",
+      "sector": "Media & Entertainment",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ONEE",
+      "symbol": "ONEE.BK",
+      "name": "The One Enterprise PCL",
+      "market": "SET",
+      "sector": "Media & Entertainment",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BEC",
+      "symbol": "BEC.BK",
+      "name": "BEC World Public Company Limited (Ch3)",
+      "market": "SET",
+      "sector": "Media & Entertainment",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "GRAMMY",
+      "symbol": "GRAMMY.BK",
+      "name": "GMM Grammy Public Company Limited",
+      "market": "SET",
+      "sector": "Media & Entertainment",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "MONO",
+      "symbol": "MONO.BK",
+      "name": "Mono Next Public Company Limited",
+      "market": "SET",
+      "sector": "Media & Entertainment",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "MCOT",
+      "symbol": "MCOT.BK",
+      "name": "MCOT Public Company Limited",
+      "market": "SET",
+      "sector": "Media & Entertainment",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BDMS",
+      "symbol": "BDMS.BK",
+      "name": "Bangkok Dusit Medical Services PCL",
+      "market": "SET",
       "sector": "Healthcare & Hospitals",
-      "price": 10.9,
-      "change": -2.68,
-      "sparkline": [
-        10.7,
-        11.1,
-        10.8,
-        11.2,
-        10.9
-      ],
-      "status": "Active"
+      "industry": "Services",
+      "currency": "THB"
     },
     {
       "ticker": "BH",
       "symbol": "BH.BK",
       "name": "Bumrungrad Hospital PCL",
       "market": "SET",
-      "currency": "THB",
       "sector": "Healthcare & Hospitals",
-      "price": 192.5,
-      "change": -0.77,
-      "sparkline": [
-        191.5,
-        192.0,
-        190.5,
-        194.0,
-        192.5
-      ],
-      "status": "Active"
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BCH",
+      "symbol": "BCH.BK",
+      "name": "Bangkok Chain Hospital PCL",
+      "market": "SET",
+      "sector": "Healthcare & Hospitals",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CHG",
+      "symbol": "CHG.BK",
+      "name": "Chularat Hospital PCL",
+      "market": "SET",
+      "sector": "Healthcare & Hospitals",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PR9",
+      "symbol": "PR9.BK",
+      "name": "Praram 9 Hospital PCL",
+      "market": "SET",
+      "sector": "Healthcare & Hospitals",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "MASTER",
+      "symbol": "MASTER.BK",
+      "name": "Master Style Public Company Limited",
+      "market": "SET",
+      "sector": "Healthcare & Hospitals",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "KLINIQ",
+      "symbol": "KLINIQ.BK",
+      "name": "The Klinique Medical Clinic PCL",
+      "market": "SET",
+      "sector": "Healthcare & Hospitals",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PRINC",
+      "symbol": "PRINC.BK",
+      "name": "Principal Capital PCL",
+      "market": "SET",
+      "sector": "Healthcare & Hospitals",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "THG",
+      "symbol": "THG.BK",
+      "name": "Thonburi Healthcare Group PCL",
+      "market": "SET",
+      "sector": "Healthcare & Hospitals",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "RJH",
+      "symbol": "RJH.BK",
+      "name": "Rajthanee Hospital PCL",
+      "market": "SET",
+      "sector": "Healthcare & Hospitals",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "EKH",
+      "symbol": "EKH.BK",
+      "name": "Ekachai Medical Care PCL",
+      "market": "SET",
+      "sector": "Healthcare & Hospitals",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "VIBHA",
+      "symbol": "VIBHA.BK",
+      "name": "Vibhavadi Medical Center PCL",
+      "market": "SET",
+      "sector": "Healthcare & Hospitals",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CMR",
+      "symbol": "CMR.BK",
+      "name": "Chiangmai Ram Medical Company",
+      "market": "SET",
+      "sector": "Healthcare & Hospitals",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "RAM",
+      "symbol": "RAM.BK",
+      "name": "Ramkhamhaeng Hospital PCL",
+      "market": "SET",
+      "sector": "Healthcare & Hospitals",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "AOT",
+      "symbol": "AOT.BK",
+      "name": "Airports of Thailand PCL",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BTS",
+      "symbol": "BTS.BK",
+      "name": "BTS Group Holdings PCL",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BEM",
+      "symbol": "BEM.BK",
+      "name": "Bangkok Expressway and Metro PCL",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "AAV",
+      "symbol": "AAV.BK",
+      "name": "Asia Aviation Public Company Limited",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BA",
+      "symbol": "BA.BK",
+      "name": "Bangkok Airways PCL",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SAV",
+      "symbol": "SAV.BK",
+      "name": "Samart Aviation Solutions PCL",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PRM",
+      "symbol": "PRM.BK",
+      "name": "Prima Marine Public Company Limited",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PSL",
+      "symbol": "PSL.BK",
+      "name": "Precious Shipping PCL",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "RCL",
+      "symbol": "RCL.BK",
+      "name": "Regional Container Lines PCL",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SJWD",
+      "symbol": "SJWD.BK",
+      "name": "SCGJWD Logistics PCL",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "III",
+      "symbol": "III.BK",
+      "name": "Triple i Logistics PCL",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "WICE",
+      "symbol": "WICE.BK",
+      "name": "WICE Logistics Public Company Limited",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "NYT",
+      "symbol": "NYT.BK",
+      "name": "Nam Seng Insurance & Logistics",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "KEX",
+      "symbol": "KEX.BK",
+      "name": "KEX Express (Thailand) PCL",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "MENA",
+      "symbol": "MENA.BK",
+      "name": "Mena Transport Public Company Limited",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PORT",
+      "symbol": "PORT.BK",
+      "name": "Sahathai Terminal PCL",
+      "market": "SET",
+      "sector": "Transportation & Logistics",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "MINT",
+      "symbol": "MINT.BK",
+      "name": "Minor International PCL",
+      "market": "SET",
+      "sector": "Tourism & Hospitality",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CENTEL",
+      "symbol": "CENTEL.BK",
+      "name": "Central Plaza Hotel PCL",
+      "market": "SET",
+      "sector": "Tourism & Hospitality",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ERW",
+      "symbol": "ERW.BK",
+      "name": "The Erawan Group PCL",
+      "market": "SET",
+      "sector": "Tourism & Hospitality",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SHR",
+      "symbol": "SHR.BK",
+      "name": "S Hotels and Resorts PCL",
+      "market": "SET",
+      "sector": "Tourism & Hospitality",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "VRANDA",
+      "symbol": "VRANDA.BK",
+      "name": "Veranda Resort PCL",
+      "market": "SET",
+      "sector": "Tourism & Hospitality",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "DUSIT",
+      "symbol": "DUSIT.BK",
+      "name": "Dusit Thani Public Company Limited",
+      "market": "SET",
+      "sector": "Tourism & Hospitality",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "GRAND",
+      "symbol": "GRAND.BK",
+      "name": "Grand Asset Hotels and Property",
+      "market": "SET",
+      "sector": "Tourism & Hospitality",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ASIA",
+      "symbol": "ASIA.BK",
+      "name": "Asia Hotel Public Company Limited",
+      "market": "SET",
+      "sector": "Tourism & Hospitality",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SISB",
+      "symbol": "SISB.BK",
+      "name": "SISB Public Company Limited (School)",
+      "market": "SET",
+      "sector": "Education & Services",
+      "industry": "Services",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ADVANC",
+      "symbol": "ADVANC.BK",
+      "name": "Advanced Info Service PCL (AIS)",
+      "market": "SET",
+      "sector": "Telecom & Digital",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TRUE",
+      "symbol": "TRUE.BK",
+      "name": "True Corporation PCL",
+      "market": "SET",
+      "sector": "Telecom & Digital",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "INTUCH",
+      "symbol": "INTUCH.BK",
+      "name": "Intouch Holdings PCL",
+      "market": "SET",
+      "sector": "Telecom & Digital",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "JAS",
+      "symbol": "JAS.BK",
+      "name": "Jasmine International PCL",
+      "market": "SET",
+      "sector": "Telecom & Digital",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SKY",
+      "symbol": "SKY.BK",
+      "name": "SKY ICT Public Company Limited",
+      "market": "SET",
+      "sector": "Technology & Software",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "DITTO",
+      "symbol": "DITTO.BK",
+      "name": "Ditto (Thailand) Public Co., Ltd.",
+      "market": "SET",
+      "sector": "Technology & Software",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BE8",
+      "symbol": "BE8.BK",
+      "name": "Beryl 8 Plus Public Company Limited",
+      "market": "SET",
+      "sector": "Technology Consulting",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "BBIK",
+      "symbol": "BBIK.BK",
+      "name": "Bluebik Group Public Company Limited",
+      "market": "SET",
+      "sector": "Technology Consulting",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "HUMAN",
+      "symbol": "HUMAN.BK",
+      "name": "Humanica Public Company Limited",
+      "market": "SET",
+      "sector": "Technology & Software",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "NETBAY",
+      "symbol": "NETBAY.BK",
+      "name": "Netbay Public Company Limited",
+      "market": "SET",
+      "sector": "Digital Technology",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "INSET",
+      "symbol": "INSET.BK",
+      "name": "Infraset Public Company Limited",
+      "market": "SET",
+      "sector": "Data Center & Telecom",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ITEL",
+      "symbol": "ITEL.BK",
+      "name": "Interlink Telecom PCL",
+      "market": "SET",
+      "sector": "Data Center & Telecom",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ILINK",
+      "symbol": "ILINK.BK",
+      "name": "Interlink Communication PCL",
+      "market": "SET",
+      "sector": "Telecom & Engineering",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "AIT",
+      "symbol": "AIT.BK",
+      "name": "Advanced Information Technology PCL",
+      "market": "SET",
+      "sector": "IT Infrastructure",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SIS",
+      "symbol": "SIS.BK",
+      "name": "SiS Distribution (Thailand) PCL",
+      "market": "SET",
+      "sector": "IT Distribution",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SYNEX",
+      "symbol": "SYNEX.BK",
+      "name": "Synnex (Thailand) PCL",
+      "market": "SET",
+      "sector": "IT Distribution",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SPVI",
+      "symbol": "SPVI.BK",
+      "name": "S P V I Public Company Limited",
+      "market": "SET",
+      "sector": "IT Retail",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "CPW",
+      "symbol": "CPW.BK",
+      "name": "Copperwired Public Company Limited",
+      "market": "SET",
+      "sector": "IT Retail",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "JTS",
+      "symbol": "JTS.BK",
+      "name": "Jasmine Technology Solution PCL",
+      "market": "SET",
+      "sector": "Cloud & AI Tech",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SAMART",
+      "symbol": "SAMART.BK",
+      "name": "Samart Corporation PCL",
+      "market": "SET",
+      "sector": "Technology Solutions",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SAMTEL",
+      "symbol": "SAMTEL.BK",
+      "name": "Samart Telcoms PCL",
+      "market": "SET",
+      "sector": "Technology Solutions",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "IIG",
+      "symbol": "IIG.BK",
+      "name": "I&I Group Public Company Limited",
+      "market": "SET",
+      "sector": "Technology Consulting",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "PROEN",
+      "symbol": "PROEN.BK",
+      "name": "Proen Corp Public Company Limited",
+      "market": "SET",
+      "sector": "Data Center & Cloud",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SECURE",
+      "symbol": "SECURE.BK",
+      "name": "nForce Secure Public Company Limited",
+      "market": "SET",
+      "sector": "Cybersecurity",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "TBN",
+      "symbol": "TBN.BK",
+      "name": "TBN Corporation PCL",
+      "market": "SET",
+      "sector": "Low-Code Software Tech",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "READY",
+      "symbol": "READY.BK",
+      "name": "ReadyPlanet Public Company Limited",
+      "market": "SET",
+      "sector": "Digital Marketing Platform",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "COMAN",
+      "symbol": "COMAN.BK",
+      "name": "Comanche International PCL",
+      "market": "SET",
+      "sector": "Software & Tech",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "YGG",
+      "symbol": "YGG.BK",
+      "name": "Yggdrazil Group PCL",
+      "market": "SET",
+      "sector": "VFX & Gaming Tech",
+      "industry": "Technology",
+      "currency": "THB"
+    },
+    {
+      "ticker": "AU",
+      "symbol": "AU.BK",
+      "name": "After You Public Company Limited",
+      "market": "SET",
+      "sector": "Food & Desserts",
+      "industry": "mai",
+      "currency": "THB"
+    },
+    {
+      "ticker": "SPA",
+      "symbol": "SPA.BK",
+      "name": "Siam Wellness Group PCL",
+      "market": "SET",
+      "sector": "Spa & Hospitality",
+      "industry": "mai",
+      "currency": "THB"
+    },
+    {
+      "ticker": "DOD",
+      "symbol": "DOD.BK",
+      "name": "DOD Biotech Public Company Limited",
+      "market": "SET",
+      "sector": "Biotech & Supplements",
+      "industry": "mai",
+      "currency": "THB"
+    },
+    {
+      "ticker": "FSMART",
+      "symbol": "FSMART.BK",
+      "name": "Forth Smart Service PCL (Boonterm)",
+      "market": "SET",
+      "sector": "Fintech & Kiosk",
+      "industry": "mai",
+      "currency": "THB"
+    },
+    {
+      "ticker": "ZIGA",
+      "symbol": "ZIGA.BK",
+      "name": "Ziga Innovation Public Company Limited",
+      "market": "SET",
+      "sector": "Industrial & Steel",
+      "industry": "mai",
+      "currency": "THB"
+    },
+    {
+      "ticker": "NEX",
+      "symbol": "NEX.BK",
+      "name": "Nex Point Public Company Limited",
+      "market": "SET",
+      "sector": "EV & Mobility",
+      "industry": "mai",
+      "currency": "THB"
     }
   ]
 }

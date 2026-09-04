@@ -5,15 +5,21 @@
 import type { SentimentType } from './stockNews';
 
 export interface MarketIndex {
-  symbol: string;         // e.g. 'SET', 'SET50', 'GSPC', 'IXIC'
-  name: string;           // e.g. 'SET Index', 'NASDAQ Composite'
-  value: number;          // e.g. 1452.30
+  symbol: string;         // e.g. 'SET', 'SET50', 'GSPC', 'THAI_GOLD', 'GC=F'
+  name: string;           // e.g. 'SET Index', 'ทองคำแท่ง 96.5%', 'Gold Spot (COMEX)'
+  value: number;          // e.g. 1452.30, 44650.00
   change: number;         // e.g. +12.45
   changePercent: number;  // e.g. +0.86
-  region: 'thai' | 'global';
+  region: 'thai' | 'global' | 'commodities';
   isPositive: boolean;
   sparklineData: number[];
   lastUpdated: string;
+  category?: 'index' | 'commodity' | 'forex' | 'gold_thai';
+  buyPrice?: number;
+  sellPrice?: number;
+  unit?: string;
+  updateRound?: string;
+  currency?: string;
 }
 
 export interface StockQuote {

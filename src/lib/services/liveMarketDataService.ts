@@ -24,6 +24,8 @@ let cachedOverview: DigestSummary | null = null;
 let overviewCacheTime = 0;
 const OVERVIEW_CACHE_TTL_MS = 30_000; // 30 seconds
 
+let isPythonEngineAvailable: boolean | null = null;
+
 /**
  * Fetch live stocks (SET & US)
  */
@@ -33,36 +35,13 @@ export async function fetchLiveStocks(): Promise<StockFundamental[]> {
     return cachedStocks;
   }
 
-  try {
-    const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
-    const pythonCmd = `py "${scriptPath}" --action stocks`;
-    const { stdout } = await execAsync(pythonCmd, { timeout: 15000 });
-    const json = JSON.parse(stdout.trim());
-
-    if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-      const validated = json.data
-        .map((item: unknown) => {
-          try {
-            return StockFundamentalSchema.parse(item);
-          } catch {
-            return null;
-          }
-        })
-        .filter((i: StockFundamental | null): i is StockFundamental => i !== null);
-
-      if (validated.length > 0) {
-        cachedStocks = validated;
-        stockCacheTime = now;
-        return validated;
-      }
-    }
-  } catch (err) {
-    console.warn('[liveMarketDataService] yfinance stock engine fallback attempt:', err);
+  if (isPythonEngineAvailable !== false) {
     try {
-      const gfScriptPath = path.resolve(process.cwd(), 'server', 'google_finance_engine.py');
-      const gfCmd = `py "${gfScriptPath}" --action stocks`;
-      const { stdout } = await execAsync(gfCmd, { timeout: 10000 });
+      const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
+      const pythonCmd = `py "${scriptPath}" --action stocks`;
+      const { stdout } = await execAsync(pythonCmd, { timeout: 3500 });
       const json = JSON.parse(stdout.trim());
+
       if (json.success && Array.isArray(json.data) && json.data.length > 0) {
         const validated = json.data
           .map((item: unknown) => {
@@ -73,18 +52,22 @@ export async function fetchLiveStocks(): Promise<StockFundamental[]> {
             }
           })
           .filter((i: StockFundamental | null): i is StockFundamental => i !== null);
+
         if (validated.length > 0) {
+          isPythonEngineAvailable = true;
           cachedStocks = validated;
           stockCacheTime = now;
           return validated;
         }
       }
-    } catch (gfErr) {
-      console.warn('[liveMarketDataService] Google Finance stock engine fallback warning:', gfErr);
+    } catch {
+      isPythonEngineAvailable = false;
     }
   }
 
   const fallback = fullMarketStocks.map((s) => StockFundamentalSchema.parse(s));
+  cachedStocks = fallback;
+  stockCacheTime = now;
   return fallback;
 }
 
@@ -97,34 +80,26 @@ export async function fetchLiveIndices(): Promise<MarketIndex[]> {
     return cachedIndices;
   }
 
-  try {
-    const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
-    const pythonCmd = `py "${scriptPath}" --action indices`;
-    const { stdout } = await execAsync(pythonCmd, { timeout: 12000 });
-    const json = JSON.parse(stdout.trim());
-
-    if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-      cachedIndices = json.data;
-      indexCacheTime = now;
-      return json.data;
-    }
-  } catch (err) {
-    console.warn('[liveMarketDataService] yfinance indices fetch warning, trying Google Finance:', err);
+  if (isPythonEngineAvailable !== false) {
     try {
-      const gfScriptPath = path.resolve(process.cwd(), 'server', 'google_finance_engine.py');
-      const gfCmd = `py "${gfScriptPath}" --action indices`;
-      const { stdout } = await execAsync(gfCmd, { timeout: 8000 });
+      const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
+      const pythonCmd = `py "${scriptPath}" --action indices`;
+      const { stdout } = await execAsync(pythonCmd, { timeout: 3000 });
       const json = JSON.parse(stdout.trim());
+
       if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+        isPythonEngineAvailable = true;
         cachedIndices = json.data;
         indexCacheTime = now;
         return json.data;
       }
-    } catch (gfErr) {
-      console.warn('[liveMarketDataService] Google Finance indices warning:', gfErr);
+    } catch {
+      isPythonEngineAvailable = false;
     }
   }
 
+  cachedIndices = mockMarketIndices;
+  indexCacheTime = now;
   return mockMarketIndices;
 }
 

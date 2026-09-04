@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import '../styles/glass-ios.css';
-import '../index.css';
 import { HeaderClientNav } from '../components/client/HeaderClientNav';
+import { SyncLogModal } from '../components/client/SyncLogModal';
 import { MarketSyncProvider } from '../lib/context/MarketSyncContext';
 import { LanguageProvider } from '../lib/context/LanguageContext';
 import { ThemeProvider } from '../lib/context/ThemeContext';
@@ -46,6 +46,7 @@ export default function RootLayout({
               <main style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 20px' }}>
                 {children}
               </main>
+              <SyncLogModal />
             </MarketSyncProvider>
           </LanguageProvider>
         </ThemeProvider>

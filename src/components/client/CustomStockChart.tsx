@@ -401,12 +401,12 @@ export function CustomStockChart({
               style={{
                 fontSize: '2rem',
                 fontWeight: 900,
-                color: '#FFFFFF',
+                color: 'var(--text-primary)',
                 letterSpacing: '-0.5px',
                 fontFamily: 'monospace, sans-serif'
               }}
             >
-              {chartData ? `${chartData.currency} ${chartData.current_price.toLocaleString()}` : '—'}
+              {chartData ? `${chartData.currency || ''} ${(chartData.current_price ?? 0).toLocaleString()}` : '—'}
             </span>
 
             <div
@@ -422,8 +422,8 @@ export function CustomStockChart({
               {isPositive ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
               <span>
                 {isPositive ? '+' : ''}
-                {chartData?.change?.toFixed(2)} ({isPositive ? '+' : ''}
-                {chartData?.change_percent?.toFixed(2)}%)
+                {(chartData?.change ?? 0).toFixed(2)} ({isPositive ? '+' : ''}
+                {(chartData?.change_percent ?? 0).toFixed(2)}%)
               </span>
             </div>
           </div>
@@ -446,9 +446,9 @@ export function CustomStockChart({
                 style={{
                   padding: '7px 10px 7px 30px',
                   borderRadius: '10px',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  background: 'rgba(0, 0, 0, 0.35)',
-                  color: '#FFFFFF',
+                  border: '1px solid var(--input-border)',
+                  background: 'var(--input-bg)',
+                  color: 'var(--input-text)',
                   fontSize: '0.8rem',
                   outline: 'none',
                   minWidth: '200px'
@@ -691,7 +691,7 @@ export function CustomStockChart({
               cursor: 'pointer'
             }}
           >
-            📊 ปริมาณ (Vol)
+            ปริมาณ (Vol)
           </button>
         </div>
 
@@ -728,8 +728,8 @@ export function CustomStockChart({
           flexWrap: 'wrap',
           padding: '6px 12px',
           borderRadius: '8px',
-          background: 'rgba(0, 0, 0, 0.4)',
-          border: '1px solid rgba(255, 255, 255, 0.05)',
+          background: 'var(--card-sub-bg)',
+          border: '1px solid var(--card-sub-border)',
           fontSize: '0.75rem',
           fontFamily: 'monospace, sans-serif',
           color: 'var(--text-secondary)',
@@ -738,11 +738,11 @@ export function CustomStockChart({
           zIndex: 1
         }}
       >
-        <span style={{ color: '#FFFFFF', fontWeight: 700 }}>
+        <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
           📅 {activeCandle?.date || '—'}
         </span>
         <span>
-          O: <strong style={{ color: '#FFFFFF' }}>{activeCandle?.open?.toFixed(2) || '—'}</strong>
+          O: <strong style={{ color: 'var(--text-primary)' }}>{activeCandle?.open?.toFixed(2) || '—'}</strong>
         </span>
         <span>
           H: <strong style={{ color: '#00E676' }}>{activeCandle?.high?.toFixed(2) || '—'}</strong>
@@ -1045,8 +1045,8 @@ export function CustomStockChart({
           {/* 52-Week Range Progress Slider */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>
-              <span>52W Low: {chartData.currency} {chartData.low52w.toFixed(2)}</span>
-              <span>52W High: {chartData.currency} {chartData.high52w.toFixed(2)}</span>
+              <span>52W Low: {chartData.currency || ''} {(chartData.low52w ?? 0).toFixed(2)}</span>
+              <span>52W High: {chartData.currency || ''} {(chartData.high52w ?? 0).toFixed(2)}</span>
             </div>
             <div style={{ position: 'relative', height: '6px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '100px', overflow: 'hidden' }}>
               <div
@@ -1055,7 +1055,7 @@ export function CustomStockChart({
                   left: 0,
                   top: 0,
                   bottom: 0,
-                  width: `${Math.min(100, Math.max(0, ((chartData.current_price - chartData.low52w) / (chartData.high52w - chartData.low52w || 1)) * 100))}%`,
+                  width: `${Math.min(100, Math.max(0, (((chartData.current_price ?? 0) - (chartData.low52w ?? 0)) / ((chartData.high52w ?? 0) - (chartData.low52w ?? 0) || 1)) * 100))}%`,
                   background: 'linear-gradient(90deg, #007AFF 0%, #00F0FF 100%)',
                   borderRadius: '100px'
                 }}
@@ -1067,7 +1067,7 @@ export function CustomStockChart({
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             <div>
               <p style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', margin: 0 }}>มูลค่าตลาด (Market Cap)</p>
-              <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FFFFFF', margin: 0 }}>
+              <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 {typeof chartData.market_cap === 'number'
                   ? (chartData.market_cap / 1e9).toFixed(1) + 'B'
                   : chartData.market_cap || '—'}

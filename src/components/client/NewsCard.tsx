@@ -4,7 +4,7 @@ import React from 'react';
 import type { StockNewsItem } from '../../lib/schemas/newsSchema';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useLanguage } from '../../lib/context/LanguageContext';
-import { Bookmark, ChevronRight, Star, TrendingUp, TrendingDown, Minus, Lightbulb, Clock } from 'lucide-react';
+import { Bookmark, ChevronRight, Star, TrendingUp, TrendingDown, Minus, Lightbulb, Clock, ExternalLink } from 'lucide-react';
 
 interface NewsCardProps {
   item: StockNewsItem;
@@ -18,7 +18,7 @@ export function NewsCard({
   onToggleBookmark,
 }: NewsCardProps) {
   const { getStockByTicker, focusStock } = useMarketSync();
-  const { t } = useLanguage();
+  const { t, tDynamic } = useLanguage();
 
   const getSentimentBadge = () => {
     switch (item.sentiment) {
@@ -49,14 +49,17 @@ export function NewsCard({
       onClick={() => onSelectNews(item)}
       style={{
         padding: '20px',
-        marginBottom: '16px',
+        borderRadius: '20px',
         cursor: 'pointer',
-        border: item.isFeatured ? '1px solid rgba(0, 122, 255, 0.4)' : undefined,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        transition: 'transform 0.2s ease, border-color 0.2s ease',
       }}
     >
-      {/* Top Meta Line */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      {/* Card Header: Tags, Time, and Sentiment Badge */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {item.isFeatured && (
             <span
               style={{
@@ -89,7 +92,7 @@ export function NewsCard({
           </span>
 
           <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-            <Clock size={12} /> {item.periodLabel}
+            <Clock size={12} /> {tDynamic(item.periodLabel)}
           </span>
         </div>
 
@@ -116,22 +119,22 @@ export function NewsCard({
 
       {/* Main Title */}
       <h3 style={{ fontSize: '1.08rem', fontWeight: 700, lineHeight: 1.4, marginBottom: '8px', color: 'var(--text-primary)' }}>
-        {item.title}
+        {tDynamic(item.title)}
       </h3>
 
       {/* Short Summary */}
       <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '14px' }}>
-        {item.summary}
+        {tDynamic(item.summary)}
       </p>
 
       {/* Key Takeaways Box */}
       <div
         style={{
-          background: 'rgba(0, 0, 0, 0.15)',
+          background: 'var(--card-sub-bg)',
           padding: '12px 14px',
           borderRadius: '12px',
           marginBottom: '14px',
-          border: '1px solid rgba(255,255,255,0.05)',
+          border: '1px solid var(--card-sub-border)',
         }}
       >
         <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-blue)', letterSpacing: '0.03em', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -141,7 +144,7 @@ export function NewsCard({
           {item.keyTakeaways.slice(0, 3).map((takeaway, idx) => (
             <div key={idx} className="takeaway-item">
               <div className="takeaway-bullet" />
-              <span>{takeaway}</span>
+              <span style={{ color: 'var(--text-primary)' }}>{tDynamic(takeaway)}</span>
             </div>
           ))}
         </div>
@@ -156,7 +159,7 @@ export function NewsCard({
           flexWrap: 'wrap',
           gap: '12px',
           paddingTop: '8px',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
+          borderTop: '1px solid var(--card-sub-border)',
         }}
       >
         {/* Tickers */}
@@ -216,7 +219,34 @@ export function NewsCard({
         </div>
 
         {/* Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {(item.link || item.sourceUrl) && (
+            <a
+              href={item.link || item.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              title={`เปิดอ่านข่าวต้นฉบับจาก ${item.source}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 10px',
+                borderRadius: '8px',
+                background: 'rgba(0, 122, 255, 0.1)',
+                border: '1px solid rgba(0, 122, 255, 0.3)',
+                color: 'var(--accent-blue)',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                textDecoration: 'none',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>อ่านต้นฉบับ</span>
+              <ExternalLink size={12} />
+            </a>
+          )}
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.8rem', color: 'var(--accent-blue)', fontWeight: 600 }}>
             <span>{t('readMore')}</span>
             <ChevronRight size={16} />

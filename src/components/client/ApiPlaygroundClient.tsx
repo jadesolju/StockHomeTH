@@ -248,7 +248,7 @@ export function ApiPlaygroundClient() {
             </div>
             {responseTimeMs && (
               <span style={{ fontSize: '0.75rem', color: 'var(--accent-bullish)', fontWeight: 600 }}>
-                ⚡ {responseTimeMs} ms (Real yfinance)
+                {responseTimeMs} ms (Real yfinance)
               </span>
             )}
           </div>

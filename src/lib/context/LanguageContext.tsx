@@ -1,13 +1,16 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { translations, type Language, type TranslationKey } from '../i18n/translations';
+import { translateDynamic, translateDynamicList } from '../utils/dynamicTranslator';
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
   t: (key: TranslationKey) => string;
+  tDynamic: (textTh?: string, textEn?: string) => string;
+  tDynamicList: (listTh?: string[], listEn?: string[]) => string[];
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -48,11 +51,33 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     [language]
   );
 
-  return (
-    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t }}>
-      {children}
-    </LanguageContext.Provider>
+  const tDynamic = useCallback(
+    (textTh?: string, textEn?: string): string => {
+      return translateDynamic(textTh, textEn, language);
+    },
+    [language]
   );
+
+  const tDynamicList = useCallback(
+    (listTh?: string[], listEn?: string[]): string[] => {
+      return translateDynamicList(listTh || [], listEn, language);
+    },
+    [language]
+  );
+
+  const contextValue = useMemo(
+    () => ({
+      language,
+      setLanguage,
+      toggleLanguage,
+      t,
+      tDynamic,
+      tDynamicList,
+    }),
+    [language, setLanguage, toggleLanguage, t, tDynamic, tDynamicList]
+  );
+
+  return <LanguageContext.Provider value={contextValue}>{children}</LanguageContext.Provider>;
 }
 
 export function useLanguage() {

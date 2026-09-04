@@ -1,6 +1,9 @@
 import Parser from 'rss-parser';
 import type { StockNewsItem, MarketRegion, NewsCategory, SentimentType } from '../schemas/newsSchema';
 import { mockNewsItems } from '../../data/mockNewsData';
+import { fetchFinnhubCompanyNews, fetchFinnhubFilings } from './finnhubNewsService';
+import { fetchSetStockNews } from './setNewsService';
+import { classifyNewsIntelligence } from '../utils/newsClassifier';
 
 const parser = new Parser({
   headers: {
@@ -17,18 +20,18 @@ const NEWS_CACHE_TTL_MS = 45_000; // 45 seconds
 
 // Multi-Source RSS Feeds Configuration
 const RSS_FEED_SOURCES = [
-  // 1. Thai Top Financial Media Search (Kaohoon, Bangkokbiznews, Thunhoon, Prachachat, Thansettakij)
+  // 1. Thai Top Financial Media Search
   {
     url: 'https://news.google.com/rss/search?q=site:kaohoon.com+OR+site:bangkokbiznews.com+OR+site:thunhoon.com+OR+site:prachachat.net+OR+site:thansettakij.com&hl=th&gl=TH&ceid=TH:th',
     category: 'thai' as MarketRegion,
-    defaultSource: 'สำนักข่าวการเงินไทย (Kaohoon / กรุงเทพธุรกิจ / ทันหุ้น)',
+    defaultSource: 'สำนักข่าวการเงินไทย',
     priority: 1
   },
   // 2. Specific Top SET 10 Tickers Search
   {
     url: 'https://news.google.com/rss/search?q=PTT+OR+DELTA+OR+CPALL+OR+KBANK+OR+SCB+OR+AOT+OR+ADVANC+OR+GULF+OR+BDMS+OR+TRUE&hl=th&gl=TH&ceid=TH:th',
     category: 'thai' as MarketRegion,
-    defaultSource: 'ข่าวหุ้นรายตัว (SET Live Search)',
+    defaultSource: 'SET Live Search',
     priority: 1
   },
   // 3. Thai SET & Economy Headlines
@@ -61,82 +64,12 @@ const RSS_FEED_SOURCES = [
   },
   // 7. Global Tech & AI Stocks
   {
-    url: 'https://news.google.com/rss/search?q=NVIDIA+OR+Apple+OR+Tesla+OR+Microsoft+OR+Wall+Street&hl=en-US&gl=US&ceid=US:en',
+    url: 'https://news.google.com/rss/search?q=NVIDIA+OR+Apple+OR+Tesla+OR+Microsoft+OR+OpenAI+OR+Wall+Street&hl=en-US&gl=US&ceid=US:en',
     category: 'global' as MarketRegion,
     defaultSource: 'Global Tech & AI Markets',
     priority: 2
   }
 ];
-
-const KNOWN_TICKERS = [
-  // SET 10
-  'PTT', 'CPALL', 'DELTA', 'AOT', 'KBANK', 'BDMS', 'SCB', 'GULF', 'ADVANC', 'TRUE',
-  // Popular Thai
-  'MINT', 'BBL', 'KTB', 'CRC', 'HMPRO', 'OR', 'CPN', 'LH', 'GPSC', 'EA', 'BGRIM', 'TOP',
-  // US Tech Giants
-  'NVDA', 'AAPL', 'TSLA', 'MSFT', 'GOOGL', 'META', 'AMZN', 'AMD',
-  // Index
-  'SET', 'SET50', 'MAI', 'NASDAQ', 'S&P500'
-];
-
-function extractTickers(text: string, defaultCategory: MarketRegion): string[] {
-  const upper = text.toUpperCase();
-  const matched: string[] = [];
-
-  for (const t of KNOWN_TICKERS) {
-    const regex = new RegExp(`\\b${t}\\b`, 'i');
-    if (regex.test(text) || upper.includes(t)) {
-      matched.push(t);
-    }
-  }
-
-  // Thai stock name heuristics
-  if (text.includes('ปตท') && !matched.includes('PTT')) matched.push('PTT');
-  if (text.includes('เดลต้า') && !matched.includes('DELTA')) matched.push('DELTA');
-  if (text.includes('กสิกร') && !matched.includes('KBANK')) matched.push('KBANK');
-  if (text.includes('ไทยพาณิชย์') && !matched.includes('SCB')) matched.push('SCB');
-  if (text.includes('ซีพี ออลล์') || text.includes('เซเว่น')) matched.push('CPALL');
-  if (text.includes('การบินไทย') || text.includes('ทอท') || text.includes('สนามบิน')) matched.push('AOT');
-  if (text.includes('กัลฟ์') && !matched.includes('GULF')) matched.push('GULF');
-  if (text.includes('กรุงเทพดุสิต') || text.includes('โรงพยาบาลกรุงเทพ')) matched.push('BDMS');
-  if (text.includes('เอไอเอส') || text.includes('แอดวานซ์')) matched.push('ADVANC');
-  if (text.includes('ทรู') && !matched.includes('TRUE')) matched.push('TRUE');
-
-  if (matched.length > 0) {
-    return Array.from(new Set(matched)).slice(0, 4);
-  }
-
-  return defaultCategory === 'thai' ? ['SET'] : ['US'];
-}
-
-function detectSentiment(text: string): SentimentType {
-  const bullishWords = [
-    'พุ่ง', 'ทะยาน', 'โต', 'บวก', 'กำไร', 'หนุน', 'คึกคัก', 'เป้า', 'ฟื้น', 'ซื้อ', 'เซอร์ไพรส์', 'แจกปันผล',
-    'surges', 'jump', 'gain', 'profit', 'boost', 'rally', 'growth', 'record', 'high', 'beat', 'bullish', 'upgrade'
-  ];
-  const bearishWords = [
-    'ดิ่ง', 'ร่วง', 'ทรุด', 'ลบ', 'ขาดทุน', 'กังวล', 'เสี่ยง', 'กดดัน', 'ชะลอ', 'ขาย', 'ระวัง', 'หั่นเป้า',
-    'plunges', 'drop', 'fall', 'loss', 'warning', 'decline', 'fears', 'cut', 'slump', 'bearish', 'downgrade'
-  ];
-
-  const lower = text.toLowerCase();
-  let bullCount = bullishWords.filter((w) => lower.includes(w)).length;
-  let bearCount = bearishWords.filter((w) => lower.includes(w)).length;
-
-  if (bullCount > bearCount) return 'bullish';
-  if (bearCount > bullCount) return 'bearish';
-  return 'neutral';
-}
-
-function detectCategory(text: string): NewsCategory {
-  const lower = text.toLowerCase();
-  if (lower.includes('ชิป') || lower.includes('ai') || lower.includes('nvidia') || lower.includes('tech') || lower.includes('apple') || lower.includes('microsoft') || lower.includes('semiconductor') || lower.includes('openai')) return 'tech';
-  if (lower.includes('น้ำมัน') || lower.includes('ptt') || lower.includes('gulf') || lower.includes('energy') || lower.includes('ก๊าซ') || lower.includes('โรงไฟฟ้า') || lower.includes('brent') || lower.includes('opec')) return 'energy';
-  if (lower.includes('แบงก์') || lower.includes('kbank') || lower.includes('scb') || lower.includes('ดอกเบี้ย') || lower.includes('ธนาคาร') || lower.includes('fed') || lower.includes('ธปท') || lower.includes('การเงิน') || lower.includes('เงินเฟ้อ')) return 'finance';
-  if (lower.includes('ค้าปลีก') || lower.includes('cpall') || lower.includes('บริโภค') || lower.includes('ท่องเที่ยว') || lower.includes('ห้าง') || lower.includes('อาหาร') || lower.includes('central')) return 'retail';
-  if (lower.includes('รพ') || lower.includes('bdms') || lower.includes('การแพทย์') || lower.includes('ยา') || lower.includes('สุขภาพ') || lower.includes('healthcare')) return 'health';
-  return 'macro';
-}
 
 function formatRelativeTime(dateStr: string): string {
   try {
@@ -153,8 +86,42 @@ function formatRelativeTime(dateStr: string): string {
   }
 }
 
-function cleanHtmlTags(str: string): string {
-  return str.replace(/<\/?[^>]+(>|$)/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').trim();
+/**
+ * Fetch dedicated stock-specific news focusing on individual ticker
+ * Multi-layer failover engine: SET Marketplace IR API + Thai Live RSS (Thai) | Finnhub News + SEC Filings (US)
+ */
+export async function fetchStockSpecificNews(ticker: string, marketHint?: string): Promise<StockNewsItem[]> {
+  const cleanTicker = ticker.replace(/[\$\^\.]/g, '').replace(/BK$/, '').trim().toUpperCase();
+  if (!cleanTicker) return [];
+
+  const isThai = marketHint === 'SET' || ['PTT', 'CPALL', 'DELTA', 'AOT', 'KBANK', 'BDMS', 'SCB', 'GULF', 'ADVANC', 'TRUE', 'MINT', 'BBL', 'KTB', 'CRC', 'HMPRO', 'OR', 'CPN', 'LH', 'GPSC', 'EA', 'BGRIM', 'TOP'].includes(cleanTicker);
+
+  if (isThai) {
+    const thaiNews = await fetchSetStockNews(cleanTicker);
+    if (thaiNews && thaiNews.length > 0) {
+      return thaiNews;
+    }
+  } else {
+    // For US stocks: Fetch both Finnhub Company News & SEC Regulatory Filings
+    const [newsRes, filingsRes] = await Promise.allSettled([
+      fetchFinnhubCompanyNews(cleanTicker),
+      fetchFinnhubFilings(cleanTicker)
+    ]);
+
+    const combinedUs: StockNewsItem[] = [];
+    if (newsRes.status === 'fulfilled' && Array.isArray(newsRes.value)) {
+      combinedUs.push(...newsRes.value);
+    }
+    if (filingsRes.status === 'fulfilled' && Array.isArray(filingsRes.value)) {
+      combinedUs.push(...filingsRes.value);
+    }
+
+    if (combinedUs.length > 0) {
+      return combinedUs;
+    }
+  }
+
+  return [];
 }
 
 /**
@@ -172,77 +139,41 @@ export async function fetchLiveAggregatedNews(): Promise<StockNewsItem[]> {
         const feedData = await parser.parseURL(feed.url);
         if (!feedData || !feedData.items) return [];
 
-        return feedData.items.slice(0, 8).map((item) => {
-          const rawTitle = cleanHtmlTags(item.title?.replace(/ - [^-]+$/, '').trim() || 'ข่าวการเงินล่าสุด');
-          const snippet = cleanHtmlTags(item.contentSnippet || item.content || item.summary || item.title || '').slice(0, 240);
+        return feedData.items.slice(0, 8).map((item, itemIdx) => {
+          const rawTitle = item.title || 'ข่าวการเงินล่าสุด';
+          const rawSnippet = item.contentSnippet || item.content || item.summary || item.title || '';
           const pubDate = item.pubDate || new Date().toISOString();
-          const combinedText = `${rawTitle} ${snippet}`;
           
-          const tickers = extractTickers(combinedText, feed.category);
-          const sentiment = detectSentiment(combinedText);
-          const category = detectCategory(combinedText);
+          // Apply Master News Intelligence & SEO Cleaner
+          const intelligence = classifyNewsIntelligence(rawTitle, rawSnippet, feed.category);
           const sourceName = item.source?.title || item.creator || feed.defaultSource;
+          const relativeTime = formatRelativeTime(pubDate);
 
-          // Target sector label
-          const sectorMap: Record<NewsCategory, string> = {
-            all: 'ภาพรวมทุกอุตสาหกรรม',
-            macro: 'เศรษฐกิจมหภาค & ภาพรวมตลาด',
-            tech: 'เทคโนโลยี, ชิปประมวลผล & AI',
-            energy: 'พลังงาน น้ำมัน & สาธารณูปโภค',
-            finance: 'ธนาคาร การเงิน & ดอกเบี้ย',
-            retail: 'ค้าปลีก อาหาร & การบริโภค',
-            telecom: 'โทรคมนาคม & สื่อสาร',
-            realestate: 'อสังหาริมทรัพย์ & กองทรัสต์',
-            health: 'การแพทย์ โรงพยาบาล & สุขภาพ'
-          };
-
-          const targetSector = sectorMap[category] || 'ตลาดหุ้น';
-
-          const bullishReason = sentiment === 'bullish'
-            ? `แรงหนุนเชิงบวกต่อกลุ่ม ${targetSector} จากผลการดำเนินงานและแนวโน้มการเติบโต`
-            : undefined;
-
-          const bearishReason = sentiment === 'bearish'
-            ? `แรงกดดันระยะสั้นต่อกลุ่ม ${targetSector} จากความผันผวนและความไม่แน่นอนของตลาด`
-            : undefined;
-
-          const priceTrendOutlook = sentiment === 'bullish'
-            ? 'มีโอกาสปรับตัวขึ้นทดสอบแนวต้านสำคัญ'
-            : sentiment === 'bearish'
-            ? 'ระมัดระวังแรงขายทำกำไรและแรงกดดันแนวรับ'
-            : 'มีแนวโน้มแกว่งตัวในกรอบ (Sideways)';
-
-          const uniqueId = `live-${Math.abs(hashString(rawTitle))}`;
+          const uniqueId = `live-${intelligence.region}-${itemIdx}-${Math.abs(hashString(intelligence.cleanTitle))}`;
 
           const newsItem: StockNewsItem = {
             id: uniqueId,
-            title: rawTitle,
-            summary: snippet.length > 10 ? snippet : `${rawTitle} - สรุปสาระสำคัญพร้อมวิเคราะห์ผลกระทบต่อราคาหุ้นและตลาดทุนโดย AI StockHomeTH`,
-            keyTakeaways: [
-              `${rawTitle} - ติดตามผลกระทบต่อทิศทางราคาหุ้นและภาพรวมตลาด`,
-              `การประเมินอารมณ์ตลาดจาก AI: ${sentiment === 'bullish' ? '🟢 เชิงบวก (Bullish)' : sentiment === 'bearish' ? '🔴 เชิงลบ (Bearish)' : '⚪ เป็นกลาง/ทรงตัว (Neutral)'}`,
-              `หุ้นและกลุ่มสินทรัพย์ที่เกี่ยวข้อง: ${tickers.map(t => `$${t}`).join(', ')}`
-            ],
-            fullContent: `${rawTitle}\n\n${snippet}\n\nรายงานสดจาก ${sourceName} • ข้อมูลได้รับการประมวลผลและเชื่อมโยงเข้ากับระบบวิเคราะห์หุ้นอัตโนมัติของ StockHomeTH`,
-            region: feed.category,
+            title: intelligence.cleanTitle,
+            summary: intelligence.cleanSummary,
+            keyTakeaways: intelligence.keyTakeaways,
+            fullContent: `${intelligence.cleanTitle}\n\n${intelligence.cleanSummary}\n\nรายงานสดจาก ${sourceName} • ข้อมูลสารสนเทศผ่านการประมวลผลและกรองคำรบกวนโดยระบบ AI StockHomeTH`,
+            region: intelligence.region,
             timeframe: 'daily',
-            marketName: feed.category === 'thai' ? 'SET Index (ไทย)' : 'Global Markets (สหรัฐฯ & โลก)',
-            date: formatRelativeTime(pubDate),
+            marketName: intelligence.marketName,
+            date: relativeTime,
             time: new Date(pubDate).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.',
-            periodLabel: `ข่าวสด Real-Time • ${formatRelativeTime(pubDate)}`,
-            sentiment,
-            tickers,
+            periodLabel: `ข่าวสด Real-Time • ${relativeTime}`,
+            sentiment: intelligence.sentiment,
+            tickers: intelligence.tickers,
             readTime: '2 นาที',
             source: sourceName,
-            category,
-            impactAnalysis: {
-              bullishReason,
-              bearishReason,
-              targetSector,
-              priceTrendOutlook
-            },
+            category: intelligence.category,
+            impactAnalysis: intelligence.impactAnalysis,
             isFeatured: false,
-            isBookmarked: false
+            isBookmarked: false,
+            link: item.link || (intelligence.region === 'thai' ? 'https://www.settrade.com' : 'https://finance.yahoo.com'),
+            url: item.link || (intelligence.region === 'thai' ? 'https://www.settrade.com' : 'https://finance.yahoo.com'),
+            sourceUrl: item.link || (intelligence.region === 'thai' ? 'https://www.settrade.com' : 'https://finance.yahoo.com')
           };
 
           return newsItem;
@@ -278,7 +209,6 @@ export async function fetchLiveAggregatedNews(): Promise<StockNewsItem[]> {
     console.warn('[liveNewsAggregatorService] Aggregator warning:', error);
   }
 
-  // Graceful fallback to verified news seed
   return mockNewsItems;
 }
 

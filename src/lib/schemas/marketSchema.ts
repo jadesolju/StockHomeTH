@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const MarketRegionSchema = z.enum(['thai', 'global']);
+export const MarketRegionSchema = z.enum(['thai', 'global', 'commodities']);
 export type MarketRegion = z.infer<typeof MarketRegionSchema>;
 
 export const SentimentTypeSchema = z.enum(['bullish', 'bearish', 'neutral']);
@@ -12,10 +12,16 @@ export const MarketIndexSchema = z.object({
   value: z.number(),
   change: z.number(),
   changePercent: z.number(),
-  region: MarketRegionSchema,
+  region: z.string(),
   isPositive: z.boolean(),
   sparklineData: z.array(z.number()).min(2),
   lastUpdated: z.string(),
+  category: z.enum(['index', 'commodity', 'forex', 'gold_thai']).optional(),
+  buyPrice: z.number().optional(),
+  sellPrice: z.number().optional(),
+  unit: z.string().optional(),
+  updateRound: z.string().optional(),
+  currency: z.string().optional(),
 });
 export type MarketIndex = z.infer<typeof MarketIndexSchema>;
 
@@ -39,6 +45,7 @@ export const StockFundamentalSchema = z.object({
   sentimentScore: z.number().min(0).max(100),
   aiInsight: z.string(),
   description: z.string(),
+  tags: z.array(z.string()).optional(),
 });
 export type StockFundamental = z.infer<typeof StockFundamentalSchema>;
 

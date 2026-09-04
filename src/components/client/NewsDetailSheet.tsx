@@ -3,7 +3,8 @@
 import React from 'react';
 import type { StockNewsItem } from '../../lib/schemas/newsSchema';
 import { useLanguage } from '../../lib/context/LanguageContext';
-import { X, Bookmark, Share2, TrendingUp, TrendingDown, Minus, AlertTriangle, ShieldCheck, Target, Newspaper, Compass } from 'lucide-react';
+import { useMarketSync } from '../../lib/context/MarketSyncContext';
+import { X, Bookmark, Share2, TrendingUp, TrendingDown, Minus, AlertTriangle, ShieldCheck, Target, Newspaper, Compass, ArrowUpRight, ArrowDownRight, ExternalLink } from 'lucide-react';
 
 interface NewsDetailSheetProps {
   item: StockNewsItem | null;
@@ -16,22 +17,25 @@ export function NewsDetailSheet({
   onClose,
   onToggleBookmark,
 }: NewsDetailSheetProps) {
-  const { t } = useLanguage();
+  const { t, tDynamic, tDynamicList, language } = useLanguage();
+  const { getStockByTicker, focusStock } = useMarketSync();
 
   if (!item) return null;
 
   const handleShare = () => {
+    const title = tDynamic(item.title);
+    const summary = tDynamic(item.summary);
     if (navigator.share) {
       navigator
         .share({
-          title: item.title,
-          text: item.summary,
+          title,
+          text: summary,
           url: window.location.href,
         })
         .catch(() => {});
     } else {
-      navigator.clipboard.writeText(`${item.title}\n\n${item.summary}`);
-      alert('คัดลอกข้อความสรุปข่าวไปยังคลิปบอร์ดแล้ว!');
+      navigator.clipboard.writeText(`${title}\n\n${summary}`);
+      alert(language === 'en' ? 'News summary copied to clipboard!' : 'คัดลอกข้อความสรุปข่าวไปยังคลิปบอร์ดแล้ว!');
     }
   };
 
@@ -93,7 +97,7 @@ export function NewsDetailSheet({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               onClick={handleShare}
-              title="แชร์สรุปข่าว"
+              title={language === 'en' ? 'Share summary' : 'แชร์สรุปข่าว'}
               style={{
                 background: 'var(--glass-bg)',
                 border: '1px solid var(--glass-border)',
@@ -112,7 +116,7 @@ export function NewsDetailSheet({
 
             <button
               onClick={(e) => onToggleBookmark(item.id, e)}
-              title="เซฟข่าว"
+              title={item.isBookmarked ? (language === 'en' ? 'Remove bookmark' : 'ลบออกจากรายการบันทึก') : (language === 'en' ? 'Bookmark article' : 'บันทึกข่าว')}
               style={{
                 background: 'var(--glass-bg)',
                 border: '1px solid var(--glass-border)',
@@ -131,6 +135,7 @@ export function NewsDetailSheet({
 
             <button
               onClick={onClose}
+              title={language === 'en' ? 'Close' : 'ปิดหน้าต่าง'}
               style={{
                 background: 'var(--glass-bg)',
                 border: '1px solid var(--glass-border)',
@@ -149,53 +154,51 @@ export function NewsDetailSheet({
           </div>
         </div>
 
-        {/* Sentiment & Date Meta */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-          {getSentimentBadge()}
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
-            {item.date} {item.time && `• ${item.time}`} • {item.readTime}
-          </span>
-        </div>
+        {/* Sentiment & Status */}
+        <div style={{ marginBottom: '16px' }}>{getSentimentBadge()}</div>
 
-        {/* Headline */}
-        <h2 style={{ fontSize: '1.35rem', fontWeight: 800, lineHeight: 1.4, marginBottom: '16px', color: 'var(--text-primary)' }}>
-          {item.title}
+        {/* Title */}
+        <h2 style={{ fontSize: '1.35rem', fontWeight: 800, lineHeight: 1.35, color: 'var(--text-primary)', marginBottom: '16px' }}>
+          {tDynamic(item.title)}
         </h2>
 
-        {/* Key Takeaways Box */}
-        <div
-          style={{
-            background: 'rgba(0, 0, 0, 0.2)',
-            padding: '16px',
-            borderRadius: '16px',
-            marginBottom: '24px',
-            border: '1px solid var(--glass-border)',
-          }}
-        >
-          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-blue)', letterSpacing: '0.04em', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Target size={15} /> {t('keyTakeaways')}
+        {/* Executive Summary */}
+        <div style={{ background: 'var(--card-sub-bg)', padding: '16px', borderRadius: '16px', border: '1px solid var(--card-sub-border)', marginBottom: '20px' }}>
+          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-blue)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Target size={14} /> {language === 'en' ? 'Executive Summary' : 'สาระสำคัญโดยย่อ (Executive Summary)'}
           </div>
-          <div className="takeaway-list" style={{ gap: '10px' }}>
-            {item.keyTakeaways.map((takeaway, idx) => (
-              <div key={idx} className="takeaway-item" style={{ alignItems: 'flex-start' }}>
-                <div className="takeaway-bullet" style={{ marginTop: '6px' }} />
-                <span style={{ fontSize: '0.9rem', lineHeight: 1.5, color: 'var(--text-primary)' }}>{takeaway}</span>
+          <p style={{ fontSize: '0.95rem', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>
+            {tDynamic(item.summary)}
+          </p>
+        </div>
+
+        {/* Key Takeaways */}
+        <div style={{ marginBottom: '24px' }}>
+          <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>
+            {t('keyTakeaways')}
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {tDynamicList(item.keyTakeaways).map((takeaway, idx) => (
+              <div
+                key={idx}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '10px',
+                  padding: '10px 14px',
+                  background: 'var(--card-sub-bg)',
+                  borderRadius: '12px',
+                  border: '1px solid var(--card-sub-border)',
+                }}
+              >
+                <span style={{ color: 'var(--accent-blue)', fontWeight: 800, fontSize: '0.85rem' }}>{idx + 1}.</span>
+                <span style={{ fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>{takeaway}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Full Detailed Content */}
-        <div style={{ marginBottom: '24px' }}>
-          <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '10px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Newspaper size={16} /> {t('readMore')}
-          </h4>
-          <p style={{ fontSize: '0.95rem', lineHeight: 1.7, color: 'var(--text-secondary)', whiteSpace: 'pre-line' }}>
-            {item.fullContent}
-          </p>
-        </div>
-
-        {/* Institutional Impact Analysis Box */}
+        {/* Impact Analysis */}
         {item.impactAnalysis && (
           <div
             style={{
@@ -215,16 +218,16 @@ export function NewsDetailSheet({
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
               {item.impactAnalysis.targetSector && (
-                <div style={{ background: 'rgba(0,0,0,0.15)', padding: '10px 14px', borderRadius: '12px' }}>
+                <div style={{ background: 'var(--card-sub-bg)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>{t('targetSector')}</div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{item.impactAnalysis.targetSector}</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{tDynamic(item.impactAnalysis.targetSector)}</div>
                 </div>
               )}
 
               {item.impactAnalysis.priceTrendOutlook && (
-                <div style={{ background: 'rgba(0,0,0,0.15)', padding: '10px 14px', borderRadius: '12px' }}>
+                <div style={{ background: 'var(--card-sub-bg)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>{t('trendOutlook')}</div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-bullish)' }}>{item.impactAnalysis.priceTrendOutlook}</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-bullish)' }}>{tDynamic(item.impactAnalysis.priceTrendOutlook)}</div>
                 </div>
               )}
             </div>
@@ -232,32 +235,122 @@ export function NewsDetailSheet({
             {item.impactAnalysis.bullishReason && (
               <div style={{ marginTop: '12px', display: 'flex', gap: '8px', fontSize: '0.85rem', color: 'var(--accent-bullish)' }}>
                 <TrendingUp size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span><strong>{t('bullishFactors')}:</strong> {item.impactAnalysis.bullishReason}</span>
+                <span><strong>{t('bullishFactors')}:</strong> {tDynamic(item.impactAnalysis.bullishReason)}</span>
               </div>
             )}
 
             {item.impactAnalysis.bearishReason && (
               <div style={{ marginTop: '8px', display: 'flex', gap: '8px', fontSize: '0.85rem', color: 'var(--accent-bearish)' }}>
                 <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span><strong>{t('bearishFactors')}:</strong> {item.impactAnalysis.bearishReason}</span>
+                <span><strong>{t('bearishFactors')}:</strong> {tDynamic(item.impactAnalysis.bearishReason)}</span>
               </div>
             )}
           </div>
         )}
 
-        {/* Source & Tickers Footer */}
+        {/* Real Source Hyperlink Button */}
+        {(item.link || item.sourceUrl) && (
+          <div style={{ marginBottom: '24px' }}>
+            <a
+              href={item.link || item.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                width: '100%',
+                padding: '14px 20px',
+                borderRadius: '14px',
+                background: 'linear-gradient(135deg, #007AFF 0%, #00C6FF 100%)',
+                color: '#ffffff',
+                fontWeight: 700,
+                fontSize: '0.92rem',
+                textDecoration: 'none',
+                boxShadow: '0 4px 15px rgba(0, 122, 255, 0.3)',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer'
+              }}
+            >
+              <ExternalLink size={18} />
+              <span>{language === 'en' ? `Read full original article at ${item.source}` : `อ่านข่าวฉบับเต็มจากแหล่งที่มาต้นฉบับ (${item.source})`}</span>
+            </a>
+          </div>
+        )}
+
+        {/* Source & Tickers Footer with Live Linking */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', paddingTop: '16px', borderTop: '1px solid var(--glass-border)' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-            {t('source')}: <strong>{item.source}</strong>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>{t('source')}:</span>
+            {(item.link || item.sourceUrl) ? (
+              <a
+                href={item.link || item.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'var(--accent-blue)', textDecoration: 'underline', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+              >
+                {item.source}
+                <ExternalLink size={11} />
+              </a>
+            ) : (
+              <strong>{item.source}</strong>
+            )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t('relatedTickers')}:</span>
-            {item.tickers.map((t) => (
-              <span key={t} className="ticker-pill">
-                ${t}
-              </span>
-            ))}
+            {item.tickers.map((symbol) => {
+              const stock = getStockByTicker(symbol);
+              if (stock) {
+                const isUp = stock.change >= 0;
+                return (
+                  <button
+                    key={symbol}
+                    onClick={() => {
+                      onClose();
+                      focusStock(symbol);
+                    }}
+                    title={`เปิดดูข้อมูลราคาและกราฟสด ${stock.name} (${stock.ticker})`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '4px 10px',
+                      borderRadius: '8px',
+                      background: isUp ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 59, 48, 0.15)',
+                      border: `1px solid ${isUp ? 'rgba(0, 230, 118, 0.3)' : 'rgba(255, 59, 48, 0.3)'}`,
+                      color: isUp ? '#00E676' : '#FF3B30',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <span>${stock.ticker}</span>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 800 }}>
+                      {stock.currency === 'THB' ? '฿' : '$'}{stock.price.toFixed(2)}
+                    </span>
+                    <span style={{ fontSize: '0.7rem' }}>
+                      ({isUp ? '+' : ''}{stock.change.toFixed(1)}%)
+                    </span>
+                  </button>
+                );
+              }
+              return (
+                <span
+                  key={symbol}
+                  className="ticker-pill"
+                  onClick={() => {
+                    onClose();
+                    focusStock(symbol);
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  ${symbol}
+                </span>
+              );
+            })}
           </div>
         </div>
       </div>

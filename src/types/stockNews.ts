@@ -49,6 +49,9 @@ export interface StockNewsItem {
   impactAnalysis: ImpactAnalysis;
   isFeatured?: boolean;
   isBookmarked?: boolean;
+  link?: string;
+  url?: string;
+  sourceUrl?: string;
 }
 
 export interface DailyWeeklyDigestSummary {

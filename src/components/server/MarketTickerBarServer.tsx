@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import type { MarketIndex } from '../../lib/schemas/marketSchema';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
-import { TrendingUp, TrendingDown, RefreshCw, Activity } from 'lucide-react';
+import { useLanguage } from '../../lib/context/LanguageContext';
+import { TrendingUp, TrendingDown, RefreshCw, BarChart3, Coins, Globe, Sparkles } from 'lucide-react';
 
 interface MarketTickerBarProps {
   indices?: MarketIndex[];
@@ -12,13 +13,48 @@ interface MarketTickerBarProps {
 
 export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarProps) {
   const { indices, isSyncing, lastUpdated, refreshAll, setSelectedMarket } = useMarketSync();
+  const { language } = useLanguage();
+  const [activeTab, setActiveTab] = useState<'indices' | 'commodities'>('indices');
 
-  const filteredIndices = indices.filter((idx) =>
-    activeRegion === 'all' ? true : idx.region === activeRegion
-  );
+  // Segregate Stock Indices from Commodities / Gold / FX
+  const stockIndices = useMemo(() => {
+    return indices.filter((item) => {
+      const sym = item.symbol.toUpperCase();
+      return (
+        sym.startsWith('^') ||
+        sym === 'SET' ||
+        sym === 'SET50' ||
+        sym === 'GSPC' ||
+        sym === 'IXIC' ||
+        sym === 'DJI' ||
+        item.category === 'index' ||
+        (!item.category && !sym.includes('GOLD') && !sym.includes('GC=') && !sym.includes('USDTHB') && !sym.includes('CL='))
+      );
+    });
+  }, [indices]);
 
-  const handleIndexClick = (region: string) => {
-    if (region === 'thai') {
+  const commodityItems = useMemo(() => {
+    return indices.filter((item) => {
+      const sym = item.symbol.toUpperCase();
+      return (
+        item.category === 'commodity' ||
+        item.category === 'gold_thai' ||
+        item.category === 'forex' ||
+        sym.includes('GOLD') ||
+        sym.includes('GC=') ||
+        sym.includes('USDTHB') ||
+        sym.includes('CL=')
+      );
+    });
+  }, [indices]);
+
+  const activeItems = activeTab === 'indices' ? stockIndices : commodityItems;
+
+  const handleIndexClick = (idx: MarketIndex) => {
+    if (idx.category === 'gold_thai' || idx.category === 'commodity' || idx.category === 'forex') {
+      return;
+    }
+    if (idx.region === 'thai' || idx.symbol.includes('.BK') || idx.symbol === '^SET.BK') {
       setSelectedMarket('SET');
     } else {
       setSelectedMarket('US');
@@ -31,86 +67,196 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
 
   return (
     <div style={{ marginBottom: '24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-          <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#00E676', boxShadow: '0 0 8px #00E676' }} />
-          <span style={{ fontWeight: 700, color: '#00E676' }}>REAL-TIME INDICES FEED</span>
-          {lastUpdated && <span style={{ opacity: 0.7 }}>• อัปเดต {lastUpdated}</span>}
-        </div>
-        <button
-          onClick={() => refreshAll()}
-          disabled={isSyncing}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--text-tertiary)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            fontSize: '0.72rem'
-          }}
-        >
-          <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
-          <span>{isSyncing ? 'กำลังซิงค์สด...' : 'รีเฟรชทั้งหมด'}</span>
-        </button>
-      </div>
-
+      {/* Top Controls Row */}
       <div
         style={{
           display: 'flex',
-          gap: '12px',
-          overflowX: 'auto',
-          paddingBottom: '8px',
-          scrollbarWidth: 'none',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '10px',
+          marginBottom: '10px'
         }}
       >
-        {filteredIndices.map((idx) => {
-          const isUp = (idx.change || 0) >= 0;
+        {/* Live Status Indicator & Tab Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#00E676', boxShadow: '0 0 8px #00E676' }} />
+            <span style={{ fontWeight: 800, color: '#00E676', letterSpacing: '0.5px' }}>
+              REAL-TIME MARKET FEED
+            </span>
+            {lastUpdated && <span style={{ opacity: 0.7, fontSize: '0.72rem' }}>• {lastUpdated}</span>}
+          </div>
+
+          {/* Option B: Tab Switcher (Stock Indices vs. Gold & Commodities) */}
+          <div
+            style={{
+              display: 'inline-flex',
+              background: 'var(--card-sub-bg)',
+              padding: '3px',
+              borderRadius: '10px',
+              border: '1px solid var(--card-sub-border)',
+              gap: '2px'
+            }}
+          >
+            <button
+              onClick={() => setActiveTab('indices')}
+              style={{
+                background: activeTab === 'indices' ? 'var(--accent-blue-gradient)' : 'transparent',
+                color: activeTab === 'indices' ? '#ffffff' : 'var(--text-secondary)',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '4px 10px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <BarChart3 size={13} />
+              <span>{language === 'en' ? 'Stock Indices' : 'ดัชนีตลาดหุ้น'}</span>
+              <span style={{ fontSize: '0.65rem', opacity: 0.8, background: 'rgba(255,255,255,0.15)', padding: '1px 5px', borderRadius: '4px' }}>
+                {stockIndices.length || 4}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('commodities')}
+              style={{
+                background: activeTab === 'commodities' ? 'linear-gradient(135deg, #FFB800 0%, #FF8C00 100%)' : 'transparent',
+                color: activeTab === 'commodities' ? '#ffffff' : 'var(--text-secondary)',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '4px 10px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <Coins size={13} />
+              <span>{language === 'en' ? 'Gold & Commodities' : 'ทองคำ & สินค้าโภคภัณฑ์'}</span>
+              <span style={{ fontSize: '0.65rem', opacity: 0.8, background: 'rgba(255,255,255,0.15)', padding: '1px 5px', borderRadius: '4px' }}>
+                {commodityItems.length || 4}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Single Manual Refresh Button */}
+        <button
+          onClick={() => refreshAll()}
+          disabled={isSyncing}
+          title="กดเพื่อดึงข้อมูลราคาสดจากตลาดหุ้นและสมาคมค้าทองคำทันที"
+          style={{
+            background: 'var(--card-sub-bg)',
+            border: '1px solid var(--card-sub-border)',
+            color: 'var(--text-secondary)',
+            borderRadius: '8px',
+            padding: '5px 10px',
+            cursor: isSyncing ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            fontSize: '0.74rem',
+            fontWeight: 600,
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} color="var(--accent-blue)" />
+          <span>{isSyncing ? (language === 'en' ? 'Syncing...' : 'กำลังดึงสด...') : (language === 'en' ? 'Refresh All' : 'รีเฟรชทั้งหมด')}</span>
+        </button>
+      </div>
+
+      {/* Cards Grid / Scrollable Row */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '12px',
+          overflowX: 'auto',
+          paddingBottom: '4px'
+        }}
+      >
+        {activeItems.map((item) => {
+          const isUp = (item.change || 0) >= 0;
+          const isThaiGold = item.category === 'gold_thai' || item.symbol === 'THAI_GOLD';
+          const isForex = item.category === 'forex' || item.symbol.includes('USDTHB');
+          const isCommodity = item.category === 'commodity' || item.symbol.includes('GC=') || item.symbol.includes('CL=');
+
           return (
             <div
-              key={idx.symbol}
+              key={item.symbol}
               className="glass-card"
-              onClick={() => handleIndexClick(idx.region)}
-              title={`คลิกเพื่อดูกลุ่มหุ้น ${idx.region === 'thai' ? 'ตลาดหุ้นไทย (SET)' : 'ตลาดหุ้นสหรัฐฯ (US)'}`}
+              onClick={() => handleIndexClick(item)}
+              title={
+                isThaiGold
+                  ? `ราคาทองคำแท่งตามประกาศสมาคมค้าทองคำแห่งประเทศไทย ${item.updateRound || ''}`
+                  : !isCommodity && !isForex
+                  ? `คลิกเพื่อดูกลุ่มหุ้น ${item.region === 'thai' ? 'ตลาดหุ้นไทย (SET)' : 'ตลาดสหรัฐฯ (US)'}`
+                  : item.name
+              }
               style={{
-                padding: '12px 16px',
-                minWidth: '180px',
-                flexShrink: 0,
+                padding: '14px 16px',
                 borderRadius: '16px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)',
-                cursor: 'pointer',
+                border: isThaiGold ? '1px solid rgba(255, 184, 0, 0.35)' : '1px solid var(--glass-border)',
+                background: isThaiGold ? 'linear-gradient(135deg, rgba(255, 184, 0, 0.08) 0%, var(--card-sub-bg) 100%)' : 'var(--card-sub-bg)',
+                cursor: !isCommodity && !isForex && !isThaiGold ? 'pointer' : 'default',
                 transition: 'transform 0.15s ease, border-color 0.15s ease'
               }}
             >
+              {/* Header Badge & Title */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                  {idx.name}
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  {item.name}
                 </span>
                 <span
                   style={{
                     fontSize: '0.65rem',
                     padding: '2px 6px',
                     borderRadius: '4px',
-                    background: idx.region === 'thai' ? 'rgba(0, 122, 255, 0.15)' : 'rgba(139, 92, 246, 0.15)',
-                    color: idx.region === 'thai' ? '#007AFF' : '#8B5CF6',
-                    fontWeight: 700,
+                    background: isThaiGold
+                      ? 'rgba(255, 184, 0, 0.2)'
+                      : item.region === 'thai'
+                      ? 'rgba(0, 122, 255, 0.15)'
+                      : 'rgba(139, 92, 246, 0.15)',
+                    color: isThaiGold ? '#FFB800' : item.region === 'thai' ? '#007AFF' : '#8B5CF6',
+                    fontWeight: 800,
                   }}
                 >
-                  {idx.region === 'thai' ? '🇹🇭 SET' : '🌍 GLOBAL'}
+                  {isThaiGold
+                    ? 'สมาคมค้าทองคำ'
+                    : isForex
+                    ? 'FOREX'
+                    : isCommodity
+                    ? 'GLOBAL'
+                    : item.region === 'thai'
+                    ? 'SET'
+                    : 'GLOBAL'}
                 </span>
               </div>
 
-              <div style={{ marginTop: '8px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', fontFamily: 'monospace' }}>
-                  {typeof idx.value === 'number'
-                    ? idx.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                    : idx.value}
+              {/* Price & Change Row */}
+              <div style={{ marginTop: '10px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+                  {isThaiGold
+                    ? `฿${item.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                    : item.currency === 'THB'
+                    ? `${item.value.toFixed(2)} ฿`
+                    : typeof item.value === 'number'
+                    ? item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                    : item.value}
                 </span>
+
                 <div
                   style={{
                     display: 'flex',
@@ -124,10 +270,41 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
                   {isUp ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                   <span>
                     {isUp ? '+' : ''}
-                    {typeof idx.changePercent === 'number' ? idx.changePercent.toFixed(2) : idx.changePercent}%
+                    {typeof item.changePercent === 'number' ? item.changePercent.toFixed(2) : item.changePercent}%
                   </span>
                 </div>
               </div>
+
+              {/* Thai Gold Specific Details: Buy / Sell Spread & Update Round */}
+              {isThaiGold && (item.buyPrice || item.sellPrice) && (
+                <div
+                  style={{
+                    marginTop: '8px',
+                    paddingTop: '6px',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '0.68rem',
+                    color: 'var(--text-tertiary)'
+                  }}
+                >
+                  <span>ขายออก: ฿{item.sellPrice?.toLocaleString()}</span>
+                  <span>รับซื้อ: ฿{item.buyPrice?.toLocaleString()}</span>
+                </div>
+              )}
+
+              {/* Commodity Unit / Subtext */}
+              {!isThaiGold && item.unit && (
+                <div
+                  style={{
+                    marginTop: '6px',
+                    fontSize: '0.68rem',
+                    color: 'var(--text-tertiary)'
+                  }}
+                >
+                  หน่วย: {item.unit} {item.change !== undefined && item.change !== 0 ? `(${item.change > 0 ? '+' : ''}${item.change.toFixed(2)})` : ''}
+                </div>
+              )}
             </div>
           );
         })}
@@ -137,3 +314,4 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
 }
 
 export { MarketTickerBarServer as MarketTickerBar };
+

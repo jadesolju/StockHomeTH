@@ -27,7 +27,7 @@ export function StockFundamentalTableServer({ stocks }: StockFundamentalTableSer
             const isUp = stock.change >= 0;
             return (
               <tr
-                key={stock.ticker}
+                key={`${stock.market}-${stock.ticker}`}
                 style={{
                   borderBottom: '1px solid rgba(255,255,255,0.04)',
                   transition: 'background 0.2s ease',

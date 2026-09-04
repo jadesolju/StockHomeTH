@@ -19,8 +19,7 @@ if sys.platform == "win32":
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SERVER_DATA_DIR = os.path.join(BASE_DIR, "server", "data")
-OUTPUT_FILE_1 = os.path.join(BASE_DIR, "thai_stocks.json")
-OUTPUT_FILE_2 = os.path.join(SERVER_DATA_DIR, "thai_stocks.json")
+OUTPUT_FILE = os.path.join(SERVER_DATA_DIR, "thai_stocks.json")
 CHECKPOINT_FILE = os.path.join(BASE_DIR, "checkpoint.json")
 CRAWLER_LOG = os.path.join(BASE_DIR, "crawler.log")
 LOG_FILE = os.path.join(BASE_DIR, "update_log.txt")
@@ -171,10 +170,7 @@ def run(batch_size=20):
             "stocks": accumulated_stocks
         }
 
-        with open(OUTPUT_FILE_1, "w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, indent=2)
-
-        with open(OUTPUT_FILE_2, "w", encoding="utf-8") as f:
+        with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)
 
         if os.path.exists(CHECKPOINT_FILE):

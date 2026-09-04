@@ -15,8 +15,7 @@ if sys.platform == "win32":
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SERVER_DATA_DIR = os.path.join(BASE_DIR, "server", "data")
-OUTPUT_FILE_1 = os.path.join(BASE_DIR, "us_stocks.json")
-OUTPUT_FILE_2 = os.path.join(SERVER_DATA_DIR, "us_stocks.json")
+OUTPUT_FILE = os.path.join(SERVER_DATA_DIR, "us_stocks.json")
 LOG_FILE = os.path.join(BASE_DIR, "update_log.txt")
 
 os.makedirs(SERVER_DATA_DIR, exist_ok=True)
@@ -63,10 +62,7 @@ def run():
             "stocks": stocks
         }
 
-        with open(OUTPUT_FILE_1, "w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, indent=2)
-
-        with open(OUTPUT_FILE_2, "w", encoding="utf-8") as f:
+        with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)
 
         msg = f"[{timestamp}] SUCCESS: US Stocks updated ({len(stocks)} companies from SEC.gov)\n"

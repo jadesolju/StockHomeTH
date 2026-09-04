@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   TrendingUp,
   Moon,
@@ -15,7 +15,8 @@ import {
   RefreshCw,
   Globe,
   Building,
-  Landmark
+  Landmark,
+  Activity
 } from 'lucide-react';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { useTheme } from '../../lib/context/ThemeContext';
@@ -39,9 +40,10 @@ export function HeaderClientNav({
   onToggleBookmarkedOnly,
 }: HeaderClientNavProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { language, setLanguage, toggleLanguage, t } = useLanguage();
   const { theme, resolvedTheme, cycleTheme } = useTheme();
-  const { selectedMarket, setSelectedMarket, refreshAll, isSyncing } = useMarketSync();
+  const { selectedMarket, setSelectedMarket, refreshAll, isSyncing, setIsLogModalOpen } = useMarketSync();
 
   const currentDate = new Date().toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', {
     weekday: 'long',
@@ -49,6 +51,14 @@ export function HeaderClientNav({
     month: 'long',
     day: 'numeric',
   });
+
+  // Handle market tab switch: navigate to "/" if on a different page, then set market
+  const handleMarketSwitch = (market: 'ALL' | 'SET' | 'US') => {
+    setSelectedMarket(market);
+    if (pathname !== '/') {
+      router.push('/');
+    }
+  };
 
   return (
     <header className="glass-card" style={{ borderRadius: '0 0 24px 24px', padding: '16px 28px', marginBottom: '24px' }}>
@@ -97,38 +107,35 @@ export function HeaderClientNav({
             </div>
           </Link>
 
-          {/* Navigation View & Market Switcher */}
+          {/* Navigation View & Dedicated Page Switcher */}
           <nav className="ios-segmented-control" style={{ padding: '4px' }}>
             <Link
               href="/"
-              onClick={() => setSelectedMarket('ALL')}
-              className={`ios-segment-btn ${pathname === '/' && selectedMarket === 'ALL' ? 'active' : ''}`}
+              className={`ios-segment-btn ${pathname === '/' || pathname === '/news' ? 'active' : ''}`}
               style={{ textDecoration: 'none', padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              <BarChart3 size={16} /> {t('marketAndCharts')}
+              <Newspaper size={16} /> {t('newsDigest')}
             </Link>
             <Link
-              href="/"
-              onClick={() => setSelectedMarket('SET')}
-              className={`ios-segment-btn ${pathname === '/' && selectedMarket === 'SET' ? 'active' : ''}`}
+              href="/stocks"
+              className={`ios-segment-btn ${pathname === '/stocks' ? 'active' : ''}`}
+              style={{ textDecoration: 'none', padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Globe size={16} /> {t('marketAndCharts')}
+            </Link>
+            <Link
+              href="/stocks/thai"
+              className={`ios-segment-btn ${pathname === '/stocks/thai' ? 'active' : ''}`}
               style={{ textDecoration: 'none', padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
               <Landmark size={16} /> {t('thaiStocks')}
             </Link>
             <Link
-              href="/"
-              onClick={() => setSelectedMarket('US')}
-              className={`ios-segment-btn ${pathname === '/' && selectedMarket === 'US' ? 'active' : ''}`}
+              href="/stocks/us"
+              className={`ios-segment-btn ${pathname === '/stocks/us' ? 'active' : ''}`}
               style={{ textDecoration: 'none', padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
               <Building size={16} /> {t('foreignStocks')}
-            </Link>
-            <Link
-              href="/news"
-              className={`ios-segment-btn ${pathname === '/news' ? 'active' : ''}`}
-              style={{ textDecoration: 'none', padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-            >
-              <Newspaper size={16} /> {t('newsDigest')}
             </Link>
           </nav>
 
@@ -201,6 +208,29 @@ export function HeaderClientNav({
                 <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{t('bookmarked')}</span>
               </button>
             )}
+
+            {/* Sync Activity Logs Modal Button */}
+            <button
+              onClick={() => setIsLogModalOpen(true)}
+              title="ดูบันทึกประวัติการอัปเดตข้อมูล Real-Time (Sync Logs)"
+              style={{
+                background: 'var(--glass-bg)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '100px',
+                padding: '8px 12px',
+                color: 'var(--accent-bullish)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.78rem',
+                fontWeight: 700
+              }}
+            >
+              <Activity size={15} className={isSyncing ? 'spin-anim' : ''} />
+              <span className="live-pulse-dot" style={{ width: '6px', height: '6px' }} />
+              <span>Logs</span>
+            </button>
 
             {/* Refresh Button */}
             <button

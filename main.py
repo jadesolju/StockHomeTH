@@ -409,6 +409,74 @@ async def get_thai_stocks_directory(
         "stocks": all_stocks
     }
 
+# ─── Parallel Multi-Symbol API Endpoints ─────────────────────────────────────
+
+@app.get("/api/v1/parallel/stocks")
+@app.post("/api/v1/parallel/stocks")
+async def get_parallel_stocks(
+    tickers: str = Query("AAPL,NVDA,TSLA,PTT,CPALL", description="Comma-separated tickers"),
+    interval: str = Query("1d", description="Bar interval: 1m, 5m, 15m, 1h, 1d"),
+    workers: int = Query(8, description="Number of parallel workers")
+):
+    """
+    High-speed parallel multi-ticker quotes & historical bars fetcher.
+    Executes concurrent thread pool requests across symbols.
+    """
+    from server.webull_engine import fetch_parallel_symbols_webull
+    raw_tickers = [t.strip().upper() for t in tickers.split(",") if t.strip()]
+    if not raw_tickers:
+        raise HTTPException(status_code=400, detail="No tickers provided")
+
+    result = fetch_parallel_symbols_webull(raw_tickers, interval=interval, max_workers=workers)
+    return result
+
+# ─── Webull OpenAPI Integration Routes ───────────────────────────────────────
+
+@app.get("/api/v1/webull/status")
+async def get_webull_status():
+    """Check Webull OpenAPI SDK installation and authentication status"""
+    from server.webull_engine import HAS_WEBULL, get_webull_client, WEBULL_REGION, WEBULL_ENDPOINT
+    client = get_webull_client()
+    return {
+        "success": True,
+        "has_webull_sdk": HAS_WEBULL,
+        "authenticated": client is not None,
+        "app_key_configured": bool(os.environ.get("WEBULL_APP_KEY")),
+        "region": WEBULL_REGION,
+        "endpoint": WEBULL_ENDPOINT,
+        "timestamp": time.time()
+    }
+
+@app.get("/api/v1/webull/history/{symbol}")
+async def get_webull_history(
+    symbol: str,
+    interval: str = Query("1d", description="Interval: 1m, 5m, 15m, 1h, 1d"),
+    limit: int = Query(50, ge=1, le=500)
+):
+    """Fetch historical bars directly via Webull OpenAPI DataClient with fallback"""
+    from server.webull_engine import get_webull_client, fetch_webull_single_bars, fetch_parallel_fallback
+    client = get_webull_client()
+    if client:
+        return fetch_webull_single_bars(client, symbol.upper(), interval=interval, limit=limit)
+    else:
+        fallback = fetch_parallel_fallback([symbol.upper()], interval=interval, max_workers=1)
+        return fallback.get(symbol.upper(), {"success": False, "error": "Unable to fetch data"})
+
+@app.post("/api/v1/webull/batch_history")
+async def get_webull_batch_history(
+    symbols: str = Query("AAPL,TSLA,NVDA", description="Comma-separated stock symbols"),
+    interval: str = Query("1d", description="Interval: 1m, 5m, 15m, 1h, 1d"),
+    count: int = Query(30, ge=1, le=100)
+):
+    """Fetch batch historical bars via Webull OpenAPI DataClient"""
+    from server.webull_engine import get_webull_client, fetch_batch_history_webull, fetch_parallel_fallback
+    client = get_webull_client()
+    symbols_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+    if client:
+        return fetch_batch_history_webull(client, symbols_list, interval=interval, count=count)
+    else:
+        return fetch_parallel_fallback(symbols_list, interval=interval, max_workers=6)
+
 if __name__ == "__main__":
     # Run FastAPI server on port 8000
     print("Starting StockHomeTH Anti-Block Stock & Chart API Server on http://127.0.0.1:8000")

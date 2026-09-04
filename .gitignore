@@ -35,11 +35,22 @@ checkpoint.json
 
 # Environment & Secrets (NEVER COMMIT)
 .env
-.env*.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env*
+*.env
+*.pem
+*.key
 server/data/users.json
+checkpoint.json
+ingestion_checkpoint.json
+*.sqlite
+*.db
+SQLite
+
+# Dev & Admin Backoffice (Local Development Only - Do Not Push)
+dev_admin_portal.bat
+src/app/admin/
+src/components/client/AdminBackofficeClient.tsx
+src/app/api/dev/admin/
 
 # Editor directories and files
 .vscode/*
