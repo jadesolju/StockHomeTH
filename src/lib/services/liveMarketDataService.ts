@@ -26,49 +26,13 @@ const OVERVIEW_CACHE_TTL_MS = 30_000; // 30 seconds
 
 let isPythonEngineAvailable: boolean | null = null;
 
+import { fetchLiveStocksFromYFinance } from './yfinanceBridge';
+
 /**
- * Fetch live stocks (SET & US)
+ * Fetch live stocks (SET & US) - Seamless 10,689 universe integration
  */
 export async function fetchLiveStocks(): Promise<StockFundamental[]> {
-  const now = Date.now();
-  if (cachedStocks && now - stockCacheTime < STOCK_CACHE_TTL_MS && cachedStocks.length > 0) {
-    return cachedStocks;
-  }
-
-  if (isPythonEngineAvailable !== false) {
-    try {
-      const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
-      const pythonCmd = `py "${scriptPath}" --action stocks`;
-      const { stdout } = await execAsync(pythonCmd, { timeout: 3500 });
-      const json = JSON.parse(stdout.trim());
-
-      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-        const validated = json.data
-          .map((item: unknown) => {
-            try {
-              return StockFundamentalSchema.parse(item);
-            } catch {
-              return null;
-            }
-          })
-          .filter((i: StockFundamental | null): i is StockFundamental => i !== null);
-
-        if (validated.length > 0) {
-          isPythonEngineAvailable = true;
-          cachedStocks = validated;
-          stockCacheTime = now;
-          return validated;
-        }
-      }
-    } catch {
-      isPythonEngineAvailable = false;
-    }
-  }
-
-  const fallback = fullMarketStocks.map((s) => StockFundamentalSchema.parse(s));
-  cachedStocks = fallback;
-  stockCacheTime = now;
-  return fallback;
+  return await fetchLiveStocksFromYFinance();
 }
 
 /**
