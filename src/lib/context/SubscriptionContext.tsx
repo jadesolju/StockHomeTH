@@ -20,7 +20,7 @@ interface SubscriptionContextType {
   canExportData: () => boolean;
   getWatchlistLimit: () => number;
   aiUsageToday: number;
-  incrementAiUsage: () => void;
+  incrementAiUsage: (newCount?: number) => void;
   resetAiUsage: () => void;
   isProOrAbove: boolean;
   isVip: boolean;

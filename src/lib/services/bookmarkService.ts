@@ -1,5 +1,5 @@
 import { supabase as supabaseClient } from '../supabase/client';
-import { NewsItem } from '../schemas/newsSchema';
+import type { StockNewsItem as NewsItem } from '../schemas/newsSchema';
 
 export async function isNewsBookmarked(uid: string, newsId: string): Promise<boolean> {
   if (!uid || !newsId) return false;
@@ -43,9 +43,9 @@ export async function toggleBookmark(uid: string, newsItem: NewsItem, currentlyB
           news_id: newsItem.id,
           title: newsItem.title,
           source: newsItem.source,
-          link: newsItem.link,
-          symbols: newsItem.symbols || [],
-          published_at: newsItem.publishedAt,
+          link: newsItem.link || newsItem.sourceUrl || '',
+          symbols: newsItem.tickers || [],
+          published_at: newsItem.date || new Date().toISOString(),
         });
         
       if (error) throw error;

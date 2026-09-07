@@ -158,6 +158,9 @@ export async function GET(request: NextRequest) {
       const bullishPercent = Math.round((gainers / total) * 100);
       const bearishPercent = Math.round((losers / total) * 100);
       const neutralPercent = Math.max(0, 100 - bullishPercent - bearishPercent);
+      const currentTime = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+      const currentDateTh = now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+      const currentDateEn = now.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 
       const thaiStocks = stocks.filter((s) => s.market === 'SET');
       const usStocks = stocks.filter((s) => s.market === 'US');
