@@ -96,7 +96,8 @@ export function ApiPlaygroundClient() {
   };
 
   const getCodeSnippet = () => {
-    const fullUrl = `http://localhost:3000${selectedEndpoint}`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    const fullUrl = `${origin}${selectedEndpoint}`;
     if (snippetLanguage === 'curl') {
       if (selectedMethod === 'POST') {
         return `curl -X POST "${fullUrl}" \\\n  -H "Content-Type: application/json" \\\n  -d '${requestBody.replace(/\n/g, '')}'`;

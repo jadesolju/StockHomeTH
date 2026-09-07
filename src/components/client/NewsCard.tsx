@@ -4,7 +4,8 @@ import React from 'react';
 import type { StockNewsItem } from '../../lib/schemas/newsSchema';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useLanguage } from '../../lib/context/LanguageContext';
-import { Bookmark, ChevronRight, Star, TrendingUp, TrendingDown, Minus, Lightbulb, Clock, Calendar, ExternalLink } from 'lucide-react';
+import { useClientAuth } from '../../lib/context/ClientAuthContext';
+import { Bookmark, ChevronRight, Star, TrendingUp, TrendingDown, Minus, Lightbulb, Clock, Calendar, ExternalLink, Lock, ShieldCheck, Crown } from 'lucide-react';
 
 interface NewsCardProps {
   item: StockNewsItem;
@@ -19,6 +20,7 @@ export function NewsCard({
 }: NewsCardProps) {
   const { getStockByTicker, focusStock } = useMarketSync();
   const { t, tDynamic, language } = useLanguage();
+  const { user } = useClientAuth();
 
   const isEn = language === 'en';
   const resolvedTitle = isEn
@@ -129,6 +131,26 @@ export function NewsCard({
           >
             {item.marketName}
           </span>
+
+          {item.impactAnalysis && (
+            <span
+              style={{
+                fontSize: '0.68rem',
+                padding: '2px 7px',
+                borderRadius: '6px',
+                background: user ? 'rgba(16, 185, 129, 0.12)' : 'rgba(0, 122, 255, 0.12)',
+                color: user ? '#10b981' : '#007AFF',
+                border: user ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(0, 122, 255, 0.25)',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '3px'
+              }}
+            >
+              {user ? <ShieldCheck size={11} /> : <Lock size={10} />}
+              <span>{isEn ? 'Impact Analysis' : 'วิเคราะห์ผลกระทบ'}</span>
+            </span>
+          )}
 
           <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
             <Clock size={12} /> {resolvedPeriodLabel}

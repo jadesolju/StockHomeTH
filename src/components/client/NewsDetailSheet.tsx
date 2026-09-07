@@ -4,7 +4,8 @@ import React from 'react';
 import type { StockNewsItem } from '../../lib/schemas/newsSchema';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
-import { X, Bookmark, Share2, TrendingUp, TrendingDown, Minus, AlertTriangle, ShieldCheck, Target, Newspaper, Compass, ArrowUpRight, ArrowDownRight, ExternalLink } from 'lucide-react';
+import { useClientAuth } from '../../lib/context/ClientAuthContext';
+import { X, Bookmark, Share2, TrendingUp, TrendingDown, Minus, AlertTriangle, ShieldCheck, Target, Newspaper, Compass, ArrowUpRight, ArrowDownRight, ExternalLink, Lock, Crown, LogIn } from 'lucide-react';
 
 interface NewsDetailSheetProps {
   item: StockNewsItem | null;
@@ -19,6 +20,7 @@ export function NewsDetailSheet({
 }: NewsDetailSheetProps) {
   const { t, tDynamic, tDynamicList, language } = useLanguage();
   const { getStockByTicker, focusStock } = useMarketSync();
+  const { user, openAuthModal } = useClientAuth();
 
   if (!item) return null;
 
@@ -219,70 +221,141 @@ export function NewsDetailSheet({
 
         {/* Impact Analysis */}
         {item.impactAnalysis && (
-          <div
-            style={{
-              background: 'var(--card-sub-bg)',
-              border: '1px solid var(--card-sub-border)',
-              padding: '18px',
-              borderRadius: '16px',
-              marginBottom: '24px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-              <ShieldCheck size={18} color="var(--accent-blue)" />
-              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                {t('impactAnalysis')}
+          user ? (
+            <div
+              style={{
+                background: 'var(--card-sub-bg)',
+                border: '1px solid var(--card-sub-border)',
+                padding: '18px',
+                borderRadius: '16px',
+                marginBottom: '24px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ShieldCheck size={18} color="var(--accent-blue)" />
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                    {t('impactAnalysis')}
+                  </h4>
+                </div>
+                <span style={{ fontSize: '0.68rem', padding: '2px 8px', borderRadius: '100px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Crown size={11} /> {isEn ? 'Member Access' : 'สิทธิ์สมาชิก'}
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                {(item.impactAnalysis.targetSector_en || item.impactAnalysis.targetSector_th || item.impactAnalysis.targetSector) && (
+                  <div style={{ background: 'var(--card-sub-bg)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>{t('targetSector')}</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {isEn
+                        ? (item.impactAnalysis.targetSector_en || tDynamic(item.impactAnalysis.targetSector_th, item.impactAnalysis.targetSector_en))
+                        : (item.impactAnalysis.targetSector_th || tDynamic(item.impactAnalysis.targetSector_th, item.impactAnalysis.targetSector_en))}
+                    </div>
+                  </div>
+                )}
+
+                {(item.impactAnalysis.priceTrendOutlook_en || item.impactAnalysis.priceTrendOutlook_th || item.impactAnalysis.priceTrendOutlook) && (
+                  <div style={{ background: 'var(--card-sub-bg)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>{t('trendOutlook')}</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-bullish)' }}>
+                      {isEn
+                        ? (item.impactAnalysis.priceTrendOutlook_en || tDynamic(item.impactAnalysis.priceTrendOutlook_th, item.impactAnalysis.priceTrendOutlook_en))
+                        : (item.impactAnalysis.priceTrendOutlook_th || tDynamic(item.impactAnalysis.priceTrendOutlook_th, item.impactAnalysis.priceTrendOutlook_en))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {(item.impactAnalysis.bullishReason_en || item.impactAnalysis.bullishReason_th || item.impactAnalysis.bullishReason) && (
+                <div style={{ marginTop: '12px', display: 'flex', gap: '8px', fontSize: '0.85rem', color: 'var(--accent-bullish)' }}>
+                  <TrendingUp size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <span>
+                    <strong>{t('bullishFactors')}:</strong>{' '}
+                    {isEn
+                      ? (item.impactAnalysis.bullishReason_en || tDynamic(item.impactAnalysis.bullishReason_th, item.impactAnalysis.bullishReason_en))
+                      : (item.impactAnalysis.bullishReason_th || tDynamic(item.impactAnalysis.bullishReason_th, item.impactAnalysis.bullishReason_en))}
+                  </span>
+                </div>
+              )}
+
+              {(item.impactAnalysis.bearishReason_en || item.impactAnalysis.bearishReason_th || item.impactAnalysis.bearishReason) && (
+                <div style={{ marginTop: '8px', display: 'flex', gap: '8px', fontSize: '0.85rem', color: 'var(--accent-bearish)' }}>
+                  <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <span>
+                    <strong>{t('bearishFactors')}:</strong>{' '}
+                    {isEn
+                      ? (item.impactAnalysis.bearishReason_en || tDynamic(item.impactAnalysis.bearishReason_th, item.impactAnalysis.bearishReason_en))
+                      : (item.impactAnalysis.bearishReason_th || tDynamic(item.impactAnalysis.bearishReason_th, item.impactAnalysis.bearishReason_en))}
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Locked Gate for Guests */
+            <div
+              className="glass-card"
+              style={{
+                padding: '24px 20px',
+                borderRadius: '18px',
+                marginBottom: '24px',
+                border: '1px solid rgba(0, 122, 255, 0.35)',
+                background: 'linear-gradient(180deg, rgba(0, 122, 255, 0.08) 0%, rgba(10, 13, 20, 0.88) 100%)',
+                textAlign: 'center',
+                boxShadow: '0 12px 32px rgba(0, 0, 0, 0.45)',
+              }}
+            >
+              <div
+                style={{
+                  width: '46px',
+                  height: '46px',
+                  borderRadius: '14px',
+                  background: 'rgba(0, 122, 255, 0.15)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '10px',
+                }}
+              >
+                <Lock size={22} color="#007AFF" />
+              </div>
+
+              <div>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(0, 122, 255, 0.15)', color: '#007AFF', padding: '3px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800, marginBottom: '8px' }}>
+                  <Crown size={11} /> {isEn ? 'MEMBER EXCLUSIVE INTELLIGENCE' : 'บทวิเคราะห์เฉพาะสมาชิก'}
+                </span>
+              </div>
+
+              <h4 style={{ margin: '0 0 6px 0', fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                {isEn ? 'AI Stock & Sector Impact Analysis' : 'การวิเคราะห์ผลกระทบต่อราคา & กลุ่มอุตสาหกรรม'}
               </h4>
+
+              <p style={{ margin: '0 auto 16px auto', fontSize: '0.82rem', color: 'var(--text-secondary)', maxWidth: '440px', lineHeight: 1.55 }}>
+                {isEn
+                  ? 'Sign in or create a free account to unlock deep sector impact, price trend outlook, and bullish/bearish catalysts for this story.'
+                  : 'เข้าสู่ระบบหรือสมัครสมาชิกฟรี เพื่อปลดล็อกบทวิเคราะห์ทิศทางราคา ปัจจัยหนุน (Bullish) ปัจจัยเสี่ยง (Bearish) และการประเมินผลกระทบต่อกลุ่มอุตสาหกรรมเชิงลึก'}
+              </p>
+
+              <button
+                onClick={() => openAuthModal('login')}
+                className="ios-btn-primary"
+                style={{
+                  padding: '9px 20px',
+                  borderRadius: '12px',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '7px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 16px rgba(0, 122, 255, 0.35)',
+                }}
+              >
+                <LogIn size={15} />
+                <span>{isEn ? 'Sign In / Register Free' : 'เข้าสู่ระบบ / สมัครสมาชิกฟรี'}</span>
+              </button>
             </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-              {(item.impactAnalysis.targetSector_en || item.impactAnalysis.targetSector_th || item.impactAnalysis.targetSector) && (
-                <div style={{ background: 'var(--card-sub-bg)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>{t('targetSector')}</div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {isEn
-                      ? (item.impactAnalysis.targetSector_en || tDynamic(item.impactAnalysis.targetSector_th, item.impactAnalysis.targetSector_en))
-                      : (item.impactAnalysis.targetSector_th || tDynamic(item.impactAnalysis.targetSector_th, item.impactAnalysis.targetSector_en))}
-                  </div>
-                </div>
-              )}
-
-              {(item.impactAnalysis.priceTrendOutlook_en || item.impactAnalysis.priceTrendOutlook_th || item.impactAnalysis.priceTrendOutlook) && (
-                <div style={{ background: 'var(--card-sub-bg)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>{t('trendOutlook')}</div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-bullish)' }}>
-                    {isEn
-                      ? (item.impactAnalysis.priceTrendOutlook_en || tDynamic(item.impactAnalysis.priceTrendOutlook_th, item.impactAnalysis.priceTrendOutlook_en))
-                      : (item.impactAnalysis.priceTrendOutlook_th || tDynamic(item.impactAnalysis.priceTrendOutlook_th, item.impactAnalysis.priceTrendOutlook_en))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {(item.impactAnalysis.bullishReason_en || item.impactAnalysis.bullishReason_th || item.impactAnalysis.bullishReason) && (
-              <div style={{ marginTop: '12px', display: 'flex', gap: '8px', fontSize: '0.85rem', color: 'var(--accent-bullish)' }}>
-                <TrendingUp size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span>
-                  <strong>{t('bullishFactors')}:</strong>{' '}
-                  {isEn
-                    ? (item.impactAnalysis.bullishReason_en || tDynamic(item.impactAnalysis.bullishReason_th, item.impactAnalysis.bullishReason_en))
-                    : (item.impactAnalysis.bullishReason_th || tDynamic(item.impactAnalysis.bullishReason_th, item.impactAnalysis.bullishReason_en))}
-                </span>
-              </div>
-            )}
-
-            {(item.impactAnalysis.bearishReason_en || item.impactAnalysis.bearishReason_th || item.impactAnalysis.bearishReason) && (
-              <div style={{ marginTop: '8px', display: 'flex', gap: '8px', fontSize: '0.85rem', color: 'var(--accent-bearish)' }}>
-                <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span>
-                  <strong>{t('bearishFactors')}:</strong>{' '}
-                  {isEn
-                    ? (item.impactAnalysis.bearishReason_en || tDynamic(item.impactAnalysis.bearishReason_th, item.impactAnalysis.bearishReason_en))
-                    : (item.impactAnalysis.bearishReason_th || tDynamic(item.impactAnalysis.bearishReason_th, item.impactAnalysis.bearishReason_en))}
-                </span>
-              </div>
-            )}
-          </div>
+          )
         )}
 
         {/* Real Source Hyperlink Button */}

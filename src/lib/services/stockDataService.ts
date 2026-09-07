@@ -12,7 +12,12 @@ export async function fetchStockByTicker(ticker: string, market?: string, forceL
 export async function fetchStocksParallel(symbols: string[], interval = '1d', workers = 8) {
   try {
     const symbolsParam = encodeURIComponent(symbols.join(','));
-    const res = await fetch(`http://localhost:3000/api/stocks/parallel?symbols=${symbolsParam}&interval=${interval}&workers=${workers}`, {
+    const isClient = typeof window !== 'undefined';
+    const baseUrl = isClient
+      ? ''
+      : (process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://127.0.0.1:3000'));
+    
+    const res = await fetch(`${baseUrl}/api/stocks/parallel?symbols=${symbolsParam}&interval=${interval}&workers=${workers}`, {
       next: { revalidate: 30 }
     });
     if (res.ok) {
