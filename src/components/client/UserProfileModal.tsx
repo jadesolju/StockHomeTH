@@ -123,14 +123,16 @@ export function UserProfileModal() {
       }}
     >
       <section
-        className="auth-dialog glass-card"
+        className="auth-dialog"
         onClick={(e) => e.stopPropagation()}
         style={{
           borderRadius: '28px',
           padding: '32px 28px',
           maxWidth: '420px',
           width: '100%',
-          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.6)',
+          background: 'var(--bg-secondary)',
+          backgroundColor: 'var(--bg-secondary)',
+          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.75)',
           border: '1px solid var(--card-border)',
           position: 'relative',
           zIndex: 100000,

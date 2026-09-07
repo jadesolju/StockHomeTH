@@ -1,31 +1,71 @@
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import path from 'path';
 import { mockMarketIndices } from '../../../../data/mockMarketData';
-
-const execAsync = promisify(exec);
 
 let cachedPayload: any = null;
 let cacheTime = 0;
 const CACHE_TTL_MS = 60_000; // 60 seconds
 
-let activePythonCmd: string | null = null;
-async function detectPythonCommand(): Promise<string> {
-  if (activePythonCmd) return activePythonCmd;
-  const candidates = ['py -3.11', 'py', 'python'];
-  for (const cmd of candidates) {
-    try {
-      const { stdout } = await execAsync(`${cmd} -c "import yfinance, sys; print('OK')"`, { timeout: 3000 });
-      if (stdout.includes('OK')) {
-        activePythonCmd = cmd;
-        return cmd;
-      }
-    } catch {
-      // Try next
-    }
-  }
-  return 'py';
+const MAJOR_INDEX_DEFINITIONS = [
+  { s: '^SET.BK', name: 'SET Index', c: 'THB', cat: 'index', country: 'TH' },
+  { s: '^GSPC', name: 'S&P 500', c: 'USD', cat: 'index', country: 'US' },
+  { s: '^IXIC', name: 'NASDAQ', c: 'USD', cat: 'index', country: 'US' },
+  { s: '^DJI', name: 'Dow Jones', c: 'USD', cat: 'index', country: 'US' },
+  { s: 'GC=F', name: 'Gold Spot', c: 'USD', cat: 'commodity', country: 'GLOBAL' },
+  { s: 'CL=F', name: 'Crude Oil WTI', c: 'USD', cat: 'commodity', country: 'GLOBAL' },
+  { s: 'BTC-USD', name: 'Bitcoin', c: 'USD', cat: 'crypto', country: 'GLOBAL' }
+];
+
+async function fetchLiveIndicesFromYahoo(): Promise<any[] | null> {
+  try {
+    const results = await Promise.all(
+      MAJOR_INDEX_DEFINITIONS.map(async (item) => {
+        try {
+          const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(item.s)}?interval=1d&range=5d`;
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 3500);
+
+          const res = await fetch(url, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            },
+            signal: controller.signal,
+            next: { revalidate: 60 }
+          });
+          clearTimeout(timeout);
+
+          if (!res.ok) return null;
+          const json = await res.json();
+          const meta = json?.chart?.result?.[0]?.meta;
+          if (!meta) return null;
+
+          const price = meta.regularMarketPrice;
+          const prev = meta.chartPreviousClose || meta.previousClose || price;
+          const change = price - prev;
+          const changePercent = prev !== 0 ? (change / prev) * 100 : 0;
+
+          return {
+            symbol: item.s,
+            name: item.name,
+            price: Number(price.toFixed(2)),
+            change: Number(change.toFixed(2)),
+            changePercent: Number(changePercent.toFixed(2)),
+            currency: item.c,
+            category: item.cat,
+            country: item.country,
+            high52w: meta.fiftyTwoWeekHigh || price,
+            low52w: meta.fiftyTwoWeekLow || price,
+            timestamp: new Date().toISOString()
+          };
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    const valid = results.filter((r): r is NonNullable<typeof r> => r !== null);
+    if (valid.length > 0) return valid;
+  } catch {}
+  return null;
 }
 
 export async function GET() {
@@ -36,50 +76,51 @@ export async function GET() {
       source: 'cache',
       data: cachedPayload.data,
       indices: cachedPayload.indices,
-      commodities: cachedPayload.commodities
+      commodities: cachedPayload.commodities,
+      timestamp: new Date(cacheTime).toISOString()
     });
   }
 
-  if (process.env.VERCEL !== '1') {
-    try {
-      const pyCmd = await detectPythonCommand();
-      const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
-      const pythonCmd = `${pyCmd} "${scriptPath}" --action indices`;
-      const { stdout } = await execAsync(pythonCmd, { timeout: 15000 });
-      
-      // Parse last valid JSON line
-      const lines = stdout.trim().split('\n');
-      let json: any = null;
-      for (let i = lines.length - 1; i >= 0; i--) {
-        const l = lines[i].trim();
-        if (l.startsWith('{') && l.endsWith('}')) {
-          try {
-            json = JSON.parse(l);
-            break;
-          } catch {}
-        }
-      }
-      if (!json) {
-        json = JSON.parse(stdout.trim());
-      }
+  // 1. Direct Cloud-Native HTTP Fetch from Yahoo Finance (Zero Python, 100% Vercel compatible)
+  const liveData = await fetchLiveIndicesFromYahoo();
+  if (liveData && liveData.length > 0) {
+    const indices = liveData.filter((d) => d.category === 'index');
+    const commodities = liveData.filter((d) => d.category !== 'index');
 
-      if (json && json.success && Array.isArray(json.data) && json.data.length > 0) {
-        cachedPayload = json;
-        cacheTime = now;
-        return NextResponse.json({
-          success: true,
-          source: 'live',
-          count: json.data.length,
-          data: json.data,
-          indices: json.indices || json.data.filter((d: any) => d.category === 'index' || !d.category),
-          commodities: json.commodities || json.data.filter((d: any) => d.category !== 'index')
-        });
-      }
-    } catch (err) {
-      console.warn('[Indices API] Python indices fetch warning, using live fallback:', err);
-    }
+    cachedPayload = {
+      data: liveData,
+      indices,
+      commodities
+    };
+    cacheTime = now;
+
+    return NextResponse.json({
+      success: true,
+      source: 'live',
+      count: liveData.length,
+      data: liveData,
+      indices,
+      commodities,
+      timestamp: new Date().toISOString()
+    });
   }
 
-  return NextResponse.json({ success: true, source: 'fallback', data: mockMarketIndices });
-}
+  // 2. Fallback to cached payload or static data
+  if (cachedPayload) {
+    return NextResponse.json({
+      success: true,
+      source: 'stale_cache',
+      data: cachedPayload.data,
+      indices: cachedPayload.indices,
+      commodities: cachedPayload.commodities,
+      timestamp: new Date().toISOString()
+    });
+  }
 
+  return NextResponse.json({
+    success: true,
+    source: 'fallback',
+    data: mockMarketIndices,
+    timestamp: new Date().toISOString()
+  });
+}

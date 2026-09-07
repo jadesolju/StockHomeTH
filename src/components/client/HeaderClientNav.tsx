@@ -318,21 +318,23 @@ export function HeaderClientNav({
 
                 {isUserMenuOpen && (
                   <div
-                    className="glass-card"
+                    className="solid-dropdown"
                     style={{
                       position: 'absolute',
                       right: 0,
                       top: 'calc(100% + 8px)',
-                      width: '230px',
+                      width: '240px',
                       borderRadius: '18px',
                       padding: '12px',
-                      boxShadow: '0 16px 40px rgba(0, 0, 0, 0.55)',
+                      background: 'var(--bg-secondary)',
+                      backgroundColor: 'var(--bg-secondary)',
+                      boxShadow: '0 20px 50px rgba(0, 0, 0, 0.75), 0 0 0 1px var(--card-border)',
                       zIndex: 10000,
                       border: '1px solid var(--card-border)',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '4px',
-                      backdropFilter: 'blur(24px)',
+                      opacity: 1,
                     }}
                   >
                     <div

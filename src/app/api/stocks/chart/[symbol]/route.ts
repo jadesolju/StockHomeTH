@@ -49,18 +49,20 @@ export async function GET(
       return NextResponse.json(chartCache[cacheKey].data);
     }
 
-    // 1. Try Python yfinance engine first
-    try {
-      const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
-      const pythonCmd = `py "${scriptPath}" --action chart --symbol "${symbol}" --period "${period}" --interval "${interval}"`;
-      const { stdout } = await execAsync(pythonCmd, { timeout: 8000 });
-      const json = JSON.parse(stdout.trim());
-      if (json.success && json.data && json.data.candles && json.data.candles.length > 0) {
-        chartCache[cacheKey] = { timestamp: now, data: json.data };
-        return NextResponse.json(json.data);
+    // 1. Try Python yfinance engine only on local machine if requested
+    if (process.env.VERCEL !== '1' && searchParams.get('engine') === 'python') {
+      try {
+        const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
+        const pythonCmd = `py "${scriptPath}" --action chart --symbol "${symbol}" --period "${period}" --interval "${interval}"`;
+        const { stdout } = await execAsync(pythonCmd, { timeout: 8000 });
+        const json = JSON.parse(stdout.trim());
+        if (json.success && json.data && json.data.candles && json.data.candles.length > 0) {
+          chartCache[cacheKey] = { timestamp: now, data: json.data };
+          return NextResponse.json(json.data);
+        }
+      } catch (pyErr) {
+        // Continue to Yahoo HTTP
       }
-    } catch (pyErr) {
-      // Continue to Yahoo HTTP
     }
 
     // 2. Direct Yahoo Finance Chart HTTP query

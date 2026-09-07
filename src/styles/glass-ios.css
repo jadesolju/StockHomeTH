@@ -290,6 +290,19 @@ body {
   color: var(--text-primary);
 }
 
+/* 100% Solid Opaque Overlays & Dialogs (No background bleed-through) */
+.auth-dialog {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--card-border) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75) !important;
+}
+
+.solid-dropdown {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--card-border) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75) !important;
+}
+
 /* Minimal Solid Button */
 .solid-button {
   border: 0;

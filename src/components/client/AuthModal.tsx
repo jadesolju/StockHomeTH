@@ -133,19 +133,21 @@ export function AuthModal({
       : 'เปลี่ยนรหัสผ่านใหม่';
 
   return (
-    <div className="ios-sheet-overlay" onClick={handleClose} style={{ zIndex: 99999, position: 'fixed', inset: 0 }}>
+    <div className="ios-sheet-overlay" onClick={handleClose} style={{ zIndex: 100000, position: 'fixed', inset: 0 }}>
       <section
-        className="auth-dialog glass-card"
+        className="auth-dialog"
         onClick={(event) => event.stopPropagation()}
         style={{
           borderRadius: '28px',
           padding: '32px 28px',
           maxWidth: '420px',
           width: '90%',
-          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.65)',
+          background: 'var(--bg-secondary)',
+          backgroundColor: 'var(--bg-secondary)',
+          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.75)',
           border: '1px solid var(--card-border)',
           position: 'relative',
-          zIndex: 100000,
+          zIndex: 100001,
         }}
       >
         <button className="icon-button auth-close" onClick={handleClose} aria-label="ปิด">
