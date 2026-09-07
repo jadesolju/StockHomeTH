@@ -5,6 +5,7 @@ import { SyncLogModal } from '../components/client/SyncLogModal';
 import { MarketSyncProvider } from '../lib/context/MarketSyncContext';
 import { LanguageProvider } from '../lib/context/LanguageContext';
 import { ThemeProvider } from '../lib/context/ThemeContext';
+import { PwaRegisterClient } from '../components/client/PwaRegisterClient';
 
 export const metadata: Metadata = {
   title: 'StockHomeTH • สรุปข่าวหุ้น AI และข้อมูลตลาดหุ้นไทย & สหรัฐฯ',
@@ -12,6 +13,10 @@ export const metadata: Metadata = {
     'แพลตฟอร์มวิเคราะห์ข่าวหุ้น สรุปการเงินประจำวันด้วย Google Gemini AI และข้อมูลตลาดหุ้น SET & US Real-time สำหรับนักลงทุนยุคใหม่',
   keywords: ['หุ้นไทย', 'SET Index', 'หุ้นสหรัฐ', 'AI สรุปข่าวหุ้น', 'Stock Analysis', 'Gemini AI', 'การเงิน'],
   manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -42,6 +47,7 @@ export default function RootLayout({
         <ThemeProvider>
           <LanguageProvider>
             <MarketSyncProvider>
+              <PwaRegisterClient />
               <HeaderClientNav />
               <main style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 20px' }}>
                 {children}

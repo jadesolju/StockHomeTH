@@ -42,7 +42,7 @@ export function HeaderClientNav({
   const pathname = usePathname();
   const router = useRouter();
   const { language, toggleLanguage, t } = useLanguage();
-  const { theme, cycleTheme } = useTheme();
+  const { theme, resolvedTheme, cycleTheme } = useTheme();
   const { setSelectedMarket, refreshAll, isSyncing, cooldownRemaining } = useMarketSync();
 
   const [currentDate, setCurrentDate] = React.useState<string>(() => {
