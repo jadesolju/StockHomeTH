@@ -75,11 +75,11 @@ export function UserProfileModal() {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || 'อัปโหลดรูปภาพไปยัง Cloudflare R2 ไม่สำเร็จ');
+        throw new Error(data.error || 'อัปโหลดรูปภาพไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
       }
 
       await updateUserProfile(undefined, data.url);
-      setSuccessMessage('อัปเดตรูปโปรไฟล์บน Cloudflare R2 สำเร็จ');
+      setSuccessMessage('อัปเดตรูปโปรไฟล์สำเร็จเรียบร้อยแล้ว');
     } catch (err: any) {
       console.error('[Avatar Upload Error]:', err);
       setErrorMessage(err.message || 'เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ');
@@ -215,7 +215,7 @@ export function UserProfileModal() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              title="เปลี่ยนรูปโปรไฟล์ (บันทึกลง Cloudflare R2)"
+              title="เปลี่ยนรูปโปรไฟล์"
               style={{
                 position: 'absolute',
                 bottom: '-2px',
@@ -352,7 +352,7 @@ export function UserProfileModal() {
             </button>
           )}
 
-          {/* Upload Image to Cloudflare R2 */}
+          {/* Upload Image */}
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
@@ -374,7 +374,7 @@ export function UserProfileModal() {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Upload size={16} color="#10b981" />
-              <span>อัปโหลดรูปภาพใหม่ (Cloudflare R2)</span>
+              <span>เปลี่ยนรูปโปรไฟล์ใหม่</span>
             </div>
             <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>เลือกไฟล์</span>
           </button>

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Newspaper, Globe, Landmark, Building, User, Sparkles } from 'lucide-react';
+import { Newspaper, Globe, Landmark, Building, User } from 'lucide-react';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
 
@@ -29,169 +29,157 @@ export function PwaBottomNav() {
         display: 'none', // Controlled via CSS media query
         justifyContent: 'space-around',
         alignItems: 'center',
-        padding: '6px 10px calc(8px + env(safe-area-inset-bottom, 0px)) 10px',
+        padding: '8px 12px calc(10px + env(safe-area-inset-bottom, 0px)) 12px',
         background: 'var(--glass-bg)',
-        backdropFilter: 'blur(28px) saturate(190%)',
-        WebkitBackdropFilter: 'blur(28px) saturate(190%)',
+        backdropFilter: 'blur(30px) saturate(200%)',
+        WebkitBackdropFilter: 'blur(30px) saturate(200%)',
         borderTop: '1px solid var(--glass-border)',
-        borderRadius: '20px 20px 0 0',
-        boxShadow: '0 -4px 24px rgba(0, 0, 0, 0.4)',
+        borderRadius: '24px 24px 0 0',
+        boxShadow: '0 -6px 28px rgba(0, 0, 0, 0.5)',
       }}
       aria-label="Mobile Navigation"
     >
-      {/* 1. News Tab */}
+      {/* 1. News Digest Tab */}
       <Link
         href="/"
+        title={t('newsDigest')}
+        aria-label={t('newsDigest')}
         style={{
           flex: 1,
+          height: '44px',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          gap: '3px',
+          justifyContent: 'center',
           textDecoration: 'none',
           color: isNewsActive ? '#007AFF' : 'var(--text-tertiary)',
-          padding: '4px 2px',
-          borderRadius: '12px',
-          transition: 'all 0.2s ease',
+          borderRadius: '14px',
+          background: isNewsActive ? 'rgba(0, 122, 255, 0.14)' : 'transparent',
+          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          position: 'relative',
         }}
       >
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Newspaper size={20} strokeWidth={isNewsActive ? 2.5 : 1.8} />
-          {isNewsActive && (
-            <span
-              style={{
-                position: 'absolute',
-                top: '-2px',
-                right: '-4px',
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: '#007AFF',
-                boxShadow: '0 0 6px #007AFF',
-              }}
-            />
-          )}
-        </div>
-        <span style={{ fontSize: '0.68rem', fontWeight: isNewsActive ? 800 : 500 }}>
-          {t('newsDigest')}
-        </span>
+        <Newspaper size={22} strokeWidth={isNewsActive ? 2.4 : 1.8} />
+        {isNewsActive && (
+          <span
+            style={{
+              position: 'absolute',
+              bottom: '5px',
+              width: '4px',
+              height: '4px',
+              borderRadius: '50%',
+              background: '#007AFF',
+              boxShadow: '0 0 6px #007AFF',
+            }}
+          />
+        )}
       </Link>
 
       {/* 2. All Markets Tab */}
       <Link
         href="/stocks"
+        title={t('marketAndCharts')}
+        aria-label={t('marketAndCharts')}
         style={{
           flex: 1,
+          height: '44px',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          gap: '3px',
+          justifyContent: 'center',
           textDecoration: 'none',
           color: isStocksActive ? '#007AFF' : 'var(--text-tertiary)',
-          padding: '4px 2px',
-          borderRadius: '12px',
-          transition: 'all 0.2s ease',
+          borderRadius: '14px',
+          background: isStocksActive ? 'rgba(0, 122, 255, 0.14)' : 'transparent',
+          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          position: 'relative',
         }}
       >
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Globe size={20} strokeWidth={isStocksActive ? 2.5 : 1.8} />
-          {isStocksActive && (
-            <span
-              style={{
-                position: 'absolute',
-                top: '-2px',
-                right: '-4px',
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: '#007AFF',
-                boxShadow: '0 0 6px #007AFF',
-              }}
-            />
-          )}
-        </div>
-        <span style={{ fontSize: '0.68rem', fontWeight: isStocksActive ? 800 : 500 }}>
-          {t('marketAndCharts')}
-        </span>
+        <Globe size={22} strokeWidth={isStocksActive ? 2.4 : 1.8} />
+        {isStocksActive && (
+          <span
+            style={{
+              position: 'absolute',
+              bottom: '5px',
+              width: '4px',
+              height: '4px',
+              borderRadius: '50%',
+              background: '#007AFF',
+              boxShadow: '0 0 6px #007AFF',
+            }}
+          />
+        )}
       </Link>
 
       {/* 3. Thai SET Stocks Tab */}
       <Link
         href="/stocks/thai"
+        title={t('thaiStocks')}
+        aria-label={t('thaiStocks')}
         style={{
           flex: 1,
+          height: '44px',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          gap: '3px',
+          justifyContent: 'center',
           textDecoration: 'none',
           color: isThaiActive ? '#10b981' : 'var(--text-tertiary)',
-          padding: '4px 2px',
-          borderRadius: '12px',
-          transition: 'all 0.2s ease',
+          borderRadius: '14px',
+          background: isThaiActive ? 'rgba(16, 185, 129, 0.14)' : 'transparent',
+          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          position: 'relative',
         }}
       >
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Landmark size={20} strokeWidth={isThaiActive ? 2.5 : 1.8} color={isThaiActive ? '#10b981' : 'currentColor'} />
-          {isThaiActive && (
-            <span
-              style={{
-                position: 'absolute',
-                top: '-2px',
-                right: '-4px',
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: '#10b981',
-                boxShadow: '0 0 6px #10b981',
-              }}
-            />
-          )}
-        </div>
-        <span style={{ fontSize: '0.68rem', fontWeight: isThaiActive ? 800 : 500 }}>
-          {t('thaiStocks')}
-        </span>
+        <Landmark size={22} strokeWidth={isThaiActive ? 2.4 : 1.8} color={isThaiActive ? '#10b981' : 'currentColor'} />
+        {isThaiActive && (
+          <span
+            style={{
+              position: 'absolute',
+              bottom: '5px',
+              width: '4px',
+              height: '4px',
+              borderRadius: '50%',
+              background: '#10b981',
+              boxShadow: '0 0 6px #10b981',
+            }}
+          />
+        )}
       </Link>
 
       {/* 4. US Stocks Tab */}
       <Link
         href="/stocks/us"
+        title={t('foreignStocks')}
+        aria-label={t('foreignStocks')}
         style={{
           flex: 1,
+          height: '44px',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          gap: '3px',
+          justifyContent: 'center',
           textDecoration: 'none',
           color: isUsActive ? '#a855f7' : 'var(--text-tertiary)',
-          padding: '4px 2px',
-          borderRadius: '12px',
-          transition: 'all 0.2s ease',
+          borderRadius: '14px',
+          background: isUsActive ? 'rgba(168, 85, 247, 0.14)' : 'transparent',
+          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          position: 'relative',
         }}
       >
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Building size={20} strokeWidth={isUsActive ? 2.5 : 1.8} color={isUsActive ? '#a855f7' : 'currentColor'} />
-          {isUsActive && (
-            <span
-              style={{
-                position: 'absolute',
-                top: '-2px',
-                right: '-4px',
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: '#a855f7',
-                boxShadow: '0 0 6px #a855f7',
-              }}
-            />
-          )}
-        </div>
-        <span style={{ fontSize: '0.68rem', fontWeight: isUsActive ? 800 : 500 }}>
-          {t('foreignStocks')}
-        </span>
+        <Building size={22} strokeWidth={isUsActive ? 2.4 : 1.8} color={isUsActive ? '#a855f7' : 'currentColor'} />
+        {isUsActive && (
+          <span
+            style={{
+              position: 'absolute',
+              bottom: '5px',
+              width: '4px',
+              height: '4px',
+              borderRadius: '50%',
+              background: '#a855f7',
+              boxShadow: '0 0 6px #a855f7',
+            }}
+          />
+        )}
       </Link>
 
-      {/* 5. User / Auth Tab */}
+      {/* 5. User Profile / Auth Tab */}
       <button
         onClick={() => {
           if (user) {
@@ -200,36 +188,37 @@ export function PwaBottomNav() {
             openAuthModal('login');
           }
         }}
+        title={user ? (user.displayName || user.email || 'โปรไฟล์') : 'เข้าสู่ระบบ'}
+        aria-label={user ? 'โปรไฟล์' : 'เข้าสู่ระบบ'}
         style={{
           flex: 1,
+          height: '44px',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          gap: '3px',
+          justifyContent: 'center',
           background: 'none',
           border: 'none',
-          color: user ? '#007AFF' : 'var(--text-tertiary)',
-          padding: '4px 2px',
-          borderRadius: '12px',
+          borderRadius: '14px',
           cursor: 'pointer',
-          transition: 'all 0.2s ease',
+          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
         <div
           style={{
-            width: '24px',
-            height: '24px',
+            width: '28px',
+            height: '28px',
             borderRadius: '50%',
             background: user ? '#007AFF' : 'var(--card-sub-bg)',
             color: user ? '#ffffff' : 'var(--text-tertiary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '0.7rem',
+            fontSize: '0.78rem',
             fontWeight: 800,
             overflow: 'hidden',
             position: 'relative',
-            border: user ? '1.5px solid rgba(0, 122, 255, 0.4)' : '1px solid var(--glass-border)',
+            border: user ? '2px solid rgba(0, 122, 255, 0.45)' : '1.5px solid var(--glass-border)',
+            boxShadow: user ? '0 2px 8px rgba(0, 122, 255, 0.3)' : 'none',
           }}
         >
           {user ? (
@@ -245,12 +234,9 @@ export function PwaBottomNav() {
               <span>{user.displayName ? user.displayName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || 'M'}</span>
             )
           ) : (
-            <User size={14} />
+            <User size={16} />
           )}
         </div>
-        <span style={{ fontSize: '0.68rem', fontWeight: user ? 800 : 500 }}>
-          {user ? 'โปรไฟล์' : 'เข้าสู่ระบบ'}
-        </span>
       </button>
     </nav>
   );
