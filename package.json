@@ -15,6 +15,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1127.0",
     "@google/genai": "^2.19.0",
+    "@supabase/server": "^1.4.1",
     "@supabase/supabase-js": "^2.109.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

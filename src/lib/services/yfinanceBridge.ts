@@ -64,7 +64,7 @@ function loadMarketCacheFile(): StockFundamental[] | null {
 }
 
 async function triggerBackgroundRefresh() {
-  if (isRefreshingBackground) return;
+  if (isRefreshingBackground || process.env.VERCEL === '1') return;
   isRefreshingBackground = true;
   try {
     const pyCmd = await detectPythonCommand();
@@ -157,28 +157,30 @@ export async function fetchSingleStockYFinance(symbol: string, market?: string, 
     }
   }
 
-  // 2. Query Yahoo Finance & Webull via Python Engine for live market quote
-  try {
-    const pyCmd = await detectPythonCommand();
-    const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
-    const marketFlag = market && market !== 'ALL' ? `--market "${market}"` : '--market "auto"';
-    const pythonCmd = `${pyCmd} "${scriptPath}" --action single --symbol "${cleanSym}" ${marketFlag}`;
-    const { stdout } = await execAsync(pythonCmd, { timeout: 8000 });
-    const json = parseLastJsonLine(stdout);
-    if (json && json.success && json.data) {
-      const parsed = StockFundamentalSchema.parse(json.data);
-      if (cachedStocks) {
-        const existingIdx = cachedStocks.findIndex((s) => s.ticker.toUpperCase() === cleanSym);
-        if (existingIdx >= 0) {
-          cachedStocks[existingIdx] = parsed;
-        } else {
-          cachedStocks.unshift(parsed);
+  // 2. Query Yahoo Finance & Webull via Python Engine for live market quote (Local runtime only)
+  if (process.env.VERCEL !== '1') {
+    try {
+      const pyCmd = await detectPythonCommand();
+      const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
+      const marketFlag = market && market !== 'ALL' ? `--market "${market}"` : '--market "auto"';
+      const pythonCmd = `${pyCmd} "${scriptPath}" --action single --symbol "${cleanSym}" ${marketFlag}`;
+      const { stdout } = await execAsync(pythonCmd, { timeout: 8000 });
+      const json = parseLastJsonLine(stdout);
+      if (json && json.success && json.data) {
+        const parsed = StockFundamentalSchema.parse(json.data);
+        if (cachedStocks) {
+          const existingIdx = cachedStocks.findIndex((s) => s.ticker.toUpperCase() === cleanSym);
+          if (existingIdx >= 0) {
+            cachedStocks[existingIdx] = parsed;
+          } else {
+            cachedStocks.unshift(parsed);
+          }
         }
+        return parsed;
       }
-      return parsed;
+    } catch (err) {
+      console.warn(`[yfinanceBridge] Live ticker query warning for ${cleanSym}:`, err);
     }
-  } catch (err) {
-    console.warn(`[yfinanceBridge] Live ticker query warning for ${cleanSym}:`, err);
   }
 
   // 3. Fallback search in memory cache or disk cache if live fetch timed out

@@ -40,42 +40,44 @@ export async function GET() {
     });
   }
 
-  try {
-    const pyCmd = await detectPythonCommand();
-    const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
-    const pythonCmd = `${pyCmd} "${scriptPath}" --action indices`;
-    const { stdout } = await execAsync(pythonCmd, { timeout: 15000 });
-    
-    // Parse last valid JSON line
-    const lines = stdout.trim().split('\n');
-    let json: any = null;
-    for (let i = lines.length - 1; i >= 0; i--) {
-      const l = lines[i].trim();
-      if (l.startsWith('{') && l.endsWith('}')) {
-        try {
-          json = JSON.parse(l);
-          break;
-        } catch {}
+  if (process.env.VERCEL !== '1') {
+    try {
+      const pyCmd = await detectPythonCommand();
+      const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
+      const pythonCmd = `${pyCmd} "${scriptPath}" --action indices`;
+      const { stdout } = await execAsync(pythonCmd, { timeout: 15000 });
+      
+      // Parse last valid JSON line
+      const lines = stdout.trim().split('\n');
+      let json: any = null;
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const l = lines[i].trim();
+        if (l.startsWith('{') && l.endsWith('}')) {
+          try {
+            json = JSON.parse(l);
+            break;
+          } catch {}
+        }
       }
-    }
-    if (!json) {
-      json = JSON.parse(stdout.trim());
-    }
+      if (!json) {
+        json = JSON.parse(stdout.trim());
+      }
 
-    if (json && json.success && Array.isArray(json.data) && json.data.length > 0) {
-      cachedPayload = json;
-      cacheTime = now;
-      return NextResponse.json({
-        success: true,
-        source: 'live',
-        count: json.data.length,
-        data: json.data,
-        indices: json.indices || json.data.filter((d: any) => d.category === 'index' || !d.category),
-        commodities: json.commodities || json.data.filter((d: any) => d.category !== 'index')
-      });
+      if (json && json.success && Array.isArray(json.data) && json.data.length > 0) {
+        cachedPayload = json;
+        cacheTime = now;
+        return NextResponse.json({
+          success: true,
+          source: 'live',
+          count: json.data.length,
+          data: json.data,
+          indices: json.indices || json.data.filter((d: any) => d.category === 'index' || !d.category),
+          commodities: json.commodities || json.data.filter((d: any) => d.category !== 'index')
+        });
+      }
+    } catch (err) {
+      console.warn('[Indices API] Python indices fetch warning, using live fallback:', err);
     }
-  } catch (err) {
-    console.warn('[Indices API] Python indices fetch warning, using live fallback:', err);
   }
 
   return NextResponse.json({ success: true, source: 'fallback', data: mockMarketIndices });

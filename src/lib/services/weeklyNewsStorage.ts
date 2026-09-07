@@ -3,8 +3,18 @@ import path from 'path';
 import type { StockNewsItem, DigestSummary } from '../schemas/newsSchema';
 import { StockNewsItemSchema, DigestSummarySchema } from '../schemas/newsSchema';
 
-const CACHE_FILE_PATH = path.resolve(process.cwd(), 'weekly_news_cache.json');
-const OVERVIEW_CACHE_PATH = path.resolve(process.cwd(), 'weekly_overview_cache.json');
+// Dynamic cache path supporting local filesystem and Vercel /tmp serverless writable storage
+const isVercel = process.env.VERCEL === '1';
+const CACHE_FILE_PATH = isVercel
+  ? path.resolve('/tmp', 'weekly_news_cache.json')
+  : path.resolve(process.cwd(), 'weekly_news_cache.json');
+const OVERVIEW_CACHE_PATH = isVercel
+  ? path.resolve('/tmp', 'weekly_overview_cache.json')
+  : path.resolve(process.cwd(), 'weekly_overview_cache.json');
+
+// In-memory hot cache
+let inMemoryNews: StockNewsItem[] | null = null;
+let inMemoryOverview: DigestSummary | null = null;
 
 /**
  * Save weekly news items to persistent storage (JSON Cache & SQLite synchronization)
@@ -12,18 +22,20 @@ const OVERVIEW_CACHE_PATH = path.resolve(process.cwd(), 'weekly_overview_cache.j
 export async function saveWeeklyNewsToStorage(items: StockNewsItem[]): Promise<boolean> {
   try {
     if (!items || items.length === 0) return false;
+    inMemoryNews = items;
 
-    // 1. Write to JSON cache file
+    // Write to JSON cache file (graceful write)
     const payload = {
       timestamp: new Date().toISOString(),
       count: items.length,
       data: items
     };
-    fs.writeFileSync(CACHE_FILE_PATH, JSON.stringify(payload, null, 2), 'utf-8');
+    try {
+      fs.writeFileSync(CACHE_FILE_PATH, JSON.stringify(payload, null, 2), 'utf-8');
+    } catch {}
 
     return true;
   } catch (err) {
-    console.warn('[weeklyNewsStorage] Save error:', err);
     return false;
   }
 }
@@ -32,6 +44,7 @@ export async function saveWeeklyNewsToStorage(items: StockNewsItem[]): Promise<b
  * Load weekly news items from persistent storage
  */
 export async function loadWeeklyNewsFromStorage(): Promise<StockNewsItem[] | null> {
+  if (inMemoryNews && inMemoryNews.length > 0) return inMemoryNews;
   try {
     if (!fs.existsSync(CACHE_FILE_PATH)) return null;
 
@@ -51,11 +64,12 @@ export async function loadWeeklyNewsFromStorage(): Promise<StockNewsItem[] | nul
         .filter((i: StockNewsItem | null): i is StockNewsItem => i !== null);
 
       if (validated.length > 0) {
+        inMemoryNews = validated;
         return validated;
       }
     }
   } catch (err) {
-    console.warn('[weeklyNewsStorage] Load error:', err);
+    // Graceful fallback
   }
   return null;
 }
@@ -66,14 +80,16 @@ export async function loadWeeklyNewsFromStorage(): Promise<StockNewsItem[] | nul
 export async function saveWeeklyOverviewToStorage(overview: DigestSummary): Promise<boolean> {
   try {
     if (!overview) return false;
+    inMemoryOverview = overview;
     const payload = {
       timestamp: new Date().toISOString(),
       data: overview
     };
-    fs.writeFileSync(OVERVIEW_CACHE_PATH, JSON.stringify(payload, null, 2), 'utf-8');
+    try {
+      fs.writeFileSync(OVERVIEW_CACHE_PATH, JSON.stringify(payload, null, 2), 'utf-8');
+    } catch {}
     return true;
   } catch (err) {
-    console.warn('[weeklyNewsStorage] Save overview error:', err);
     return false;
   }
 }
@@ -82,6 +98,7 @@ export async function saveWeeklyOverviewToStorage(overview: DigestSummary): Prom
  * Load weekly digest overview from persistent storage
  */
 export async function loadWeeklyOverviewFromStorage(): Promise<DigestSummary | null> {
+  if (inMemoryOverview) return inMemoryOverview;
   try {
     if (!fs.existsSync(OVERVIEW_CACHE_PATH)) return null;
 
@@ -90,10 +107,12 @@ export async function loadWeeklyOverviewFromStorage(): Promise<DigestSummary | n
     const rawData = parsed.data || parsed;
 
     if (rawData) {
-      return DigestSummarySchema.parse(rawData);
+      const val = DigestSummarySchema.parse(rawData);
+      inMemoryOverview = val;
+      return val;
     }
   } catch (err) {
-    console.warn('[weeklyNewsStorage] Load overview error:', err);
+    // Graceful fallback
   }
   return null;
 }
