@@ -151,3 +151,34 @@ drop policy if exists "Public can read non-sensitive config" on public.admin_con
 create policy "Public can read non-sensitive config"
   on public.admin_config for select
   using (true);
+
+-- =================================================================================
+-- 5. User Bookmarks (user_bookmarks)
+-- Stores bookmarked news articles for each user.
+-- =================================================================================
+create table if not exists public.user_bookmarks (
+  id uuid default gen_random_uuid() primary key,
+  user_id text not null, -- Firebase UID
+  news_id text not null, -- ID of the news item in news_items table
+  title text not null,
+  link text,
+  source text,
+  symbols jsonb default '[]'::jsonb,
+  published_at timestamp with time zone,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique (user_id, news_id)
+);
+
+-- Enable RLS
+alter table public.user_bookmarks enable row level security;
+
+-- Policies for user_bookmarks
+-- Note: Since we use Firebase Auth, we verify identity via an API route or pass the UID directly. 
+-- For a truly secure setup with Firebase Auth and Supabase RLS, we would need to pass a custom JWT. 
+-- However, for this project, we'll allow anon/public access to insert/select if they provide the correct user_id, 
+-- or we handle it securely in a Next.js Server Action / API Route using the Supabase Service Role.
+-- Here we create a permissive policy for simplicity, but it's recommended to handle bookmarking via Server Actions.
+create policy "Enable all actions for public (temporary)"
+  on public.user_bookmarks for all
+  using (true)
+  with check (true);

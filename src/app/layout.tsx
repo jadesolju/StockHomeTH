@@ -8,6 +8,9 @@ import { MarketSyncProvider } from '../lib/context/MarketSyncContext';
 import { LanguageProvider } from '../lib/context/LanguageContext';
 import { ThemeProvider } from '../lib/context/ThemeContext';
 import { ClientAuthProvider } from '../lib/context/ClientAuthContext';
+import { SubscriptionProvider } from '../lib/context/SubscriptionContext';
+import { PricingModal } from '../components/client/PricingModal';
+import { LocalRoleSwitcher } from '../components/client/LocalRoleSwitcher';
 import { PwaRegisterClient } from '../components/client/PwaRegisterClient';
 import { PwaBottomNav } from '../components/client/PwaBottomNav';
 
@@ -55,17 +58,21 @@ export default function RootLayout({
         <ThemeProvider>
           <LanguageProvider>
             <ClientAuthProvider>
-              <MarketSyncProvider>
-                <PwaRegisterClient />
-                <HeaderClientNav />
-                <main style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 20px' }}>
-                  {children}
-                </main>
-                <AuthModal />
-                <UserProfileModal />
-                <PwaBottomNav />
-                <SyncLogModal />
-              </MarketSyncProvider>
+              <SubscriptionProvider>
+                <MarketSyncProvider>
+                  <PwaRegisterClient />
+                  <HeaderClientNav />
+                  <main style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 20px' }}>
+                    {children}
+                  </main>
+                  <AuthModal />
+                  <UserProfileModal />
+                  <PricingModal />
+                  <LocalRoleSwitcher />
+                  <PwaBottomNav />
+                  <SyncLogModal />
+                </MarketSyncProvider>
+              </SubscriptionProvider>
             </ClientAuthProvider>
           </LanguageProvider>
         </ThemeProvider>

@@ -5,6 +5,7 @@ import type { StockFundamental } from '../../lib/schemas/marketSchema';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { Sparkline } from '../ui/Sparkline';
+import { useClientAuth } from '../../lib/context/ClientAuthContext';
 import { getStockTags, getMarketScopedTagFilters, getStockPopularityRank, THAI_7_GIANTS, MAGNIFICENT_7, SET50_TICKERS, SET100_TICKERS, DOW_JONES_30, NASDAQ_100, RECENT_IPOS } from '../../lib/utils/stockTagHelper';
 import {
   Search,
@@ -92,11 +93,29 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
     tickerFlashMap,
   } = useMarketSync();
   const { t, tDynamic, language } = useLanguage();
+  const { user, openAuthModal } = useClientAuth();
 
   // Instant reactive market state (allows live market toggle and direct sorting in ALL view)
   const [localMarket, setLocalMarket] = useState<'ALL' | 'SET' | 'US'>(
     hideMarketTabs && marketOverride ? marketOverride : contextMarket || 'ALL'
   );
+
+  // Trigger login modal if guest scrolls down
+  useEffect(() => {
+    if (user) return;
+    const hasSeenLoginPrompt = sessionStorage.getItem('stockhome_login_prompted');
+    if (hasSeenLoginPrompt) return;
+
+    const handleScroll = () => {
+      if (window.scrollY > 800) {
+        sessionStorage.setItem('stockhome_login_prompted', 'true');
+        openAuthModal('login');
+        window.removeEventListener('scroll', handleScroll);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [user, openAuthModal]);
 
   const selectedMarket = hideMarketTabs && marketOverride ? marketOverride : localMarket;
 
@@ -1079,9 +1098,21 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                   </div>
 
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+                    <div 
+                      style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace', cursor: !user ? 'pointer' : 'default' }}
+                      onClick={(e) => {
+                        if (!user) {
+                          e.stopPropagation();
+                          openAuthModal('login');
+                        }
+                      }}
+                    >
                       {stock.currency === 'THB' ? '฿' : '$'}
-                      {(Number(stock.price) || 0).toFixed(2)}
+                      {!user ? (
+                        <span style={{ filter: 'blur(5px)', userSelect: 'none' }}>{(Number(stock.price) || 0).toFixed(2)}</span>
+                      ) : (
+                        (Number(stock.price) || 0).toFixed(2)
+                      )}
                     </div>
                     <div
                       style={{
@@ -1260,9 +1291,21 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                         ))}
                       </div>
                     </td>
-                    <td style={{ padding: '14px 16px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+                    <td 
+                      style={{ padding: '14px 16px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace', cursor: !user ? 'pointer' : 'default' }}
+                      onClick={(e) => {
+                        if (!user) {
+                          e.stopPropagation();
+                          openAuthModal('login');
+                        }
+                      }}
+                    >
                       {stock.currency === 'THB' ? '฿' : '$'}
-                      {(Number(stock.price) || 0).toFixed(2)}
+                      {!user ? (
+                        <span style={{ filter: 'blur(5px)', userSelect: 'none' }}>{(Number(stock.price) || 0).toFixed(2)}</span>
+                      ) : (
+                        (Number(stock.price) || 0).toFixed(2)
+                      )}
                     </td>
                     <td style={{ padding: '14px 16px' }}>
                       <span

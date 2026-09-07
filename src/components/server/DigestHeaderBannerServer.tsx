@@ -157,7 +157,17 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
     return (
       <div
         key={`cat-${idx}-${cat.substring(0, 15)}`}
-        onClick={() => matched && focusStock(matched)}
+        onClick={() => {
+          if (matched) {
+            focusStock(matched);
+            const clean = matched.replace(/[\$\^\.]/g, '').trim().toUpperCase();
+            window.dispatchEvent(new CustomEvent('filterNewsByTicker', { detail: clean }));
+            const el = document.getElementById('news-feed-section');
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',

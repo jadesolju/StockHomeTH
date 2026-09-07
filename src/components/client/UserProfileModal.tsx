@@ -17,6 +17,7 @@ import {
   Crown
 } from 'lucide-react';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
+import { useSubscription } from '../../lib/context/SubscriptionContext';
 
 export function UserProfileModal() {
   const {
@@ -24,9 +25,11 @@ export function UserProfileModal() {
     isProfileModalOpen,
     closeProfileModal,
     updateUserProfile,
-    openAuthModal,
     signOut,
+    openAuthModal,
   } = useClientAuth();
+
+  const { currentPlan, currentTier, openPricingModal } = useSubscription();
 
   const [displayName, setDisplayName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
@@ -244,9 +247,9 @@ export function UserProfileModal() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '4px' }}>
             <span
               style={{
-                background: 'rgba(0, 122, 255, 0.15)',
-                color: '#007AFF',
-                border: '1px solid rgba(0, 122, 255, 0.3)',
+                background: currentTier === 'vip' ? 'rgba(168, 85, 247, 0.2)' : currentTier === 'pro' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(34, 197, 94, 0.15)',
+                color: currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : 'var(--accent-bullish)',
+                border: `1px solid ${currentTier === 'vip' ? 'rgba(168, 85, 247, 0.4)' : currentTier === 'pro' ? 'rgba(59, 130, 246, 0.4)' : 'rgba(34, 197, 94, 0.3)'}`,
                 padding: '2px 10px',
                 borderRadius: '100px',
                 fontSize: '0.72rem',
@@ -256,7 +259,7 @@ export function UserProfileModal() {
                 gap: '4px',
               }}
             >
-              <Crown size={12} /> StockHome Member
+              <Crown size={12} /> {currentPlan.name}
             </span>
             {isGoogleUser && (
               <span
@@ -280,6 +283,50 @@ export function UserProfileModal() {
           <p style={{ margin: '2px 0 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
             {user.email}
           </p>
+
+          {/* Membership Tier Upgrade Banner */}
+          <div
+            style={{
+              marginTop: '14px',
+              padding: '12px 14px',
+              borderRadius: '14px',
+              background: currentTier === 'free' ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%)' : 'rgba(255, 255, 255, 0.04)',
+              border: `1px solid ${currentTier === 'free' ? 'rgba(59, 130, 246, 0.3)' : 'var(--card-sub-border)'}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '10px',
+              textAlign: 'left',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                {currentTier === 'free' ? '⭐ อัปเกรดเป็น Pro Investor' : `👑 สิทธิพิเศษระดับ ${currentPlan.name}`}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                {currentTier === 'free' ? 'ปลดล็อก AI วิเคราะห์งบ และเตือนเข้า LINE' : `สถานะใช้งานได้ถึง ${currentPlan.expiresAt || 'ตลอดชีพ'}`}
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                closeProfileModal();
+                openPricingModal();
+              }}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '10px',
+                border: 'none',
+                background: currentTier === 'free' ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.1)',
+                color: '#ffffff',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {currentTier === 'free' ? 'ดูแพ็กเกจ' : 'เปลี่ยนแผน'}
+            </button>
+          </div>
         </div>
 
         {/* Feedback Messages */}

@@ -157,47 +157,74 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
     return displayItems.slice(0, visibleCount);
   }, [displayItems, visibleCount]);
 
-  // Load Bookmarks from LocalStorage
+  // Load Bookmarks from Firebase or LocalStorage
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('stockhome_bookmarked_ids');
-      if (saved) {
-        const bookmarkedIds: string[] = JSON.parse(saved);
-        setDailyNewsList((prev) =>
-          prev.map((item) => ({
-            ...item,
-            isBookmarked: bookmarkedIds.includes(item.id),
-          }))
-        );
-        setWeeklyNewsList((prev) =>
-          prev.map((item) => ({
-            ...item,
-            isBookmarked: bookmarkedIds.includes(item.id),
-          }))
-        );
+    const loadBookmarks = async () => {
+      let bookmarkedIds: string[] = [];
+      if (user) {
+        // Load from Firebase
+        const { getUserBookmarks } = await import('../../lib/services/bookmarkService');
+        const bookmarks = await getUserBookmarks(user.uid);
+        bookmarkedIds = bookmarks.map((b: any) => b.newsId);
+      } else {
+        // Load from LocalStorage
+        try {
+          const saved = localStorage.getItem('stockhome_bookmarked_ids');
+          if (saved) {
+            bookmarkedIds = JSON.parse(saved);
+          }
+        } catch {
+          // Ignore
+        }
       }
-    } catch {
-      // Ignore
-    }
-  }, []);
 
-  const handleToggleBookmark = (id: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    const updateList = (prev: StockNewsItem[]) => {
-      const updated = prev.map((item) =>
-        item.id === id ? { ...item, isBookmarked: !item.isBookmarked } : item
-      );
-      const bookmarkedIds = updated.filter((i) => i.isBookmarked).map((i) => i.id);
-      localStorage.setItem('stockhome_bookmarked_ids', JSON.stringify(bookmarkedIds));
-      return updated;
+      if (bookmarkedIds.length > 0) {
+        const updateIsBookmarked = (prev: StockNewsItem[]) =>
+          prev.map((item) => ({ ...item, isBookmarked: bookmarkedIds.includes(item.id) }));
+        setDailyNewsList(updateIsBookmarked);
+        setWeeklyNewsList(updateIsBookmarked);
+      }
     };
+    loadBookmarks();
+  }, [user]);
+
+  const handleToggleBookmark = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    
+    if (!user) {
+      openAuthModal('login');
+      return;
+    }
+
+    const itemToBookmark = activePool.find(i => i.id === id) || tickerSpecificNews.find(i => i.id === id);
+    if (!itemToBookmark) return;
+
+    const isCurrentlyBookmarked = itemToBookmark.isBookmarked || false;
+
+    // Optimistic UI Update
+    const updateList = (prev: StockNewsItem[]) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, isBookmarked: !isCurrentlyBookmarked } : item
+      );
 
     setDailyNewsList(updateList);
     setWeeklyNewsList(updateList);
     setTickerSpecificNews(updateList);
 
     if (selectedNews && selectedNews.id === id) {
-      setSelectedNews((prev) => (prev ? { ...prev, isBookmarked: !prev.isBookmarked } : null));
+      setSelectedNews((prev) => (prev ? { ...prev, isBookmarked: !isCurrentlyBookmarked } : null));
+    }
+
+    // Persist to Firebase
+    try {
+      const { toggleBookmark } = await import('../../lib/services/bookmarkService');
+      await toggleBookmark(user.uid, itemToBookmark, isCurrentlyBookmarked);
+    } catch (error) {
+      console.error('Failed to toggle bookmark in Firebase', error);
+      // Revert Optimistic UI if failed
+      setDailyNewsList((prev) => prev.map((item) => item.id === id ? { ...item, isBookmarked: isCurrentlyBookmarked } : item));
+      setWeeklyNewsList((prev) => prev.map((item) => item.id === id ? { ...item, isBookmarked: isCurrentlyBookmarked } : item));
+      setTickerSpecificNews((prev) => prev.map((item) => item.id === id ? { ...item, isBookmarked: isCurrentlyBookmarked } : item));
     }
   };
 
@@ -226,8 +253,19 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
     setTickerInput('');
   };
 
+  useEffect(() => {
+    const handleFilterEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        setSelectedTicker(customEvent.detail);
+      }
+    };
+    window.addEventListener('filterNewsByTicker', handleFilterEvent);
+    return () => window.removeEventListener('filterNewsByTicker', handleFilterEvent);
+  }, [setSelectedTicker]);
+
   return (
-    <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
+    <div id="news-feed-section" style={{ maxWidth: '1240px', margin: '0 auto' }}>
       {/* Timeframe Pill Switcher (Daily Market Pulse vs. 7-Day Weekly Briefing) */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
         <div className="ios-segmented-control" style={{ padding: '4px' }}>
