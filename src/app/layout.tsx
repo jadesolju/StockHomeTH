@@ -49,6 +49,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="th" data-theme="dark" suppressHydrationWarning>
+      <head>
+        <link rel="icon" type="image/svg+xml" href="/Gemini-svg.svg" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="apple-touch-icon" href="/Gemini-svg.svg" />
+      </head>
       <body style={{ minHeight: '100vh', margin: 0, paddingBottom: '100px' }}>
         <ThemeProvider>
           <LanguageProvider>
