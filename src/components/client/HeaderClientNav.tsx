@@ -83,22 +83,21 @@ export function HeaderClientNav({
                 width: '42px',
                 height: '42px',
                 borderRadius: '12px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
+                background: 'transparent',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '4px',
-                boxShadow: '0 4px 14px rgba(91, 127, 255, 0.25)',
+                padding: '0',
+                overflow: 'hidden',
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/Gemini-svg.svg"
-                alt="Gemini AI Logo"
-                width={32}
-                height={32}
-                style={{ objectFit: 'contain' }}
+                src="/favicon.svg"
+                alt="StockHomeTH Logo"
+                width={42}
+                height={42}
+                style={{ objectFit: 'contain', width: '100%', height: '100%' }}
               />
             </div>
             <div>

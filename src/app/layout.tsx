@@ -14,14 +14,8 @@ export const metadata: Metadata = {
   keywords: ['หุ้นไทย', 'SET Index', 'หุ้นสหรัฐ', 'AI สรุปข่าวหุ้น', 'Stock Analysis', 'Gemini AI', 'การเงิน'],
   manifest: '/manifest.json',
   icons: {
-    icon: [
-      { url: '/Gemini-svg.svg', type: 'image/svg+xml' },
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-    ],
-    apple: [
-      { url: '/Gemini-svg.svg', type: 'image/svg+xml' },
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-    ],
+    icon: '/favicon.svg',
+    apple: '/favicon.svg',
   },
   appleWebApp: {
     capable: true,
@@ -50,9 +44,8 @@ export default function RootLayout({
   return (
     <html lang="th" data-theme="dark" suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/svg+xml" href="/Gemini-svg.svg" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="apple-touch-icon" href="/Gemini-svg.svg" />
+        <link rel="apple-touch-icon" href="/favicon.svg" />
       </head>
       <body style={{ minHeight: '100vh', margin: 0, paddingBottom: '100px' }}>
         <ThemeProvider>

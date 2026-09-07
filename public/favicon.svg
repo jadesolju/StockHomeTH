@@ -1,40 +1,100 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
   <defs>
-    <linearGradient id="geminiGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1BA1E3" />
-      <stop offset="35%" stop-color="#5B7FFF" />
-      <stop offset="70%" stop-color="#9B51E0" />
-      <stop offset="100%" stop-color="#D946EF" />
+    <!-- Background Gradient -->
+    <radialGradient id="bgGlow" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#0f192c" />
+      <stop offset="60%" stop-color="#070a12" />
+      <stop offset="100%" stop-color="#030508" />
+    </radialGradient>
+
+    <!-- Neon Cyan to Emerald Gradient (Stock Uptrend & Future) -->
+    <linearGradient id="cyberGreen" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0052D4" />
+      <stop offset="50%" stop-color="#4364F7" />
+      <stop offset="100%" stop-color="#6FB1FC" />
     </linearGradient>
-    <linearGradient id="geminiGlow" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#00F2FE" stop-opacity="0.8" />
-      <stop offset="100%" stop-color="#4FACFE" stop-opacity="0.2" />
+
+    <linearGradient id="bullTrend" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F2FE" />
+      <stop offset="100%" stop-color="#4FACFE" />
     </linearGradient>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="3" result="blur" />
+
+    <linearGradient id="neonAccent" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0575E6" />
+      <stop offset="60%" stop-color="#00F260" />
+      <stop offset="100%" stop-color="#05FFA1" />
+    </linearGradient>
+
+    <!-- Sleek Glass Gradients -->
+    <linearGradient id="glassRoofLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.03" />
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
   </defs>
 
-  <!-- Google Gemini AI 4-Point Star Shape -->
-  <path
-    d="M 50 2 
-       C 50 28.5, 71.5 50, 98 50 
-       C 71.5 50, 50 71.5, 50 98 
-       C 50 71.5, 28.5 50, 2 50 
-       C 28.5 50, 50 28.5, 50 2 Z"
-    fill="url(#geminiGrad)"
-    filter="url(#glow)"
-  />
-  
-  <!-- Inner Flare Sparkle -->
-  <path
-    d="M 50 18 
-       C 50 35, 65 50, 82 50 
-       C 65 50, 50 65, 50 82 
-       C 50 65, 35 50, 18 50 
-       C 35 50, 50 35, 50 18 Z"
-    fill="url(#geminiGlow)"
-    opacity="0.65"
-  />
+  <!-- Background Base -->
+  <rect width="500" height="500" rx="100" fill="url(#bgGlow)" />
+
+  <!-- Subtle Minimal Grid Pattern (Aesthetic FinTech Touch) -->
+  <g stroke="#ffffff" stroke-opacity="0.04" stroke-width="1">
+    <line x1="100" y1="0" x2="100" y2="500" />
+    <line x1="250" y1="0" x2="250" y2="500" />
+    <line x1="400" y1="0" x2="400" y2="500" />
+    <line x1="0" y1="100" x2="500" y2="100" />
+    <line x1="0" y1="250" x2="500" y2="250" />
+    <line x1="0" y1="400" x2="500" y2="400" />
+  </g>
+
+  <!-- Ambient Light Behind Core Logo -->
+  <circle cx="250" cy="245" r="110" fill="#00f2fe" opacity="0.12" filter="url(#softGlow)" />
+
+  <!-- LOGO MARK: Minimal Architectural "Home" merged with Exponential "Bull Growth" -->
+  <g transform="translate(0, -5)">
+    <!-- House Silhouette: Left Wing / Foundation Roof -->
+    <path d="M140 262 L250 162 L250 198 L165 275 Z" 
+          fill="url(#glassRoofLeft)" />
+
+    <!-- Isometric Candlestick Bar 1 (Left Support) -->
+    <rect x="180" y="270" width="22" height="60" rx="11" 
+          fill="#3A4D6B" opacity="0.5" />
+
+    <!-- Isometric Candlestick Bar 2 (Center Growth) -->
+    <rect x="239" y="230" width="22" height="100" rx="11" 
+          fill="url(#bullTrend)" opacity="0.8" />
+
+    <!-- Primary Momentum Vector: Upward Breakout Roofline -->
+    <path d="M 135 255 
+             L 250 152 
+             L 345 237 
+             L 375 140" 
+          fill="none" 
+          stroke="url(#neonAccent)" 
+          stroke-width="18" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"
+          filter="url(#glow)" />
+
+    <!-- Candlestick Bar 3 (Right High Pillar / Leading Edge) -->
+    <rect x="298" y="195" width="22" height="135" rx="11" 
+          fill="url(#neonAccent)" />
+
+    <!-- Spark / Apex Trend Point (The Breakout Node) -->
+    <circle cx="375" cy="140" r="9" fill="#FFFFFF" filter="url(#glow)" />
+    <circle cx="375" cy="140" r="4" fill="#05FFA1" />
+  </g>
+
+  <!-- Subtle Modern Border Frame -->
+  <rect x="1" y="1" width="498" height="498" rx="99" 
+        fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="2" />
 </svg>
