@@ -248,13 +248,17 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
               {/* Price & Change Row */}
               <div style={{ marginTop: '10px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-                  {isThaiGold
-                    ? `฿${(Number(item.value) || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-                    : item.currency === 'THB'
-                    ? `${(Number(item.value) || 0).toFixed(2)} ฿`
-                    : typeof item.value === 'number'
-                    ? item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                    : (Number(item.value) || 0).toFixed(2)}
+                  {(() => {
+                    const rawVal = item.value ?? (item as any).price;
+                    const numVal = Number(rawVal) || 0;
+                    if (isThaiGold) {
+                      return `฿${numVal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                    }
+                    if (item.currency === 'THB') {
+                      return `${numVal.toFixed(2)} ฿`;
+                    }
+                    return numVal > 0 ? numVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : numVal.toFixed(2);
+                  })()}
                 </span>
 
                 <div
