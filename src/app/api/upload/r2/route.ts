@@ -1,7 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadToR2 } from '@/lib/services/cloudflareR2Service';
+import { uploadToR2, getObjectFromR2 } from '@/lib/services/cloudflareR2Service';
 
 export const dynamic = 'force-dynamic';
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const key = searchParams.get('key');
+
+    if (!key) {
+      return NextResponse.json({ success: false, error: 'Key query parameter is required' }, { status: 400 });
+    }
+
+    const object = await getObjectFromR2(key);
+
+    if (!object) {
+      return NextResponse.json({ success: false, error: 'Object not found in R2' }, { status: 404 });
+    }
+
+    return new Response(new Uint8Array(object.buffer), {
+      status: 200,
+      headers: {
+        'Content-Type': object.contentType,
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      },
+    });
+  } catch (err: any) {
+    console.error('[R2 GET Error]:', err);
+    return NextResponse.json({ success: false, error: err.message || 'Server error' }, { status: 500 });
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,7 +55,7 @@ export async function POST(req: NextRequest) {
     const result = await uploadToR2(buffer, file.name, file.type);
 
     if (!result) {
-      return NextResponse.json({ success: false, error: 'Failed to upload to Cloudflare R2' }, { status: 500 });
+      return NextResponse.json({ success: false, error: 'Failed to upload image' }, { status: 500 });
     }
 
     return NextResponse.json({
