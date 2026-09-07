@@ -1,23 +1,31 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useSubscription } from '../../lib/context/SubscriptionContext';
+import { useSubscription, type SubscriptionTier } from '../../lib/context/SubscriptionContext';
 import { PRICING_PLANS } from '../../config/pricingPlans';
-import { X, Check, Zap, Sparkles, ShieldCheck, Crown, ArrowRight, Star } from 'lucide-react';
+import { MockPaymentModal } from './MockPaymentModal';
+import { X, Check, Zap, Sparkles, ShieldCheck, Crown, ArrowRight, Coffee, QrCode } from 'lucide-react';
 
 export function PricingModal() {
   const { isPricingModalOpen, closePricingModal, currentTier, setTier, billingCycle, setBillingCycle } = useSubscription();
   const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [paymentModalTier, setPaymentModalTier] = useState<SubscriptionTier | null>(null);
 
   if (!isPricingModalOpen) return null;
 
-  const handleSelectPlan = (planId: 'free' | 'lite' | 'pro' | 'vip') => {
-    setTier(planId);
-    setSuccessToast(`🎉 อัปเกรดเป็นแพ็กเกจ ${planId.toUpperCase()} (Local Simulation) สำเร็จแล้ว!`);
-    setTimeout(() => {
-      setSuccessToast(null);
-      closePricingModal();
-    }, 1400);
+  const handleSelectPlan = (planId: SubscriptionTier) => {
+    if (planId === 'free') {
+      setTier('free');
+      setSuccessToast(`🎉 ปรับสิทธิ์เป็น Free Member เรียบร้อยแล้ว`);
+      setTimeout(() => {
+        setSuccessToast(null);
+        closePricingModal();
+      }, 1200);
+      return;
+    }
+
+    // Open Mock Payment Modal for paid tiers (Coffee Supporter / Pro / VIP)
+    setPaymentModalTier(planId);
   };
 
   return (
@@ -342,7 +350,7 @@ export function PricingModal() {
                       '✓ แพ็กเกจปัจจุบันของคุณ'
                     ) : (
                       <>
-                        {plan.id === 'free' ? 'เลือกใช้งานฟรี' : `ทดลองใช้ ${plan.name}`} <ArrowRight size={15} />
+                        {plan.id === 'free' ? 'เลือกใช้งานฟรี' : `อัปเกรดเป็น ${plan.name} (${plan.currency}${plan.priceMonthly})`} <ArrowRight size={15} />
                       </>
                     )}
                   </button>
@@ -354,9 +362,25 @@ export function PricingModal() {
 
         {/* Local Test Mode Disclaimer */}
         <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
-          🔒 Local Sandbox Environment — การเลือกแพ็กเกจจะจำลองสถานะสิทธิ์บนเครื่องของคุณทันทีโดยไม่มีการตัดบัตรจริง
+          🔒 Local Sandbox Environment — รองรับ PromptPay QR จำลอง พร้อมปุ่ม [Dev: Simulate Success] เพื่อทดสอบสิทธิ์ทันที
         </div>
       </div>
+
+      {/* Mock Payment PromptPay Sandbox Modal */}
+      {paymentModalTier && (
+        <MockPaymentModal
+          isOpen={Boolean(paymentModalTier)}
+          targetTier={paymentModalTier}
+          onClose={() => setPaymentModalTier(null)}
+          onSuccess={() => {
+            setSuccessToast(`🎉 อัปเกรดเป็น ${paymentModalTier.toUpperCase()} เรียบร้อยแล้ว!`);
+            setTimeout(() => {
+              setSuccessToast(null);
+              closePricingModal();
+            }, 1500);
+          }}
+        />
+      )}
     </div>
   );
 }

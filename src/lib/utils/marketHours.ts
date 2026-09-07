@@ -237,8 +237,8 @@ export function getCurrentBriefingSession(date = new Date()): MarketBriefingSess
   if (timeInMinutes >= 510 && timeInMinutes < 690) {
     return {
       sessionKey: 'morning',
-      labelTh: 'รอบสาย (Morning Pre-Market)',
-      labelEn: 'Morning Session (Pre-Market)',
+      labelTh: 'สรุปภาพรวมรอบเช้า',
+      labelEn: 'Morning Market Briefing',
       timeRangeTh: '08:30 - 11:30 น.',
       timeRangeEn: '08:30 - 11:30 BKK',
       descriptionTh: 'สรุปเตรียมความพร้อมก่อนเปิดตลาดเช้า SET และทิศทางตลาดโลก',
@@ -250,8 +250,8 @@ export function getCurrentBriefingSession(date = new Date()): MarketBriefingSess
   if (timeInMinutes >= 690 && timeInMinutes < 930) {
     return {
       sessionKey: 'midday',
-      labelTh: 'รอบเที่ยง (Midday Intermission)',
-      labelEn: 'Midday Session (Lunch Break)',
+      labelTh: 'สรุปภาพรวมรอบเที่ยง',
+      labelEn: 'Midday Market Intermission',
       timeRangeTh: '11:30 - 15:30 น.',
       timeRangeEn: '11:30 - 15:30 BKK',
       descriptionTh: 'สรุปภาพรวมปิดตลาดภาคเช้า SET และแนวโน้มภาคบ่าย',
@@ -263,8 +263,8 @@ export function getCurrentBriefingSession(date = new Date()): MarketBriefingSess
   if (timeInMinutes >= 930 && timeInMinutes < 1170) {
     return {
       sessionKey: 'evening',
-      labelTh: 'รอบเย็น (Evening Market Close)',
-      labelEn: 'Evening Session (SET Close)',
+      labelTh: 'สรุปภาพรวมปิดตลาดเย็น',
+      labelEn: 'Evening Market Close Wrap',
       timeRangeTh: '15:30 - 19:30 น.',
       timeRangeEn: '15:30 - 19:30 BKK',
       descriptionTh: 'สรุปภาวะปิดตลาดประจำวัน SET & mai และเตรียมความพร้อมตลาดสหรัฐฯ',
@@ -275,8 +275,8 @@ export function getCurrentBriefingSession(date = new Date()): MarketBriefingSess
   // 4. รอบค่ำ (Night / Wall Street Session: 19:30 - 08:30 น.)
   return {
     sessionKey: 'night',
-    labelTh: 'รอบค่ำ (Night & Wall Street)',
-    labelEn: 'Night Session (Wall Street Open)',
+    labelTh: 'เกาะติดตลาดรอบค่ำ & Wall Street',
+    labelEn: 'Wall Street & Night Session',
     timeRangeTh: '19:30 - 08:30 น.',
     timeRangeEn: '19:30 - 08:30 BKK',
     descriptionTh: 'เกาะติดเปิดตลาดหุ้นสหรัฐฯ (S&P 500, NASDAQ) และข่าวเศรษฐกิจโลก',

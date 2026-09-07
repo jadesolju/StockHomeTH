@@ -1,4 +1,4 @@
-import { supabaseClient } from '../supabase/client';
+import { supabase as supabaseClient } from '../supabase/client';
 import { NewsItem } from '../schemas/newsSchema';
 
 export async function isNewsBookmarked(uid: string, newsId: string): Promise<boolean> {

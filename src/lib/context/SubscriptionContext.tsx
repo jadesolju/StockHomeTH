@@ -35,12 +35,16 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 
 const STORAGE_KEY = 'stockhome_local_subscription_tier';
 const AI_USAGE_KEY = 'stockhome_local_ai_usage_count';
+const AI_RESET_DATE_KEY = 'stockhome_local_ai_reset_date';
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const [currentTier, setCurrentTierState] = useState<SubscriptionTier>('free');
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
   const [isPricingModalOpen, setIsPricingModalOpen] = useState<boolean>(false);
   const [aiUsageToday, setAiUsageToday] = useState<number>(0);
+
+  // Helper to get today's date string YYYY-MM-DD
+  const getTodayStr = () => new Date().toISOString().split('T')[0];
 
   // Load saved subscription state from localStorage on mount (Local-first persistence)
   useEffect(() => {
@@ -49,9 +53,20 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       if (savedTier && ['free', 'lite', 'pro', 'vip'].includes(savedTier)) {
         setCurrentTierState(savedTier);
       }
-      const savedAi = localStorage.getItem(AI_USAGE_KEY);
-      if (savedAi) {
-        setAiUsageToday(parseInt(savedAi, 10) || 0);
+
+      const today = getTodayStr();
+      const lastResetDate = localStorage.getItem(AI_RESET_DATE_KEY);
+
+      // Check daily reset rule: if new day, reset credits_used = 0
+      if (lastResetDate !== today) {
+        localStorage.setItem(AI_RESET_DATE_KEY, today);
+        localStorage.setItem(AI_USAGE_KEY, '0');
+        setAiUsageToday(0);
+      } else {
+        const savedAi = localStorage.getItem(AI_USAGE_KEY);
+        if (savedAi) {
+          setAiUsageToday(parseInt(savedAi, 10) || 0);
+        }
       }
     } catch {}
   }, []);
@@ -92,10 +107,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     return currentPlan.limits.watchlistLimit;
   }, [currentPlan.limits.watchlistLimit]);
 
-  const incrementAiUsage = useCallback(() => {
+  const incrementAiUsage = useCallback((newCount?: number) => {
     setAiUsageToday((prev) => {
-      const updated = prev + 1;
+      const today = getTodayStr();
+      const updated = typeof newCount === 'number' ? newCount : prev + 1;
       try {
+        localStorage.setItem(AI_RESET_DATE_KEY, today);
         localStorage.setItem(AI_USAGE_KEY, updated.toString());
       } catch {}
       return updated;
@@ -103,9 +120,11 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const resetAiUsage = useCallback(() => {
+    const today = getTodayStr();
     setAiUsageToday(0);
     try {
-      localStorage.removeItem(AI_USAGE_KEY);
+      localStorage.setItem(AI_RESET_DATE_KEY, today);
+      localStorage.setItem(AI_USAGE_KEY, '0');
     } catch {}
   }, []);
 

@@ -6,6 +6,8 @@ import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { Sparkline } from '../ui/Sparkline';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
+import { useSubscription } from '../../lib/context/SubscriptionContext';
+import type { StockAnalysisResult } from '../../lib/services/aiStockAnalysisService';
 import { getStockTags, getMarketScopedTagFilters, getStockPopularityRank, THAI_7_GIANTS, MAGNIFICENT_7, SET50_TICKERS, SET100_TICKERS, DOW_JONES_30, NASDAQ_100, RECENT_IPOS } from '../../lib/utils/stockTagHelper';
 import {
   Search,
@@ -30,7 +32,14 @@ import {
   Award,
   ArrowUpDown,
   Tag,
-  ExternalLink
+  ExternalLink,
+  Bot,
+  Zap,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2,
+  Lock,
+  Layers
 } from 'lucide-react';
 
 export type StockSortOption =
@@ -94,6 +103,54 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
   } = useMarketSync();
   const { t, tDynamic, language } = useLanguage();
   const { user, openAuthModal } = useClientAuth();
+  const { currentTier, currentPlan, aiUsageToday, incrementAiUsage, openPricingModal } = useSubscription();
+
+  // AI Stock Analysis State (Localhost Prototype with Smart Cache & Rate Limits)
+  const [aiAnalysisMap, setAiAnalysisMap] = useState<Record<string, StockAnalysisResult>>({});
+  const [isAnalyzingStock, setIsAnalyzingStock] = useState(false);
+  const [aiAnalysisError, setAiAnalysisError] = useState<string | null>(null);
+  const [smartCacheHitMap, setSmartCacheHitMap] = useState<Record<string, boolean>>({});
+
+  const handleAnalyzeStockWithAi = async (stock: StockFundamental) => {
+    setIsAnalyzingStock(true);
+    setAiAnalysisError(null);
+
+    try {
+      const res = await fetch('/api/ai/analyze-stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          symbol: stock.ticker,
+          market: stock.market,
+          userTier: currentTier,
+          stockData: stock,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        if (res.status === 429 || data.code === 'RATE_LIMIT_EXCEEDED') {
+          setAiAnalysisError(data.error || `โควตาเครดิต AI ประจำวันของแพ็กเกจ ${currentTier.toUpperCase()} เต็มแล้ว`);
+        } else {
+          setAiAnalysisError(data.error || 'เกิดข้อผิดพลาดในการวิเคราะห์หุ้น กรุณาลองใหม่อีกครั้ง');
+        }
+        return;
+      }
+
+      if (data.data) {
+        setAiAnalysisMap((prev) => ({ ...prev, [stock.ticker]: data.data }));
+        setSmartCacheHitMap((prev) => ({ ...prev, [stock.ticker]: Boolean(data.cached) }));
+        if (!data.cached && typeof data.quota?.creditsUsed === 'number') {
+          incrementAiUsage(data.quota.creditsUsed);
+        }
+      }
+    } catch (err) {
+      setAiAnalysisError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ AI ได้ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setIsAnalyzingStock(false);
+    }
+  };
 
   // Instant reactive market state (allows live market toggle and direct sorting in ALL view)
   const [localMarket, setLocalMarket] = useState<'ALL' | 'SET' | 'US'>(
@@ -1587,15 +1644,252 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
               ))}
             </div>
 
-            {/* AI Analysis Summary */}
-            <div style={{ background: 'rgba(0, 122, 255, 0.06)', border: '1px solid rgba(0, 122, 255, 0.2)', borderRadius: '14px', padding: '16px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-blue)', fontWeight: 700, marginBottom: '6px' }}>
-                <Sparkles size={16} /> {language === 'en' ? 'AI Fundamental & Sentiment Insight' : 'บทวิเคราะห์ AI อัจฉริยะ (AI Fundamental & Sentiment Insight)'}
-              </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
-                {tDynamic(activeStockModal.aiInsight || activeStockModal.description)}
-              </p>
-            </div>
+            {/* Interactive Gemini 1.5 Flash AI Stock Analysis Card */}
+            {(() => {
+              const currentAnalysis = aiAnalysisMap[activeStockModal.ticker];
+              const isCachedToday = smartCacheHitMap[activeStockModal.ticker];
+              const remainingCredits = Math.max(0, currentPlan.limits.aiOnDemandDailyLimit - aiUsageToday);
+
+              return (
+                <div
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(0, 122, 255, 0.08) 0%, rgba(18, 18, 22, 0.9) 100%)',
+                    border: '1px solid rgba(0, 122, 255, 0.25)',
+                    borderRadius: '18px',
+                    padding: '18px 20px',
+                    marginBottom: '22px',
+                    position: 'relative',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
+                  }}
+                >
+                  {/* Header & Quota Status */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue)', fontWeight: 800, fontSize: '0.95rem' }}>
+                      <Bot size={18} />
+                      <span>{language === 'en' ? 'Gemini 1.5 Flash AI Intelligence' : 'AI วิเคราะห์หุ้นเจาะลึก (Gemini 1.5 Flash)'}</span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {isCachedToday && (
+                        <span
+                          style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '100px',
+                            background: 'rgba(34, 197, 94, 0.15)',
+                            color: 'var(--accent-bullish)',
+                            border: '1px solid rgba(34, 197, 94, 0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          <Zap size={11} /> Smart Cache (0 เครดิต)
+                        </span>
+                      )}
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          padding: '3px 10px',
+                          borderRadius: '100px',
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          color: 'var(--text-secondary)',
+                          border: '1px solid var(--glass-border)',
+                        }}
+                      >
+                        โควตา AI วันนี้: <b style={{ color: remainingCredits > 0 ? 'var(--accent-blue)' : '#ef4444' }}>{aiUsageToday}/{currentPlan.limits.aiOnDemandDailyLimit}</b> ครั้ง ({currentPlan.name})
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Quota Error Banner */}
+                  {aiAnalysisError && (
+                    <div
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.12)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: '12px',
+                        padding: '12px 14px',
+                        marginBottom: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '10px',
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fca5a5', fontSize: '0.82rem', fontWeight: 600 }}>
+                        <AlertTriangle size={16} color="#ef4444" />
+                        <span>{aiAnalysisError}</span>
+                      </div>
+                      <button
+                        onClick={openPricingModal}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          background: 'var(--accent-blue)',
+                          color: '#ffffff',
+                          fontSize: '0.75rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        ⚡ อัปเกรดรับโควตาเพิ่ม
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Analysis Result or Trigger Button */}
+                  {currentAnalysis ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', animation: 'fadeIn 0.2s ease-out' }}>
+                      {/* Valuation & Rating Row */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '10px',
+                          padding: '12px 14px',
+                          background: 'rgba(255, 255, 255, 0.04)',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(255, 255, 255, 0.06)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span
+                            style={{
+                              fontSize: '0.8rem',
+                              fontWeight: 900,
+                              padding: '4px 10px',
+                              borderRadius: '8px',
+                              background:
+                                currentAnalysis.rating === 'STRONG_BUY'
+                                  ? 'rgba(34, 197, 94, 0.25)'
+                                  : currentAnalysis.rating === 'BUY'
+                                  ? 'rgba(16, 185, 129, 0.2)'
+                                  : currentAnalysis.rating === 'HOLD'
+                                  ? 'rgba(234, 179, 8, 0.2)'
+                                  : 'rgba(239, 68, 68, 0.2)',
+                              color:
+                                currentAnalysis.rating === 'STRONG_BUY' || currentAnalysis.rating === 'BUY'
+                                  ? 'var(--accent-bullish)'
+                                  : currentAnalysis.rating === 'HOLD'
+                                  ? '#eab308'
+                                  : '#ef4444',
+                              border: '1px solid currentColor',
+                            }}
+                          >
+                            {currentAnalysis.rating.replace('_', ' ')}
+                          </span>
+                          <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                            เป้าหมาย Fair Value: <b style={{ color: 'var(--text-primary)' }}>{currentAnalysis.currency === 'THB' ? '฿' : '$'}{currentAnalysis.fairValueEstimate.targetPrice.toFixed(2)}</b> ({currentAnalysis.fairValueEstimate.upsidePercent >= 0 ? '+' : ''}{currentAnalysis.fairValueEstimate.upsidePercent}% Upside)
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                          AI Confidence: <b style={{ color: 'var(--accent-blue)' }}>{currentAnalysis.confidenceScore}%</b>
+                        </div>
+                      </div>
+
+                      {/* Summary */}
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                        {currentAnalysis.summary}
+                      </p>
+
+                      {/* 2-Col Strengths & Risks */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
+                        {/* Strengths */}
+                        <div style={{ background: 'rgba(34, 197, 94, 0.05)', border: '1px solid rgba(34, 197, 94, 0.15)', borderRadius: '12px', padding: '10px 12px' }}>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent-bullish)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <CheckCircle2 size={13} /> จุดเด่นเชิงพื้นฐาน
+                          </div>
+                          <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                            {currentAnalysis.keyStrengths.map((s, idx) => (
+                              <li key={idx} style={{ marginBottom: '4px' }}>{s}</li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Risks */}
+                        <div style={{ background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.15)', borderRadius: '12px', padding: '10px 12px' }}>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <AlertTriangle size={13} /> ปัจจัยเสี่ยงที่ต้องติดตาม
+                          </div>
+                          <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                            {currentAnalysis.keyRisks.map((r, idx) => (
+                              <li key={idx} style={{ marginBottom: '4px' }}>{r}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+
+                      {/* Technical & Verdict Box */}
+                      <div
+                        style={{
+                          background: 'rgba(0, 122, 255, 0.06)',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(0, 122, 255, 0.15)',
+                          padding: '10px 14px',
+                          fontSize: '0.8rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                        }}
+                      >
+                        <div style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
+                          📊 กราฟ & เทคนิค: <span style={{ color: currentAnalysis.technicalInsight.trend === 'BULLISH' ? 'var(--accent-bullish)' : '#eab308' }}>{currentAnalysis.technicalInsight.trend}</span> • แนวรับ {currentAnalysis.currency === 'THB' ? '฿' : '$'}{currentAnalysis.technicalInsight.supportLevel} • แนวต้าน {currentAnalysis.currency === 'THB' ? '฿' : '$'}{currentAnalysis.technicalInsight.resistanceLevel}
+                        </div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
+                          🎯 <b>กลยุทธ์:</b> {currentAnalysis.actionableVerdict}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 14px 0' }}>
+                        {tDynamic(activeStockModal.aiInsight || activeStockModal.description)}
+                      </p>
+
+                      <button
+                        disabled={isAnalyzingStock}
+                        onClick={() => handleAnalyzeStockWithAi(activeStockModal)}
+                        style={{
+                          width: '100%',
+                          padding: '11px 18px',
+                          borderRadius: '12px',
+                          border: 'none',
+                          background: 'linear-gradient(90deg, #007AFF 0%, #3B82F6 100%)',
+                          color: '#ffffff',
+                          fontSize: '0.88rem',
+                          fontWeight: 800,
+                          cursor: isAnalyzingStock ? 'not-allowed' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          boxShadow: '0 4px 16px rgba(0, 122, 255, 0.3)',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        {isAnalyzingStock ? (
+                          <>
+                            <Loader2 size={16} className="spin" /> กำลังประมวลผลด้วย Gemini 1.5 Flash...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles size={16} /> สั่ง AI วิเคราะห์เจาะลึกงบ & เทคนิค ${activeStockModal.ticker}
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Dedicated Stock-Specific News & Filings Feed */}
             <div>

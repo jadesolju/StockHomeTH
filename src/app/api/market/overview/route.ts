@@ -165,6 +165,32 @@ export async function GET(request: NextRequest) {
       const currentDateTh = now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
       const currentDateEn = now.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 
+      const leadTicker = topGainer?.ticker;
+      const gainerTextTh = leadTicker ? `$${leadTicker}` : 'หุ้นกลุ่มเทคฯ และผู้นำตลาด';
+      const gainerTextEn = leadTicker ? `$${leadTicker}` : 'Tech & Market leaders';
+
+      let headlineTh = '';
+      let headlineEn = '';
+
+      if (sessionKey === 'night') {
+        if (bullishPercent >= 55) {
+          headlineTh = `เกาะติดตลาดหุ้นรอบค่ำ: บรรยากาศซื้อขายคึกคัก นำทัพโดยแรงซื้อใน ${gainerTextTh}`;
+          headlineEn = `Wall Street & Global Wrap: Equities advance steadily, led by momentum in ${gainerTextEn}`;
+        } else {
+          headlineTh = `เกาะติดตลาดหุ้นรอบค่ำ: ภาวะลงทุนแกว่งตัวสลับกลุ่มเล่น นำโดยความเคลื่อนไหวของ ${gainerTextTh}`;
+          headlineEn = `Wall Street & Global Wrap: Selective market rotation underway, led by ${gainerTextEn}`;
+        }
+      } else if (bullishPercent >= 60) {
+        headlineTh = `ตลาดหุ้นปรับตัวสดใสต่อเนื่อง นำทัพโดยแรงซื้อเด่นในหุ้น ${gainerTextTh}`;
+        headlineEn = `Markets rally with broad-based buying interest, led by strong gains in ${gainerTextEn}`;
+      } else if (bullishPercent >= 45) {
+        headlineTh = `ตลาดหุ้นเคลื่อนไหวในกรอบทรงตัว มีแรงซื้อเก็งกำไรหมุนเวียน นำโดย ${gainerTextTh}`;
+        headlineEn = `Markets trade in a stable range with sector rotation, led by ${gainerTextEn}`;
+      } else {
+        headlineTh = `ภาวะตลาดแกว่งตัวผันผวนและพักฐาน ขณะที่ ${gainerTextTh} ยังมีแรงหนุนโดดเด่น`;
+        headlineEn = `Markets face selective consolidation as ${gainerTextEn} demonstrates resilience`;
+      }
+
       const rawOverview = {
         id: `overview-${sessionKey}-${Date.now()}`,
         periodLabel: `${sessionInfo.labelTh} (${sessionInfo.timeRangeTh}) • ${currentDateTh}`,
@@ -173,9 +199,9 @@ export async function GET(request: NextRequest) {
         updatedAt: currentTime,
         timeframe: 'daily' as const,
         region: 'all' as const,
-        mainHeadline: `ตลาดภาพรวมเคลื่อนไหว ${bullishPercent >= 50 ? 'เชิงบวก' : 'ผันผวน'} (${sessionInfo.labelTh}) นำโดย ${topGainer?.ticker || 'หุ้นกลุ่มเทคฯ และพลังงาน'}`,
-        mainHeadline_th: `ตลาดภาพรวมเคลื่อนไหว ${bullishPercent >= 50 ? 'เชิงบวก' : 'ผันผวน'} (${sessionInfo.labelTh}) นำโดย ${topGainer?.ticker || 'หุ้นกลุ่มเทคฯ และพลังงาน'}`,
-        mainHeadline_en: `Market moving ${bullishPercent >= 50 ? 'positively' : 'selectively'} (${sessionInfo.labelEn}) led by ${topGainer?.ticker || 'Tech & Energy leaders'}`,
+        mainHeadline: headlineTh,
+        mainHeadline_th: headlineTh,
+        mainHeadline_en: headlineEn,
         overviewSummary: `ความเคลื่อนไหวตลาดล่าสุด (${sessionInfo.labelTh}): หุ้นปรับตัวขึ้น ${gainers} บริษัท, ปรับตัวลง ${losers} บริษัท จากทั้งหมด ${total} บริษัทที่ติดตามในระบบ (${sessionInfo.descriptionTh})`,
         overviewSummary_th: `ความเคลื่อนไหวตลาดล่าสุด (${sessionInfo.labelTh}): หุ้นปรับตัวขึ้น ${gainers} บริษัท, ปรับตัวลง ${losers} บริษัท จากทั้งหมด ${total} บริษัทที่ติดตามในระบบ (${sessionInfo.descriptionTh})`,
         overviewSummary_en: `Latest Market Activity (${sessionInfo.labelEn}): ${gainers} advancers vs ${losers} decliners across ${total} monitored equities (${sessionInfo.descriptionEn})`,

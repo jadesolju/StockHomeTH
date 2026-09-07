@@ -125,7 +125,9 @@ export async function fetchLiveMarketOverview(): Promise<DigestSummary> {
 
       const topHeadline = newsList && newsList.length > 0
         ? newsList[0].title
-        : `ตลาดภาพรวมเคลื่อนไหว ${bullishPercent >= 50 ? 'เชิงบวก' : 'ผันผวน'} นำโดย ${topGainer?.ticker || 'กลุ่มพลังงาน & เทคโนโลยี'}`;
+        : (bullishPercent >= 55
+            ? `ตลาดหุ้นเคลื่อนไหวในแดนบวก มีแรงซื้อหนุนนำโดย ${topGainer?.ticker ? '$' + topGainer.ticker : 'หุ้นกลุ่มเทคฯ และพลังงาน'}`
+            : `ภาวะตลาดแกว่งตัวผันผวนสลับกลุ่มเล่น นำโดยความเคลื่อนไหวของ ${topGainer?.ticker ? '$' + topGainer.ticker : 'หุ้นกลุ่มเทคฯ และพลังงาน'}`);
 
       const overview: DigestSummary = {
         id: `digest-${Date.now()}`,
