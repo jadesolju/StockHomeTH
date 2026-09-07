@@ -10,7 +10,7 @@ import sys
 import json
 import random
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 
 if sys.platform == "win32":
     try:
@@ -140,7 +140,7 @@ US_CURATED = {
     "ZS":    ("Zscaler, Inc.",                  "Technology & Cybersecurity",   178.40, "$27.2B",  55.0, 0.0),
     "TTD":   ("The Trade Desk, Inc.",           "Digital Advertising Tech",     108.50, "$53.2B",  82.0, 0.0),
     "TTWO":  ("Take-Two Interactive Software",  "Gaming & Interactive Media",   152.40, "$26.5B",  38.0, 0.0),
-    "EA":    ("Electronic Arts Inc.",           "Gaming & Digital Media",       2.94, "$38.2B",  32.0, 0.95),
+    "EA":    ("Electronic Arts Inc.",           "Gaming & Digital Media",       2.92, "$38.2B",  32.0, 0.95),
     "WBD":   ("Warner Bros. Discovery, Inc.",   "Media & Entertainment",          7.85, "$19.2B",   0.0, 0.0),
     "CHTR":  ("Charter Communications, Inc.",   "Telecom & Cable",              345.00, "$49.8B",  10.5, 0.0),
     "CMCSA": ("Comcast Corporation",            "Telecom & Media",               40.50, "$158.2B", 10.8, 3.05),
@@ -360,7 +360,7 @@ def save_to_db(stocks, db_path=DB_FILE):
     );
     """)
 
-    now = datetime.now().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     for s in stocks:
         cur.execute("""
             INSERT OR REPLACE INTO stocks VALUES (
@@ -408,7 +408,7 @@ def save_to_db(stocks, db_path=DB_FILE):
 def main():
     print("=" * 60)
     print("🇺🇸 StockHomeTH - Global (US) Stock Universe Builder")
-    print(f"   Timestamp: {datetime.now().isoformat()}")
+    print(f"   Timestamp: {datetime.now(timezone.utc).isoformat()}")
     print("=" * 60)
 
     target = 1500
@@ -436,7 +436,7 @@ def main():
 
     combined = existing + us_stocks
     cache_payload = {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "count": len(combined),
         "setCount": len(existing),
         "usCount": len(us_stocks),
