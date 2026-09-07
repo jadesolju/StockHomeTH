@@ -41,7 +41,7 @@ export function HeaderClientNav({
 }: HeaderClientNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { language, toggleLanguage, t } = useLanguage();
+  const { language, setLanguage, toggleLanguage, t } = useLanguage();
   const { theme, resolvedTheme, cycleTheme } = useTheme();
   const { setSelectedMarket, refreshAll, isSyncing, cooldownRemaining } = useMarketSync();
 
