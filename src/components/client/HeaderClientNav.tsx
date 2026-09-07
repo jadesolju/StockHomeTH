@@ -91,7 +91,17 @@ export function HeaderClientNav({
   }, []);
 
   return (
-    <header className="mobile-pwa-header glass-card" style={{ borderRadius: '0 0 20px 20px', padding: '12px 24px', marginBottom: '20px' }}>
+    <header
+      className="mobile-pwa-header glass-card"
+      style={{
+        borderRadius: '0 0 20px 20px',
+        padding: '12px 24px',
+        marginBottom: '20px',
+        overflow: 'visible',
+        position: 'relative',
+        zIndex: 1000,
+      }}
+    >
       <div style={{ maxWidth: '1240px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'nowrap', gap: '12px' }}>
         {/* Brand Logo & Title */}
         <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>

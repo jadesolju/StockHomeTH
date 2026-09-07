@@ -274,9 +274,18 @@ export const AdminBackofficeClient: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: actionId }),
       });
-      const data = await res.json();
 
-      if (data.success) {
+      const contentType = res.headers.get('content-type') || '';
+      let data: any = null;
+
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const rawText = await res.text();
+        throw new Error(`Server returned HTTP ${res.status} (${res.statusText || 'Non-JSON response'})\n${rawText.slice(0, 300)}`);
+      }
+
+      if (data && data.success) {
         setLogsOutput(
           `[✓ SUCCESS] ${actionName} completed in ${data.durationMs || 0}ms\n\n` +
             `Timestamp: ${data.timestamp}\n` +
@@ -285,10 +294,14 @@ export const AdminBackofficeClient: React.FC = () => {
         );
         fetchStatus();
       } else {
-        setLogsOutput(`[✕ ERROR] ${data.error || 'Execution failed'}\n\nStderr:\n${data.stderr || 'No stderr'}`);
+        setLogsOutput(
+          `[✕ EXECUTION FAILED] ${data?.error || 'Action failed'}\n\n` +
+            (data?.stderr ? `Stderr:\n${data.stderr}\n\n` : '') +
+            (data?.output ? `Stdout:\n${data.output}` : '')
+        );
       }
     } catch (err: any) {
-      setLogsOutput(`[✕ NETWORK ERROR] ${err.message}`);
+      setLogsOutput(`[✕ BACKEND ERROR] ${err.message || 'Could not communicate with admin backend'}`);
     } finally {
       setRunningAction(null);
     }

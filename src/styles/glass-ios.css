@@ -520,6 +520,7 @@ body {
     padding: 10px 14px !important;
     border-radius: 0 0 16px 16px !important;
     margin-bottom: 12px !important;
+    overflow: visible !important;
   }
   .mobile-pwa-bottom-nav {
     display: flex !important;
