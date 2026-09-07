@@ -4,6 +4,18 @@
 -- (Idempotent: Safe to re-run multiple times)
 -- =========================================================================
 
+-- 0. Register Migration in Supabase Migration History
+create schema if not exists supabase_migrations;
+create table if not exists supabase_migrations.schema_migrations (
+  version text primary key,
+  statements text[],
+  name text
+);
+
+insert into supabase_migrations.schema_migrations (version, name)
+values ('20260907120000', 'new_migration')
+on conflict (version) do nothing;
+
 -- 1. Enable UUID Extension
 create extension if not exists "uuid-ossp";
 
