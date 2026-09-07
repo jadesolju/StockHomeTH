@@ -13,6 +13,7 @@ import { PricingModal } from '../components/client/PricingModal';
 import { LocalRoleSwitcher } from '../components/client/LocalRoleSwitcher';
 import { PwaRegisterClient } from '../components/client/PwaRegisterClient';
 import { PwaBottomNav } from '../components/client/PwaBottomNav';
+import { GlobalNewsModal } from '../components/client/GlobalNewsModal';
 
 export const metadata: Metadata = {
   title: 'StockHomeTH • สรุปข่าวหุ้น AI และข้อมูลตลาดหุ้นไทย & สหรัฐฯ',
@@ -70,6 +71,7 @@ export default function RootLayout({
                   <PricingModal />
                   <LocalRoleSwitcher />
                   <PwaBottomNav />
+                  <GlobalNewsModal />
                   <SyncLogModal />
                 </MarketSyncProvider>
               </SubscriptionProvider>

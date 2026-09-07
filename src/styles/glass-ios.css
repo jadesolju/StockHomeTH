@@ -591,4 +591,24 @@ body {
   }
 }
 
+/* Key Catalyst Clickable Card Interactions */
+.catalyst-item-clickable {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.catalyst-item-clickable:hover {
+  background: var(--card-sub-bg-hover, rgba(255, 255, 255, 0.08)) !important;
+  border-color: var(--accent-blue) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.15);
+}
+
+.catalyst-item-clickable:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
 

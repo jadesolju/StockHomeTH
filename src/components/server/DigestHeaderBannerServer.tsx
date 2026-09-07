@@ -1,17 +1,17 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import type { DigestSummary } from '../../lib/schemas/newsSchema';
+import type { DigestSummary, StockNewsItem } from '../../lib/schemas/newsSchema';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useLanguage } from '../../lib/context/LanguageContext';
-import { Zap, CheckCircle2, RefreshCw, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Minus, Landmark, Globe, Building, Activity } from 'lucide-react';
+import { Zap, CheckCircle2, RefreshCw, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Minus, Landmark, Globe, Building, Activity, Newspaper, ChevronRight } from 'lucide-react';
 
 interface DigestHeaderBannerProps {
   summary?: DigestSummary;
 }
 
 export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderBannerProps) {
-  const { overview, stocks, news, isSyncing, cooldownRemaining, refreshAll, focusStock, getStockByTicker, lastUpdated } = useMarketSync();
+  const { overview, stocks, news, isSyncing, cooldownRemaining, refreshAll, focusStock, getStockByTicker, lastUpdated, setActiveNewsModal, getNewsByTicker } = useMarketSync();
   const { t, tDynamic, language } = useLanguage();
   const [activeMarketTab, setActiveMarketTab] = useState<'ALL' | 'SET' | 'US'>('ALL');
   
@@ -146,28 +146,104 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
 
   const renderCatalystItem = (cat: string, idx: number) => {
     const translatedCat = cat;
-    const words = cat.split(/[\s:,\(\)\+]+/);
-    const matched = words.find((w) => {
-      const clean = w.replace(/[\$\^\.]/g, '').trim().toUpperCase();
-      return clean.length >= 2 && stocks.some((s) => s.ticker.toUpperCase() === clean);
-    });
-    const cleanTicker = matched ? matched.replace(/[\$\^\.]/g, '').trim().toUpperCase() : undefined;
+
+    // Find all matching tickers mentioned in this catalyst
+    const matchedTickers = stocks
+      .filter((s) => {
+        const regex = new RegExp(`\\b${s.ticker}\\b`, 'i');
+        return regex.test(cat);
+      })
+      .map((s) => s.ticker.toUpperCase());
+
+    const cleanTicker = matchedTickers[0];
     const stock = cleanTicker ? getStockByTicker(cleanTicker) : undefined;
+
+    const handleCatalystClick = () => {
+      // 1. Check if there's an existing news item for any matched ticker or keyword
+      let matchingNews: StockNewsItem | undefined;
+
+      for (const tkr of matchedTickers) {
+        const tickerNews = getNewsByTicker(tkr);
+        if (tickerNews && tickerNews.length > 0) {
+          matchingNews = tickerNews[0];
+          break;
+        }
+      }
+
+      if (!matchingNews && news && news.length > 0) {
+        const keywords = cat.split(/[\s:,\(\)\+]+/).filter((w) => w.length >= 3);
+        matchingNews = news.find((n) => {
+          const text = `${n.title} ${n.summary} ${(n.tickers || []).join(' ')}`.toLowerCase();
+          return keywords.some((kw) => text.includes(kw.toLowerCase()));
+        });
+      }
+
+      if (matchingNews) {
+        setActiveNewsModal(matchingNews);
+        return;
+      }
+
+      // 2. Generate dynamic rich News Item if no exact match found
+      const isThai = cleanTicker && stock ? stock.market === 'SET' : activeMarketTab === 'SET' || (!cat.includes('US') && !cat.includes('Wall Street') && !cat.includes('NVIDIA') && !cat.includes('Apple') && !cat.includes('Tesla'));
+      const catParts = cat.split(':');
+      const catTitle = catParts.length > 1 ? catParts[0].trim() : (cat.length > 60 ? `${cat.slice(0, 60)}...` : cat);
+      const catSummary = catParts.length > 1 ? catParts.slice(1).join(':').trim() : cat;
+
+      const dynamicNewsItem: StockNewsItem = {
+        id: `catalyst-news-${Date.now()}-${idx}-${cleanTicker || 'macro'}`,
+        title: catTitle,
+        title_th: catTitle,
+        title_en: catTitle,
+        summary: catSummary,
+        summary_th: catSummary,
+        summary_en: catSummary,
+        keyTakeaways: [
+          catSummary,
+          cleanTicker ? `ปัจจัยเชิงบวกและทิศทางราคาของหุ้น $${cleanTicker} สอดคล้องกับภาพรวมตลาด` : 'ปัจจัยเชิงโครงสร้างที่ส่งผลต่อการเคลื่อนไหวของดัชนีและกลุ่มอุตสาหกรรมหลัก',
+          'นักลงทุนควรติดตามกระแสเงินทุน (Fund Flow) และการประกาศตัวเลขเศรษฐกิจต่อเนื่อง'
+        ],
+        keyTakeaways_th: [
+          catSummary,
+          cleanTicker ? `ปัจจัยเชิงบวกและทิศทางราคาของหุ้น $${cleanTicker} สอดคล้องกับภาพรวมตลาด` : 'ปัจจัยเชิงโครงสร้างที่ส่งผลต่อการเคลื่อนไหวของดัชนีและกลุ่มอุตสาหกรรมหลัก',
+          'นักลงทุนควรติดตามกระแสเงินทุน (Fund Flow) และการประกาศตัวเลขเศรษฐกิจต่อเนื่อง'
+        ],
+        keyTakeaways_en: [
+          catSummary,
+          cleanTicker ? `Momentum and fundamentals for $${cleanTicker} align with broad market drivers` : 'Key structural catalyst driving index performance and industry sector rotation',
+          'Investors should monitor global capital flows and macroeconomic data releases'
+        ],
+        fullContent: `${catSummary}\n\nบทวิเคราะห์ปัจจัยเร่ง (Catalyst Intelligence):\nประเด็นนี้เป็นหนึ่งในตัวขับเคลื่อนสำคัญ (Key Catalyst) ที่นักวิเคราะห์และระบบ Real-time AI ตรวจพบในรอบตลาดปัจจุบัน ส่งผลให้หุ้นที่เกี่ยวข้องมีแรงซื้อขายหนาแน่นและทิศทางราคาโดดเด่น`,
+        region: isThai ? 'thai' : 'global',
+        timeframe: 'daily',
+        marketName: isThai ? 'SET Index (ไทย)' : 'US & Global Markets',
+        date: new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }),
+        periodLabel: `Key Catalyst • ${summary.periodLabel_th || summary.periodLabel || 'Live Brief'}`,
+        periodLabel_th: `Key Catalyst • ${summary.periodLabel_th || summary.periodLabel || 'Live Brief'}`,
+        periodLabel_en: `Key Catalyst • ${summary.periodLabel_en || 'Live Brief'}`,
+        sentiment: stock ? (stock.change >= 0 ? 'bullish' : 'bearish') : 'bullish',
+        tickers: matchedTickers.length > 0 ? matchedTickers : (isThai ? ['SET'] : ['US']),
+        readTime: '1 นาที',
+        source: 'StockHome Intelligence Catalyst',
+        category: isThai ? 'energy' : 'tech',
+        impactAnalysis: {
+          bullishReason: 'แรงหนุนเชิงบวกต่อกลุ่มอุตสาหกรรมเป้าหมายและหุ้นที่เกี่ยวข้อง',
+          targetSector: stock ? stock.sector : (isThai ? 'SET50 & Leaders' : 'Global Tech & Equities'),
+          priceTrendOutlook: stock && stock.change >= 0 ? 'มีแนวโน้มทดสอบแนวต้านสำคัญ' : 'แกว่งตัวในกรอบสร้างฐานราคา',
+        },
+        isFeatured: true,
+        isBookmarked: false,
+      };
+
+      setActiveNewsModal(dynamicNewsItem);
+    };
 
     return (
       <div
         key={`cat-${idx}-${cat.substring(0, 15)}`}
-        onClick={() => {
-          if (matched) {
-            focusStock(matched);
-            const clean = matched.replace(/[\$\^\.]/g, '').trim().toUpperCase();
-            window.dispatchEvent(new CustomEvent('filterNewsByTicker', { detail: clean }));
-            const el = document.getElementById('news-feed-section');
-            if (el) {
-              el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-          }
-        }}
+        onClick={handleCatalystClick}
+        role="button"
+        tabIndex={0}
+        title={language === 'en' ? 'Click to read full news and impact analysis' : 'คลิกเพื่อเปิดอ่านข่าวสารและบทวิเคราะห์เจาะลึก'}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -176,38 +252,71 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
           fontSize: '0.82rem',
           color: 'var(--text-primary)',
           background: 'var(--card-sub-bg)',
-          padding: '8px 12px',
-          borderRadius: '10px',
-          cursor: matched ? 'pointer' : 'default',
-          border: matched ? '1px solid var(--accent-blue)' : '1px solid var(--card-sub-border)',
+          padding: '9px 12px',
+          borderRadius: '12px',
+          cursor: 'pointer',
+          border: '1px solid var(--card-sub-border)',
           transition: 'all 0.15s ease',
         }}
+        className="catalyst-item-clickable"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
-          <CheckCircle2 size={13} color="var(--accent-blue)" style={{ flexShrink: 0 }} />
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{translatedCat}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', flex: 1 }}>
+          <div
+            style={{
+              width: '20px',
+              height: '20px',
+              borderRadius: '6px',
+              background: 'rgba(0, 122, 255, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Newspaper size={12} color="var(--accent-blue)" />
+          </div>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
+            {translatedCat}
+          </span>
         </div>
-        {stock && (
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          {stock && (
+            <span
+              style={{
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                padding: '2px 8px',
+                borderRadius: '100px',
+                background: stock.change >= 0 ? 'var(--accent-bullish-bg)' : 'var(--accent-bearish-bg)',
+                color: stock.change >= 0 ? 'var(--accent-bullish)' : 'var(--accent-bearish)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '2px',
+              }}
+            >
+              {Number(stock.change) >= 0 ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+              {stock.currency === 'THB' ? '฿' : '$'}
+              {(Number(stock.price) || 0).toFixed(2)} ({Number(stock.change) >= 0 ? '+' : ''}
+              {(Number(stock.change) || 0).toFixed(2)}%)
+            </span>
+          )}
           <span
             style={{
-              flexShrink: 0,
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              padding: '2px 8px',
-              borderRadius: '100px',
-              background: stock.change >= 0 ? 'var(--accent-bullish-bg)' : 'var(--accent-bearish-bg)',
-              color: stock.change >= 0 ? 'var(--accent-bullish)' : 'var(--accent-bearish)',
-              display: 'flex',
+              fontSize: '0.68rem',
+              color: 'var(--accent-blue)',
+              fontWeight: 700,
+              background: 'rgba(0, 122, 255, 0.1)',
+              padding: '2px 6px',
+              borderRadius: '6px',
+              display: 'inline-flex',
               alignItems: 'center',
               gap: '2px',
             }}
           >
-            {Number(stock.change) >= 0 ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
-            {stock.currency === 'THB' ? '฿' : '$'}
-            {(Number(stock.price) || 0).toFixed(2)} ({Number(stock.change) >= 0 ? '+' : ''}
-            {(Number(stock.change) || 0).toFixed(2)}%)
+            อ่านข่าว <ChevronRight size={11} />
           </span>
-        )}
+        </div>
       </div>
     );
   };

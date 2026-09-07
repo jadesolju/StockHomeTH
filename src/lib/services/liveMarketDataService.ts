@@ -123,11 +123,15 @@ export async function fetchLiveMarketOverview(): Promise<DigestSummary> {
         );
       }
 
+      const thaiStocks = stocks.filter((s) => s.market === 'SET');
+      const topThaiMovers = [...thaiStocks].sort((a, b) => b.change - a.change).slice(0, 3).map(s => `$${s.ticker}`);
+      const leadTickers = topThaiMovers.length > 0 ? topThaiMovers.join(', ') : (topGainer?.ticker ? `$${topGainer.ticker}` : '$DELTA, $PTT, $GULF');
+
       const topHeadline = newsList && newsList.length > 0
         ? newsList[0].title
         : (bullishPercent >= 55
-            ? `ตลาดหุ้นเคลื่อนไหวในแดนบวก มีแรงซื้อหนุนนำโดย ${topGainer?.ticker ? '$' + topGainer.ticker : 'หุ้นกลุ่มเทคฯ และพลังงาน'}`
-            : `ภาวะตลาดแกว่งตัวผันผวนสลับกลุ่มเล่น นำโดยความเคลื่อนไหวของ ${topGainer?.ticker ? '$' + topGainer.ticker : 'หุ้นกลุ่มเทคฯ และพลังงาน'}`);
+            ? `สรุปภาวะตลาด: ดัชนีปรับตัวขึ้นอย่างแข็งแกร่ง — หุ้นโดดเด่นประจำวัน: ${leadTickers}`
+            : `สรุปภาวะตลาด: ตลาดเคลื่อนไหวทรงตัวในกรอบ — หุ้นโดดเด่นประจำวัน: ${leadTickers}`);
 
       const overview: DigestSummary = {
         id: `digest-${Date.now()}`,

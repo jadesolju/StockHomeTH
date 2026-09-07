@@ -159,36 +159,40 @@ export async function GET(request: NextRequest) {
       const bearishPercent = Math.round((losers / total) * 100);
       const neutralPercent = Math.max(0, 100 - bullishPercent - bearishPercent);
 
-      const topGainer = [...stocks].sort((a, b) => b.change - a.change)[0];
+      const thaiStocks = stocks.filter((s) => s.market === 'SET');
+      const usStocks = stocks.filter((s) => s.market === 'US');
 
-      const currentTime = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
-      const currentDateTh = now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-      const currentDateEn = now.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+      const topThaiMovers = [...thaiStocks].sort((a, b) => b.change - a.change).slice(0, 3).map(s => `$${s.ticker}`);
+      const topUsMovers = [...usStocks].sort((a, b) => b.change - a.change).slice(0, 3).map(s => `$${s.ticker}`);
 
-      const leadTicker = topGainer?.ticker;
-      const gainerTextTh = leadTicker ? `$${leadTicker}` : 'หุ้นกลุ่มเทคฯ และผู้นำตลาด';
-      const gainerTextEn = leadTicker ? `$${leadTicker}` : 'Tech & Market leaders';
+      const leadTickersTh = sessionKey === 'night' 
+        ? (topUsMovers.length > 0 ? topUsMovers.join(', ') : '$NVDA, $AAPL, $TSLA')
+        : (topThaiMovers.length > 0 ? topThaiMovers.join(', ') : '$DELTA, $PTT, $GULF');
+
+      const leadTickersEn = sessionKey === 'night'
+        ? (topUsMovers.length > 0 ? topUsMovers.join(', ') : '$NVDA, $AAPL, $TSLA')
+        : (topThaiMovers.length > 0 ? topThaiMovers.join(', ') : '$DELTA, $PTT, $GULF');
 
       let headlineTh = '';
       let headlineEn = '';
 
       if (sessionKey === 'night') {
         if (bullishPercent >= 55) {
-          headlineTh = `เกาะติดตลาดหุ้นรอบค่ำ: บรรยากาศซื้อขายคึกคัก นำทัพโดยแรงซื้อใน ${gainerTextTh}`;
-          headlineEn = `Wall Street & Global Wrap: Equities advance steadily, led by momentum in ${gainerTextEn}`;
+          headlineTh = `เกาะติดตลาดรอบค่ำ & Wall Street: ตลาดสหรัฐฯ ปรับตัวสดใส — หุ้นโดดเด่นประจำวัน: ${leadTickersTh}`;
+          headlineEn = `Wall Street & Global Wrap: Tech & Equities Rally — Market Leaders: ${leadTickersEn}`;
         } else {
-          headlineTh = `เกาะติดตลาดหุ้นรอบค่ำ: ภาวะลงทุนแกว่งตัวสลับกลุ่มเล่น นำโดยความเคลื่อนไหวของ ${gainerTextTh}`;
-          headlineEn = `Wall Street & Global Wrap: Selective market rotation underway, led by ${gainerTextEn}`;
+          headlineTh = `เกาะติดตลาดรอบค่ำ & Wall Street: ดัชนีแกว่งตัวสลับกลุ่มเล่น — หุ้นโดดเด่นประจำวัน: ${leadTickersTh}`;
+          headlineEn = `Wall Street & Global Wrap: Sector Rotation Underway — Market Leaders: ${leadTickersEn}`;
         }
       } else if (bullishPercent >= 60) {
-        headlineTh = `ตลาดหุ้นปรับตัวสดใสต่อเนื่อง นำทัพโดยแรงซื้อเด่นในหุ้น ${gainerTextTh}`;
-        headlineEn = `Markets rally with broad-based buying interest, led by strong gains in ${gainerTextEn}`;
+        headlineTh = `สรุปภาวะตลาด: ดัชนีปรับตัวขึ้นอย่างแข็งแกร่ง — หุ้นโดดเด่นประจำวัน: ${leadTickersTh}`;
+        headlineEn = `Market Intelligence: Broad-Based Equity Rally — Daily Leaders: ${leadTickersEn}`;
       } else if (bullishPercent >= 45) {
-        headlineTh = `ตลาดหุ้นเคลื่อนไหวในกรอบทรงตัว มีแรงซื้อเก็งกำไรหมุนเวียน นำโดย ${gainerTextTh}`;
-        headlineEn = `Markets trade in a stable range with sector rotation, led by ${gainerTextEn}`;
+        headlineTh = `สรุปภาวะตลาด: ตลาดเคลื่อนไหวทรงตัวในกรอบ — หุ้นโดดเด่นประจำวัน: ${leadTickersTh}`;
+        headlineEn = `Market Intelligence: Equities Consolidate Steadily — Daily Highlights: ${leadTickersEn}`;
       } else {
-        headlineTh = `ภาวะตลาดแกว่งตัวผันผวนและพักฐาน ขณะที่ ${gainerTextTh} ยังมีแรงหนุนโดดเด่น`;
-        headlineEn = `Markets face selective consolidation as ${gainerTextEn} demonstrates resilience`;
+        headlineTh = `สรุปภาวะตลาด: ดัชนีพักฐานและเผชิญแรงขายทำกำไร — หุ้นโดดเด่นประจำวัน: ${leadTickersTh}`;
+        headlineEn = `Market Intelligence: Market Pullback & Defensive Positioning — Key Movers: ${leadTickersEn}`;
       }
 
       const rawOverview = {
@@ -202,9 +206,9 @@ export async function GET(request: NextRequest) {
         mainHeadline: headlineTh,
         mainHeadline_th: headlineTh,
         mainHeadline_en: headlineEn,
-        overviewSummary: `ความเคลื่อนไหวตลาดล่าสุด (${sessionInfo.labelTh}): หุ้นปรับตัวขึ้น ${gainers} บริษัท, ปรับตัวลง ${losers} บริษัท จากทั้งหมด ${total} บริษัทที่ติดตามในระบบ (${sessionInfo.descriptionTh})`,
-        overviewSummary_th: `ความเคลื่อนไหวตลาดล่าสุด (${sessionInfo.labelTh}): หุ้นปรับตัวขึ้น ${gainers} บริษัท, ปรับตัวลง ${losers} บริษัท จากทั้งหมด ${total} บริษัทที่ติดตามในระบบ (${sessionInfo.descriptionTh})`,
-        overviewSummary_en: `Latest Market Activity (${sessionInfo.labelEn}): ${gainers} advancers vs ${losers} decliners across ${total} monitored equities (${sessionInfo.descriptionEn})`,
+        overviewSummary: `ความเคลื่อนไหวตลาดล่าสุด: หุ้นปรับตัวขึ้น ${gainers} บริษัท, ปรับตัวลง ${losers} บริษัท จากทั้งหมด ${total.toLocaleString()} บริษัทที่ติดตามในระบบ (${sessionInfo.descriptionTh})`,
+        overviewSummary_th: `ความเคลื่อนไหวตลาดล่าสุด: หุ้นปรับตัวขึ้น ${gainers} บริษัท, ปรับตัวลง ${losers} บริษัท จากทั้งหมด ${total.toLocaleString()} บริษัทที่ติดตามในระบบ (${sessionInfo.descriptionTh})`,
+        overviewSummary_en: `Latest Market Breadth: ${gainers} advancing stocks vs ${losers} declining stocks across ${total.toLocaleString()} monitored equities (${sessionInfo.descriptionEn})`,
         marketSentimentScore: {
           bullishPercent,
           neutralPercent,
