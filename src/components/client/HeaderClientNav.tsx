@@ -83,13 +83,23 @@ export function HeaderClientNav({
                 width: '42px',
                 height: '42px',
                 borderRadius: '12px',
-                background: '#0071e3',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                padding: '4px',
+                boxShadow: '0 4px 14px rgba(91, 127, 255, 0.25)',
               }}
             >
-              <TrendingUp size={24} color="#ffffff" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/Gemini-svg.svg"
+                alt="Gemini AI Logo"
+                width={32}
+                height={32}
+                style={{ objectFit: 'contain' }}
+              />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
