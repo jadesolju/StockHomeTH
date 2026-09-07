@@ -41,24 +41,35 @@ export function HeaderClientNav({
 }: HeaderClientNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { language, setLanguage, toggleLanguage, t } = useLanguage();
-  const { theme, resolvedTheme, cycleTheme } = useTheme();
-  const { selectedMarket, setSelectedMarket, refreshAll, isSyncing, cooldownRemaining, setIsLogModalOpen } = useMarketSync();
+  const { language, toggleLanguage, t } = useLanguage();
+  const { theme, cycleTheme } = useTheme();
+  const { setSelectedMarket, refreshAll, isSyncing, cooldownRemaining } = useMarketSync();
 
-  const currentDate = new Date().toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+  const [currentDate, setCurrentDate] = React.useState<string>(() => {
+    return new Date().toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   });
 
-  // Handle market tab switch: navigate to "/" if on a different page, then set market
-  const handleMarketSwitch = (market: 'ALL' | 'SET' | 'US') => {
-    setSelectedMarket(market);
-    if (pathname !== '/') {
-      router.push('/');
-    }
-  };
+  React.useEffect(() => {
+    const updateDate = () => {
+      const now = new Date();
+      setCurrentDate(
+        now.toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      );
+    };
+    updateDate();
+    const timer = setInterval(updateDate, 30000);
+    return () => clearInterval(timer);
+  }, [language]);
 
   return (
     <header className="glass-card" style={{ borderRadius: '0 0 24px 24px', padding: '16px 28px', marginBottom: '24px' }}>

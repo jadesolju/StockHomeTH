@@ -9,6 +9,9 @@ import { enrichDualLanguageDigestSummaryAsync } from '../../../../lib/services/d
 import { getCurrentBriefingSession } from '../../../../lib/utils/marketHours';
 import { mockDailyDigestSummary } from '../../../../data/mockNewsData';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const SESSION_CACHE_FILE = path.resolve(process.cwd(), 'market_briefing_session_cache.json');
 
 function loadSessionCache(): Record<string, any> | null {

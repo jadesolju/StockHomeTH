@@ -5,6 +5,9 @@ import { getStockPopularityRank } from '../../lib/utils/stockTagHelper';
 import { mockMarketIndices } from '../../data/mockMarketData';
 import { Globe, Sparkles, BarChart3, ArrowUpDown } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: 'ตลาดหุ้นทั้งหมด (ALL Markets) | StockHomeTH',
   description: 'สำรวจและวิเคราะห์ราคาหุ้น ปัจจัยพื้นฐาน P/E ปันผล และคะแนน AI ของหุ้นไทยและหุ้นสหรัฐฯ กว่า 1,500 ตัว',

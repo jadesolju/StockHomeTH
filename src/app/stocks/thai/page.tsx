@@ -6,6 +6,9 @@ import { mockMarketIndices } from '../../../data/mockMarketData';
 import { Landmark, Clock, Activity, ShieldCheck, TrendingUp } from 'lucide-react';
 import { getSetMarketStatus } from '../../../lib/utils/marketHours';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: 'หุ้นไทย (SET & mai) | StockHomeTH',
   description: 'ศูนย์ข้อมูลหุ้นไทย ตลาดหลักทรัพย์แห่งประเทศไทย (SET & mai) กว่า 800+ บริษัท วิเคราะห์งบการเงิน P/E ปันผล และคะแนน AI',

@@ -7,6 +7,9 @@ import { getDynamicDailyDigestSummary, getDynamicMockNewsItems } from '../data/m
 import { mockMarketIndices } from '../data/mockMarketData';
 import { Globe, Landmark, Building, ArrowRight, TrendingUp, Sparkles, BarChart3 } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function HomePage() {
   const dynamicDigest = getDynamicDailyDigestSummary();
   const dynamicNews = getDynamicMockNewsItems();

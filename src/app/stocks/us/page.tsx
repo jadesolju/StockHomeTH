@@ -6,6 +6,9 @@ import { mockMarketIndices } from '../../../data/mockMarketData';
 import { Building, Clock, Activity, Cpu, TrendingUp } from 'lucide-react';
 import { getUsMarketStatus } from '../../../lib/utils/marketHours';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: 'หุ้นต่างประเทศ (US Markets) | StockHomeTH',
   description: 'ศูนย์ข้อมูลหุ้นสหรัฐฯ S&P 500, NASDAQ, Dow Jones, Magnificent 7 และผู้นำเทคโนโลยี AI ระดับโลกกว่า 700+ บริษัท',
