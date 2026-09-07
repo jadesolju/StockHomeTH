@@ -130,8 +130,8 @@ async function seedStocks() {
 
   console.log(`⚡ Total stocks prepared: ${stocksToUpsert.length}`);
 
-  // Batch Upsert (50 at a time) via Supabase REST
-  const batchSize = 50;
+  // Batch Upsert (250 at a time) via Supabase REST
+  const batchSize = 250;
   let successCount = 0;
   for (let i = 0; i < stocksToUpsert.length; i += batchSize) {
     const batch = stocksToUpsert.slice(i, i + batchSize);
