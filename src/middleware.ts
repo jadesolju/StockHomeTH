@@ -1,10 +1,10 @@
-import { type NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { updateSession } from '@/utils/supabase/middleware';
 
 export async function middleware(request: NextRequest) {
   // Never intercept API routes with Supabase session refresh middleware
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    return;
+    return NextResponse.next();
   }
   return await updateSession(request);
 }
