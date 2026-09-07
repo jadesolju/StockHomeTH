@@ -3,11 +3,13 @@ import '../styles/glass-ios.css';
 import { HeaderClientNav } from '../components/client/HeaderClientNav';
 import { SyncLogModal } from '../components/client/SyncLogModal';
 import { AuthModal } from '../components/client/AuthModal';
+import { UserProfileModal } from '../components/client/UserProfileModal';
 import { MarketSyncProvider } from '../lib/context/MarketSyncContext';
 import { LanguageProvider } from '../lib/context/LanguageContext';
 import { ThemeProvider } from '../lib/context/ThemeContext';
 import { ClientAuthProvider } from '../lib/context/ClientAuthContext';
 import { PwaRegisterClient } from '../components/client/PwaRegisterClient';
+import { PwaBottomNav } from '../components/client/PwaBottomNav';
 
 export const metadata: Metadata = {
   title: 'StockHomeTH • สรุปข่าวหุ้น AI และข้อมูลตลาดหุ้นไทย & สหรัฐฯ',
@@ -60,6 +62,8 @@ export default function RootLayout({
                   {children}
                 </main>
                 <AuthModal />
+                <UserProfileModal />
+                <PwaBottomNav />
                 <SyncLogModal />
               </MarketSyncProvider>
             </ClientAuthProvider>

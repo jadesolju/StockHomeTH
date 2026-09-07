@@ -9,7 +9,8 @@ import { NewsCard } from './NewsCard';
 import { NewsDetailSheet } from './NewsDetailSheet';
 import { useStockFilters } from '../../lib/hooks/useStockFilters';
 import { generateAiNewsAction } from '../../lib/actions/newsActions';
-import { Sparkles, RotateCcw, X, Target, Newspaper, Calendar, Search, TrendingUp, ShieldCheck, Zap, Activity, ChevronDown, CheckCircle2, Landmark, Globe } from 'lucide-react';
+import { Sparkles, RotateCcw, X, Target, Newspaper, Calendar, Search, TrendingUp, ShieldCheck, Zap, Activity, ChevronDown, CheckCircle2, Landmark, Globe, Lock, LogIn, Crown } from 'lucide-react';
+import { useClientAuth } from '../../lib/context/ClientAuthContext';
 
 interface NewsFeedClientProps {
   initialNews?: StockNewsItem[];
@@ -26,6 +27,7 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
     setSelectedTicker,
   } = useMarketSync();
   const { t, tDynamic, language } = useLanguage();
+  const { user, openAuthModal } = useClientAuth();
 
   const [dailyNewsList, setDailyNewsList] = useState<StockNewsItem[]>(
     liveNews && liveNews.length > 0 ? liveNews : initialNews || []
@@ -281,127 +283,194 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
 
       {/* ─── 7-Day Weekly Executive Hub (แสดงเฉพาะเมื่อเลือกแท็บสรุปข่าวรอบสัปดาห์) ─── */}
       {filters.timeframe === 'weekly' && (
-        <div
-          className="glass-card"
-          style={{
-            padding: '24px',
-            borderRadius: '20px',
-            marginBottom: '24px',
-            border: '1px solid var(--accent-neutral-border)',
-            background: 'var(--glass-bg)',
-          }}
-        >
-          {/* Hub Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  background: 'var(--accent-neutral-bg)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--accent-neutral)'
-                }}
-              >
-                <Calendar size={20} />
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>{isEn ? '7-Day Market Intelligence & Keylists' : 'สาระสำคัญและภาพรวมตลาดรอบ 7 วัน'}</span>
-                </h3>
-                <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                  {isEn
-                    ? 'Synthesized from verified Thai & Foreign financial channels over the past 7 days'
-                    : 'รวบรวมและวิเคราะห์จากสำนักข่าวการเงินชั้นนำของไทยและต่างประเทศรอบ 7 วันที่ผ่านมา'}
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => fetchWeeklyNewsData(true)}
-              disabled={isLoadingWeekly}
-              className="ios-glass-btn"
+        !user ? (
+          /* Guest Gate Overlay Card */
+          <div
+            className="glass-card"
+            style={{
+              padding: '36px 24px',
+              borderRadius: '24px',
+              marginBottom: '24px',
+              border: '1px solid rgba(0, 122, 255, 0.35)',
+              background: 'linear-gradient(180deg, rgba(0, 122, 255, 0.09) 0%, rgba(10, 13, 20, 0.85) 100%)',
+              textAlign: 'center',
+              boxShadow: '0 16px 40px rgba(0, 0, 0, 0.5)',
+            }}
+          >
+            <div
               style={{
-                padding: '6px 14px',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                background: 'var(--accent-neutral-bg)',
-                border: '1px solid var(--accent-neutral-border)',
-                color: 'var(--accent-neutral)',
-                cursor: 'pointer'
+                width: '52px',
+                height: '52px',
+                borderRadius: '16px',
+                background: 'rgba(0, 122, 255, 0.15)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '14px',
               }}
             >
-              <RotateCcw size={13} className={isLoadingWeekly ? 'spin' : ''} />
-              <span>{isLoadingWeekly ? (isEn ? 'Re-syncing...' : 'กำลังดึงข้อมูลสด...') : (isEn ? 'Live Re-sync 7D' : 'อัปเดตสดรอบ 7 วัน')}</span>
-            </button>
-          </div>
-
-          {/* Dual Column: Thai Keylist vs US/Global Keylist */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '14px' }}>
-            {/* Thai Keylist Box */}
-            <div style={{ background: 'var(--card-sub-bg)', padding: '16px 18px', borderRadius: '16px', border: '1px solid var(--card-sub-border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Landmark size={16} color="var(--accent-blue)" />
-                  <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                    {isEn ? 'Thai SET Weekly Catalysts' : 'Keylist หุ้นไทยและเศรษฐกิจรอบสัปดาห์'}
-                  </h4>
-                </div>
-                <span style={{ fontSize: '0.68rem', padding: '2px 8px', borderRadius: '100px', background: 'var(--accent-blue-bg)', color: 'var(--accent-blue)', fontWeight: 700 }}>
-                  SET & mai
-                </span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-                {(weeklyOverview?.thaiCatalysts_th || [
-                  'สัญญาณ Fund Flow ไหลเข้าสะสมในหุ้นขนาดใหญ่ SET50 และหุ้นปันผลสูง (PTT, KBANK, ADVANC)',
-                  'การลงทุนโครงสร้างพื้นฐาน Data Center และศูนย์กลาง AI ในประเทศไทยขยายตัวต่อเนื่อง (DELTA, GULF)',
-                  'ตัวเลขเศรษฐกิจภาคบริการและการท่องเที่ยวไทยขยายตัวดีกว่าคาดการณ์ (AOT, CPALL, BDMS)'
-                ]).map((item: string, idx: number) => {
-                  const text = isEn ? (weeklyOverview?.thaiCatalysts_en?.[idx] || tDynamic(item)) : (weeklyOverview?.thaiCatalysts_th?.[idx] || item);
-                  return (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
-                      <span style={{ color: 'var(--accent-blue)', fontWeight: 800 }}>•</span>
-                      <span>{text}</span>
-                    </div>
-                  );
-                })}
-              </div>
+              <Lock size={26} color="#007AFF" />
             </div>
-
-            {/* Global / US Keylist Box */}
-            <div style={{ background: 'var(--card-sub-bg)', padding: '16px 18px', borderRadius: '16px', border: '1px solid var(--card-sub-border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Globe size={16} color="#5e5ce6" />
-                  <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                    {isEn ? 'Wall Street & Global Catalysts' : 'Keylist หุ้นต่างประเทศ & วอลล์สตรีท'}
-                  </h4>
-                </div>
-                <span style={{ fontSize: '0.68rem', padding: '2px 8px', borderRadius: '100px', background: 'rgba(94, 92, 230, 0.15)', color: '#5e5ce6', fontWeight: 700 }}>
-                  S&P 500 & Tech
-                </span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-                {(weeklyOverview?.usCatalysts_th || [
-                  'NVIDIA (NVDA) & ชิป AI: ดีมานด์เซิร์ฟเวอร์ Blackwell AI และ Data Center ระดับโลกเติบโตทำสถิติใหม่',
-                  'Apple (AAPL) & Microsoft (MSFT): ยอดสมัครใช้บริการ Enterprise AI และรายได้ Cloud ขยายตัวแกร่ง',
-                  'Wall Street (S&P 500 & NASDAQ): ทิศทางนโยบายดอกเบี้ย Fed และผลประกอบการกลุ่ม Big Tech ดีกว่าคาด'
-                ]).map((item: string, idx: number) => {
-                  const text = isEn ? (weeklyOverview?.usCatalysts_en?.[idx] || tDynamic(item)) : (weeklyOverview?.usCatalysts_th?.[idx] || item);
-                  return (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
-                      <span style={{ color: '#5e5ce6', fontWeight: 800 }}>•</span>
-                      <span>{text}</span>
-                    </div>
-                  );
-                })}
-              </div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(0, 122, 255, 0.15)', color: '#007AFF', padding: '3px 12px', borderRadius: '100px', fontSize: '0.72rem', fontWeight: 800, marginBottom: '10px' }}>
+              <Crown size={12} /> {isEn ? 'MEMBER EXCLUSIVE INTELLIGENCE' : 'บทวิเคราะห์เฉพาะสมาชิก'}
+            </div>
+            <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              {isEn ? 'Weekly Market Intelligence & Deep Catalysts' : 'สาระสำคัญและสรุปแนวโน้มตลาดรอบ 7 วัน'}
+            </h3>
+            <p style={{ margin: '10px auto 22px auto', fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '520px', lineHeight: 1.55 }}>
+              {isEn
+                ? 'Sign in or create a free account to unlock full 7-day AI synthesized market intelligence, Thai SET catalysts, Wall Street trends, and dedicated stock summaries.'
+                : 'เข้าสู่ระบบหรือสมัครสมาชิกฟรี เพื่อปลดล็อกบทวิเคราะห์สรุปแนวโน้มตลาดหุ้นไทย SET และตลาดสหรัฐฯ Wall Street พร้อม Keylist ปัจจัยบวก/ลบเชิงลึก'}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => openAuthModal('login')}
+                className="ios-btn-primary"
+                style={{
+                  padding: '11px 22px',
+                  borderRadius: '14px',
+                  fontSize: '0.88rem',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 20px rgba(0, 122, 255, 0.4)'
+                }}
+              >
+                <LogIn size={16} /> {isEn ? 'Sign In / Register Free' : 'เข้าสู่ระบบ / สมัครสมาชิกฟรี'}
+              </button>
             </div>
           </div>
-        </div>
+        ) : (
+          /* Logged-In Member Hub */
+          <div
+            className="glass-card"
+            style={{
+              padding: '24px',
+              borderRadius: '20px',
+              marginBottom: '24px',
+              border: '1px solid var(--accent-neutral-border)',
+              background: 'var(--glass-bg)',
+            }}
+          >
+            {/* Hub Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '10px',
+                    background: 'var(--accent-neutral-bg)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--accent-neutral)'
+                  }}
+                >
+                  <Calendar size={20} />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      <span>{isEn ? '7-Day Market Intelligence & Keylists' : 'สาระสำคัญและภาพรวมตลาดรอบ 7 วัน'}</span>
+                    </h3>
+                    <span style={{ fontSize: '0.68rem', padding: '2px 8px', borderRadius: '100px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Crown size={11} /> {isEn ? 'Member Access' : 'สิทธิ์สมาชิก'}
+                    </span>
+                  </div>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                    {isEn
+                      ? 'Synthesized from verified Thai & Foreign financial channels over the past 7 days'
+                      : 'รวบรวมและวิเคราะห์จากสำนักข่าวการเงินชั้นนำของไทยและต่างประเทศรอบ 7 วันที่ผ่านมา'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => fetchWeeklyNewsData(true)}
+                disabled={isLoadingWeekly}
+                className="ios-glass-btn"
+                style={{
+                  padding: '6px 14px',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  background: 'var(--accent-neutral-bg)',
+                  border: '1px solid var(--accent-neutral-border)',
+                  color: 'var(--accent-neutral)',
+                  cursor: 'pointer'
+                }}
+              >
+                <RotateCcw size={13} className={isLoadingWeekly ? 'spin' : ''} />
+                <span>{isLoadingWeekly ? (isEn ? 'Re-syncing...' : 'กำลังดึงข้อมูลสด...') : (isEn ? 'Live Re-sync 7D' : 'อัปเดตสดรอบ 7 วัน')}</span>
+              </button>
+            </div>
+
+            {/* Dual Column: Thai Keylist vs US/Global Keylist */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '14px' }}>
+              {/* Thai Keylist Box */}
+              <div style={{ background: 'var(--card-sub-bg)', padding: '16px 18px', borderRadius: '16px', border: '1px solid var(--card-sub-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Landmark size={16} color="var(--accent-blue)" />
+                    <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      {isEn ? 'Thai SET Weekly Catalysts' : 'Keylist หุ้นไทยและเศรษฐกิจรอบสัปดาห์'}
+                    </h4>
+                  </div>
+                  <span style={{ fontSize: '0.68rem', padding: '2px 8px', borderRadius: '100px', background: 'var(--accent-blue-bg)', color: 'var(--accent-blue)', fontWeight: 700 }}>
+                    SET & mai
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                  {(weeklyOverview?.thaiCatalysts_th || [
+                    'สัญญาณ Fund Flow ไหลเข้าสะสมในหุ้นขนาดใหญ่ SET50 และหุ้นปันผลสูง (PTT, KBANK, ADVANC)',
+                    'การลงทุนโครงสร้างพื้นฐาน Data Center และศูนย์กลาง AI ในประเทศไทยขยายตัวต่อเนื่อง (DELTA, GULF)',
+                    'ตัวเลขเศรษฐกิจภาคบริการและการท่องเที่ยวไทยขยายตัวดีกว่าคาดการณ์ (AOT, CPALL, BDMS)'
+                  ]).map((item: string, idx: number) => {
+                    const text = isEn ? (weeklyOverview?.thaiCatalysts_en?.[idx] || tDynamic(item)) : (weeklyOverview?.thaiCatalysts_th?.[idx] || item);
+                    return (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                        <span style={{ color: 'var(--accent-blue)', fontWeight: 800 }}>•</span>
+                        <span>{text}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Global / US Keylist Box */}
+              <div style={{ background: 'var(--card-sub-bg)', padding: '16px 18px', borderRadius: '16px', border: '1px solid var(--card-sub-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Globe size={16} color="#5e5ce6" />
+                    <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      {isEn ? 'Wall Street & Global Catalysts' : 'Keylist หุ้นต่างประเทศ & วอลล์สตรีท'}
+                    </h4>
+                  </div>
+                  <span style={{ fontSize: '0.68rem', padding: '2px 8px', borderRadius: '100px', background: 'rgba(94, 92, 230, 0.15)', color: '#5e5ce6', fontWeight: 700 }}>
+                    S&P 500 & Tech
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                  {(weeklyOverview?.usCatalysts_th || [
+                    'NVIDIA (NVDA) & ชิป AI: ดีมานด์เซิร์ฟเวอร์ Blackwell AI และ Data Center ระดับโลกเติบโตทำสถิติใหม่',
+                    'Apple (AAPL) & Microsoft (MSFT): ยอดสมัครใช้บริการ Enterprise AI และรายได้ Cloud ขยายตัวแกร่ง',
+                    'Wall Street (S&P 500 & NASDAQ): ทิศทางนโยบายดอกเบี้ย Fed และผลประกอบการกลุ่ม Big Tech ดีกว่าคาด'
+                  ]).map((item: string, idx: number) => {
+                    const text = isEn ? (weeklyOverview?.usCatalysts_en?.[idx] || tDynamic(item)) : (weeklyOverview?.usCatalysts_th?.[idx] || item);
+                    return (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                        <span style={{ color: '#5e5ce6', fontWeight: 800 }}>•</span>
+                        <span>{text}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )
       )}
 
       {/* Stock-Specific Focus Bar (ศูนย์รวมและค้นหาข่าวสารหุ้นรายตัว) */}
@@ -485,15 +554,16 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
           </form>
         </div>
 
-        {/* Quick Ticker Pills */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 600, marginRight: '4px' }}>
+        {/* Quick Ticker Pills (Side-scrollable track on mobile PWA) */}
+        <div className="mobile-side-scroll" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', overflowX: 'auto' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 600, marginRight: '4px', flexShrink: 0 }}>
             {language === 'en' ? 'Quick Tickers:' : 'หุ้นยอดนิยม:'}
           </span>
 
           <button
             onClick={() => setSelectedTicker(null)}
             style={{
+              flexShrink: 0,
               padding: '3px 10px',
               borderRadius: '6px',
               fontSize: '0.75rem',
@@ -515,6 +585,7 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
                 key={t}
                 onClick={() => setSelectedTicker(isSelected ? null : t)}
                 style={{
+                  flexShrink: 0,
                   padding: '3px 9px',
                   borderRadius: '6px',
                   fontSize: '0.75rem',
@@ -530,7 +601,7 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
             );
           })}
 
-          <div style={{ width: '1px', height: '14px', background: 'rgba(255, 255, 255, 0.1)', margin: '0 4px' }} />
+          <div style={{ width: '1px', height: '14px', background: 'rgba(255, 255, 255, 0.1)', margin: '0 4px', flexShrink: 0 }} />
 
           {/* US Stocks */}
           {POPULAR_US_TICKERS.map((t) => {
@@ -540,6 +611,7 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
                 key={t}
                 onClick={() => setSelectedTicker(isSelected ? null : t)}
                 style={{
+                  flexShrink: 0,
                   padding: '3px 9px',
                   borderRadius: '6px',
                   fontSize: '0.75rem',

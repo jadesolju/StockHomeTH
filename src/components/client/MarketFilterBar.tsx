@@ -123,14 +123,15 @@ export function MarketFilterBar({
         </div>
       </div>
 
-      {/* Category Pills List */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+      {/* Category Pills List (Side-scrollable track on mobile PWA) */}
+      <div className="mobile-side-scroll" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
         {CATEGORIES.map((cat) => (
           <button
             key={cat.id}
             onClick={() => onSelectCategory(cat.id)}
             className="ios-chip"
             style={{
+              flexShrink: 0,
               background: selectedCategory === cat.id ? 'var(--accent-blue)' : 'var(--glass-bg)',
               color: selectedCategory === cat.id ? '#ffffff' : 'var(--text-secondary)',
               border: selectedCategory === cat.id ? '1px solid var(--accent-blue)' : '1px solid var(--glass-border)',
@@ -141,7 +142,8 @@ export function MarketFilterBar({
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '6px',
+              whiteSpace: 'nowrap'
             }}
           >
             {cat.icon}

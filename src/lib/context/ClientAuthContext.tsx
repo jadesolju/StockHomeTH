@@ -25,11 +25,15 @@ interface ClientAuthContextType {
   registerWithEmail: (name: string, email: string, pass: string) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   changePassword: (newPassword: string) => Promise<void>;
+  updateUserProfile: (name?: string, photoURL?: string) => Promise<void>;
   signOut: () => Promise<void>;
   isAuthModalOpen: boolean;
   authModalTab: AuthModalTab;
   openAuthModal: (tab?: AuthModalTab) => void;
   closeAuthModal: () => void;
+  isProfileModalOpen: boolean;
+  openProfileModal: () => void;
+  closeProfileModal: () => void;
 }
 
 const ClientAuthContext = createContext<ClientAuthContextType | undefined>(undefined);
@@ -39,6 +43,7 @@ export const ClientAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [loading, setLoading] = useState<boolean>(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalTab, setAuthModalTab] = useState<AuthModalTab>('login');
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -55,6 +60,14 @@ export const ClientAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const closeAuthModal = () => {
     setIsAuthModalOpen(false);
+  };
+
+  const openProfileModal = () => {
+    setIsProfileModalOpen(true);
+  };
+
+  const closeProfileModal = () => {
+    setIsProfileModalOpen(false);
   };
 
   const signInWithGoogle = async () => {
@@ -88,9 +101,23 @@ export const ClientAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     await updatePassword(auth.currentUser, newPassword);
   };
 
+  const updateUserProfile = async (name?: string, photoURL?: string) => {
+    if (!auth.currentUser) return;
+    const updates: { displayName?: string; photoURL?: string } = {};
+    if (name !== undefined) updates.displayName = name.trim();
+    if (photoURL !== undefined) updates.photoURL = photoURL;
+
+    await updateProfile(auth.currentUser, updates);
+    setUser({
+      ...auth.currentUser,
+      ...updates,
+    } as User);
+  };
+
   const signOut = async () => {
     await firebaseSignOut(auth);
     setUser(null);
+    closeProfileModal();
   };
 
   return (
@@ -103,11 +130,15 @@ export const ClientAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         registerWithEmail,
         forgotPassword,
         changePassword,
+        updateUserProfile,
         signOut,
         isAuthModalOpen,
         authModalTab,
         openAuthModal,
         closeAuthModal,
+        isProfileModalOpen,
+        openProfileModal,
+        closeProfileModal,
       }}
     >
       {children}

@@ -724,9 +724,9 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
           </div>
         </div>
 
-        {/* Popular Curated Tag Filter Bar */}
-        <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-tertiary)', display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: '4px' }}>
+        {/* Popular Curated Tag Filter Bar (Side-scrollable track on mobile PWA) */}
+        <div className="mobile-side-scroll" style={{ marginTop: '14px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px', overflowX: 'auto' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-tertiary)', display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: '4px', flexShrink: 0 }}>
             <Tag size={13} color="var(--accent-blue)" /> {language === 'en' ? 'Tags:' : 'แท็ก:'}
           </span>
           {availableTags.map((tag) => {
@@ -740,6 +740,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                   });
                 }}
                 style={{
+                  flexShrink: 0,
                   background: isActive ? 'var(--accent-blue)' : 'var(--card-sub-bg)',
                   color: isActive ? '#ffffff' : 'var(--text-secondary)',
                   border: isActive ? '1px solid var(--accent-blue)' : '1px solid var(--card-sub-border)',
@@ -751,6 +752,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '4px',
+                  whiteSpace: 'nowrap',
                   transition: 'all 0.15s ease'
                 }}
               >

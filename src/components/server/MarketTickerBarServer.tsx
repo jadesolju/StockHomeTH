@@ -181,16 +181,8 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
         </button>
       </div>
 
-      {/* Cards Grid / Scrollable Row */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '12px',
-          overflowX: 'auto',
-          paddingBottom: '4px'
-        }}
-      >
+      {/* Cards Grid / Scrollable Row (Side-scrolling track on mobile PWA) */}
+      <div className="market-ticker-grid">
         {activeItems.map((item) => {
           const isUp = (item.change || 0) >= 0;
           const isThaiGold = item.category === 'gold_thai' || item.symbol === 'THAI_GOLD';
@@ -201,7 +193,7 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
           return (
             <div
               key={item.symbol}
-              className={`glass-card ${flashClass}`}
+              className={`glass-card market-ticker-card ${flashClass}`}
               onClick={() => handleIndexClick(item)}
               title={
                 isThaiGold
