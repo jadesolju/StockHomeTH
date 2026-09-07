@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { mockMarketIndices } from '../../../../data/mockMarketData';
 
 let cachedPayload: any = null;
 let cacheTime = 0;
-const CACHE_TTL_MS = 60_000; // 60 seconds
+const CACHE_TTL_MS = 30_000; // 30 seconds fresh cache
 
 interface IndexItem {
   symbol: string;
@@ -22,6 +21,7 @@ interface IndexItem {
   low52w?: number;
   sellPrice?: number;
   buyPrice?: number;
+  updateRound?: string;
   lastUpdated: string;
   timestamp: string;
 }
@@ -31,11 +31,56 @@ const MAJOR_INDEX_DEFINITIONS = [
   { s: '^GSPC', name: 'S&P 500', c: 'USD', cat: 'index', country: 'US' },
   { s: '^IXIC', name: 'NASDAQ', c: 'USD', cat: 'index', country: 'US' },
   { s: '^DJI', name: 'Dow Jones', c: 'USD', cat: 'index', country: 'US' },
-  { s: 'GC=F', name: 'Gold Spot', c: 'USD', cat: 'commodity', country: 'GLOBAL' },
+  { s: 'GC=F', name: 'Gold Spot (USD)', c: 'USD', cat: 'commodity', country: 'GLOBAL' },
   { s: 'CL=F', name: 'Crude Oil WTI', c: 'USD', cat: 'commodity', country: 'GLOBAL' },
   { s: 'BTC-USD', name: 'Bitcoin', c: 'USD', cat: 'crypto', country: 'GLOBAL' },
   { s: 'THB=X', name: 'USD / THB', c: 'THB', cat: 'forex', country: 'TH' }
 ];
+
+async function fetchOfficialThaiGold(): Promise<IndexItem | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch('https://api.chnwt.dev/thai-gold-api/latest', {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      next: { revalidate: 60 }
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (json?.status === 'success' && json?.response?.price?.gold_bar) {
+      const bar = json.response.price.gold_bar;
+      const sell = parseFloat(String(bar.sell).replace(/,/g, '')) || 0;
+      const buy = parseFloat(String(bar.buy).replace(/,/g, '')) || (sell - 100);
+      const updateTime = json.response.update_time || 'สมาคมค้าทองคำ';
+
+      if (sell > 0) {
+        return {
+          symbol: 'GOLD_THAI',
+          name: 'ทองคำแท่ง 96.5% (สมาคม)',
+          value: sell,
+          price: sell,
+          sellPrice: sell,
+          buyPrice: buy,
+          change: 0,
+          changePercent: 0,
+          currency: 'THB',
+          category: 'gold_thai',
+          country: 'TH',
+          region: 'thai',
+          isPositive: true,
+          sparklineData: [sell * 0.995, sell * 0.998, sell],
+          updateRound: updateTime,
+          lastUpdated: updateTime,
+          timestamp: new Date().toISOString()
+        };
+      }
+    }
+  } catch {}
+  return null;
+}
 
 async function fetchLiveIndicesFromYahoo(): Promise<IndexItem[] | null> {
   try {
@@ -51,7 +96,7 @@ async function fetchLiveIndicesFromYahoo(): Promise<IndexItem[] | null> {
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             },
             signal: controller.signal,
-            next: { revalidate: 60 }
+            next: { revalidate: 30 }
           });
           clearTimeout(timeout);
 
@@ -66,7 +111,6 @@ async function fetchLiveIndicesFromYahoo(): Promise<IndexItem[] | null> {
           const changePercent = prev !== 0 ? (change / prev) * 100 : 0;
           const isPositive = change >= 0;
 
-          // Extract sparkline points if available
           const quotes = json?.chart?.result?.[0]?.indicators?.quote?.[0]?.close || [];
           const sparklineData = Array.isArray(quotes) && quotes.filter((v: any) => typeof v === 'number').length >= 2
             ? quotes.filter((v: any) => typeof v === 'number').slice(-7)
@@ -97,12 +141,24 @@ async function fetchLiveIndicesFromYahoo(): Promise<IndexItem[] | null> {
     );
 
     const valid = results.filter((r): r is IndexItem => r !== null);
-    if (valid.length > 0) {
-      // Add Thai Gold estimate if Gold Spot is present
+    
+    // Fetch official Thai Gold directly
+    const thaiGold = await fetchOfficialThaiGold();
+    if (thaiGold) {
+      // If we have gold spot, sync change percentage
+      const goldSpot = valid.find((v) => v.symbol === 'GC=F');
+      if (goldSpot) {
+        thaiGold.change = goldSpot.change;
+        thaiGold.changePercent = goldSpot.changePercent;
+        thaiGold.isPositive = goldSpot.isPositive;
+      }
+      valid.push(thaiGold);
+    } else {
+      // Fallback estimate if API temporarily unavailable
       const goldSpot = valid.find((v) => v.symbol === 'GC=F');
       const usdThb = valid.find((v) => v.symbol === 'THB=X');
       if (goldSpot && goldSpot.value > 0) {
-        const fxRate = usdThb && usdThb.value > 0 ? usdThb.value : 34.2;
+        const fxRate = usdThb && usdThb.value > 0 ? usdThb.value : 32.87;
         const rawThaiGold = Math.round((goldSpot.value * (15.244 / 31.104) * 0.965 * fxRate) + 300);
         valid.push({
           symbol: 'GOLD_THAI',
@@ -123,8 +179,9 @@ async function fetchLiveIndicesFromYahoo(): Promise<IndexItem[] | null> {
           timestamp: new Date().toISOString()
         });
       }
-      return valid;
     }
+
+    return valid;
   } catch {}
   return null;
 }
@@ -142,7 +199,6 @@ export async function GET() {
     });
   }
 
-  // 1. Direct Cloud-Native HTTP Fetch from Yahoo Finance (Zero Python, 100% Vercel compatible)
   const liveData = await fetchLiveIndicesFromYahoo();
   if (liveData && liveData.length > 0) {
     const indices = liveData.filter((d) => d.category === 'index');
@@ -166,7 +222,6 @@ export async function GET() {
     });
   }
 
-  // 2. Fallback to cached payload or static data
   if (cachedPayload) {
     return NextResponse.json({
       success: true,
@@ -181,7 +236,7 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     source: 'fallback',
-    data: mockMarketIndices,
+    data: [],
     timestamp: new Date().toISOString()
   });
 }
