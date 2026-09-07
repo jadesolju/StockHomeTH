@@ -14,8 +14,14 @@ export const metadata: Metadata = {
   keywords: ['หุ้นไทย', 'SET Index', 'หุ้นสหรัฐ', 'AI สรุปข่าวหุ้น', 'Stock Analysis', 'Gemini AI', 'การเงิน'],
   manifest: '/manifest.json',
   icons: {
-    icon: '/favicon.svg',
-    apple: '/favicon.svg',
+    icon: [
+      { url: '/Gemini-svg.svg', type: 'image/svg+xml' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: [
+      { url: '/Gemini-svg.svg', type: 'image/svg+xml' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
   },
   appleWebApp: {
     capable: true,

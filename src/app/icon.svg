@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="geminiGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1BA1E3" />
+      <stop offset="35%" stop-color="#5B7FFF" />
+      <stop offset="70%" stop-color="#9B51E0" />
+      <stop offset="100%" stop-color="#D946EF" />
+    </linearGradient>
+    <linearGradient id="geminiGlow" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F2FE" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#4FACFE" stop-opacity="0.2" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Google Gemini AI 4-Point Star Shape -->
+  <path
+    d="M 50 2 
+       C 50 28.5, 71.5 50, 98 50 
+       C 71.5 50, 50 71.5, 50 98 
+       C 50 71.5, 28.5 50, 2 50 
+       C 28.5 50, 50 28.5, 50 2 Z"
+    fill="url(#geminiGrad)"
+    filter="url(#glow)"
+  />
+  
+  <!-- Subtle Inner Flare Sparkle -->
+  <path
+    d="M 50 18 
+       C 50 35, 65 50, 82 50 
+       C 65 50, 50 65, 50 82 
+       C 50 65, 35 50, 18 50 
+       C 35 50, 50 35, 50 18 Z"
+    fill="url(#geminiGlow)"
+    opacity="0.65"
+  />
+</svg>
