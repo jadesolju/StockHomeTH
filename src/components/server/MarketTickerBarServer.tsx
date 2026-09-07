@@ -254,10 +254,10 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
                     if (isThaiGold) {
                       return `฿${numVal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
                     }
-                    if (item.currency === 'THB') {
+                    if (isForex) {
                       return `${numVal.toFixed(2)} ฿`;
                     }
-                    return numVal > 0 ? numVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : numVal.toFixed(2);
+                    return numVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                   })()}
                 </span>
 
