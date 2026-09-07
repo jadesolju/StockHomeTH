@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import yahooFinance from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2';
+
+const yahooFinance = new YahooFinance();
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -15,7 +17,7 @@ export async function GET(request: Request) {
     // Fetch a batch of stocks to update, sorted by oldest updated_at
     const { data: stocks, error: fetchError } = await supabase
       .from('stocks')
-      .select('ticker, market, symbol, id')
+      .select('ticker, market, name')
       .order('updated_at', { ascending: true })
       .limit(limit);
 
@@ -33,31 +35,35 @@ export async function GET(request: Request) {
       if (s.market === 'SET' && s.ticker) {
         return `${s.ticker}.BK`;
       }
-      return s.ticker || s.symbol;
+      return s.ticker;
     }).filter(Boolean);
 
     if (symbolsToFetch.length > 0) {
       const results = await yahooFinance.quote(symbolsToFetch as string[]);
       
       for (const stock of stocks) {
-        const querySymbol = stock.market === 'SET' ? `${stock.ticker}.BK` : (stock.ticker || stock.symbol);
+        const querySymbol = stock.market === 'SET' ? `${stock.ticker}.BK` : stock.ticker;
         const quote = (Array.isArray(results) ? results : [results]).find((r: any) => r.symbol === querySymbol);
         
         if (quote && quote.regularMarketPrice) {
           const change = quote.regularMarketChangePercent || 0;
+          
           updatedData.push({
-            id: stock.id,
+            ticker: stock.ticker,
+            name: stock.name,
+            market: stock.market,
             price: quote.regularMarketPrice,
             change: change,
-            market_cap: quote.marketCap || 0,
-            pe_ratio: quote.trailingPE || 0,
-            dividend_yield: quote.trailingAnnualDividendYield || 0,
+            pe_ratio: quote.trailingPE || null,
+            dividend_yield: quote.trailingAnnualDividendYield || null,
             updated_at: new Date().toISOString()
           });
         } else {
           // Update timestamp anyway so we don't get stuck in a loop trying to fetch invalid symbols
           updatedData.push({
-            id: stock.id,
+            ticker: stock.ticker,
+            name: stock.name,
+            market: stock.market,
             updated_at: new Date().toISOString()
           });
         }
