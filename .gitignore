@@ -50,10 +50,8 @@ ingestion_checkpoint.json
 *.db
 SQLite
 
-# Dev & Admin Backoffice (Local Development Only - Do Not Push)
+# Dev Scripts (Local Development Only)
 dev_admin_portal.bat
-src/app/admin/
-src/components/client/AdminBackofficeClient.tsx
 src/app/api/dev/admin/
 
 # Editor directories and files
