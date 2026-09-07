@@ -37,6 +37,25 @@ async function seedStocks() {
   
   const stocksToUpsert = [];
 
+  // Load live cache data to merge prices
+  const cachePath = path.resolve(rootDir, 'market_cache.json');
+  let cacheMap = {};
+  if (fs.existsSync(cachePath)) {
+    try {
+      const rawCache = fs.readFileSync(cachePath, 'utf-8');
+      const cacheData = JSON.parse(rawCache);
+      const list = Array.isArray(cacheData) ? cacheData : cacheData.data || [];
+      for (const item of list) {
+        if (item.ticker && item.market) {
+          cacheMap[`${item.market}-${item.ticker}`] = item;
+        }
+      }
+      console.log(`🧠 Loaded ${Object.keys(cacheMap).length} live stocks from market_cache.json`);
+    } catch (e) {
+      console.warn('Could not read market_cache.json:', e.message);
+    }
+  }
+
   // 1. Read Thai Stocks
   if (fs.existsSync(thaiPath)) {
     const raw = fs.readFileSync(thaiPath, 'utf-8');
@@ -44,26 +63,29 @@ async function seedStocks() {
     const list = Array.isArray(data) ? data : data.stocks || [];
     console.log(`📦 Loaded ${list.length} Thai stocks from ${thaiPath}`);
     for (const s of list) {
+      const ticker = s.ticker || s.symbol?.replace('.BK', '');
+      const live = cacheMap[`SET-${ticker}`] || {};
+      
       stocksToUpsert.push({
-        ticker: s.ticker || s.symbol?.replace('.BK', ''),
-        name: s.name || s.ticker,
+        ticker: ticker,
+        name: live.name || s.name || ticker,
         market: 'SET',
-        sector: s.sector || 'General',
-        price: Number(s.price) || 0,
-        currency: 'THB',
-        change: Number(s.change) || 0,
-        market_cap: s.marketCap || s.market_cap || '-',
-        pe_ratio: Number(s.peRatio || s.pe_ratio) || null,
-        dividend_yield: Number(s.dividendYield || s.dividend_yield) || null,
-        high_52w: Number(s.high52w || s.high_52w) || null,
-        low_52w: Number(s.low52w || s.low_52w) || null,
-        volume: s.volume || '-',
-        ai_insight: s.aiInsight || s.ai_insight || null,
-        description: s.description || null,
-        sparkline_7d: s.sparkline7d || s.sparkline_7d || [],
-        analyst_rating: s.analystRating || s.analyst_rating || 'Hold',
-        target_price: Number(s.targetPrice || s.target_price) || null,
-        sentiment_score: Number(s.sentimentScore || s.sentiment_score) || 50,
+        sector: live.sector || s.sector || 'General',
+        price: Number(live.price || s.price) || 0,
+        currency: live.currency || 'THB',
+        change: Number(live.change || s.change) || 0,
+        market_cap: live.marketCap || s.marketCap || s.market_cap || '-',
+        pe_ratio: Number(live.peRatio || s.peRatio || s.pe_ratio) || null,
+        dividend_yield: Number(live.dividendYield || s.dividendYield || s.dividend_yield) || null,
+        high_52w: Number(live.high52w || s.high52w || s.high_52w) || null,
+        low_52w: Number(live.low52w || s.low52w || s.low_52w) || null,
+        volume: live.volume || s.volume || '-',
+        ai_insight: live.aiInsight || s.aiInsight || s.ai_insight || null,
+        description: live.description || s.description || null,
+        sparkline_7d: live.sparkline7d || s.sparkline7d || s.sparkline_7d || [],
+        analyst_rating: live.analystRating || s.analystRating || s.analyst_rating || 'Hold',
+        target_price: Number(live.targetPrice || s.targetPrice || s.target_price) || null,
+        sentiment_score: Number(live.sentimentScore || s.sentimentScore || s.sentiment_score) || 50,
         is_active: true,
         updated_at: new Date().toISOString()
       });
@@ -77,26 +99,29 @@ async function seedStocks() {
     const list = Array.isArray(data) ? data : data.stocks || [];
     console.log(`📦 Loaded ${list.length} US stocks from ${usPath}`);
     for (const s of list) {
+      const ticker = s.ticker || s.symbol;
+      const live = cacheMap[`US-${ticker}`] || {};
+      
       stocksToUpsert.push({
-        ticker: s.ticker || s.symbol,
-        name: s.name || s.ticker,
+        ticker: ticker,
+        name: live.name || s.name || ticker,
         market: 'US',
-        sector: s.sector || 'General',
-        price: Number(s.price) || 0,
-        currency: 'USD',
-        change: Number(s.change) || 0,
-        market_cap: s.marketCap || s.market_cap || '-',
-        pe_ratio: Number(s.peRatio || s.pe_ratio) || null,
-        dividend_yield: Number(s.dividendYield || s.dividend_yield) || null,
-        high_52w: Number(s.high52w || s.high_52w) || null,
-        low_52w: Number(s.low52w || s.low_52w) || null,
-        volume: s.volume || '-',
-        ai_insight: s.aiInsight || s.ai_insight || null,
-        description: s.description || null,
-        sparkline_7d: s.sparkline7d || s.sparkline_7d || [],
-        analyst_rating: s.analystRating || s.analyst_rating || 'Hold',
-        target_price: Number(s.targetPrice || s.target_price) || null,
-        sentiment_score: Number(s.sentimentScore || s.sentiment_score) || 50,
+        sector: live.sector || s.sector || 'General',
+        price: Number(live.price || s.price) || 0,
+        currency: live.currency || 'USD',
+        change: Number(live.change || s.change) || 0,
+        market_cap: live.marketCap || s.marketCap || s.market_cap || '-',
+        pe_ratio: Number(live.peRatio || s.peRatio || s.pe_ratio) || null,
+        dividend_yield: Number(live.dividendYield || s.dividendYield || s.dividend_yield) || null,
+        high_52w: Number(live.high52w || s.high52w || s.high_52w) || null,
+        low_52w: Number(live.low52w || s.low52w || s.low_52w) || null,
+        volume: live.volume || s.volume || '-',
+        ai_insight: live.aiInsight || s.aiInsight || s.ai_insight || null,
+        description: live.description || s.description || null,
+        sparkline_7d: live.sparkline7d || s.sparkline7d || s.sparkline_7d || [],
+        analyst_rating: live.analystRating || s.analystRating || s.analyst_rating || 'Hold',
+        target_price: Number(live.targetPrice || s.targetPrice || s.target_price) || null,
+        sentiment_score: Number(live.sentimentScore || s.sentimentScore || s.sentiment_score) || 50,
         is_active: true,
         updated_at: new Date().toISOString()
       });
