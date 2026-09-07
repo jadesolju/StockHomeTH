@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -16,11 +16,17 @@ import {
   Globe,
   Building,
   Landmark,
-  Activity
+  User,
+  LogIn,
+  LogOut,
+  Key,
+  Shield,
+  Check
 } from 'lucide-react';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { useTheme } from '../../lib/context/ThemeContext';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
+import { useClientAuth } from '../../lib/context/ClientAuthContext';
 
 interface HeaderClientNavProps {
   onRefresh?: () => void;
@@ -44,8 +50,12 @@ export function HeaderClientNav({
   const { language, setLanguage, toggleLanguage, t } = useLanguage();
   const { theme, resolvedTheme, cycleTheme } = useTheme();
   const { setSelectedMarket, refreshAll, isSyncing, cooldownRemaining } = useMarketSync();
+  const { user, openAuthModal, signOut } = useClientAuth();
 
-  const [currentDate, setCurrentDate] = React.useState<string>(() => {
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const [currentDate, setCurrentDate] = useState<string>(() => {
     return new Date().toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -54,7 +64,7 @@ export function HeaderClientNav({
     });
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const updateDate = () => {
       const now = new Date();
       setCurrentDate(
@@ -70,6 +80,17 @@ export function HeaderClientNav({
     const timer = setInterval(updateDate, 30000);
     return () => clearInterval(timer);
   }, [language]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <header className="glass-card" style={{ borderRadius: '0 0 24px 24px', padding: '16px 28px', marginBottom: '24px' }}>
@@ -158,7 +179,7 @@ export function HeaderClientNav({
             </Link>
           </nav>
 
-          {/* Header Action Controls: Language Switcher, Theme & Refresh */}
+          {/* Header Action Controls: Language Switcher, Theme, Refresh & Member Auth */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {/* TH / ENG Instant Language Toggle */}
             <div className="ios-segmented-control" style={{ padding: '3px' }}>
@@ -276,9 +297,145 @@ export function HeaderClientNav({
                 <Moon size={16} color="#007AFF" />
               )}
             </button>
+
+            {/* Member Auth Button / Profile Dropdown */}
+            {user ? (
+              <div style={{ position: 'relative' }} ref={userMenuRef}>
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  style={{
+                    background: 'var(--card-sub-bg)',
+                    border: '1px solid var(--card-sub-border)',
+                    borderRadius: '100px',
+                    padding: '6px 12px 6px 8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      background: '#007AFF',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                    }}
+                  >
+                    {user.displayName ? user.displayName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || 'M'}
+                  </div>
+                  <span>{user.displayName || user.email?.split('@')[0]}</span>
+                </button>
+
+                {/* Dropdown Menu */}
+                {isUserMenuOpen && (
+                  <div
+                    className="glass-card"
+                    style={{
+                      position: 'absolute',
+                      right: 0,
+                      top: 'calc(100% + 8px)',
+                      width: '220px',
+                      borderRadius: '18px',
+                      padding: '12px',
+                      boxShadow: '0 12px 32px rgba(0, 0, 0, 0.4)',
+                      zIndex: 1000,
+                      border: '1px solid var(--card-border)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                    }}
+                  >
+                    <div style={{ padding: '6px 8px', borderBottom: '1px solid var(--card-sub-border)', marginBottom: '4px' }}>
+                      <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                        {user.displayName || 'StockHome Member'}
+                      </p>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '0.72rem', color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {user.email}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        openAuthModal('changePassword');
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        padding: '8px 10px',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                      className="glass-card-hover"
+                    >
+                      <Key size={14} color="#007AFF" /> เปลี่ยนรหัสผ่าน
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        signOut();
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#f87171',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        padding: '8px 10px',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                      className="glass-card-hover"
+                    >
+                      <LogOut size={14} /> ออกจากระบบ
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => openAuthModal('login')}
+                className="ios-btn-primary"
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: '100px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                }}
+              >
+                <LogIn size={14} /> เข้าสู่ระบบ
+              </button>
+            )}
           </div>
         </div>
       </div>
     </header>
   );
 }
+export default HeaderClientNav;

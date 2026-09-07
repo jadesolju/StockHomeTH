@@ -1,27 +1,20 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-  User,
-  signInWithPopup,
-  GoogleAuthProvider,
-  signInWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-} from 'firebase/auth';
-import { auth } from '../firebase/firebaseClient';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '../supabase/client';
 
-// List of pre-authorized admin emails (configurable via environment or defaults)
+// Pre-authorized admin emails (configurable)
 const AUTHORIZED_ADMIN_EMAILS = [
   'afillly002@gmail.com',
 ];
 
 interface AdminAuthContextType {
   user: User | null;
+  session: Session | null;
   isAdmin: boolean;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
-  signInWithEmail: (email: string, pass: string) => Promise<void>;
+  signInWithSupabase: (email: string, pass: string) => Promise<void>;
   signOut: () => Promise<void>;
   error: string | null;
 }
@@ -30,59 +23,88 @@ const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefin
 
 export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    // 1. Initial Session Check
+    const checkSession = async () => {
+      try {
+        const { data, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          console.warn('[AdminAuth] Session fetch warning:', sessionError.message);
+        }
+        if (data?.session) {
+          setSession(data.session);
+          setUser(data.session.user);
+        }
+      } catch (err) {
+        console.error('[AdminAuth] Initial check error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSession();
+
+    // 2. Auth State Listener
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
       setLoading(false);
     });
-    return () => unsubscribe();
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
   }, []);
 
   const isAdmin = Boolean(
     user && user.email && AUTHORIZED_ADMIN_EMAILS.includes(user.email.toLowerCase().trim())
   );
 
-  const signInWithGoogle = async () => {
+  const signInWithSupabase = async (email: string, pass: string) => {
     try {
       setError(null);
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const email = result.user.email?.toLowerCase().trim();
-      if (email && !AUTHORIZED_ADMIN_EMAILS.includes(email)) {
-        await firebaseSignOut(auth);
-        setError(`อีเมล ${email} ไม่มีสิทธิ์เข้าถึงระบบ Admin Backoffice`);
-      }
-    } catch (err: any) {
-      console.error('[AdminAuth] Google sign in error:', err);
-      setError(err.message || 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ');
-    }
-  };
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: pass,
+      });
 
-  const signInWithEmail = async (email: string, pass: string) => {
-    try {
-      setError(null);
-      const result = await signInWithEmailAndPassword(auth, email, pass);
-      const userEmail = result.user.email?.toLowerCase().trim();
-      if (userEmail && !AUTHORIZED_ADMIN_EMAILS.includes(userEmail)) {
-        await firebaseSignOut(auth);
-        setError(`อีเมล ${userEmail} ไม่มีสิทธิ์เข้าถึงระบบ Admin Backoffice`);
+      if (authError) {
+        throw new Error(authError.message || 'อีเมลหรือรหัสผ่าน Admin ไม่ถูกต้อง');
       }
+
+      const userEmail = data.user?.email?.toLowerCase().trim();
+      if (userEmail && !AUTHORIZED_ADMIN_EMAILS.includes(userEmail)) {
+        await supabase.auth.signOut();
+        throw new Error(`อีเมล ${userEmail} ไม่มีสิทธิ์เข้าถึงระบบ Admin Backoffice`);
+      }
+
+      setUser(data.user);
+      setSession(data.session);
     } catch (err: any) {
-      console.error('[AdminAuth] Email sign in error:', err);
-      setError(err.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+      console.error('[AdminAuth] Supabase sign in error:', err);
+      let msg = err.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+      if (msg.includes('Invalid login credentials')) {
+        msg = 'อีเมลหรือรหัสผ่าน Supabase Admin ไม่ถูกต้อง';
+      } else if (msg.includes('Email not confirmed')) {
+        msg = 'กรุณายืนยันอีเมลใน Supabase ก่อนเข้าสู่ระบบ';
+      }
+      setError(msg);
+      throw err;
     }
   };
 
   const signOut = async () => {
     try {
-      await firebaseSignOut(auth);
+      await supabase.auth.signOut();
       setUser(null);
+      setSession(null);
       setError(null);
     } catch (err: any) {
-      console.error('[AdminAuth] Sign out error:', err);
+      console.error('[AdminAuth] Supabase sign out error:', err);
     }
   };
 
@@ -90,10 +112,10 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     <AdminAuthContext.Provider
       value={{
         user,
+        session,
         isAdmin,
         loading,
-        signInWithGoogle,
-        signInWithEmail,
+        signInWithSupabase,
         signOut,
         error,
       }}
@@ -110,3 +132,4 @@ export const useAdminAuth = () => {
   }
   return context;
 };
+export default AdminAuthProvider;

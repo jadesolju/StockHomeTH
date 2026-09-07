@@ -2,9 +2,11 @@ import type { Metadata, Viewport } from 'next';
 import '../styles/glass-ios.css';
 import { HeaderClientNav } from '../components/client/HeaderClientNav';
 import { SyncLogModal } from '../components/client/SyncLogModal';
+import { AuthModal } from '../components/client/AuthModal';
 import { MarketSyncProvider } from '../lib/context/MarketSyncContext';
 import { LanguageProvider } from '../lib/context/LanguageContext';
 import { ThemeProvider } from '../lib/context/ThemeContext';
+import { ClientAuthProvider } from '../lib/context/ClientAuthContext';
 import { PwaRegisterClient } from '../components/client/PwaRegisterClient';
 
 export const metadata: Metadata = {
@@ -50,14 +52,17 @@ export default function RootLayout({
       <body style={{ minHeight: '100vh', margin: 0, paddingBottom: '100px' }}>
         <ThemeProvider>
           <LanguageProvider>
-            <MarketSyncProvider>
-              <PwaRegisterClient />
-              <HeaderClientNav />
-              <main style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 20px' }}>
-                {children}
-              </main>
-              <SyncLogModal />
-            </MarketSyncProvider>
+            <ClientAuthProvider>
+              <MarketSyncProvider>
+                <PwaRegisterClient />
+                <HeaderClientNav />
+                <main style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 20px' }}>
+                  {children}
+                </main>
+                <AuthModal />
+                <SyncLogModal />
+              </MarketSyncProvider>
+            </ClientAuthProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

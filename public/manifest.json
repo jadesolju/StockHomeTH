@@ -1,18 +1,44 @@
 {
-  "name": "StockHomeTH • AI Financial & Stock Intelligence",
+  "name": "StockHomeTH • สรุปข่าวหุ้น AI & ตลาดหุ้นไทยและสหรัฐฯ",
   "short_name": "StockHomeTH",
-  "description": "Real-time Thai & US stock analytics, live charts, and AI financial news summaries.",
+  "description": "แพลตฟอร์มวิเคราะห์และสรุปข่าวหุ้นการเงินด้วย Gemini AI พร้อมข้อมูลตลาดหุ้นไทย SET และสหรัฐฯ แบบ Real-time",
   "start_url": "/",
+  "id": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0f1219",
+  "background_color": "#0a0d14",
   "theme_color": "#007AFF",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
+  "categories": ["finance", "business", "news"],
   "icons": [
     {
       "src": "/favicon.svg",
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "สรุปข่าวหุ้น AI",
+      "short_name": "ข่าวหุ้น AI",
+      "description": "ดูสรุปข่าวหุ้นไทยและสหรัฐฯ รายสัปดาห์",
+      "url": "/news",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "ตลาดหุ้นไทย (SET)",
+      "short_name": "หุ้นไทย",
+      "description": "ดูกราฟและราคาหุ้นไทย Real-time",
+      "url": "/stocks/thai",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "ตลาดหุ้นสหรัฐฯ (US)",
+      "short_name": "หุ้นสหรัฐฯ",
+      "description": "ดูกราฟและราคาหุ้นต่างประเทศ Real-time",
+      "url": "/stocks/us",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
     }
   ]
 }
