@@ -43,7 +43,7 @@ export function HeaderClientNav({
   const router = useRouter();
   const { language, setLanguage, toggleLanguage, t } = useLanguage();
   const { theme, resolvedTheme, cycleTheme } = useTheme();
-  const { selectedMarket, setSelectedMarket, refreshAll, isSyncing, setIsLogModalOpen } = useMarketSync();
+  const { selectedMarket, setSelectedMarket, refreshAll, isSyncing, cooldownRemaining, setIsLogModalOpen } = useMarketSync();
 
   const currentDate = new Date().toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', {
     weekday: 'long',
@@ -69,17 +69,16 @@ export function HeaderClientNav({
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div
               style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: '14px',
-                background: 'linear-gradient(135deg, #007AFF 0%, #00C6FF 100%)',
+                width: '42px',
+                height: '42px',
+                borderRadius: '12px',
+                background: '#0071e3',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 6px 20px rgba(0, 122, 255, 0.4)',
               }}
             >
-              <TrendingUp size={26} color="#ffffff" />
+              <TrendingUp size={24} color="#ffffff" />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -168,9 +167,9 @@ export function HeaderClientNav({
                 disabled={isGeneratingAi}
                 className="ios-glass-btn"
                 style={{
-                  background: 'var(--accent-blue-gradient)',
+                  background: 'var(--accent-blue)',
                   color: '#ffffff',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   padding: '8px 16px',
                   borderRadius: '100px',
                   border: 'none',
@@ -178,7 +177,7 @@ export function HeaderClientNav({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  boxShadow: '0 4px 14px rgba(0, 122, 255, 0.35)'
+                  boxShadow: 'none'
                 }}
               >
                 <Sparkles size={15} className={isGeneratingAi ? 'spin' : ''} />
@@ -209,45 +208,28 @@ export function HeaderClientNav({
               </button>
             )}
 
-            {/* Sync Activity Logs Modal Button */}
-            <button
-              onClick={() => setIsLogModalOpen(true)}
-              title="ดูบันทึกประวัติการอัปเดตข้อมูล Real-Time (Sync Logs)"
-              style={{
-                background: 'var(--glass-bg)',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '100px',
-                padding: '8px 12px',
-                color: 'var(--accent-bullish)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '0.78rem',
-                fontWeight: 700
-              }}
-            >
-              <Activity size={15} className={isSyncing ? 'spin-anim' : ''} />
-              <span className="live-pulse-dot" style={{ width: '6px', height: '6px' }} />
-              <span>Logs</span>
-            </button>
-
-            {/* Refresh Button */}
+            {/* Refresh Button with Anti-Spam Protection */}
             <button
               onClick={() => (onRefresh ? onRefresh() : refreshAll())}
-              title={t('refreshData')}
+              disabled={isRefreshing || isSyncing || cooldownRemaining > 0}
+              title={cooldownRemaining > 0 ? `โปรดรอ ${cooldownRemaining} วินาทีก่อนรีเฟรชอีกครั้ง` : t('refreshData')}
               style={{
                 background: 'var(--glass-bg)',
                 border: '1px solid var(--glass-border)',
                 borderRadius: '100px',
                 padding: '8px 12px',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
+                color: (isRefreshing || isSyncing || cooldownRemaining > 0) ? 'var(--text-tertiary)' : 'var(--text-secondary)',
+                cursor: (isRefreshing || isSyncing || cooldownRemaining > 0) ? 'not-allowed' : 'pointer',
+                opacity: (isRefreshing || isSyncing || cooldownRemaining > 0) ? 0.6 : 1,
                 display: 'flex',
                 alignItems: 'center',
+                gap: '4px',
+                fontSize: '0.75rem',
+                transition: 'all 0.15s ease'
               }}
             >
               <RefreshCw size={15} className={isRefreshing || isSyncing ? 'spin-anim' : ''} />
+              {cooldownRemaining > 0 && <span style={{ fontSize: '0.7rem', fontWeight: 700 }}>{cooldownRemaining}s</span>}
             </button>
 
             {/* Theme Switcher (Light / Dark / System) */}

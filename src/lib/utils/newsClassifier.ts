@@ -10,6 +10,7 @@
  */
 
 import type { MarketRegion, NewsCategory, SentimentType, ImpactAnalysis } from '../schemas/newsSchema';
+import { calculateFinancialRelevance, type FinancialRelevanceResult } from './financialRelevanceEngine';
 
 // ==========================================
 // 1. SEO & PUBLISHER SIGNATURE PATTERNS
@@ -111,10 +112,15 @@ export function stripHtml(str: string): string {
 export function cleanNewsTitle(raw: string): string {
   let text = stripHtml(raw);
 
-  // 1. Remove trailing " - Publisher" or " | Publisher"
-  text = text.replace(/\s*[-–—|•/]\s*([^-–—|•/]+)$/, (match, group) => {
+  // 1. Remove trailing " - Publisher Name" commonly appended by RSS/Google News
+  text = text.replace(/\s*[-–—|]\s*([A-Za-z0-9\u0E00-\u0E7F\.\s]{2,40})$/, (match, group) => {
+    // If the trailing segment is a known publisher or short source name, strip it
     for (const pat of PUBLISHER_SEO_PATTERNS) {
       if (pat.test(group)) return '';
+    }
+    // Also strip generic domain names or known portal suffixes
+    if (/\.(com|co\.th|net|org|io)$/i.test(group) || /thaiticketmajor|google|yahoo|reuters|cnbc|bloomberg|prachachat|bangkokbiz/i.test(group)) {
+      return '';
     }
     return match;
   });
@@ -142,7 +148,7 @@ export function cleanNewsTitle(raw: string): string {
 /**
  * Clean SEO tags and boilerplate phrases from news snippet/summary
  */
-export function cleanNewsSnippet(raw: string, cleanTitle?: string): string {
+export function cleanNewsSnippet(raw: string, cleanTitle?: string, isThai?: boolean): string {
   let text = stripHtml(raw);
 
   // Remove publisher names and fluff
@@ -153,18 +159,24 @@ export function cleanNewsSnippet(raw: string, cleanTitle?: string): string {
     text = text.replace(pat, '');
   }
 
+  // If the snippet starts with the clean title, strip the title portion to avoid duplication
+  if (cleanTitle && cleanTitle.length > 5) {
+    const titleRegex = new RegExp(`^${cleanTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[-–—|:•/]*\\s*`, 'i');
+    text = text.replace(titleRegex, '');
+  }
+
   text = text
     .replace(/[\s\-_–—|:•/]+$/, '')
     .replace(/^[\s\-_–—|:•/]+/, '')
     .replace(/\s+/g, ' ')
     .trim();
 
-  // If snippet is just the title repeated or too short, generate a clean summary
-  if (cleanTitle && (text === cleanTitle || text.length < 15)) {
-    return `${cleanTitle} - สรุปสาระสำคัญและความเคลื่อนไหวล่าสุดผ่านการวิเคราะห์โดย StockHomeTH`;
+  // If the remaining snippet is identical to title or too short (< 20 chars), return empty string so classifier can synthesize an authentic executive summary
+  if (cleanTitle && (text.toLowerCase() === cleanTitle.toLowerCase() || text.length < 20)) {
+    return '';
   }
 
-  return text || cleanTitle || 'สรุปรายงานความเคลื่อนไหวตลาดการเงินและหลักทรัพย์';
+  return text;
 }
 
 // ==========================================
@@ -519,6 +531,9 @@ export function detectNewsCategory(text: string): NewsCategory {
 export interface NewsIntelligenceResult {
   cleanTitle: string;
   cleanSummary: string;
+  relevance: FinancialRelevanceResult;
+  relevanceScore: number;
+  relevanceLevel: 'high' | 'moderate' | 'low';
   region: MarketRegion;
   marketName: string;
   tickers: string[];
@@ -526,21 +541,32 @@ export interface NewsIntelligenceResult {
   sentiment: SentimentType;
   impactAnalysis: ImpactAnalysis;
   keyTakeaways: string[];
+  title_th?: string;
+  title_en?: string;
+  summary_th?: string;
+  summary_en?: string;
+  keyTakeaways_th?: string[];
+  keyTakeaways_en?: string[];
 }
 
 export function classifyNewsIntelligence(
   rawTitle: string,
   rawSnippet: string,
-  feedCategory: MarketRegion = 'thai'
+  feedCategory: MarketRegion = 'thai',
+  sourceName: string = ''
 ): NewsIntelligenceResult {
   const cleanTitle = cleanNewsTitle(rawTitle);
-  const cleanSummary = cleanNewsSnippet(rawSnippet, cleanTitle);
+  const isThai = /[\u0E00-\u0E7F]/.test(cleanTitle) || feedCategory === 'thai';
+  const cleanSummary = cleanNewsSnippet(rawSnippet, cleanTitle, isThai);
   const fullText = `${cleanTitle} ${cleanSummary}`.toLowerCase();
+
+  // Compute Financial Relevance & Weight
+  const relevance = calculateFinancialRelevance(cleanTitle, cleanSummary, sourceName);
 
   let matchedTickers: string[] = [];
   let detectedCategory: NewsCategory = detectNewsCategory(fullText);
   let detectedRegion: MarketRegion = feedCategory;
-  let marketName = feedCategory === 'thai' ? 'SET Index (ไทย)' : 'Global Markets (สหรัฐฯ & สากล)';
+  let marketName = feedCategory === 'thai' ? 'SET Index (ไทย)' : 'US / Global Markets';
 
   // 1. Check Entity Rules for specific proxies (OpenAI -> MSFT/NVDA, etc.)
   let matchedRule: EntityTickerRule | null = null;
@@ -580,7 +606,7 @@ export function classifyNewsIntelligence(
       matchedTickers.push('SET');
     } else if (feedCategory === 'global' || fullText.includes('wall street') || fullText.includes('สหรัฐ') || fullText.includes('ต่างประเทศ') || fullText.includes('โลก')) {
       detectedRegion = 'global';
-      marketName = 'Global Markets (สหรัฐฯ & โลก)';
+      marketName = 'US / Global Markets';
       matchedTickers.push(detectedCategory === 'tech' ? 'QQQ' : 'SPY');
     } else {
       detectedRegion = 'thai';
@@ -595,8 +621,8 @@ export function classifyNewsIntelligence(
   // 3. Detect Sentiment
   const sentiment = detectNewsSentiment(fullText);
 
-  // 4. Sector & Impact Analysis
-  const sectorNames: Record<NewsCategory, string> = {
+  // 4. Sector & Impact Analysis Dictionary
+  const sectorNamesTh: Record<NewsCategory, string> = {
     all: 'ภาพรวมตลาด',
     macro: 'เศรษฐกิจมหภาค & นโยบายการเงิน',
     tech: 'เทคโนโลยี, AI & เซมิคอนดักเตอร์',
@@ -608,43 +634,119 @@ export function classifyNewsIntelligence(
     health: 'การแพทย์ โรงพยาบาล & สุขภาพ'
   };
 
-  const targetSector = sectorNames[detectedCategory] || 'ตลาดหุ้น';
+  const sectorNamesEn: Record<NewsCategory, string> = {
+    all: 'Broad Market',
+    macro: 'Macroeconomics & Monetary Policy',
+    tech: 'Technology, AI & Semiconductors',
+    energy: 'Energy, Oil & Utilities',
+    finance: 'Banking, Financials & Digital Assets',
+    retail: 'Retail Commerce & Consumer Goods',
+    telecom: 'Telecommunications & Media',
+    realestate: 'Real Estate & Industrial Parks',
+    health: 'Healthcare, Hospitals & BioMed'
+  };
 
-  const bullishReason = sentiment === 'bullish'
-    ? `ปัจจัยหนุนเชิงบวกต่อกลุ่ม ${targetSector} จากนวัตกรรม ความต้องการของตลาด หรือผลประกอบการที่แข็งแกร่ง`
+  const targetSectorTh = sectorNamesTh[detectedCategory] || 'ตลาดหุ้น';
+  const targetSectorEn = sectorNamesEn[detectedCategory] || 'Equities Market';
+  const tickerListTh = uniqueTickers.map(t => `$${t}`).join(', ');
+  const tickerListEn = uniqueTickers.map(t => `$${t}`).join(', ');
+
+  const bullishReasonTh = sentiment === 'bullish'
+    ? `ปัจจัยหนุนเชิงบวกต่อกลุ่ม ${targetSectorTh} จากนวัตกรรม ความต้องการของตลาด หรือผลประกอบการที่แข็งแกร่ง`
+    : undefined;
+  const bullishReasonEn = sentiment === 'bullish'
+    ? `Bullish catalyst for ${targetSectorEn} driven by strong market demand, technological tailwinds, or resilient earnings`
     : undefined;
 
-  const bearishReason = sentiment === 'bearish'
-    ? `แรงกดดันระยะสั้นต่อกลุ่ม ${targetSector} จากความไม่แน่นอน นโยบาย หรือสภาวะเศรษฐกิจที่ชะลอตัว`
+  const bearishReasonTh = sentiment === 'bearish'
+    ? `แรงกดดันระยะสั้นต่อกลุ่ม ${targetSectorTh} จากความไม่แน่นอน นโยบาย หรือสภาวะเศรษฐกิจที่ชะลอตัว`
+    : undefined;
+  const bearishReasonEn = sentiment === 'bearish'
+    ? `Near-term pressure on ${targetSectorEn} from macroeconomic uncertainties, policy shifts, or market volatility`
     : undefined;
 
-  const priceTrendOutlook = sentiment === 'bullish'
+  const priceTrendOutlookTh = sentiment === 'bullish'
     ? 'มีโอกาสปรับตัวขึ้นตามโมเมนตัมเชิงบวก'
     : sentiment === 'bearish'
     ? 'ระมัดระวังแรงขายทำกำไรและความผันผวน'
     : 'มีแนวโน้มแกว่งตัวในกรอบ (Sideways)';
 
-  // 5. Generate High-Fidelity Key Takeaways
-  const keyTakeaways: string[] = [
-    `${cleanTitle} - ติดตามผลกระทบต่อทิศทางธุรกิจและโมเมนตัมของอุตสาหกรรม ${targetSector}`,
-    `การประเมินอารมณ์ตลาดจาก AI: ${sentiment === 'bullish' ? 'เชิงบวก (Bullish Catalyst)' : sentiment === 'bearish' ? 'เชิงลบ/ระมัดระวัง (Bearish Pressure)' : 'เป็นกลาง/ทรงตัว (Neutral Outlook)'}`,
-    `หุ้นและกลุ่มสินทรัพย์ที่เกี่ยวข้อง: ${uniqueTickers.map(t => `$${t}`).join(', ')}`
+  const priceTrendOutlookEn = sentiment === 'bullish'
+    ? 'Expected upward momentum on positive catalyst'
+    : sentiment === 'bearish'
+    ? 'Caution advised on potential profit-taking and volatility'
+    : 'Range-bound consolidation (Sideways)';
+
+  // 5. Intelligent Executive Summary Generator (Non-repetitive, High-Value Synthesis)
+  let executiveSummaryTh = isThai && cleanSummary ? cleanSummary : '';
+  let executiveSummaryEn = !isThai && cleanSummary ? cleanSummary : '';
+
+  if (!executiveSummaryTh) {
+    if (sentiment === 'bullish') {
+      executiveSummaryTh = `รายงานความเคลื่อนไหวสำคัญของกลุ่ม${targetSectorTh} (${tickerListTh}): ตลาดตอบรับปัจจัยบวกและการเติบโตของธุรกิจ ช่วยเพิ่มความเชื่อมั่นแก่นักลงทุน โดยมีแนวโน้ม${priceTrendOutlookTh}`;
+    } else if (sentiment === 'bearish') {
+      executiveSummaryTh = `รายงานประเด็นสำคัญของกลุ่ม${targetSectorTh} (${tickerListTh}): เผชิญแรงกดดันระยะสั้นและความผันผวนจากสภาวะตลาด นักลงทุนควรระมัดระวังความเสี่ยงและ${priceTrendOutlookTh}`;
+    } else {
+      executiveSummaryTh = `รายงานสารสนเทศและภาพรวมของกลุ่ม${targetSectorTh} (${tickerListTh}): สะท้อนความเคลื่อนไหวตามรอบการเปิดเผยข้อมูลและการประเมินมูลค่าตามปัจจัยพื้นฐานในปัจจุบัน`;
+    }
+  }
+
+  if (!executiveSummaryEn) {
+    if (sentiment === 'bullish') {
+      executiveSummaryEn = `Executive intelligence for ${targetSectorEn} (${tickerListEn}): Market sentiment is buoyed by expanding business catalysts and solid sector tailwinds, with ${priceTrendOutlookEn.toLowerCase()}.`;
+    } else if (sentiment === 'bearish') {
+      executiveSummaryEn = `Executive intelligence for ${targetSectorEn} (${tickerListEn}): Highlights near-term headwinds and market volatility, warranting careful risk assessment as ${priceTrendOutlookEn.toLowerCase()}.`;
+    } else {
+      executiveSummaryEn = `Executive intelligence for ${targetSectorEn} (${tickerListEn}): Overview of recent corporate disclosures and baseline fundamental consolidation.`;
+    }
+  }
+
+  // 6. Distinct Dual-Language Key Takeaways (Never repeating the headline)
+  const keyTakeawaysTh: string[] = [
+    `ประเด็นขับเคลื่อนหลัก: สารสนเทศในกลุ่ม${targetSectorTh} ส่งผลโดยตรงต่อทิศทางการดำเนินงานและโครงสร้างความต้องการของตลาด`,
+    `การประเมินอารมณ์ตลาดจาก AI: ${sentiment === 'bullish' ? 'เชิงบวก (Bullish Catalyst)' : sentiment === 'bearish' ? 'เชิงลบ/ระมัดระวัง (Bearish Pressure)' : 'เป็นกลาง/ทรงตัว (Neutral Outlook)'} — ${priceTrendOutlookTh}`,
+    `หุ้นและสินทรัพย์เป้าหมาย: ${tickerListTh} • สรุปสาระสำคัญผ่านระบบ AI StockHomeTH`
   ];
+
+  const keyTakeawaysEn: string[] = [
+    `Core Market Driver: Key catalyst in ${targetSectorEn} directly influencing operational momentum and sector positioning.`,
+    `AI Sentiment Assessment: ${sentiment === 'bullish' ? 'Bullish Catalyst' : sentiment === 'bearish' ? 'Bearish Pressure' : 'Neutral Outlook'} — ${priceTrendOutlookEn}`,
+    `Target Equities & Assets: ${tickerListEn} • Synthesized by StockHomeTH Intelligence Engine`
+  ];
+
+  const finalSummary = isThai ? executiveSummaryTh : executiveSummaryEn;
 
   return {
     cleanTitle,
-    cleanSummary,
+    cleanSummary: finalSummary,
+    relevance,
+    relevanceScore: relevance.score,
+    relevanceLevel: relevance.level,
     region: detectedRegion,
     marketName,
     tickers: uniqueTickers,
     category: detectedCategory,
     sentiment,
     impactAnalysis: {
-      bullishReason,
-      bearishReason,
-      targetSector,
-      priceTrendOutlook
+      bullishReason: isThai ? bullishReasonTh : bullishReasonEn,
+      bullishReason_th: bullishReasonTh,
+      bullishReason_en: bullishReasonEn,
+      bearishReason: isThai ? bearishReasonTh : bearishReasonEn,
+      bearishReason_th: bearishReasonTh,
+      bearishReason_en: bearishReasonEn,
+      targetSector: isThai ? targetSectorTh : targetSectorEn,
+      targetSector_th: targetSectorTh,
+      targetSector_en: targetSectorEn,
+      priceTrendOutlook: isThai ? priceTrendOutlookTh : priceTrendOutlookEn,
+      priceTrendOutlook_th: priceTrendOutlookTh,
+      priceTrendOutlook_en: priceTrendOutlookEn,
     },
-    keyTakeaways
+    keyTakeaways: isThai ? keyTakeawaysTh : keyTakeawaysEn,
+    keyTakeaways_th: keyTakeawaysTh,
+    keyTakeaways_en: keyTakeawaysEn,
+    title_th: isThai ? cleanTitle : undefined,
+    title_en: !isThai ? cleanTitle : undefined,
+    summary_th: executiveSummaryTh,
+    summary_en: executiveSummaryEn,
   };
 }

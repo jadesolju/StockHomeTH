@@ -53,13 +53,13 @@ export default function ErrorBoundary({
         <button
           onClick={reset}
           style={{
-            background: 'var(--accent-blue-gradient)',
+            background: 'var(--accent-blue)',
             color: '#ffffff',
             border: 'none',
             borderRadius: '100px',
             padding: '10px 24px',
             fontSize: '0.85rem',
-            fontWeight: 700,
+            fontWeight: 600,
             cursor: 'pointer',
             display: 'inline-flex',
             alignItems: 'center',

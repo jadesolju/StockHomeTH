@@ -216,6 +216,82 @@ export function getUsMarketStatus(date = new Date()): MarketStatusInfo {
   };
 }
 
+export interface MarketBriefingSession {
+  sessionKey: 'morning' | 'midday' | 'evening' | 'night';
+  labelTh: string;
+  labelEn: string;
+  timeRangeTh: string;
+  timeRangeEn: string;
+  descriptionTh: string;
+  descriptionEn: string;
+}
+
+/**
+ * 4 Daily Market Briefing Checkpoints (สาย เที่ยง เย็น ค่ำ)
+ */
+export function getCurrentBriefingSession(date = new Date()): MarketBriefingSession {
+  const { hour, minute } = getBangkokTime(date);
+  const timeInMinutes = hour * 60 + minute;
+
+  // 1. รอบสาย (Morning Session: 08:30 - 11:30 น.)
+  if (timeInMinutes >= 510 && timeInMinutes < 690) {
+    return {
+      sessionKey: 'morning',
+      labelTh: 'รอบสาย (Morning Pre-Market)',
+      labelEn: 'Morning Session (Pre-Market)',
+      timeRangeTh: '08:30 - 11:30 น.',
+      timeRangeEn: '08:30 - 11:30 BKK',
+      descriptionTh: 'สรุปเตรียมความพร้อมก่อนเปิดตลาดเช้า SET และทิศทางตลาดโลก',
+      descriptionEn: 'SET morning pre-market briefing and global macro catalyst setup'
+    };
+  }
+
+  // 2. รอบเที่ยง (Midday / Lunch Session: 11:30 - 15:30 น.)
+  if (timeInMinutes >= 690 && timeInMinutes < 930) {
+    return {
+      sessionKey: 'midday',
+      labelTh: 'รอบเที่ยง (Midday Intermission)',
+      labelEn: 'Midday Session (Lunch Break)',
+      timeRangeTh: '11:30 - 15:30 น.',
+      timeRangeEn: '11:30 - 15:30 BKK',
+      descriptionTh: 'สรุปภาพรวมปิดตลาดภาคเช้า SET และแนวโน้มภาคบ่าย',
+      descriptionEn: 'Midday market wrap-up and afternoon outlook'
+    };
+  }
+
+  // 3. รอบเย็น (Evening / SET Close Session: 15:30 - 19:30 น.)
+  if (timeInMinutes >= 930 && timeInMinutes < 1170) {
+    return {
+      sessionKey: 'evening',
+      labelTh: 'รอบเย็น (Evening Market Close)',
+      labelEn: 'Evening Session (SET Close)',
+      timeRangeTh: '15:30 - 19:30 น.',
+      timeRangeEn: '15:30 - 19:30 BKK',
+      descriptionTh: 'สรุปภาวะปิดตลาดประจำวัน SET & mai และเตรียมความพร้อมตลาดสหรัฐฯ',
+      descriptionEn: 'SET daily closing summary and US market preview'
+    };
+  }
+
+  // 4. รอบค่ำ (Night / Wall Street Session: 19:30 - 08:30 น.)
+  return {
+    sessionKey: 'night',
+    labelTh: 'รอบค่ำ (Night & Wall Street)',
+    labelEn: 'Night Session (Wall Street Open)',
+    timeRangeTh: '19:30 - 08:30 น.',
+    timeRangeEn: '19:30 - 08:30 BKK',
+    descriptionTh: 'เกาะติดเปิดตลาดหุ้นสหรัฐฯ (S&P 500, NASDAQ) และข่าวเศรษฐกิจโลก',
+    descriptionEn: 'Wall Street opening bell and global economic wrap-up'
+  };
+}
+
+/**
+ * Returns true if today is Sunday (day 0) for Weekly 7-Day Synthesis
+ */
+export function isSundayWeeklySynthesisDay(date = new Date()): boolean {
+  const { day } = getBangkokTime(date);
+  return day === 0;
+}
+
 /**
  * Get unified real-time status and smart sync intervals
  */
@@ -223,14 +299,16 @@ export function getDualMarketStatus(date = new Date()): DualMarketStatus {
   const setStatus = getSetMarketStatus(date);
   const usStatus = getUsMarketStatus(date);
   const isAnyOpen = setStatus.isOpen || usStatus.isOpen;
+  const briefingSession = getCurrentBriefingSession(date);
+  const isSunday = isSundayWeeklySynthesisDay(date);
 
   // 5 minutes when open, 30 minutes when closed (Prevents API rate limiting and stability issues)
   const stockSyncIntervalMs = isAnyOpen ? 5 * 60 * 1000 : 30 * 60 * 1000;
   const stockSyncIntervalLabel = isAnyOpen ? '5 นาที (ตลาดเปิด)' : '30 นาที (ตลาดปิด/ประหยัด API)';
 
-  // News and AI Analysis is always 30 minutes
+  // News and AI Analysis: 4 sessions daily (สาย เที่ยง เย็น ค่ำ)
   const newsSyncIntervalMs = 30 * 60 * 1000;
-  const newsSyncIntervalLabel = '30 นาที (RSS & AI Digest)';
+  const newsSyncIntervalLabel = `4 รอบต่อวัน (${briefingSession.labelTh}${isSunday ? ' • วันอาทิตย์สรุปสัปดาห์' : ''})`;
 
   return {
     set: setStatus,

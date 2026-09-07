@@ -40,10 +40,20 @@ export const SET100_TICKERS = new Set([
 ]);
 
 /**
- * US Magnificent 7 (7 นางฟ้าสหรัฐฯ) - The 7 US Mega-Cap Tech Titans
+ * US Magnificent 7 (7 นางฟ้าหุ้นสหรัฐฯ)
  */
 export const MAGNIFICENT_7 = new Set([
   'NVDA', 'AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'META', 'TSLA'
+]);
+
+/**
+ * Recent IPOs (หุ้น IPO ล่าสุดและหุ้นดาวเด่นเข้าตลาดใหม่)
+ */
+export const RECENT_IPOS = new Set([
+  // US IPOs
+  'SPCX', 'RDDT', 'ARM', 'ALAB', 'TEM', 'RBRK', 'CART', 'BIRK', 'KVYO', 'ANRO', 'CGON', 'WAY',
+  // Thai IPOs
+  'OKJ', 'MEDEZE', 'TMAN', 'NEO', 'COCOCO', 'SAV', 'MASTER', 'MCA', 'TGE', 'CHAO', 'TLI', 'ITC', 'BTG'
 ]);
 
 /**
@@ -137,12 +147,20 @@ export function getStockTags(stock: StockFundamental): string[] {
     }
     if (SP500_TECH.has(t) || SP500_FINANCE.has(t) || SP500_HEALTH.has(t) || DOW_JONES_30.has(t)) {
       tags.push('S&P 500');
-    } else {
-      tags.push('S&P 500');
     }
   }
 
   // 2. Value & Dividend Tags
+  if (RECENT_IPOS.has(t)) {
+    tags.push('IPO ล่าสุด');
+    tags.push('Recent IPO');
+  }
+  if (t === 'SPCX') {
+    tags.push('SpaceX');
+    tags.push('Aerospace & Defense');
+    tags.push('Deep Tech');
+  }
+
   if (stock.dividendYield >= 3.0 || DIVIDEND_ARISTOCRATS.has(t)) {
     tags.push('High Dividend');
   }
@@ -187,6 +205,10 @@ export function getStockTags(stock: StockFundamental): string[] {
         if (rawTag.includes('SET') || rawTag.includes('mai') || rawTag.includes('นางฟ้า')) {
           continue;
         }
+        // If it's SPCX, strip improper index tags from raw tags
+        if (t === 'SPCX' && (rawTag.includes('Magnificent') || rawTag.includes('S&P 500') || rawTag.includes('NASDAQ-100'))) {
+          continue;
+        }
       }
       tags.push(rawTag);
     }
@@ -210,12 +232,13 @@ export function getStockTags(stock: StockFundamental): string[] {
  * Curated list of popular tags specifically for Thai Stocks (SET / mai)
  */
 export const THAI_MARKET_TAG_FILTERS = [
-  { id: 'ALL', labelTh: 'ทุกหมวด (All)', labelEn: 'All Tags' },
-  { id: '7 นางฟ้าหุ้นไทย', labelTh: '7 นางฟ้าหุ้นไทย (Thai 7 Giants)', labelEn: 'Thai 7 Giants' },
-  { id: 'SET50', labelTh: 'SET50 บลูชิพ (50 หุ้นใหญ่)', labelEn: 'SET50 Blue Chips' },
-  { id: 'SET100', labelTh: 'SET100 หุ้นใหญ่ (100 หุ้นนำ)', labelEn: 'SET100 Index' },
+  { id: 'ALL', labelTh: 'ทุกหมวด', labelEn: 'All Tags' },
+  { id: '7 นางฟ้าหุ้นไทย', labelTh: '7 นางฟ้าหุ้นไทย', labelEn: 'Thai 7 Giants' },
+  { id: 'IPO ล่าสุด', labelTh: 'IPO ล่าสุด', labelEn: 'Recent IPOs' },
+  { id: 'SET50', labelTh: 'SET50 บลูชิพ', labelEn: 'SET50 Blue Chips' },
+  { id: 'SET100', labelTh: 'SET100 หุ้นใหญ่', labelEn: 'SET100 Index' },
   { id: 'sSET / mai', labelTh: 'sSET / mai หุ้นเติบโต', labelEn: 'sSET / mai Growth' },
-  { id: 'High Dividend', labelTh: 'ปันผลสูง (High Div)', labelEn: 'High Dividend' },
+  { id: 'High Dividend', labelTh: 'ปันผลสูง', labelEn: 'High Dividend' },
   { id: 'Value Play', labelTh: 'หุ้นคุณค่า (Value P/E ต่ำ)', labelEn: 'Value Play (Low P/E)' },
   { id: 'Banking & Finance', labelTh: 'การเงิน & ธนาคาร', labelEn: 'Banking & Finance' },
   { id: 'Energy & Power', labelTh: 'พลังงาน & สาธารณูปโภค', labelEn: 'Energy & Utilities' },
@@ -227,13 +250,14 @@ export const THAI_MARKET_TAG_FILTERS = [
  * Curated list of popular tags specifically for US Stocks (NYSE / NASDAQ / Dow)
  */
 export const US_MARKET_TAG_FILTERS = [
-  { id: 'ALL', labelTh: 'ทุกหมวด (All)', labelEn: 'All Tags' },
-  { id: 'Magnificent 7', labelTh: 'Magnificent 7 (7 นางฟ้าบิ๊กเทค)', labelEn: 'Magnificent 7' },
-  { id: 'Dow Jones', labelTh: 'Dow Jones (DJIA 30 หุ้นบลูชิพ)', labelEn: 'Dow Jones 30' },
-  { id: 'NASDAQ-100', labelTh: 'NASDAQ-100 (หุ้นเทค & นวัตกรรม)', labelEn: 'NASDAQ-100 Tech' },
-  { id: 'S&P 500', labelTh: 'S&P 500 (500 หุ้นชั้นนำ)', labelEn: 'S&P 500 Index' },
+  { id: 'ALL', labelTh: 'ทุกหมวด', labelEn: 'All Tags' },
+  { id: 'Magnificent 7', labelTh: '7 นางฟ้า (Magnificent 7)', labelEn: 'Magnificent 7' },
+  { id: 'IPO ล่าสุด', labelTh: 'IPO ล่าสุด & หุ้นดาวเด่น', labelEn: 'Recent IPOs & Stars' },
+  { id: 'Dow Jones', labelTh: 'Dow Jones', labelEn: 'Dow Jones' },
+  { id: 'NASDAQ-100', labelTh: 'NASDAQ-100', labelEn: 'NASDAQ-100' },
+  { id: 'S&P 500', labelTh: 'S&P 500', labelEn: 'S&P 500' },
   { id: 'Tech & AI', labelTh: 'AI & เซมิคอนดักเตอร์', labelEn: 'AI & Big Tech' },
-  { id: 'High Dividend', labelTh: 'ปันผลสม่ำเสมอ (Dividend Aristocrats)', labelEn: 'Dividend Aristocrats' },
+  { id: 'High Dividend', labelTh: 'ปันผลสม่ำเสมอ', labelEn: 'Dividend Aristocrats' },
   { id: 'Value Play', labelTh: 'หุ้นคุณค่า (Value P/E ต่ำ)', labelEn: 'Value Play (Low P/E)' },
   { id: 'Banking & Finance', labelTh: 'วอลล์สตรีท & การเงิน', labelEn: 'Wall St & Finance' },
   { id: 'Healthcare', labelTh: 'เฮลท์แคร์ & ไบโอเทค', labelEn: 'Healthcare & Biotech' },
@@ -244,21 +268,154 @@ export const US_MARKET_TAG_FILTERS = [
  * Combined list of popular tags for All Markets view
  */
 export const ALL_MARKETS_TAG_FILTERS = [
-  { id: 'ALL', labelTh: 'ทุกหมวด (All)', labelEn: 'All Tags' },
-  { id: '7 นางฟ้าหุ้นไทย', labelTh: '7 นางฟ้าหุ้นไทย (SET)', labelEn: 'Thai 7 Giants (SET)' },
-  { id: 'Magnificent 7', labelTh: 'Magnificent 7 (US)', labelEn: 'Magnificent 7 (US)' },
+  { id: 'ALL', labelTh: 'ทุกหมวด', labelEn: 'All Tags' },
+  { id: '7 นางฟ้าหุ้นไทย', labelTh: '7 นางฟ้าหุ้นไทย', labelEn: 'Thai 7 Giants' },
+  { id: 'Magnificent 7', labelTh: '7 นางฟ้า (Magnificent 7)', labelEn: 'Magnificent 7' },
+  { id: 'IPO ล่าสุด', labelTh: 'IPO ล่าสุด (US & Thai)', labelEn: 'Recent IPOs' },
   { id: 'SET50', labelTh: 'SET50 บลูชิพ', labelEn: 'SET50 Blue Chips' },
   { id: 'SET100', labelTh: 'SET100 หุ้นใหญ่', labelEn: 'SET100 Index' },
-  { id: 'Dow Jones', labelTh: 'Dow Jones (DJIA 30)', labelEn: 'Dow Jones (DJIA 30)' },
-  { id: 'NASDAQ-100', labelTh: 'NASDAQ-100 (US)', labelEn: 'NASDAQ-100 (US)' },
-  { id: 'S&P 500', labelTh: 'S&P 500 (US)', labelEn: 'S&P 500 (US)' },
+  { id: 'Dow Jones', labelTh: 'Dow Jones', labelEn: 'Dow Jones' },
+  { id: 'NASDAQ-100', labelTh: 'NASDAQ-100', labelEn: 'NASDAQ-100' },
+  { id: 'S&P 500', labelTh: 'S&P 500', labelEn: 'S&P 500' },
   { id: 'Tech & AI', labelTh: 'AI & เทคโนโลยี', labelEn: 'AI & Big Tech' },
-  { id: 'High Dividend', labelTh: 'ปันผลสูง (High Div)', labelEn: 'High Dividend' },
+  { id: 'High Dividend', labelTh: 'ปันผลสูง', labelEn: 'High Dividend' },
   { id: 'Value Play', labelTh: 'หุ้นคุณค่า (Value P/E ต่ำ)', labelEn: 'Value Play (Low P/E)' },
   { id: 'Banking & Finance', labelTh: 'การเงิน & ธนาคาร', labelEn: 'Banking & Finance' },
   { id: 'Energy & Power', labelTh: 'พลังงาน & สาธารณูปโภค', labelEn: 'Energy & Utilities' },
   { id: 'Healthcare', labelTh: 'การแพทย์ & สุขภาพ', labelEn: 'Healthcare & Biotech' },
 ];
+
+/**
+ * Magnificent 7 strictly ordered rank (1..7)
+ */
+export const MAG_7_ORDER: Record<string, number> = {
+  'NVDA': 1,
+  'AAPL': 2,
+  'MSFT': 3,
+  'GOOGL': 4,
+  'GOOG': 4,
+  'AMZN': 5,
+  'META': 6,
+  'TSLA': 7,
+};
+
+/**
+ * Thai 7 Giants strictly ordered rank (1..8)
+ */
+export const THAI_7_ORDER: Record<string, number> = {
+  'DELTA': 1,
+  'PTT': 2,
+  'AOT': 3,
+  'ADVANC': 4,
+  'GULF': 5,
+  'KBANK': 6,
+  'SCB': 7,
+  'CPALL': 8,
+};
+
+/**
+ * US Prominent Mega-Cap Leaders (Rank 10..45)
+ */
+export const US_PROMINENT_LEADERS: Record<string, number> = {
+  'AMD': 10,
+  'AVGO': 11,
+  'PLTR': 12,
+  'LLY': 13,
+  'JPM': 14,
+  'V': 15,
+  'MA': 16,
+  'COST': 17,
+  'NFLX': 18,
+  'CRM': 19,
+  'WMT': 20,
+  'ORCL': 21,
+  'DIS': 22,
+  'QCOM': 23,
+  'INTC': 24,
+  'BAC': 25,
+  'KO': 26,
+  'PEP': 27,
+  'UNH': 28,
+  'HD': 29,
+  'PG': 30,
+  'UBER': 31,
+  'COIN': 32,
+  'SOFI': 33,
+  'PYPL': 34,
+  'ARM': 35,
+  'SMCI': 36,
+  'PANW': 37,
+  'CRWD': 38,
+  'SNOW': 39,
+  'NOW': 40,
+  'SHOP': 41,
+  'ISRG': 42,
+  'AMAT': 43,
+  'MU': 44,
+  'TXN': 45,
+};
+
+/**
+ * Thai Top SET50 Blue Chips (Rank 10..38)
+ */
+export const THAI_PROMINENT_LEADERS: Record<string, number> = {
+  'BDMS': 10,
+  'TRUE': 11,
+  'SCC': 12,
+  'BBL': 13,
+  'KTB': 14,
+  'CPN': 15,
+  'MINT': 16,
+  'PTTEP': 17,
+  'TOP': 18,
+  'BH': 19,
+  'TTB': 20,
+  'HMPRO': 21,
+  'BJC': 22,
+  'TU': 23,
+  'BANPU': 24,
+  'BTS': 25,
+  'COM7': 26,
+  'GPSC': 27,
+  'BGRIM': 28,
+  'RATCH': 29,
+  'SAWAD': 30,
+  'MTC': 31,
+  'TIDLOR': 32,
+  'INTUCH': 33,
+  'CENTEL': 34,
+  'KCE': 35,
+  'HANA': 36,
+  'CCET': 37,
+  'CPF': 38,
+};
+
+/**
+ * Calculates a tiered priority rank for any stock in a market context
+ * Returns a lower number for higher priority (e.g. 1 is top priority)
+ */
+export function getStockPopularityRank(stock: { ticker: string; market: string }, marketContext: string = 'ALL'): number {
+  const ticker = stock.ticker.toUpperCase();
+  const market = stock.market;
+
+  if (market === 'US') {
+    if (MAG_7_ORDER[ticker]) return MAG_7_ORDER[ticker]; // 1..7
+    if (US_PROMINENT_LEADERS[ticker]) return US_PROMINENT_LEADERS[ticker]; // 10..45
+    if (NASDAQ_100.has(ticker)) return 60;
+    if (DOW_JONES_30.has(ticker)) return 70;
+    return 100;
+  }
+
+  if (market === 'SET') {
+    if (THAI_7_ORDER[ticker]) return THAI_7_ORDER[ticker]; // 1..8
+    if (THAI_PROMINENT_LEADERS[ticker]) return THAI_PROMINENT_LEADERS[ticker]; // 10..38
+    if (SET50_TICKERS.has(ticker)) return 60;
+    if (SET100_TICKERS.has(ticker)) return 75;
+    return 100;
+  }
+
+  return 100;
+}
 
 /**
  * Helper to get market-scoped tag filter definitions
@@ -270,4 +427,6 @@ export function getMarketScopedTagFilters(market: 'ALL' | 'SET' | 'US') {
 }
 
 export const POPULAR_TAG_FILTERS = ALL_MARKETS_TAG_FILTERS;
+
+
 

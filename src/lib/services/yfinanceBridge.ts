@@ -143,8 +143,21 @@ function parseLastJsonLine(output: string): any {
   return JSON.parse(output.trim());
 }
 
-export async function fetchSingleStockYFinance(symbol: string, market?: string): Promise<StockFundamental | null> {
+export async function fetchSingleStockYFinance(symbol: string, market?: string, forceLive = false): Promise<StockFundamental | null> {
   const cleanSym = symbol.replace('.BK', '').toUpperCase();
+
+  // 1. Fast Cache Check (< 1ms): Return immediately if already in hot memory or market cache
+  if (!forceLive) {
+    const cacheList = cachedStocks || loadMarketCacheFile();
+    if (cacheList && cacheList.length > 0) {
+      const match = cacheList.find(
+        (s) => s.ticker.toUpperCase() === cleanSym && (!market || market === 'ALL' || s.market.toUpperCase() === market.toUpperCase())
+      );
+      if (match) return match;
+    }
+  }
+
+  // 2. Query Yahoo Finance & Webull via Python Engine for live market quote
   try {
     const pyCmd = await detectPythonCommand();
     const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
@@ -168,9 +181,10 @@ export async function fetchSingleStockYFinance(symbol: string, market?: string):
     console.warn(`[yfinanceBridge] Live ticker query warning for ${cleanSym}:`, err);
   }
 
-  // Fallback search in cache
-  if (cachedStocks) {
-    const match = cachedStocks.find((s) => s.ticker.toUpperCase() === cleanSym);
+  // 3. Fallback search in memory cache or disk cache if live fetch timed out
+  const cacheList = cachedStocks || loadMarketCacheFile();
+  if (cacheList && cacheList.length > 0) {
+    const match = cacheList.find((s) => s.ticker.toUpperCase() === cleanSym);
     if (match) return match;
   }
 

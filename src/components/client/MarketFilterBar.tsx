@@ -1,11 +1,9 @@
 'use client';
 
 import React from 'react';
-import type { NewsCategory, SentimentType } from '../../lib/schemas/newsSchema';
+import type { NewsCategory, SentimentType, MarketRegion } from '../../lib/schemas/newsSchema';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import {
-  Search,
-  X,
   Globe,
   Cpu,
   Zap,
@@ -16,25 +14,28 @@ import {
   HeartPulse,
   TrendingUp,
   TrendingDown,
-  Layers
+  Layers,
+  Flag
 } from 'lucide-react';
 
 interface MarketFilterBarProps {
+  selectedRegion?: 'all' | MarketRegion;
+  onSelectRegion?: (region: 'all' | MarketRegion) => void;
   selectedCategory: NewsCategory;
   onSelectCategory: (category: NewsCategory) => void;
   selectedSentiment: 'all' | SentimentType;
   onSelectSentiment: (sentiment: 'all' | SentimentType) => void;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
 export function MarketFilterBar({
+  selectedRegion = 'all',
+  onSelectRegion,
   selectedCategory,
   onSelectCategory,
   selectedSentiment,
   onSelectSentiment,
-  searchQuery,
-  onSearchChange,
 }: MarketFilterBarProps) {
   const { t, language } = useLanguage();
 
@@ -52,77 +53,47 @@ export function MarketFilterBar({
 
   return (
     <div style={{ marginBottom: '24px' }}>
-      {/* Search Input Bar */}
-      <div style={{ position: 'relative', marginBottom: '14px' }}>
-        <Search
-          size={18}
-          color="var(--text-tertiary)"
-          style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }}
-        />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder={t('searchStockPlaceholder')}
-          style={{
-            width: '100%',
-            padding: '12px 42px 12px 46px',
-            borderRadius: '16px',
-            border: '1px solid var(--glass-border)',
-            background: 'var(--glass-bg)',
-            backdropFilter: 'blur(16px)',
-            color: 'var(--text-primary)',
-            fontSize: '0.9rem',
-            outline: 'none',
-          }}
-        />
-        {searchQuery && (
-          <button
-            onClick={() => onSearchChange('')}
-            style={{
-              position: 'absolute',
-              right: '14px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-tertiary)',
-              cursor: 'pointer',
-            }}
-          >
-            <X size={16} />
-          </button>
-        )}
-      </div>
-
-      {/* Category Pills & Sentiment Toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-        {/* Category Pills List */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', flex: 1 }}>
-          {CATEGORIES.map((cat) => (
+      {/* Market Region & Sentiment Controls Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+        {/* Market Region Selector */}
+        {onSelectRegion && (
+          <div className="ios-segmented-control" style={{ padding: '3px' }}>
             <button
-              key={cat.id}
-              onClick={() => onSelectCategory(cat.id)}
-              className="ios-chip"
+              onClick={() => onSelectRegion('all')}
+              className={`ios-segment-btn ${selectedRegion === 'all' ? 'active' : ''}`}
+              style={{ padding: '5px 14px', fontSize: '0.78rem', fontWeight: selectedRegion === 'all' ? 700 : 500 }}
+            >
+              <Globe size={13} />
+              <span>{language === 'th' ? 'ทุกตลาด' : 'All Markets'}</span>
+            </button>
+            <button
+              onClick={() => onSelectRegion('thai')}
+              className={`ios-segment-btn ${selectedRegion === 'thai' ? 'active' : ''}`}
               style={{
-                background: selectedCategory === cat.id ? 'var(--accent-blue-gradient)' : 'var(--glass-bg)',
-                color: selectedCategory === cat.id ? '#ffffff' : 'var(--text-secondary)',
-                border: selectedCategory === cat.id ? '1px solid rgba(0, 122, 255, 0.4)' : '1px solid var(--glass-border)',
-                fontWeight: selectedCategory === cat.id ? 700 : 500,
-                padding: '6px 14px',
-                borderRadius: '100px',
-                fontSize: '0.8rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
+                padding: '5px 14px',
+                fontSize: '0.78rem',
+                color: selectedRegion === 'thai' ? 'var(--accent-blue)' : undefined,
+                fontWeight: selectedRegion === 'thai' ? 700 : 500
               }}
             >
-              {cat.icon}
-              <span>{cat.label}</span>
+              <Landmark size={13} />
+              <span>{language === 'th' ? 'หุ้นไทย (SET)' : 'Thai SET'}</span>
             </button>
-          ))}
-        </div>
+            <button
+              onClick={() => onSelectRegion('global')}
+              className={`ios-segment-btn ${selectedRegion === 'global' ? 'active' : ''}`}
+              style={{
+                padding: '5px 14px',
+                fontSize: '0.78rem',
+                color: selectedRegion === 'global' ? '#5e5ce6' : undefined,
+                fontWeight: selectedRegion === 'global' ? 700 : 500
+              }}
+            >
+              <Flag size={13} />
+              <span>{language === 'th' ? 'สากล / สหรัฐฯ (US)' : 'Global / US'}</span>
+            </button>
+          </div>
+        )}
 
         {/* Sentiment Filter Controls */}
         <div className="ios-segmented-control" style={{ padding: '3px', flexShrink: 0 }}>
@@ -150,6 +121,33 @@ export function MarketFilterBar({
             <span>{t('sentimentBearish')}</span>
           </button>
         </div>
+      </div>
+
+      {/* Category Pills List */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => onSelectCategory(cat.id)}
+            className="ios-chip"
+            style={{
+              background: selectedCategory === cat.id ? 'var(--accent-blue)' : 'var(--glass-bg)',
+              color: selectedCategory === cat.id ? '#ffffff' : 'var(--text-secondary)',
+              border: selectedCategory === cat.id ? '1px solid var(--accent-blue)' : '1px solid var(--glass-border)',
+              fontWeight: selectedCategory === cat.id ? 700 : 500,
+              padding: '6px 14px',
+              borderRadius: '100px',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            {cat.icon}
+            <span>{cat.label}</span>
+          </button>
+        ))}
       </div>
     </div>
   );

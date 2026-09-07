@@ -116,22 +116,45 @@ export async function fetchSetStockNews(ticker: string): Promise<StockNewsItem[]
           const qLabel = item.quarter ? `ไตรมาส ${item.quarter === 6 ? 'ครึ่งปีแรก' : item.quarter}` : '';
           const summary = `${typeLabel}: ${headline} ${qLabel ? `(${qLabel} ปี ${item.period || ''})` : ''} ข้อมูลส่งตรงจากตลาดหลักทรัพย์แห่งประเทศไทย`;
 
+          const title_th = headline;
+          const title_en = `[SET Official Disclosure] ${cleanTicker}: ${headline}`;
+          const summary_th = summary;
+          const summary_en = `Stock Exchange of Thailand Official Disclosure: ${headline} (${cleanTicker}). Verified company filing.`;
+
+          const keyTakeaways_th = [
+            `${headline} - ข่าวแจ้งเป็นทางการผ่านระบบเปิดเผยสารสนเทศของตลาดหลักทรัพย์แห่งประเทศไทย (SET)`,
+            `ประเภทรายงาน: ${typeLabel} • ผู้ส่งสารสนเทศ: ${item.senderName || cleanTicker}`,
+            `การประเมินสัญญาณ: ${sentiment === 'bullish' ? 'เชิงบวกต่อผลการดำเนินงาน' : sentiment === 'bearish' ? 'ระวังแรงกดดันระยะสั้น' : 'รายงานตามรอบบัญชี/สารสนเทศทั่วไป'}`
+          ];
+
+          const keyTakeaways_en = [
+            `Official regulatory filing for ${cleanTicker} disclosed through SET Information Portal`,
+            `Report Type: ${typeLabel} • Reporting Entity: ${item.senderName || cleanTicker}`,
+            `AI Sentiment Assessment: ${sentiment === 'bullish' ? 'Bullish' : sentiment === 'bearish' ? 'Bearish' : 'Neutral Disclosure'}`
+          ];
+
           return {
             id: `set-ir-${item.newsId || Math.random().toString(36).substring(2, 9)}`,
             title: headline,
-            summary: summary,
-            keyTakeaways: [
-              `${headline} - ข่าวแจ้งเป็นทางการผ่านระบบเปิดเผยสารสนเทศของตลาดหลักทรัพย์แห่งประเทศไทย (SET)`,
-              `ประเภทรายงาน: ${typeLabel} • ผู้ส่งสารสนเทศ: ${item.senderName || cleanTicker}`,
-              `การประเมินสัญญาณ: ${sentiment === 'bullish' ? 'เชิงบวกต่อผลการดำเนินงาน' : sentiment === 'bearish' ? 'ระวังแรงกดดันระยะสั้น' : 'รายงานตามรอบบัญชี/สารสนเทศทั่วไป'}`
-            ],
+            title_th,
+            title_en,
+            summary,
+            summary_th,
+            summary_en,
+            keyTakeaways: keyTakeaways_th,
+            keyTakeaways_th,
+            keyTakeaways_en,
             fullContent: `${headline}\n\n${summary}\n\nรหัสข่าว (News ID): ${item.newsId}\nผู้รายงาน: ${item.senderName || cleanTicker}\nเอกสารแนบ: ${item.pdfFileName || 'ไม่มี'}`,
+            fullContent_th: `${headline}\n\n${summary}\n\nรหัสข่าว (News ID): ${item.newsId}\nผู้รายงาน: ${item.senderName || cleanTicker}\nเอกสารแนบ: ${item.pdfFileName || 'ไม่มี'}`,
+            fullContent_en: `${title_en}\n\n${summary_en}\n\nNews ID: ${item.newsId}\nReporter: ${item.senderName || cleanTicker}`,
             region: 'thai',
             timeframe: 'daily',
             marketName: 'SET Index (ตลาดหลักทรัพย์ฯ)',
             date: relativeTime,
             time: new Date(pubDate).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.',
             periodLabel: `ข่าวสด SET IR • ${relativeTime}`,
+            periodLabel_th: `ข่าวสด SET IR • ${relativeTime}`,
+            periodLabel_en: `Live SET IR • ${relativeTime}`,
             sentiment,
             tickers: item.symbol && item.symbol.length > 0 ? item.symbol : [cleanTicker],
             readTime: '1 นาที',
@@ -139,9 +162,17 @@ export async function fetchSetStockNews(ticker: string): Promise<StockNewsItem[]
             category: item.reportType === 'FIN' ? 'finance' : 'macro',
             impactAnalysis: {
               bullishReason: sentiment === 'bullish' ? 'สารสนเทศแสดงการเติบโตหรือปัจจัยบวกต่อผลประกอบการ' : undefined,
+              bullishReason_th: sentiment === 'bullish' ? 'สารสนเทศแสดงการเติบโตหรือปัจจัยบวกต่อผลประกอบการ' : undefined,
+              bullishReason_en: sentiment === 'bullish' ? 'Official disclosure reflects positive growth or operational earnings catalyst' : undefined,
               bearishReason: sentiment === 'bearish' ? 'สารสนเทศอาจสร้างความกังวลหรือความผันผวนต่อราคาหุ้น' : undefined,
+              bearishReason_th: sentiment === 'bearish' ? 'สารสนเทศอาจสร้างความกังวลหรือความผันผวนต่อราคาหุ้น' : undefined,
+              bearishReason_en: sentiment === 'bearish' ? 'Disclosure may induce short-term operational concerns or price volatility' : undefined,
               targetSector: 'หุ้นไทย (SET)',
-              priceTrendOutlook: sentiment === 'bullish' ? 'หนุนความเชื่อมั่นนักลงทุน' : sentiment === 'bearish' ? 'ระมัดระวังแรงขาย' : 'ทรงตัวตามตลาด'
+              targetSector_th: 'หุ้นไทย (SET)',
+              targetSector_en: 'Thai Equities (SET)',
+              priceTrendOutlook: sentiment === 'bullish' ? 'หนุนความเชื่อมั่นนักลงทุน' : sentiment === 'bearish' ? 'ระมัดระวังแรงขาย' : 'ทรงตัวตามตลาด',
+              priceTrendOutlook_th: sentiment === 'bullish' ? 'หนุนความเชื่อมั่นนักลงทุน' : sentiment === 'bearish' ? 'ระมัดระวังแรงขาย' : 'ทรงตัวตามตลาด',
+              priceTrendOutlook_en: sentiment === 'bullish' ? 'Boosts investor confidence' : sentiment === 'bearish' ? 'Caution on selling pressure' : 'Market-neutral consolidation'
             },
             isFeatured: false,
             isBookmarked: false,
@@ -167,29 +198,52 @@ export async function fetchSetStockNews(ticker: string): Promise<StockNewsItem[]
     if (feed && feed.items && feed.items.length > 0) {
       const items: StockNewsItem[] = feed.items.slice(0, 10).map((item, idx) => {
         const rawTitle = cleanNewsTitle(item.title || '');
-        const snippet = cleanNewsSnippet(item.contentSnippet || item.title || '', rawTitle);
+        const snippet = cleanNewsSnippet(item.contentSnippet || item.title || '', rawTitle, true);
         const pubDate = item.pubDate || new Date().toISOString();
         const relativeTime = formatThaiRelativeTime(pubDate);
         const sentiment = detectThaiSentiment(`${rawTitle} ${snippet}`);
         const sourceName = item.source?.title || item.creator || 'ข่าวหุ้นและการเงินไทย';
         const itemLink = item.link || `https://www.settrade.com/th/equities/quote/${cleanTicker}/overview`;
 
+        const title_th = rawTitle;
+        const title_en = `[Thai Market News] ${cleanTicker}: ${rawTitle}`;
+        const summary_th = snippet;
+        const summary_en = `Market news and development for ${cleanTicker} reported by ${sourceName}.`;
+
+        const keyTakeaways_th = [
+          `${rawTitle} - สรุปข่าวสารสดและทิศทางธุรกิจของ $${cleanTicker}`,
+          `การประเมินอารมณ์ตลาดจาก AI: ${sentiment === 'bullish' ? 'เชิงบวก (Bullish)' : sentiment === 'bearish' ? 'เชิงลบ (Bearish)' : 'เป็นกลาง/เก็งกำไรในกรอบ'}`,
+          `แหล่งข่าวต้นฉบับ: ${sourceName}`
+        ];
+
+        const keyTakeaways_en = [
+          `Live market update and business catalyst for ${cleanTicker}`,
+          `AI Sentiment Evaluation: ${sentiment === 'bullish' ? 'Bullish' : sentiment === 'bearish' ? 'Bearish' : 'Neutral Consolidation'}`,
+          `Source: ${sourceName}`
+        ];
+
         return {
           id: `set-rss-${cleanTicker.toLowerCase()}-${idx}-${Math.abs(hashString(rawTitle))}`,
           title: rawTitle,
+          title_th,
+          title_en,
           summary: snippet,
-          keyTakeaways: [
-            `${rawTitle} - สรุปข่าวสารสดและทิศทางธุรกิจของ $${cleanTicker}`,
-            `การประเมินอารมณ์ตลาดจาก AI: ${sentiment === 'bullish' ? 'เชิงบวก (Bullish)' : sentiment === 'bearish' ? 'เชิงลบ (Bearish)' : 'เป็นกลาง/เก็งกำไรในกรอบ'}`,
-            `แหล่งข่าวต้นฉบับ: ${sourceName}`
-          ],
+          summary_th,
+          summary_en,
+          keyTakeaways: keyTakeaways_th,
+          keyTakeaways_th,
+          keyTakeaways_en,
           fullContent: `${rawTitle}\n\n${snippet}\n\nรายงานสดจาก ${sourceName} • ลิงก์ต้นฉบับ: ${itemLink}`,
+          fullContent_th: `${rawTitle}\n\n${snippet}\n\nรายงานสดจาก ${sourceName} • ลิงก์ต้นฉบับ: ${itemLink}`,
+          fullContent_en: `${title_en}\n\n${summary_en}\n\nReported by ${sourceName} • Original URL: ${itemLink}`,
           region: 'thai',
           timeframe: 'daily',
           marketName: 'SET Index (ไทย)',
           date: relativeTime,
           time: new Date(pubDate).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.',
           periodLabel: `ข่าวสด Real-Time • ${relativeTime}`,
+          periodLabel_th: `ข่าวสด Real-Time • ${relativeTime}`,
+          periodLabel_en: `Live Real-Time • ${relativeTime}`,
           sentiment,
           tickers: [cleanTicker],
           readTime: '2 นาที',
@@ -197,9 +251,17 @@ export async function fetchSetStockNews(ticker: string): Promise<StockNewsItem[]
           category: 'macro',
           impactAnalysis: {
             bullishReason: sentiment === 'bullish' ? `แรงซื้อเก็งกำไรและความเชื่อมั่นในหุ้น $${cleanTicker}` : undefined,
+            bullishReason_th: sentiment === 'bullish' ? `แรงซื้อเก็งกำไรและความเชื่อมั่นในหุ้น $${cleanTicker}` : undefined,
+            bullishReason_en: sentiment === 'bullish' ? `Speculative buying and confidence tailwinds for $${cleanTicker}` : undefined,
             bearishReason: sentiment === 'bearish' ? `แรงกดดันระยะสั้นและความผันผวนในหุ้น $${cleanTicker}` : undefined,
+            bearishReason_th: sentiment === 'bearish' ? `แรงกดดันระยะสั้นและความผันผวนในหุ้น $${cleanTicker}` : undefined,
+            bearishReason_en: sentiment === 'bearish' ? `Short-term profit taking and market volatility in $${cleanTicker}` : undefined,
             targetSector: 'หุ้นไทย (SET)',
-            priceTrendOutlook: sentiment === 'bullish' ? 'มีโอกาสทดสอบแนวต้าน' : sentiment === 'bearish' ? 'ระวังแรงขายทำกำไร' : 'แกว่งตัวในกรอบ'
+            targetSector_th: 'หุ้นไทย (SET)',
+            targetSector_en: 'Thai Equities (SET)',
+            priceTrendOutlook: sentiment === 'bullish' ? 'มีโอกาสทดสอบแนวต้าน' : sentiment === 'bearish' ? 'ระวังแรงขายทำกำไร' : 'แกว่งตัวในกรอบ',
+            priceTrendOutlook_th: sentiment === 'bullish' ? 'มีโอกาสทดสอบแนวต้าน' : sentiment === 'bearish' ? 'ระวังแรงขายทำกำไร' : 'แกว่งตัวในกรอบ',
+            priceTrendOutlook_en: sentiment === 'bullish' ? 'Potential test of resistance level' : sentiment === 'bearish' ? 'Exercise caution on pullback' : 'Range-bound consolidation'
           },
           isFeatured: false,
           isBookmarked: false,

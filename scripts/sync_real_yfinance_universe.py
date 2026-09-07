@@ -1,11 +1,12 @@
 """
-Sync Real Live Stock Quotes from Yahoo Finance
-Fetches actual real-world closing & live prices for SET and US stocks,
-and saves the validated data into market_cache.json and market_data.db.
+StockHomeTH - Comprehensive Real-time yfinance Universe Synchronizer
+Fetches actual real-world closing & live prices for SET and US stocks from Yahoo Finance,
+updates market_cache.json + market_data.db, and updates build_global_universe.py & build_thai_universe.py.
 """
 
 import os
 import sys
+import re
 import json
 import time
 import sqlite3
@@ -16,6 +17,14 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CACHE_PATH = os.path.join(BASE_DIR, "market_cache.json")
+DB_PATH = os.path.join(BASE_DIR, "market_data.db")
+GLOBAL_SCRIPT = os.path.join(BASE_DIR, "scripts", "build_global_universe.py")
+THAI_SCRIPT = os.path.join(BASE_DIR, "scripts", "build_thai_universe.py")
+THAI_DATA = os.path.join(BASE_DIR, "server", "data", "thai_stocks.json")
+US_DATA = os.path.join(BASE_DIR, "server", "data", "us_stocks.json")
 
 # High quality SET & US stock universe definitions
 SET_MAJOR = [
@@ -144,6 +153,40 @@ US_MAJOR = [
     {"ticker": "BA", "name": "The Boeing Company", "sector": "Aerospace & Defense"},
     {"ticker": "LMT", "name": "Lockheed Martin Corporation", "sector": "Aerospace & Defense"},
     {"ticker": "RTX", "name": "RTX Corporation", "sector": "Aerospace & Defense"},
+    {"ticker": "INTU", "name": "Intuit Inc.", "sector": "Software & Cloud"},
+    {"ticker": "AMAT", "name": "Applied Materials, Inc.", "sector": "Technology & Semiconductors"},
+    {"ticker": "ISRG", "name": "Intuitive Surgical, Inc.", "sector": "Healthcare & Medical Tech"},
+    {"ticker": "LRCX", "name": "Lam Research Corporation", "sector": "Technology & Semiconductors"},
+    {"ticker": "KLAC", "name": "KLA Corporation", "sector": "Technology & Semiconductors"},
+    {"ticker": "ADI", "name": "Analog Devices, Inc.", "sector": "Technology & Semiconductors"},
+    {"ticker": "SNPS", "name": "Synopsys, Inc.", "sector": "Software & Semiconductors"},
+    {"ticker": "CDNS", "name": "Cadence Design Systems", "sector": "Software & Semiconductors"},
+    {"ticker": "MELI", "name": "MercadoLibre, Inc.", "sector": "Consumer & Retail"},
+    {"ticker": "PDD", "name": "PDD Holdings Inc.", "sector": "Consumer & Retail"},
+    {"ticker": "MAR", "name": "Marriott International", "sector": "Consumer & Travel"},
+    {"ticker": "ORLY", "name": "O'Reilly Automotive", "sector": "Consumer & Retail"},
+    {"ticker": "CTAS", "name": "Cintas Corporation", "sector": "Industrials & Services"},
+    {"ticker": "NXPI", "name": "NXP Semiconductors", "sector": "Technology & Semiconductors"},
+    {"ticker": "FTNT", "name": "Fortinet, Inc.", "sector": "Technology & Cybersecurity"},
+    {"ticker": "WDAY", "name": "Workday, Inc.", "sector": "Software & Cloud"},
+    {"ticker": "ROP", "name": "Roper Technologies", "sector": "Technology & Software"},
+    {"ticker": "PCAR", "name": "PACCAR Inc", "sector": "Industrials & Machinery"},
+    {"ticker": "PAYX", "name": "Paychex, Inc.", "sector": "Technology & HR Software"},
+    {"ticker": "CPRT", "name": "Copart, Inc.", "sector": "Consumer & Auto Services"},
+    {"ticker": "ODFL", "name": "Old Dominion Freight Line", "sector": "Industrials & Transport"},
+    {"ticker": "FAST", "name": "Fastenal Company", "sector": "Industrials & Wholesale"},
+    {"ticker": "CSGP", "name": "CoStar Group", "sector": "Real Estate & Software"},
+    {"ticker": "ROST", "name": "Ross Stores, Inc.", "sector": "Consumer & Retail"},
+    {"ticker": "SBUX", "name": "Starbucks Corporation", "sector": "Consumer & Restaurants"},
+    {"ticker": "MDLZ", "name": "Mondelez International", "sector": "Food & Consumer Staples"},
+    {"ticker": "MNST", "name": "Monster Beverage", "sector": "Food & Consumer Staples"},
+    {"ticker": "KDP", "name": "Keurig Dr Pepper", "sector": "Food & Consumer Staples"},
+    {"ticker": "KHC", "name": "The Kraft Heinz Company", "sector": "Food & Consumer Staples"},
+    {"ticker": "MRNA", "name": "Moderna, Inc.", "sector": "Healthcare & Biotech"},
+    {"ticker": "TXN", "name": "Texas Instruments", "sector": "Technology & Semiconductors"},
+    {"ticker": "MU", "name": "Micron Technology", "sector": "Technology & Semiconductors"},
+    {"ticker": "ARM", "name": "Arm Holdings plc", "sector": "Technology & Semiconductors"},
+    {"ticker": "SMCI", "name": "Super Micro Computer", "sector": "Technology & Hardware"},
 ]
 
 def format_market_cap(val, currency="THB"):
@@ -168,10 +211,34 @@ def format_market_cap(val, currency="THB"):
     except:
         return "—"
 
+def update_python_script_prices(script_path, price_map):
+    """Safely updates price values inside Python universe builder scripts"""
+    if not os.path.exists(script_path):
+        return
+    try:
+        with open(script_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        updated_lines = []
+        for line in content.split("\n"):
+            match = re.match(r'^\s*"([A-Za-z0-9.\-]+)":\s*\(([^,]+),\s*([^,]+),\s*([0-9.]+),\s*([^,]+),\s*([0-9.]+),\s*([0-9.]+)\),?', line)
+            if match:
+                ticker = match.group(1).upper()
+                if ticker in price_map:
+                    p = price_map[ticker]["price"]
+                    # Format with same padding
+                    line = re.sub(r'([0-9.]+),\s*("\$[0-9.TBM]+")', f'{p:.2f}, \\2', line)
+            updated_lines.append(line)
+
+        with open(script_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(updated_lines))
+        print(f"Updated live prices in script: {os.path.basename(script_path)}")
+    except Exception as e:
+        print(f"Warning updating {script_path}: {e}")
+
 def sync_universe():
     print(f"[{datetime.now().strftime('%H:%M:%S')}] Starting Real Yahoo Finance Universe Sync...")
     
-    # 1. Prepare YF symbols
     set_map = {f"{item['ticker']}.BK": item for item in SET_MAJOR}
     us_map = {item['ticker']: item for item in US_MAJOR}
     
@@ -187,22 +254,19 @@ def sync_universe():
         print(f"Failed to download from Yahoo Finance: {e}")
         return
 
-    # Extract Close and Volume tables
     close_df = df.get('Close', None)
     vol_df = df.get('Volume', None)
-    high_df = df.get('High', None)
-    low_df = df.get('Low', None)
 
     real_stocks = []
+    latest_price_map = {}
 
     # Process SET stocks
     for yf_sym, meta in set_map.items():
         ticker = meta['ticker']
         try:
             series = None
-            if close_df is not None:
-                if yf_sym in close_df.columns:
-                    series = close_df[yf_sym].dropna()
+            if close_df is not None and yf_sym in close_df.columns:
+                series = close_df[yf_sym].dropna()
             
             if series is not None and len(series) > 0:
                 last_price = round(float(series.iloc[-1]), 2)
@@ -210,7 +274,6 @@ def sync_universe():
                 change = round(((last_price - prev_price) / prev_price) * 100, 2) if prev_price else 0.0
                 sparkline = [round(float(x), 2) for x in series.tolist()]
                 if len(sparkline) < 7:
-                    # Pad to 7 items
                     sparkline = [sparkline[0]] * (7 - len(sparkline)) + sparkline
             else:
                 continue
@@ -219,7 +282,6 @@ def sync_universe():
             last_vol = int(v_series.iloc[-1]) if v_series is not None and len(v_series) > 0 else 5000000
             vol_str = f"{last_vol / 1e6:.1f}M" if last_vol >= 1e6 else f"{last_vol / 1e3:.0f}K"
 
-            # Estimate or calculate market cap & 52w range
             h52 = round(last_price * 1.15, 2)
             l52 = round(last_price * 0.85, 2)
             est_mcap = format_market_cap(last_price * 15_000_000_000, "THB")
@@ -229,7 +291,7 @@ def sync_universe():
             elif change < -2.0:
                 sentiment = max(15, 45 + int(change * 3))
 
-            real_stocks.append({
+            stock_obj = {
                 "ticker": ticker,
                 "name": meta["name"],
                 "market": "SET",
@@ -250,7 +312,9 @@ def sync_universe():
                 "aiInsight": f"ข้อมูลราคาล่าสุดจากตลาด SET (Yahoo Finance): {meta['name']} ({ticker}) ซื้อขายที่ {last_price:.2f} THB.",
                 "description": f"{meta['name']} เป็นบริษัทจดทะเบียนในตลาดหลักทรัพย์แห่งประเทศไทย หมวด {meta['sector']}",
                 "tags": ["SET", "7 นางฟ้าหุ้นไทย", "SET50", "Blue Chip"] if ticker in ["PTT", "DELTA", "CPALL", "AOT", "KBANK", "SCB", "GULF"] else (["SET", "SET50", "Blue Chip"] if ticker in ["ADVANC", "BDMS", "BBL", "CPN", "PTTEP"] else ["SET", "SET100"])
-            })
+            }
+            real_stocks.append(stock_obj)
+            latest_price_map[ticker] = stock_obj
         except Exception as err:
             print(f"Error processing SET {ticker}: {err}")
 
@@ -259,9 +323,8 @@ def sync_universe():
         ticker = meta['ticker']
         try:
             series = None
-            if close_df is not None:
-                if yf_sym in close_df.columns:
-                    series = close_df[yf_sym].dropna()
+            if close_df is not None and yf_sym in close_df.columns:
+                series = close_df[yf_sym].dropna()
             
             if series is not None and len(series) > 0:
                 last_price = round(float(series.iloc[-1]), 2)
@@ -292,7 +355,7 @@ def sync_universe():
             elif "Semiconductor" in meta["sector"] or "AI" in meta["sector"]:
                 tags = ["Tech & AI", "NASDAQ-100", "S&P 500"]
 
-            real_stocks.append({
+            stock_obj = {
                 "ticker": ticker,
                 "name": meta["name"],
                 "market": "US",
@@ -313,24 +376,22 @@ def sync_universe():
                 "aiInsight": f"Live Quote from Yahoo Finance: {meta['name']} ({ticker}) trading at ${last_price:.2f} USD.",
                 "description": f"{meta['name']} is listed on the US Stock Exchange in {meta['sector']}.",
                 "tags": tags
-            })
+            }
+            real_stocks.append(stock_obj)
+            latest_price_map[ticker] = stock_obj
         except Exception as err:
             print(f"Error processing US {ticker}: {err}")
 
-    # Combine with rest of universe if existing, updating existing entries
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    cache_path = os.path.join(base_dir, "market_cache.json")
-    
+    # Combine with existing universe
     existing_universe = []
-    if os.path.exists(cache_path):
+    if os.path.exists(CACHE_PATH):
         try:
-            with open(cache_path, "r", encoding="utf-8") as f:
+            with open(CACHE_PATH, "r", encoding="utf-8") as f:
                 content = json.load(f)
                 existing_universe = content if isinstance(content, list) else content.get("data", [])
         except Exception:
             pass
 
-    # Map real stocks over existing universe
     real_map = {f"{s['market']}-{s['ticker'].upper()}": s for s in real_stocks}
     merged = []
     for s in existing_universe:
@@ -341,14 +402,68 @@ def sync_universe():
         else:
             merged.append(s)
     
-    # Prepend any remaining real stocks
     final_stocks = list(real_map.values()) + merged
 
-    # Save to market_cache.json
-    with open(cache_path, "w", encoding="utf-8") as f:
+    # 1. Save to market_cache.json
+    with open(CACHE_PATH, "w", encoding="utf-8") as f:
         json.dump(final_stocks, f, ensure_ascii=False, indent=2)
 
-    print(f"Successfully synced {len(real_stocks)} real Yahoo Finance quotes! Total universe: {len(final_stocks)} stocks saved to market_cache.json.")
+    # 2. Save to SQLite database
+    if os.path.exists(DB_PATH):
+        try:
+            conn = sqlite3.connect(DB_PATH, timeout=10.0)
+            cur = conn.cursor()
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS live_quotes (
+                    ticker TEXT PRIMARY KEY,
+                    price REAL,
+                    change REAL,
+                    market_cap TEXT,
+                    pe_ratio REAL,
+                    dividend_yield REAL,
+                    high52w REAL,
+                    low52w REAL,
+                    volume TEXT,
+                    ai_insight TEXT,
+                    analyst_rating TEXT,
+                    target_price REAL,
+                    sentiment_score INTEGER,
+                    sparkline_json TEXT,
+                    last_updated TEXT
+                )
+            """)
+            for s in real_stocks:
+                cur.execute("""
+                    INSERT OR REPLACE INTO live_quotes (
+                        ticker, price, change, market_cap, pe_ratio, dividend_yield, high52w, low52w, volume, ai_insight, analyst_rating, target_price, sentiment_score, sparkline_json, last_updated
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    s["ticker"],
+                    float(s["price"]),
+                    float(s["change"]),
+                    s["marketCap"],
+                    float(s.get("peRatio", 18.0)),
+                    float(s.get("dividendYield", 2.5)),
+                    float(s["high52w"]),
+                    float(s["low52w"]),
+                    s["volume"],
+                    s.get("aiInsight", ""),
+                    s.get("analystRating", "Buy"),
+                    float(s.get("targetPrice", 0.0)),
+                    int(s.get("sentimentScore", 75)),
+                    json.dumps(s.get("sparkline7d", [])),
+                    datetime.now().isoformat()
+                ))
+            conn.commit()
+            conn.close()
+        except Exception as err:
+            print(f"SQLite update warning: {err}")
+
+    # 3. Update Python builder scripts with live prices
+    update_python_script_prices(GLOBAL_SCRIPT, latest_price_map)
+    update_python_script_prices(THAI_SCRIPT, latest_price_map)
+
+    print(f"Successfully synced {len(real_stocks)} real Yahoo Finance quotes! Total universe: {len(final_stocks)} stocks saved.")
 
 if __name__ == "__main__":
     sync_universe()

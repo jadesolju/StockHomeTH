@@ -125,9 +125,9 @@ export function ApiPlaygroundClient() {
         style={{
           padding: '28px',
           marginBottom: '24px',
-          background: 'radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.15), rgba(0, 122, 255, 0.1))',
-          borderColor: 'rgba(139, 92, 246, 0.3)',
-          borderRadius: '24px',
+          background: 'var(--glass-bg)',
+          borderColor: 'var(--glass-border)',
+          borderRadius: '20px',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
@@ -136,7 +136,7 @@ export function ApiPlaygroundClient() {
               <span className="badge-sentiment badge-bullish" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 <Terminal size={14} /> Dev-Only Route API Engine
               </span>
-              <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 700 }}>● Python yfinance v1.7.0 Live</span>
+              <span style={{ fontSize: '0.8rem', color: '#30d158', fontWeight: 700 }}>● Python yfinance v1.7.0 Live</span>
             </div>
             <h2 style={{ fontSize: '1.85rem', fontWeight: 800, margin: '4px 0', color: 'var(--text-primary)' }}>
               Developer API Route & yfinance Sandbox
@@ -144,6 +144,26 @@ export function ApiPlaygroundClient() {
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', margin: '6px 0 0 0', maxWidth: '680px' }}>
               ทดสอบยิง Real-time yfinance Route API เพื่อดึงข้อมูลดิบของหุ้นไทย (SET) และหุ้นสหรัฐฯ (US) สำหรับนักพัฒนา
             </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <a
+              href="/admin"
+              style={{
+                background: 'var(--accent-blue)',
+                color: '#ffffff',
+                padding: '10px 18px',
+                borderRadius: '10px',
+                textDecoration: 'none',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <ShieldCheck size={16} /> Admin & Log Terminal
+            </a>
           </div>
         </div>
       </div>
@@ -294,12 +314,12 @@ export function ApiPlaygroundClient() {
               onClick={handleExecuteApi}
               disabled={isExecuting}
               style={{
-                background: 'var(--accent-blue-gradient)',
+                background: 'var(--accent-blue)',
                 color: '#ffffff',
                 border: 'none',
-                borderRadius: '12px',
+                borderRadius: '10px',
                 padding: '10px 18px',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.85rem',
                 cursor: 'pointer',
                 display: 'inline-flex',

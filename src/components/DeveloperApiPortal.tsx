@@ -145,8 +145,8 @@ axios.${selectedMethod.toLowerCase()}('${fullUrl}', ${selectedMethod === 'POST' 
         style={{
           padding: '28px',
           marginBottom: '24px',
-          background: 'radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.15), rgba(0, 122, 255, 0.1))',
-          borderColor: 'rgba(139, 92, 246, 0.3)'
+          background: 'var(--glass-bg)',
+          borderColor: 'var(--glass-border)'
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
@@ -169,12 +169,11 @@ axios.${selectedMethod.toLowerCase()}('${fullUrl}', ${selectedMethod === 'POST' 
             style={{
               padding: '10px 20px',
               borderRadius: '100px',
-              background: 'linear-gradient(135deg, var(--accent-blue), #8b5cf6)',
+              background: 'var(--accent-blue)',
               border: 'none',
               color: '#fff',
               fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px var(--accent-blue-glow)'
+              cursor: 'pointer'
             }}
           >
             Request Enterprise API Rate Limit
@@ -414,10 +413,10 @@ axios.${selectedMethod.toLowerCase()}('${fullUrl}', ${selectedMethod === 'POST' 
             style={{
               padding: '12px',
               borderRadius: '100px',
-              background: 'linear-gradient(135deg, #007AFF, #3b82f6)',
+              background: 'var(--accent-blue)',
               border: 'none',
               color: '#fff',
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: isExecuting ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',

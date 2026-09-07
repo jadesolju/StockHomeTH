@@ -1,6 +1,7 @@
 import { MarketTickerBarServer } from '../../components/server/MarketTickerBarServer';
 import { StockExplorerClient } from '../../components/client/StockExplorerClient';
 import { fetchLiveStockFundamentals } from '../../lib/services/stockDataService';
+import { getStockPopularityRank } from '../../lib/utils/stockTagHelper';
 import { mockMarketIndices } from '../../data/mockMarketData';
 import { Globe, Sparkles, BarChart3, ArrowUpDown } from 'lucide-react';
 
@@ -11,7 +12,13 @@ export const metadata = {
 
 export default async function AllStocksPage() {
   const allStocks = await fetchLiveStockFundamentals();
-  const initialStocks = allStocks.slice(0, 50);
+  const sorted = [...allStocks].sort((a, b) => {
+    const rankA = getStockPopularityRank(a, 'ALL');
+    const rankB = getStockPopularityRank(b, 'ALL');
+    if (rankA !== rankB) return rankA - rankB;
+    return (b.sentimentScore ?? 50) - (a.sentimentScore ?? 50);
+  });
+  const initialStocks = sorted.slice(0, 100);
 
   return (
     <>

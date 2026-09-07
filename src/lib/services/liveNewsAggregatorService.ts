@@ -4,6 +4,7 @@ import { mockNewsItems } from '../../data/mockNewsData';
 import { fetchFinnhubCompanyNews, fetchFinnhubFilings } from './finnhubNewsService';
 import { fetchSetStockNews } from './setNewsService';
 import { classifyNewsIntelligence } from '../utils/newsClassifier';
+import { enrichDualLanguageNewsItemAsync } from './deeplTranslationService';
 
 const parser = new Parser({
   headers: {
@@ -27,16 +28,16 @@ const RSS_FEED_SOURCES = [
     defaultSource: 'สำนักข่าวการเงินไทย',
     priority: 1
   },
-  // 2. Specific Top SET 10 Tickers Search
+  // 2. Specific Top SET Tickers Search
   {
-    url: 'https://news.google.com/rss/search?q=PTT+OR+DELTA+OR+CPALL+OR+KBANK+OR+SCB+OR+AOT+OR+ADVANC+OR+GULF+OR+BDMS+OR+TRUE&hl=th&gl=TH&ceid=TH:th',
+    url: 'https://news.google.com/rss/search?q=(PTT+OR+DELTA+OR+CPALL+OR+KBANK+OR+SCB+OR+AOT+OR+ADVANC+OR+GULF+OR+BDMS)+AND+(%E0%B8%AB%E0%B8%B8%E0%B9%89%E0%B8%99+OR+SET)&hl=th&gl=TH&ceid=TH:th',
     category: 'thai' as MarketRegion,
     defaultSource: 'SET Live Search',
     priority: 1
   },
   // 3. Thai SET & Economy Headlines
   {
-    url: 'https://news.google.com/rss/search?q=%E0%B8%AB%E0%B8%B8%E0%B9%89%E0%B8%99%E0%B9%84%E0%B8%97%E0%B8%A2+OR+SET+OR+%E0%B8%95%E0%B8%A5%E0%B8%B2%E0%B8%94%E0%B8%AB%E0%B8%A5%E0%B8%B1%E0%B8%81%E0%B8%97%E0%B8%A3%E0%B8%B1%E0%B8%9E%E0%B8%A2%E0%B9%8B&hl=th&gl=TH&ceid=TH:th',
+    url: 'https://news.google.com/rss/search?q=%E0%B8%AB%E0%B8%B8%E0%B9%89%E0%B8%99%E0%B9%84%E0%B8%97%E0%B8%A2+OR+SET50+OR+%E0%B8%95%E0%B8%A5%E0%B8%B2%E0%B8%94%E0%B8%AB%E0%B8%A5%E0%B8%B1%E0%B8%81%E0%B8%97%E0%B8%A3%E0%B8%B1%E0%B8%9E%E0%B8%A2%E0%B9%8B&hl=th&gl=TH&ceid=TH:th',
     category: 'thai' as MarketRegion,
     defaultSource: 'Google News ตลาดหุ้นไทย',
     priority: 2
@@ -64,14 +65,14 @@ const RSS_FEED_SOURCES = [
   },
   // 7. Global Tech & AI Stocks
   {
-    url: 'https://news.google.com/rss/search?q=NVIDIA+OR+Apple+OR+Tesla+OR+Microsoft+OR+OpenAI+OR+Wall+Street&hl=en-US&gl=US&ceid=US:en',
+    url: 'https://news.google.com/rss/search?q=(NVIDIA+OR+Apple+OR+Tesla+OR+Microsoft+OR+OpenAI+OR+"Wall+Street"+OR+"S%26P+500"+OR+Nasdaq)+AND+(stock+OR+shares+OR+market+OR+revenue)&hl=en-US&gl=US&ceid=US:en',
     category: 'global' as MarketRegion,
     defaultSource: 'Global Tech & AI Markets',
     priority: 2
   }
 ];
 
-function formatRelativeTime(dateStr: string): string {
+function formatRelativeTimeTh(dateStr: string): string {
   try {
     const diffMs = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diffMs / 60000);
@@ -83,6 +84,21 @@ function formatRelativeTime(dateStr: string): string {
     return `${days} วันที่แล้ว`;
   } catch {
     return 'วันนี้';
+  }
+}
+
+function formatRelativeTimeEn(dateStr: string): string {
+  try {
+    const diffMs = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  } catch {
+    return 'Today';
   }
 }
 
@@ -139,36 +155,61 @@ export async function fetchLiveAggregatedNews(): Promise<StockNewsItem[]> {
         const feedData = await parser.parseURL(feed.url);
         if (!feedData || !feedData.items) return [];
 
-        return feedData.items.slice(0, 8).map((item, itemIdx) => {
-          const rawTitle = item.title || 'ข่าวการเงินล่าสุด';
+        const itemsToProcess = feedData.items.slice(0, 8);
+        const enrichedItems: StockNewsItem[] = [];
+
+        for (let itemIdx = 0; itemIdx < itemsToProcess.length; itemIdx++) {
+          const item = itemsToProcess[itemIdx];
+          const rawTitle = item.title || (feed.category === 'thai' ? 'ข่าวการเงินล่าสุด' : 'Latest Market News');
           const rawSnippet = item.contentSnippet || item.content || item.summary || item.title || '';
           const pubDate = item.pubDate || new Date().toISOString();
           
-          // Apply Master News Intelligence & SEO Cleaner
-          const intelligence = classifyNewsIntelligence(rawTitle, rawSnippet, feed.category);
           const sourceName = item.source?.title || item.creator || feed.defaultSource;
-          const relativeTime = formatRelativeTime(pubDate);
+          const relativeTimeTh = formatRelativeTimeTh(pubDate);
+          const relativeTimeEn = formatRelativeTimeEn(pubDate);
+          
+          // Apply Master News Intelligence & SEO Cleaner with Financial Relevance Engine
+          const intelligence = classifyNewsIntelligence(rawTitle, rawSnippet, feed.category, sourceName);
 
+          // STRICT SAFE MODE FILTER: Drop items with Relevance Score < 50 (Weather, Culture, Gossip, Non-Financial)
+          if (!intelligence.relevance.isAcceptable || intelligence.relevanceScore < 50) {
+            continue;
+          }
+
+          const isThaiItem = intelligence.region === 'thai';
           const uniqueId = `live-${intelligence.region}-${itemIdx}-${Math.abs(hashString(intelligence.cleanTitle))}`;
 
-          const newsItem: StockNewsItem = {
+          const rawItem: StockNewsItem = {
             id: uniqueId,
             title: intelligence.cleanTitle,
+            title_th: intelligence.title_th,
+            title_en: intelligence.title_en,
             summary: intelligence.cleanSummary,
+            summary_th: intelligence.summary_th,
+            summary_en: intelligence.summary_en,
             keyTakeaways: intelligence.keyTakeaways,
-            fullContent: `${intelligence.cleanTitle}\n\n${intelligence.cleanSummary}\n\nรายงานสดจาก ${sourceName} • ข้อมูลสารสนเทศผ่านการประมวลผลและกรองคำรบกวนโดยระบบ AI StockHomeTH`,
+            keyTakeaways_th: intelligence.keyTakeaways_th,
+            keyTakeaways_en: intelligence.keyTakeaways_en,
+            fullContent: isThaiItem
+              ? `${intelligence.cleanTitle}\n\n${intelligence.cleanSummary}\n\nรายงานสดจาก ${sourceName} • ข้อมูลสารสนเทศผ่านการประมวลผลโดยระบบ AI StockHomeTH`
+              : `${intelligence.cleanTitle}\n\n${intelligence.cleanSummary}\n\nLive reporting from ${sourceName} • Financial intelligence processed by StockHomeTH AI`,
+            fullContent_th: `${intelligence.cleanTitle}\n\n${intelligence.cleanSummary}\n\nรายงานสดจาก ${sourceName} • ข้อมูลสารสนเทศผ่านการประมวลผลโดยระบบ AI StockHomeTH`,
+            fullContent_en: `${intelligence.cleanTitle}\n\n${intelligence.cleanSummary}\n\nLive reporting from ${sourceName} • Financial intelligence processed by StockHomeTH AI`,
             region: intelligence.region,
             timeframe: 'daily',
             marketName: intelligence.marketName,
-            date: relativeTime,
+            date: isThaiItem ? relativeTimeTh : relativeTimeEn,
             time: new Date(pubDate).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.',
-            periodLabel: `ข่าวสด Real-Time • ${relativeTime}`,
+            periodLabel: isThaiItem ? `ข่าวสด Real-Time • ${relativeTimeTh}` : `Live News • ${relativeTimeEn}`,
+            periodLabel_th: `ข่าวสด Real-Time • ${relativeTimeTh}`,
+            periodLabel_en: `Live Real-Time • ${relativeTimeEn}`,
             sentiment: intelligence.sentiment,
             tickers: intelligence.tickers,
-            readTime: '2 นาที',
+            readTime: isThaiItem ? '2 นาที' : '2 min',
             source: sourceName,
             category: intelligence.category,
             impactAnalysis: intelligence.impactAnalysis,
+            relevanceScore: intelligence.relevanceScore,
             isFeatured: false,
             isBookmarked: false,
             link: item.link || (intelligence.region === 'thai' ? 'https://www.settrade.com' : 'https://finance.yahoo.com'),
@@ -176,8 +217,11 @@ export async function fetchLiveAggregatedNews(): Promise<StockNewsItem[]> {
             sourceUrl: item.link || (intelligence.region === 'thai' ? 'https://www.settrade.com' : 'https://finance.yahoo.com')
           };
 
-          return newsItem;
-        });
+          const enriched = await enrichDualLanguageNewsItemAsync(rawItem);
+          enrichedItems.push(enriched as StockNewsItem);
+        }
+
+        return enrichedItems;
       } catch (err) {
         return [];
       }
@@ -198,6 +242,9 @@ export async function fetchLiveAggregatedNews(): Promise<StockNewsItem[]> {
         }
       }
     }
+
+    // Sort by Financial Relevance Score (Highest confidence 70-100 on top, 50-69 at bottom)
+    combined.sort((a, b) => (b.relevanceScore ?? 60) - (a.relevanceScore ?? 60));
 
     if (combined.length > 0) {
       combined[0].isFeatured = true;

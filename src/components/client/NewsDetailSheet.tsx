@@ -22,9 +22,28 @@ export function NewsDetailSheet({
 
   if (!item) return null;
 
+  const isEn = language === 'en';
+  const resolvedTitle = isEn
+    ? (item.title_en || tDynamic(item.title_th, item.title_en))
+    : (item.title_th || tDynamic(item.title_th, item.title_en));
+
+  const resolvedSummary = isEn
+    ? (item.summary_en || tDynamic(item.summary_th, item.summary_en))
+    : (item.summary_th || tDynamic(item.summary_th, item.summary_en));
+
+  const resolvedTakeaways = isEn && item.keyTakeaways_en && item.keyTakeaways_en.length > 0
+    ? item.keyTakeaways_en
+    : (!isEn && item.keyTakeaways_th && item.keyTakeaways_th.length > 0)
+    ? item.keyTakeaways_th
+    : item.keyTakeaways.map((takeaway) => tDynamic(takeaway));
+
+  const resolvedPeriodLabel = isEn
+    ? (item.periodLabel_en || tDynamic(item.periodLabel_th, item.periodLabel_en))
+    : (item.periodLabel_th || tDynamic(item.periodLabel_th, item.periodLabel_en));
+
   const handleShare = () => {
-    const title = tDynamic(item.title);
-    const summary = tDynamic(item.summary);
+    const title = resolvedTitle;
+    const summary = resolvedSummary;
     if (navigator.share) {
       navigator
         .share({
@@ -91,7 +110,7 @@ export function NewsDetailSheet({
             >
               {item.marketName}
             </span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{item.periodLabel}</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{resolvedPeriodLabel}</span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -159,7 +178,7 @@ export function NewsDetailSheet({
 
         {/* Title */}
         <h2 style={{ fontSize: '1.35rem', fontWeight: 800, lineHeight: 1.35, color: 'var(--text-primary)', marginBottom: '16px' }}>
-          {tDynamic(item.title)}
+          {resolvedTitle}
         </h2>
 
         {/* Executive Summary */}
@@ -168,7 +187,7 @@ export function NewsDetailSheet({
             <Target size={14} /> {language === 'en' ? 'Executive Summary' : 'สาระสำคัญโดยย่อ (Executive Summary)'}
           </div>
           <p style={{ fontSize: '0.95rem', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>
-            {tDynamic(item.summary)}
+            {resolvedSummary}
           </p>
         </div>
 
@@ -178,7 +197,7 @@ export function NewsDetailSheet({
             {t('keyTakeaways')}
           </h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {tDynamicList(item.keyTakeaways).map((takeaway, idx) => (
+            {resolvedTakeaways.map((takeaway, idx) => (
               <div
                 key={idx}
                 style={{
@@ -202,8 +221,8 @@ export function NewsDetailSheet({
         {item.impactAnalysis && (
           <div
             style={{
-              background: 'linear-gradient(135deg, rgba(0, 122, 255, 0.05), rgba(139, 92, 246, 0.05))',
-              border: '1px solid rgba(0, 122, 255, 0.2)',
+              background: 'var(--card-sub-bg)',
+              border: '1px solid var(--card-sub-border)',
               padding: '18px',
               borderRadius: '16px',
               marginBottom: '24px',
@@ -217,32 +236,50 @@ export function NewsDetailSheet({
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-              {item.impactAnalysis.targetSector && (
+              {(item.impactAnalysis.targetSector_en || item.impactAnalysis.targetSector_th || item.impactAnalysis.targetSector) && (
                 <div style={{ background: 'var(--card-sub-bg)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>{t('targetSector')}</div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{tDynamic(item.impactAnalysis.targetSector)}</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {isEn
+                      ? (item.impactAnalysis.targetSector_en || tDynamic(item.impactAnalysis.targetSector_th, item.impactAnalysis.targetSector_en))
+                      : (item.impactAnalysis.targetSector_th || tDynamic(item.impactAnalysis.targetSector_th, item.impactAnalysis.targetSector_en))}
+                  </div>
                 </div>
               )}
 
-              {item.impactAnalysis.priceTrendOutlook && (
+              {(item.impactAnalysis.priceTrendOutlook_en || item.impactAnalysis.priceTrendOutlook_th || item.impactAnalysis.priceTrendOutlook) && (
                 <div style={{ background: 'var(--card-sub-bg)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>{t('trendOutlook')}</div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-bullish)' }}>{tDynamic(item.impactAnalysis.priceTrendOutlook)}</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-bullish)' }}>
+                    {isEn
+                      ? (item.impactAnalysis.priceTrendOutlook_en || tDynamic(item.impactAnalysis.priceTrendOutlook_th, item.impactAnalysis.priceTrendOutlook_en))
+                      : (item.impactAnalysis.priceTrendOutlook_th || tDynamic(item.impactAnalysis.priceTrendOutlook_th, item.impactAnalysis.priceTrendOutlook_en))}
+                  </div>
                 </div>
               )}
             </div>
 
-            {item.impactAnalysis.bullishReason && (
+            {(item.impactAnalysis.bullishReason_en || item.impactAnalysis.bullishReason_th || item.impactAnalysis.bullishReason) && (
               <div style={{ marginTop: '12px', display: 'flex', gap: '8px', fontSize: '0.85rem', color: 'var(--accent-bullish)' }}>
                 <TrendingUp size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span><strong>{t('bullishFactors')}:</strong> {tDynamic(item.impactAnalysis.bullishReason)}</span>
+                <span>
+                  <strong>{t('bullishFactors')}:</strong>{' '}
+                  {isEn
+                    ? (item.impactAnalysis.bullishReason_en || tDynamic(item.impactAnalysis.bullishReason_th, item.impactAnalysis.bullishReason_en))
+                    : (item.impactAnalysis.bullishReason_th || tDynamic(item.impactAnalysis.bullishReason_th, item.impactAnalysis.bullishReason_en))}
+                </span>
               </div>
             )}
 
-            {item.impactAnalysis.bearishReason && (
+            {(item.impactAnalysis.bearishReason_en || item.impactAnalysis.bearishReason_th || item.impactAnalysis.bearishReason) && (
               <div style={{ marginTop: '8px', display: 'flex', gap: '8px', fontSize: '0.85rem', color: 'var(--accent-bearish)' }}>
                 <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span><strong>{t('bearishFactors')}:</strong> {tDynamic(item.impactAnalysis.bearishReason)}</span>
+                <span>
+                  <strong>{t('bearishFactors')}:</strong>{' '}
+                  {isEn
+                    ? (item.impactAnalysis.bearishReason_en || tDynamic(item.impactAnalysis.bearishReason_th, item.impactAnalysis.bearishReason_en))
+                    : (item.impactAnalysis.bearishReason_th || tDynamic(item.impactAnalysis.bearishReason_th, item.impactAnalysis.bearishReason_en))}
+                </span>
               </div>
             )}
           </div>
@@ -263,13 +300,12 @@ export function NewsDetailSheet({
                 width: '100%',
                 padding: '14px 20px',
                 borderRadius: '14px',
-                background: 'linear-gradient(135deg, #007AFF 0%, #00C6FF 100%)',
+                background: 'var(--accent-blue)',
                 color: '#ffffff',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.92rem',
                 textDecoration: 'none',
-                boxShadow: '0 4px 15px rgba(0, 122, 255, 0.3)',
-                transition: 'all 0.2s ease',
+                transition: 'background-color 0.15s ease',
                 cursor: 'pointer'
               }}
             >

@@ -30,6 +30,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 checkpoint.json
+*cache.json
+*_cache.json
 *.sqlite
 *.db
 
@@ -39,6 +41,8 @@ checkpoint.json
 *.env
 *.pem
 *.key
+*serviceAccount*.json
+*firebase-admin*.json
 server/data/users.json
 checkpoint.json
 ingestion_checkpoint.json

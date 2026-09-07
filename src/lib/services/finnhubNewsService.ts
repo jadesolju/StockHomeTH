@@ -1,4 +1,5 @@
 import type { StockNewsItem, SentimentType, NewsCategory } from '../schemas/newsSchema';
+import { translateClean } from '../utils/newsTranslationEngine';
 
 const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || 'dadd9d9r01qtj63otibgdadd9d9r01qtj63otic0';
 
@@ -49,6 +50,21 @@ function formatRelativeTime(epochSec: number): string {
   }
 }
 
+function formatRelativeTimeEn(epochSec: number): string {
+  try {
+    const diffMs = Date.now() - epochSec * 1000;
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  } catch {
+    return 'Today';
+  }
+}
+
 /**
  * Fetch company-specific news from Finnhub API for US stocks
  */
@@ -92,49 +108,67 @@ export async function fetchFinnhubCompanyNews(symbol: string): Promise<StockNews
       const sentiment = detectSentiment(combinedText);
       const category = detectCategory(combinedText);
       const epoch = item.datetime || Math.floor(Date.now() / 1000);
-      const dateStr = formatRelativeTime(epoch);
+      const dateStrTh = formatRelativeTime(epoch);
+      const dateStrEn = formatRelativeTimeEn(epoch);
       const sourceName = item.source ? `${item.source} (Finnhub)` : 'Finnhub Global';
 
-      const bullishReason = sentiment === 'bullish'
-        ? `Finnhub Intelligence: สัญญาณการเติบโตเชิงบวกและแรงซื้อต่อเนื่องในหุ้น $${cleanSymbol}`
-        : undefined;
+      const title_th = translateClean(headline, 'th');
+      const title_en = headline;
+      const summary_th = translateClean(summary, 'th');
+      const summary_en = summary;
 
-      const bearishReason = sentiment === 'bearish'
-        ? `Finnhub Intelligence: แรงกดดันจากความผันผวนหรือความกังวลระยะสั้นในหุ้น $${cleanSymbol}`
-        : undefined;
+      const keyTakeaways_th = [
+        `${title_th} - ข่าวสารตรงจากสำนักข่าวชั้นนำระดับสากล (${item.source || 'Global'})`,
+        `การประเมินสัญญาณข่าวจาก AI: ${sentiment === 'bullish' ? 'เชิงบวก (Bullish Outlook)' : sentiment === 'bearish' ? 'ระวังแรงกดดัน (Bearish Outlook)' : 'ทรงตัวเป็นกลาง (Neutral)'}`,
+        `หุ้นเป้าหมาย: $${cleanSymbol} • ข้อมูลสดรับรองโดย Finnhub Intelligence Platform`
+      ];
 
-      const priceTrendOutlook = sentiment === 'bullish'
-        ? `แนวโน้มเชิงบวก มีโอกาสทดสอบระดับสูงสุดใหม่`
-        : sentiment === 'bearish'
-        ? `แนวโน้มชะลอตัว ระมัดระวังความผันผวนระยะสั้น`
-        : `แกว่งตัวรอปัจจัยบวกใหม่ (Sideways)`;
+      const keyTakeaways_en = [
+        `${headline} - Direct intelligence from verified international source (${item.source || 'Global'})`,
+        `AI Sentiment Assessment: ${sentiment === 'bullish' ? 'Bullish Catalyst' : sentiment === 'bearish' ? 'Bearish Pressure' : 'Neutral Outlook'}`,
+        `Target Asset: $${cleanSymbol} • Verified by Finnhub Intelligence Platform`
+      ];
 
       return {
         id: `finnhub-${item.id || Math.random().toString(36).substring(2, 9)}`,
         title: headline,
-        summary: summary,
-        keyTakeaways: [
-          `${headline} - ข่าวสารตรงจากสำนักข่าวชั้นนำระดับสากล (${item.source || 'Global'})`,
-          `การประเมินสัญญาณข่าวจาก AI: ${sentiment === 'bullish' ? 'เชิงบวก (Bullish Outlook)' : sentiment === 'bearish' ? 'ระวังแรงกดดัน (Bearish Outlook)' : 'ทรงตัวเป็นกลาง (Neutral)'}`,
-          `หุ้นเป้าหมาย: $${cleanSymbol} • ข้อมูลสดรับรองโดย Finnhub Intelligence Platform`
-        ],
-        fullContent: `${headline}\n\n${summary}\n\nที่มา: ${item.source || 'Finnhub News'}\nลิงก์ต้นฉบับ: ${item.url || ''}`,
+        title_th,
+        title_en,
+        summary,
+        summary_th,
+        summary_en,
+        keyTakeaways: keyTakeaways_en,
+        keyTakeaways_th,
+        keyTakeaways_en,
+        fullContent: `${headline}\n\n${summary}\n\nSource: ${item.source || 'Finnhub News'}\nURL: ${item.url || ''}`,
+        fullContent_th: `${title_th}\n\n${summary_th}\n\nที่มา: ${item.source || 'Finnhub News'}\nลิงก์ต้นฉบับ: ${item.url || ''}`,
+        fullContent_en: `${headline}\n\n${summary}\n\nSource: ${item.source || 'Finnhub News'}\nURL: ${item.url || ''}`,
         region: 'global',
         timeframe: 'daily',
         marketName: 'US / Global Markets',
-        date: dateStr,
+        date: dateStrEn,
         time: new Date(epoch * 1000).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.',
-        periodLabel: `ข่าวสด Finnhub • ${dateStr}`,
+        periodLabel: `Live Finnhub • ${dateStrEn}`,
+        periodLabel_th: `ข่าวสด Finnhub • ${dateStrTh}`,
+        periodLabel_en: `Live Finnhub • ${dateStrEn}`,
         sentiment,
         tickers: [cleanSymbol],
-        readTime: '2 นาที',
+        readTime: '2 min',
         source: sourceName,
         category,
         impactAnalysis: {
-          bullishReason,
-          bearishReason,
-          targetSector: 'หุ้นสหรัฐฯ & สากล',
-          priceTrendOutlook
+          bullishReason: sentiment === 'bullish' ? `Finnhub Intelligence: Strong buying momentum and growth signals for $${cleanSymbol}` : undefined,
+          bullishReason_th: sentiment === 'bullish' ? `Finnhub Intelligence: สัญญาณการเติบโตเชิงบวกและแรงซื้อต่อเนื่องในหุ้น $${cleanSymbol}` : undefined,
+          bullishReason_en: sentiment === 'bullish' ? `Finnhub Intelligence: Strong buying momentum and growth signals for $${cleanSymbol}` : undefined,
+          bearishReason: sentiment === 'bearish' ? `Finnhub Intelligence: Potential short-term volatility or pressure on $${cleanSymbol}` : undefined,
+          bearishReason_th: sentiment === 'bearish' ? `Finnhub Intelligence: แรงกดดันจากความผันผวนหรือความกังวลระยะสั้นในหุ้น $${cleanSymbol}` : undefined,
+          bearishReason_en: sentiment === 'bearish' ? `Finnhub Intelligence: Potential short-term volatility or pressure on $${cleanSymbol}` : undefined,
+          targetSector: 'US & Global Markets',
+          targetSector_th: 'หุ้นสหรัฐฯ & สากล',
+          targetSector_en: 'US & Global Markets',
+          priceTrendOutlook: sentiment === 'bullish' ? 'Upward momentum expected' : sentiment === 'bearish' ? 'Caution on short-term pullback' : 'Consolidation range (Sideways)',
+          priceTrendOutlook_th: sentiment === 'bullish' ? 'แนวโน้มเชิงบวก มีโอกาสทดสอบระดับสูงสุดใหม่' : sentiment === 'bearish' ? 'แนวโน้มชะลอตัว ระมัดระวังความผันผวนระยะสั้น' : 'แกว่งตัวรอปัจจัยบวกใหม่ (Sideways)',
+          priceTrendOutlook_en: sentiment === 'bullish' ? 'Upward momentum expected' : sentiment === 'bearish' ? 'Caution on short-term pullback' : 'Consolidation range (Sideways)',
         },
         isFeatured: false,
         isBookmarked: false,
@@ -185,41 +219,73 @@ export async function fetchFinnhubFilings(symbol: string): Promise<StockNewsItem
 
     const items: StockNewsItem[] = rawList.slice(0, 10).map((f: any) => {
       const formType = f.form || 'SEC Filing';
-      const formDesc = formType === '10-K' ? 'รายงานประจำปี (Annual Report 10-K)'
+      const formDescTh = formType === '10-K' ? 'รายงานประจำปี (Annual Report 10-K)'
         : formType === '10-Q' ? 'รายงานประจำไตรมาส (Quarterly Report 10-Q)'
         : formType === '8-K' ? 'รายงานเหตุการณ์สำคัญ (Current Report 8-K)'
         : formType === '4' ? 'รายงานการซื้อขายของผู้บริหาร (Insider Form 4)'
         : `แบบรายงาน ${formType} ต่อ ก.ล.ต. สหรัฐฯ (SEC EDGAR)`;
 
-      const filedDateStr = f.filedDate ? f.filedDate.split(' ')[0] : 'ล่าสุด';
-      const title = `[SEC Filing] ${cleanSymbol} ยื่นแบบรายงาน ${formType} (${formDesc})`;
-      const summary = `บริษัท ${cleanSymbol} ได้ส่งมอบเอกสารแบบแสดงรายการข้อมูลทางการ (${formType}) ให้แก่สำนักงานคณะกรรมการกำกับหลักทรัพย์และตลาดหลักทรัพย์สหรัฐอเมริกา (SEC) เมื่อวันที่ ${filedDateStr}`;
+      const formDescEn = formType === '10-K' ? 'Annual Report (10-K)'
+        : formType === '10-Q' ? 'Quarterly Report (10-Q)'
+        : formType === '8-K' ? 'Current Report (8-K)'
+        : formType === '4' ? 'Statement of Changes in Beneficial Ownership (Form 4)'
+        : `SEC EDGAR Regulatory Filing (${formType})`;
+
+      const filedDateStr = f.filedDate ? f.filedDate.split(' ')[0] : 'Latest';
+      const title_th = `[SEC Filing] ${cleanSymbol} ยื่นแบบรายงาน ${formType} (${formDescTh})`;
+      const title_en = `[SEC Filing] ${cleanSymbol} submitted ${formType} (${formDescEn})`;
+
+      const summary_th = `บริษัท ${cleanSymbol} ได้ส่งมอบเอกสารแบบแสดงรายการข้อมูลทางการ (${formType}) ให้แก่สำนักงานคณะกรรมการกำกับหลักทรัพย์และตลาดหลักทรัพย์สหรัฐอเมริกา (SEC) เมื่อวันที่ ${filedDateStr}`;
+      const summary_en = `${cleanSymbol} officially submitted regulatory filing (${formType}) to the U.S. Securities and Exchange Commission (SEC) on ${filedDateStr}`;
+
       const filingUrl = f.reportUrl || f.filingUrl || `https://www.sec.gov/edgar/searchedgar/companysearch`;
 
       return {
         id: `sec-filing-${f.accessNumber || Math.random().toString(36).substring(2, 9)}`,
-        title,
-        summary,
+        title: title_en,
+        title_th,
+        title_en,
+        summary: summary_en,
+        summary_th,
+        summary_en,
         keyTakeaways: [
-          `ประเภทเอกสารทางการ: ${formType} (${formDesc})`,
+          `Regulatory Form Type: ${formType} (${formDescEn})`,
+          `Filing Date: ${f.acceptedDate || f.filedDate || 'Latest'}`,
+          `CIK: ${f.cik || 'N/A'} • Authenticated via U.S. SEC EDGAR Database`
+        ],
+        keyTakeaways_th: [
+          `ประเภทเอกสารทางการ: ${formType} (${formDescTh})`,
           `วันที่บันทึกระบบ SEC: ${f.acceptedDate || f.filedDate || 'ล่าสุด'}`,
           `รหัส CIK: ${f.cik || 'N/A'} • เอกสารตรวจสอบสิทธิโดย SEC EDGAR Database`
         ],
-        fullContent: `${title}\n\n${summary}\n\nAccession Number: ${f.accessNumber}\nCIK: ${f.cik}\nลิงก์ดูเอกสารทางการ: ${filingUrl}`,
+        keyTakeaways_en: [
+          `Regulatory Form Type: ${formType} (${formDescEn})`,
+          `Filing Date: ${f.acceptedDate || f.filedDate || 'Latest'}`,
+          `CIK: ${f.cik || 'N/A'} • Authenticated via U.S. SEC EDGAR Database`
+        ],
+        fullContent: `${title_en}\n\n${summary_en}\n\nAccession Number: ${f.accessNumber}\nCIK: ${f.cik}\nSEC Document: ${filingUrl}`,
+        fullContent_th: `${title_th}\n\n${summary_th}\n\nAccession Number: ${f.accessNumber}\nCIK: ${f.cik}\nลิงก์ดูเอกสารทางการ: ${filingUrl}`,
+        fullContent_en: `${title_en}\n\n${summary_en}\n\nAccession Number: ${f.accessNumber}\nCIK: ${f.cik}\nSEC Document: ${filingUrl}`,
         region: 'global',
         timeframe: 'daily',
         marketName: 'US SEC EDGAR',
         date: filedDateStr,
-        time: 'สารสนเทศทางการ',
+        time: 'Official Disclosure',
         periodLabel: `SEC Filing • ${filedDateStr}`,
+        periodLabel_th: `แบบรายงาน SEC • ${filedDateStr}`,
+        periodLabel_en: `SEC Filing • ${filedDateStr}`,
         sentiment: 'neutral' as SentimentType,
         tickers: [cleanSymbol],
-        readTime: '1 นาที',
+        readTime: '1 min',
         source: 'U.S. SEC EDGAR (Finnhub Filings)',
         category: 'finance' as NewsCategory,
         impactAnalysis: {
-          targetSector: 'เอกสารทางการ & งบการเงินสหรัฐฯ',
-          priceTrendOutlook: 'รายงานตามเกณฑ์ข้อบังคับ ก.ล.ต. สหรัฐฯ'
+          targetSector: 'US Official Disclosures',
+          targetSector_th: 'เอกสารทางการ & งบการเงินสหรัฐฯ',
+          targetSector_en: 'US Official Disclosures',
+          priceTrendOutlook: 'Complies with SEC statutory disclosures',
+          priceTrendOutlook_th: 'รายงานตามเกณฑ์ข้อบังคับ ก.ล.ต. สหรัฐฯ',
+          priceTrendOutlook_en: 'Complies with SEC statutory disclosures'
         },
         isFeatured: false,
         isBookmarked: false,

@@ -5,103 +5,38 @@
  */
 
 import type { Language } from '../i18n/translations';
-
-// In-memory persistent cache for instant lookups
-const translationCache = new Map<string, string>();
+import { translateClean, translateListClean, isPrimarilyThai } from './newsTranslationEngine';
 
 /**
- * Common financial & market terminology translation rules
- */
-const termDictionary: [RegExp, string][] = [
-  [/สรุปภาพรวมตลาดประจำวันที่\s*/gi, 'Daily Market Executive Summary • '],
-  [/สรุปสัปดาห์ล่าสุด\s*/gi, 'Latest Weekly Market Digest • '],
-  [/สรุปภาพรวมตลาด/gi, 'Market Overview Summary'],
-  [/สรุปรายวัน/gi, 'Daily Briefing'],
-  [/สรุปรายสัปดาห์/gi, 'Weekly Briefing'],
-  [/ดัชนีตลาดหลักทรัพย์แห่งประเทศไทย\s*\(SET Index\)/gi, 'Stock Exchange of Thailand (SET Index)'],
-  [/ดัชนีตลาดหุ้นไทย/gi, 'SET Index'],
-  [/ตลาดหุ้นโลก/gi, 'Global Stock Markets'],
-  [/ตลาดหุ้นสหรัฐฯ/gi, 'US Stock Markets'],
-  [/กลุ่มพลังงานและสาธารณูปโภค/gi, 'Energy & Utilities Sector'],
-  [/กลุ่มพลังงาน/gi, 'Energy Sector'],
-  [/กลุ่มเทคโนโลยีและAI/gi, 'Technology & AI Sector'],
-  [/กลุ่มเทคโนโลยี/gi, 'Technology Sector'],
-  [/กลุ่มธนาคารและการเงิน/gi, 'Banking & Financial Sector'],
-  [/กลุ่มธนาคาร/gi, 'Banking Sector'],
-  [/กลุ่มค้าปลีกและท่องเที่ยว/gi, 'Retail & Tourism Sector'],
-  [/กลุ่มค้าปลีก/gi, 'Retail Sector'],
-  [/กลุ่มการแพทย์และสุขภาพ/gi, 'Healthcare & Medical Sector'],
-  [/กลุ่มอสังหาริมทรัพย์/gi, 'Real Estate Sector'],
-  [/กลุ่มชิ้นส่วนอิเล็กทรอนิกส์/gi, 'Electronic Components Sector'],
-  [/กลุ่มโทรคมนาคม/gi, 'Telecommunications Sector'],
-  [/นักลงทุนสถาบัน/gi, 'institutional investors'],
-  [/นักลงทุนต่างชาติ/gi, 'foreign investors'],
-  [/มูลค่าการซื้อขายหนาแน่น/gi, 'robust trading turnover'],
-  [/มูลค่าการซื้อขาย/gi, 'trading volume'],
-  [/กำไรสุทธิ/gi, 'net profit'],
-  [/ผลประกอบการ/gi, 'financial performance'],
-  [/ยอดขาย/gi, 'revenue'],
-  [/เงินปันผล/gi, 'dividends'],
-  [/อัตราดอกเบี้ย/gi, 'interest rates'],
-  [/กระแสเงินลงทุน/gi, 'fund flow'],
-  [/ปรับตัวเพิ่มขึ้น/gi, 'advanced higher'],
-  [/ปรับตัวลดลง/gi, 'retreated lower'],
-  [/เคลื่อนไหวคึกคัก/gi, 'traded actively'],
-  [/ขยายตัวต่อเนื่อง/gi, 'expanded continuously'],
-  [/สัญญาณเชิงบวก/gi, 'bullish signals'],
-  [/ปัจจัยความเสี่ยง/gi, 'risk factors'],
-  [/ประเด็นสำคัญที่ต้องรู้/gi, 'Key Takeaways'],
-  [/การวิเคราะห์ผลกระทบ/gi, 'Impact Analysis'],
-  [/คาดการณ์แนวโน้ม/gi, 'Trend Outlook'],
-  [/บทวิเคราะห์ AI/gi, 'AI Analysis Insight'],
-  [/ศูนย์ข้อมูล/gi, 'Data Center'],
-  [/โครงสร้างพื้นฐาน/gi, 'infrastructure'],
-  [/อยู่ในเกณฑ์/gi, 'remains in'],
-  [/ระดับราคา/gi, 'price level'],
-  [/แนวต้าน/gi, 'resistance level'],
-  [/แนวรับ/gi, 'support level'],
-];
-
-/**
- * Fast translation processor
- */
-function processTranslation(text: string): string {
-  if (!text) return '';
-
-  let translated = text;
-  for (const [regex, replacement] of termDictionary) {
-    translated = translated.replace(regex, replacement);
-  }
-
-  return translated;
-}
-
-/**
- * Translates dynamic content instantly using cache & background dictionary rules
+ * Translates dynamic content cleanly without mixing words between Thai and English
  */
 export function translateDynamic(
   textTh?: string,
   textEn?: string,
   targetLang: Language = 'th'
 ): string {
-  if (!textTh) return '';
-  if (targetLang === 'th') return textTh;
+  if (targetLang === 'th') {
+    if (textTh && textTh.trim()) {
+      return isPrimarilyThai(textTh) ? textTh : translateClean(textTh, 'th');
+    }
+    if (textEn && textEn.trim()) {
+      return translateClean(textEn, 'th');
+    }
+    return '';
+  }
 
-  // 1. Explicit English provided
-  if (textEn && textEn.trim()) {
+  // targetLang === 'en'
+  if (textEn && textEn.trim() && !isPrimarilyThai(textEn)) {
     return textEn;
   }
-
-  // 2. Cache hit
-  const cacheKey = `th2en_${textTh}`;
-  if (translationCache.has(cacheKey)) {
-    return translationCache.get(cacheKey)!;
+  if (textTh && textTh.trim()) {
+    return translateClean(textTh, 'en');
+  }
+  if (textEn && textEn.trim()) {
+    return translateClean(textEn, 'en');
   }
 
-  // 3. Process translation instantly without blocking
-  const translated = processTranslation(textTh);
-  translationCache.set(cacheKey, translated);
-  return translated;
+  return '';
 }
 
 /**
@@ -112,8 +47,23 @@ export function translateDynamicList(
   listEn?: string[],
   targetLang: Language = 'th'
 ): string[] {
-  if (targetLang === 'th') return listTh;
-  if (listEn && listEn.length > 0) return listEn;
+  if (targetLang === 'th') {
+    if (listTh && listTh.length > 0) {
+      return listTh.map((item) => (isPrimarilyThai(item) ? item : translateClean(item, 'th')));
+    }
+    if (listEn && listEn.length > 0) {
+      return translateListClean(listEn, 'th');
+    }
+    return [];
+  }
 
-  return listTh.map((item) => translateDynamic(item, undefined, targetLang));
+  // targetLang === 'en'
+  if (listEn && listEn.length > 0 && listEn.some((i) => !isPrimarilyThai(i))) {
+    return listEn;
+  }
+  if (listTh && listTh.length > 0) {
+    return translateListClean(listTh, 'en');
+  }
+
+  return [];
 }

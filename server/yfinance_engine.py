@@ -582,68 +582,48 @@ def main():
         }, ensure_ascii=False))
     elif args.action == "single" and args.symbol:
         clean_raw = args.symbol.strip().upper().replace(".BK", "")
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        cache_file = os.path.join(base_dir, "market_cache.json")
         
-        # Intelligent Market Resolution
-        known_us = {
-            "ARM", "SMCI", "NVDA", "AAPL", "MSFT", "GOOGL", "GOOG", "AMZN", "META", "TSLA",
-            "AMD", "AVGO", "INTC", "CRM", "NFLX", "PLTR", "SOFI", "COIN", "UBER", "PANW",
-            "CRWD", "SNOW", "ORCL", "CSCO", "IBM", "NOW", "SHOP", "SQ", "DIS", "JPM",
-            "BAC", "WFC", "C", "GS", "MS", "BLK", "V", "MA", "AXP", "COST", "HD",
-            "PG", "UNH", "WMT", "PYPL", "LLY", "NVO", "PFE", "ABBV", "MRK", "TMO",
-            "ABT", "BMY", "AMGN", "XOM", "CVX", "COP", "SLB", "CAT", "DE", "HON",
-            "GE", "BA", "LMT", "NEE", "DUK", "SO", "QCOM", "TXN", "MU", "LRCX", "KLAC"
-        }
-        
-        if args.market.upper() == "SET":
-            is_thai = True
-        elif args.market.upper() == "US":
-            is_thai = False
-        elif clean_raw in known_us or args.symbol.endswith(":US") or args.symbol.startswith("US:"):
-            is_thai = False
-        elif args.symbol.endswith(".BK") or args.symbol.endswith(":SET"):
-            is_thai = True
-        else:
-            is_thai = True
-
-        target_sym = f"{clean_raw}.BK" if is_thai else clean_raw
-        
-        # 1. Attempt live yfinance fetch
-        item = None
-        
-        # Primary candidate
-        primary_sym = f"{clean_raw}.BK" if is_thai else clean_raw
-        primary_mkt = "SET" if is_thai else "US"
-        try:
-            t_def = {
-                "symbol": primary_sym,
-                "ticker": clean_raw,
-                "market": primary_mkt,
-                "name": f"{clean_raw} {'PCL' if is_thai else 'Inc.'}",
-                "sector": "Services" if is_thai else "Technology"
-            }
-            item = fetch_single_ticker_data(t_def)
-        except Exception as err:
-            sys.stderr.write(f"Single fetch warning for {clean_raw} ({primary_sym}): {err}\n")
-
-        # 2. Secondary candidate (cross-market check if primary had no data)
-        if not item or item.get("price", 0) <= 0:
-            secondary_sym = clean_raw if is_thai else f"{clean_raw}.BK"
-            secondary_mkt = "US" if is_thai else "SET"
+        # 1. Fast Cache Check (Sub-millisecond)
+        if os.path.exists(cache_file):
             try:
-                t_def_alt = {
-                    "symbol": secondary_sym,
-                    "ticker": clean_raw,
-                    "market": secondary_mkt,
-                    "name": f"{clean_raw} {'Inc.' if is_thai else 'PCL'}",
-                    "sector": "Technology" if is_thai else "Services"
-                }
-                item_alt = fetch_single_ticker_data(t_def_alt)
-                if item_alt and item_alt.get("price", 0) > 0:
-                    item = item_alt
-            except Exception as err:
-                sys.stderr.write(f"Cross-market fetch warning for {clean_raw}: {err}\n")
+                with open(cache_file, "r", encoding="utf-8") as f:
+                    c_data = json.load(f)
+                    items = c_data if isinstance(c_data, list) else c_data.get("data", [])
+                    for item in items:
+                        if item.get("ticker", "").upper() == clean_raw:
+                            if args.market == "auto" or item.get("market") == args.market:
+                                print(json.dumps({"success": True, "source": "cache", "data": item}, ensure_ascii=False))
+                                return
+            except Exception:
+                pass
 
-        # 3. Strict financial integrity: If symbol is invalid or delisted, return not found (NEVER hallucinate fake data)
+        # 2. Parallel Candidates Resolution (Query US and SET simultaneously)
+        candidates = []
+        if args.market.upper() == "SET" or args.symbol.endswith(".BK"):
+            candidates = [
+                {"symbol": f"{clean_raw}.BK", "ticker": clean_raw, "market": "SET", "name": f"{clean_raw} PCL", "sector": "Services"},
+                {"symbol": clean_raw, "ticker": clean_raw, "market": "US", "name": f"{clean_raw} Inc.", "sector": "Technology"}
+            ]
+        elif args.market.upper() == "US":
+            candidates = [
+                {"symbol": clean_raw, "ticker": clean_raw, "market": "US", "name": f"{clean_raw} Inc.", "sector": "Technology"},
+                {"symbol": f"{clean_raw}.BK", "ticker": clean_raw, "market": "SET", "name": f"{clean_raw} PCL", "sector": "Services"}
+            ]
+        else:
+            # Smart default: Try US first, Thai second concurrently
+            candidates = [
+                {"symbol": clean_raw, "ticker": clean_raw, "market": "US", "name": f"{clean_raw} Inc.", "sector": "Technology"},
+                {"symbol": f"{clean_raw}.BK", "ticker": clean_raw, "market": "SET", "name": f"{clean_raw} PCL", "sector": "Services"}
+            ]
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            cand_results = list(executor.map(fetch_single_ticker_data, candidates))
+
+        item = next((r for r in cand_results if r and r.get("price", 0) > 0), None)
+
+        # 3. Strict financial integrity: If symbol is invalid or delisted, return not found
         if not item or item.get("price", 0) <= 0:
             print(json.dumps({
                 "success": False,
@@ -651,7 +631,7 @@ def main():
                 "data": None
             }, ensure_ascii=False))
         else:
-            # Enhance with real company name and sector if available from yfinance info
+            # Enhance with real company name, sector, target price, analyst rating, and ratios from yfinance info
             try:
                 t_obj = yf.Ticker(item["symbol"])
                 info = getattr(t_obj, "info", None)
@@ -664,11 +644,45 @@ def main():
                         item["sector"] = real_sector
                     if info.get("trailingPE"):
                         item["peRatio"] = round(float(info["trailingPE"]), 1)
-                    if info.get("dividendYield"):
-                        item["dividendYield"] = round(float(info["dividendYield"]) * 100, 2)
+                    elif info.get("forwardPE"):
+                        item["peRatio"] = round(float(info["forwardPE"]), 1)
+                    if info.get("dividendYield") is not None:
+                        dy = float(info["dividendYield"])
+                        item["dividendYield"] = round(dy * 100 if dy < 0.1 else dy, 2)
+                    if info.get("targetMeanPrice"):
+                        item["targetPrice"] = round(float(info["targetMeanPrice"]), 2)
+                    if info.get("recommendationKey"):
+                        rec = str(info["recommendationKey"]).lower()
+                        rec_map = {
+                            "strong_buy": "Strong Buy",
+                            "buy": "Buy",
+                            "hold": "Hold",
+                            "underperform": "Sell",
+                            "sell": "Sell",
+                            "strong_sell": "Strong Sell"
+                        }
+                        item["analystRating"] = rec_map.get(rec, "Buy")
+                    if info.get("longBusinessSummary"):
+                        item["description"] = info["longBusinessSummary"][:300] + "..."
             except Exception:
                 pass
-            print(json.dumps({"success": True, "data": item}, ensure_ascii=False))
+
+            # Persist newly found stock to cache
+            try:
+                if os.path.exists(cache_file):
+                    with open(cache_file, "r", encoding="utf-8") as f:
+                        c_data = json.load(f)
+                        items = c_data if isinstance(c_data, list) else c_data.get("data", [])
+                    
+                    key = f"{item['market']}-{item['ticker']}"
+                    filtered_items = [s for s in items if f"{s.get('market')}-{s.get('ticker')}" != key]
+                    filtered_items.insert(0, item)
+                    with open(cache_file, "w", encoding="utf-8") as f:
+                        json.dump(filtered_items, f, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+
+            print(json.dumps({"success": True, "source": "live_vendor", "data": item}, ensure_ascii=False))
     elif args.action == "chart" and args.symbol:
         sym = args.symbol
         if not ("." in sym or "^" in sym):

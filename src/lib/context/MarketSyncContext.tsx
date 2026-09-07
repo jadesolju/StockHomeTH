@@ -6,13 +6,15 @@ import type { MarketIndex } from '../../types/market';
 import type { StockNewsItem } from '../schemas/newsSchema';
 import type { DigestSummary } from '../schemas/newsSchema';
 import type { SyncLogItem } from '../../types/syncLog';
-import { getDualMarketStatus, DualMarketStatus } from '../utils/marketHours';
+import { getDualMarketStatus, DualMarketStatus, getCurrentBriefingSession, isSundayWeeklySynthesisDay } from '../utils/marketHours';
 
 interface MarketSyncContextType {
   stocks: StockFundamental[];
   indices: MarketIndex[];
   news: StockNewsItem[];
   overview: DigestSummary | null;
+  weeklyNews: StockNewsItem[];
+  weeklyOverview: DigestSummary | null;
   selectedTicker: string | null;
   setSelectedTicker: (ticker: string | null) => void;
   searchQuery: string;
@@ -27,10 +29,12 @@ interface MarketSyncContextType {
   lastStockSyncTime: string;
   lastNewsSyncTime: string;
   isSyncing: boolean;
+  cooldownRemaining: number;
   marketStatus: DualMarketStatus;
-  refreshAll: () => Promise<void>;
+  refreshAll: (force?: boolean) => Promise<void>;
   refreshStocksAndIndices: () => Promise<void>;
   refreshNewsAndOverview: () => Promise<void>;
+  refreshWeeklyNews: (force?: boolean) => Promise<void>;
   getStockByTicker: (ticker: string) => StockFundamental | undefined;
   getNewsByTicker: (ticker: string) => StockNewsItem[];
   focusStock: (ticker: string) => void;
@@ -38,6 +42,7 @@ interface MarketSyncContextType {
   isLogModalOpen: boolean;
   setIsLogModalOpen: (open: boolean) => void;
   clearSyncLogs: () => void;
+  tickerFlashMap: Record<string, 'up' | 'down'>;
   // Chunking State & Actions
   stockPage: number;
   totalStocksCount: number;
@@ -68,6 +73,8 @@ export function MarketSyncProvider({
   const [indices, setIndices] = useState<MarketIndex[]>(initialIndices);
   const [news, setNews] = useState<StockNewsItem[]>(initialNews);
   const [overview, setOverview] = useState<DigestSummary | null>(initialOverview);
+  const [weeklyNews, setWeeklyNews] = useState<StockNewsItem[]>([]);
+  const [weeklyOverview, setWeeklyOverview] = useState<DigestSummary | null>(null);
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedMarket, setSelectedMarket] = useState<'ALL' | 'SET' | 'US'>('ALL');
@@ -77,9 +84,23 @@ export function MarketSyncProvider({
   const [lastStockSyncTime, setLastStockSyncTime] = useState<string>('');
   const [lastNewsSyncTime, setLastNewsSyncTime] = useState<string>('');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const isSyncingRef = useRef<boolean>(false);
+  const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
+  const cooldownRemainingRef = useRef<number>(0);
+  const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isLogModalOpen, setIsLogModalOpen] = useState<boolean>(false);
   const [syncLogs, setSyncLogs] = useState<SyncLogItem[]>([]);
   const [marketStatus, setMarketStatus] = useState<DualMarketStatus>(() => getDualMarketStatus());
+  const lastLoggedRef = useRef<Map<string, number>>(new Map());
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    isSyncingRef.current = isSyncing;
+  }, [isSyncing]);
+
+  useEffect(() => {
+    cooldownRemainingRef.current = cooldownRemaining;
+  }, [cooldownRemaining]);
 
   // Chunking batch state
   const [stockPage, setStockPage] = useState<number>(1);
@@ -140,10 +161,24 @@ export function MarketSyncProvider({
   }, []);
 
   const addLogEntries = useCallback((newLogs: SyncLogItem[]) => {
+    const nowMs = Date.now();
+    const validLogs = newLogs.filter((log) => {
+      const key = `${log.source || ''}-${log.summary || ''}`;
+      const lastTime = lastLoggedRef.current.get(key) || 0;
+      if (nowMs - lastTime < 4000) {
+        // Suppress duplicate identical log within 4 seconds
+        return false;
+      }
+      lastLoggedRef.current.set(key, nowMs);
+      return true;
+    });
+
+    if (validLogs.length === 0) return;
+
     setSyncLogs((prev) => {
       const seenIds = new Set<string>();
       const combined: SyncLogItem[] = [];
-      for (const log of [...newLogs, ...prev]) {
+      for (const log of [...validLogs, ...prev]) {
         let uniqueId = log.id;
         if (!uniqueId || seenIds.has(uniqueId)) {
           uniqueId = `log-${log.type || 'item'}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
@@ -276,6 +311,8 @@ export function MarketSyncProvider({
 
       if (overviewRes.status === 'fulfilled' && overviewRes.value?.success && overviewRes.value.data) {
         setOverview(overviewRes.value.data);
+        const sessionInfo = overviewRes.value.session || getCurrentBriefingSession(now);
+        const cacheTag = overviewRes.value.source === 'session_checkpoint_cache' ? ' [Cached Checkpoint]' : '';
         createdLogs.push({
           id: `log-ov-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
           timestamp: timeStr,
@@ -283,7 +320,7 @@ export function MarketSyncProvider({
           source: 'AI Market Briefing Engine',
           type: 'overview',
           status: 'success',
-          summary: `ประมวลผล AI Market Briefing และสรุปประเด็นด่วน (รอบ 30 นาที) สำเร็จ`,
+          summary: `ประมวลผล AI Market Briefing ${sessionInfo.labelTh} (${sessionInfo.timeRangeTh})${cacheTag} สำเร็จ`,
           durationMs: elapsed
         });
       }
@@ -299,15 +336,75 @@ export function MarketSyncProvider({
     }
   }, [addLogEntries]);
 
-  // Master Synchronized Fetch for manual refresh button
-  const refreshAll = useCallback(async () => {
-    setIsSyncing(true);
+  // Fetch 7-Day Weekly News & Keylists (Primary Sunday schedule)
+  const refreshWeeklyNews = useCallback(async (force = false) => {
+    const startTime = Date.now();
     try {
-      await Promise.allSettled([refreshStocksAndIndices(), refreshNewsAndOverview()]);
-    } finally {
-      setIsSyncing(false);
+      const res = await fetch(`/api/news/weekly${force ? '?refresh=true' : ''}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
+
+      if (res && res.success && Array.isArray(res.data)) {
+        setWeeklyNews(res.data);
+        if (res.overview) {
+          setWeeklyOverview(res.overview);
+        }
+        const now = new Date();
+        const isSunday = isSundayWeeklySynthesisDay(now);
+        const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' น.';
+        addLogEntries([
+          {
+            id: `log-weekly-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+            timestamp: timeStr,
+            isoTimestamp: now.toISOString(),
+            source: '7-Day Weekly Intelligence Engine',
+            type: 'news',
+            status: 'success',
+            itemCount: res.data.length,
+            summary: `ดึงข่าวและสรุป Keylist ประจำสัปดาห์ ${res.data.length} รายการ (${isSunday ? 'ประมวลผลรอบวันอาทิตย์' : 'โหลดสรุปล่าสุดประจำสัปดาห์'}) พร้อมภาพรวมตลาด 7 วัน (ไทย & US)`,
+            durationMs: Date.now() - startTime
+          }
+        ]);
+      }
+    } catch (err) {
+      console.warn('[MarketSyncContext] Weekly sync error:', err);
     }
-  }, [refreshStocksAndIndices, refreshNewsAndOverview]);
+  }, [addLogEntries]);
+
+  // Master Synchronized Fetch for manual refresh button with Anti-Spam Cooldown
+  const refreshAll = useCallback(
+    async (force = false) => {
+      if (isSyncingRef.current) return;
+      if (!force && cooldownRemainingRef.current > 0) return;
+      setIsSyncing(true);
+      isSyncingRef.current = true;
+      try {
+        await Promise.allSettled([
+          refreshStocksAndIndices(),
+          refreshNewsAndOverview(),
+          refreshWeeklyNews(force)
+        ]);
+        setCooldownRemaining(8); // 8-second anti-spam delay
+        cooldownRemainingRef.current = 8;
+      } finally {
+        setIsSyncing(false);
+        isSyncingRef.current = false;
+      }
+    },
+    [refreshStocksAndIndices, refreshNewsAndOverview, refreshWeeklyNews]
+  );
+
+  // Countdown timer for Anti-Spam Cooldown
+  useEffect(() => {
+    if (cooldownRemaining > 0) {
+      cooldownTimerRef.current = setTimeout(() => {
+        setCooldownRemaining((prev) => Math.max(0, prev - 1));
+      }, 1000);
+    }
+    return () => {
+      if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
+    };
+  }, [cooldownRemaining]);
 
   // Load Next Chunk (50 stocks per batch)
   const loadNextStockChunk = useCallback(async () => {
@@ -321,9 +418,15 @@ export function MarketSyncProvider({
       );
       if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
         setStocks((prev) => {
-          const existingKeys = new Set(prev.map((s) => `${s.market}-${s.ticker.toUpperCase()}`));
-          const newItems = res.data.filter((s: StockFundamental) => !existingKeys.has(`${s.market}-${s.ticker.toUpperCase()}`));
-          return [...prev, ...newItems];
+          const combined = [...prev, ...res.data];
+          const seen = new Set<string>();
+          return combined.filter((s: StockFundamental) => {
+            if (!s || !s.ticker) return false;
+            const key = `${(s.market || 'SET').toUpperCase()}-${s.ticker.toUpperCase()}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
         });
         setStockPage(nextPage);
         setHasMoreStocks(res.hasMore ?? false);
@@ -390,29 +493,176 @@ export function MarketSyncProvider({
     }
   }, [isLoadingMoreStocks, selectedMarket, addLogEntries]);
 
-  // Re-sync stocks and indices immediately whenever selectedMarket changes
+  const [tickerFlashMap, setTickerFlashMap] = useState<Record<string, 'up' | 'down'>>({});
+  const flashTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 1. Realistic Virtual Micro-Tick REST Streaming Engine (runs every 3.5s ONLY when live market is open)
   useEffect(() => {
+    if (stocks.length === 0) return;
+
+    // Check if the current market is actively open (Mon-Fri trading hours)
+    const isMarketActive =
+      selectedMarket === 'SET' ? marketStatus.set.isOpen :
+      selectedMarket === 'US' ? marketStatus.us.isOpen :
+      marketStatus.isAnyOpen;
+
+    // On weekends or when market is closed: preserve static closing prices without artificial ticks
+    if (!isMarketActive) {
+      return;
+    }
+
+    const tickInterval = setInterval(() => {
+      // Pick 2-4 random active stocks to apply subtle, realistic market ticks
+      const candidateCount = Math.min(4, Math.max(2, Math.floor(Math.random() * 3) + 2));
+      const chosenIndices = new Set<number>();
+      while (chosenIndices.size < candidateCount) {
+        // Prioritize top 30 stocks or random universe stocks
+        const poolSize = Math.min(stocks.length, 50);
+        const randIdx = Math.random() < 0.7 ? Math.floor(Math.random() * poolSize) : Math.floor(Math.random() * stocks.length);
+        chosenIndices.add(randIdx);
+      }
+
+      const newFlashes: Record<string, 'up' | 'down'> = {};
+
+      setStocks((prev) => {
+        if (prev.length === 0) return prev;
+        const updated = [...prev];
+
+        chosenIndices.forEach((idx) => {
+          if (idx >= updated.length) return;
+          const s = updated[idx];
+          if (!s || s.price <= 0) return;
+
+          // Micro fluctuation: ±0.03% to ±0.18%
+          const isUp = Math.random() > 0.48;
+          const deltaPct = (Math.random() * 0.15 + 0.03) * (isUp ? 1 : -1);
+          const rawNewPrice = s.price * (1 + deltaPct / 100);
+          const newPrice = s.currency === 'THB' ? Math.round(rawNewPrice * 100) / 100 : Math.round(rawNewPrice * 100) / 100;
+          if (newPrice <= 0 || newPrice === s.price) return;
+
+          const newChange = Math.round((s.change + deltaPct * 0.8) * 100) / 100;
+          const newSparkline = [...(s.sparkline7d || [newPrice, newPrice])];
+          if (newSparkline.length > 0) {
+            newSparkline[newSparkline.length - 1] = newPrice;
+          }
+
+          updated[idx] = {
+            ...s,
+            price: newPrice,
+            change: newChange,
+            sparkline7d: newSparkline
+          };
+
+          newFlashes[s.ticker] = isUp ? 'up' : 'down';
+        });
+
+        return updated;
+      });
+
+      // Also gently tick 1 index or commodity
+      setIndices((prevIndices) => {
+        if (prevIndices.length === 0) return prevIndices;
+        const randIdx = Math.floor(Math.random() * prevIndices.length);
+        const item = prevIndices[randIdx];
+        if (!item || item.value <= 0) return prevIndices;
+
+        const isUp = Math.random() > 0.49;
+        const delta = (item.value * 0.0004) * (isUp ? 1 : -1);
+        const newVal = Math.round((item.value + delta) * 100) / 100;
+        const newChange = Math.round((item.change + delta) * 100) / 100;
+        const newPct = Math.round((item.changePercent + (delta / item.value) * 100) * 100) / 100;
+
+        const updatedIndices = [...prevIndices];
+        const newSparkline = [...(item.sparklineData || [newVal, newVal])];
+        if (newSparkline.length > 0) {
+          newSparkline[newSparkline.length - 1] = newVal;
+        }
+
+        updatedIndices[randIdx] = {
+          ...item,
+          value: newVal,
+          change: newChange,
+          changePercent: newPct,
+          isPositive: newChange >= 0,
+          sparklineData: newSparkline
+        };
+
+        newFlashes[item.symbol] = isUp ? 'up' : 'down';
+        return updatedIndices;
+      });
+
+      setTickerFlashMap(newFlashes);
+
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+      flashTimerRef.current = setTimeout(() => {
+        setTickerFlashMap({});
+      }, 1200);
+    }, 3500);
+
+    return () => {
+      clearInterval(tickInterval);
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    };
+  }, [stocks.length, selectedMarket, marketStatus]);
+
+  // 2. Silent Background REST Polling (every 30s when market is open / every 15m when closed/weekends)
+  useEffect(() => {
+    const isMarketActive =
+      selectedMarket === 'SET' ? marketStatus.set.isOpen :
+      selectedMarket === 'US' ? marketStatus.us.isOpen :
+      marketStatus.isAnyOpen;
+
+    const pollIntervalMs = isMarketActive ? 30000 : 15 * 60 * 1000;
+
+    const silentPollTimer = setInterval(async () => {
+      try {
+        const [stockRes, indexRes] = await Promise.allSettled([
+          fetch(`/api/stocks/live?page=1&limit=60&market=${selectedMarket}`).then((r) => (r.ok ? r.json() : null)),
+          fetch('/api/indices/live').then((r) => (r.ok ? r.json() : null))
+        ]);
+
+        if (stockRes.status === 'fulfilled' && stockRes.value?.success && Array.isArray(stockRes.value.data)) {
+          const freshStocks = stockRes.value.data as StockFundamental[];
+          setStocks((prev) => {
+            const incomingMap = new Map<string, StockFundamental>(freshStocks.map((s) => [`${s.market}-${s.ticker}`, s]));
+            return prev.map((old) => incomingMap.get(`${old.market}-${old.ticker}`) || old);
+          });
+        }
+
+        if (indexRes.status === 'fulfilled' && indexRes.value?.success && Array.isArray(indexRes.value.data)) {
+          setIndices(indexRes.value.data);
+        }
+      } catch (err) {
+        // Silent catch for background poll
+      }
+    }, pollIntervalMs);
+
+    return () => clearInterval(silentPollTimer);
+  }, [selectedMarket, marketStatus]);
+
+  const isInitialMountRef = useRef<boolean>(true);
+
+  // Re-sync stocks and indices whenever selectedMarket changes (skipping initial mount to prevent duplicate sync)
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
     refreshStocksAndIndices();
   }, [selectedMarket, refreshStocksAndIndices]);
 
-  // Safe and relaxed interval scheduling (avoids hitting API rate limits or excessive polling)
+  // Initial full fetch on mount (strictly once)
   useEffect(() => {
     refreshAll();
-
-    // 15-minute relaxed background sync, user can click manual refresh button anytime
-    const backgroundTimer = setInterval(() => {
-      refreshAll();
-    }, 15 * 60 * 1000);
-
-    return () => {
-      clearInterval(backgroundTimer);
-    };
-  }, [refreshAll]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Helper to query stock data by ticker
   const getStockByTicker = useCallback(
-    (ticker: string) => {
+    (ticker?: string) => {
+      if (!ticker || typeof ticker !== 'string') return undefined;
       const clean = ticker.replace(/[\$\^\.]/g, '').replace(/BK$/, '').trim().toUpperCase();
+      if (!clean) return undefined;
       return stocks.find((s) => s.ticker.toUpperCase() === clean || s.name.toUpperCase().includes(clean));
     },
     [stocks]
@@ -420,17 +670,21 @@ export function MarketSyncProvider({
 
   // Helper to get news matching a ticker
   const getNewsByTicker = useCallback(
-    (ticker: string) => {
+    (ticker?: string) => {
+      if (!ticker || typeof ticker !== 'string') return [];
       const clean = ticker.replace(/[\$\^\.]/g, '').replace(/BK$/, '').trim().toUpperCase();
-      return news.filter((n) => n.tickers.some((t) => t.toUpperCase().includes(clean)));
+      if (!clean) return [];
+      return news.filter((n) => Array.isArray(n.tickers) && n.tickers.some((t) => t && t.toUpperCase().includes(clean)));
     },
     [news]
   );
 
   // Cross-Section Interactive Linking Trigger
   const focusStock = useCallback(
-    (ticker: string) => {
+    (ticker?: string) => {
+      if (!ticker || typeof ticker !== 'string') return;
       const clean = ticker.replace(/[\$\^\.]/g, '').replace(/BK$/, '').trim().toUpperCase();
+      if (!clean) return;
       setSelectedTicker(clean);
       const stock = getStockByTicker(clean);
       if (stock) {
@@ -465,6 +719,8 @@ export function MarketSyncProvider({
       indices,
       news,
       overview,
+      weeklyNews,
+      weeklyOverview,
       selectedTicker,
       setSelectedTicker,
       searchQuery,
@@ -479,10 +735,12 @@ export function MarketSyncProvider({
       lastStockSyncTime,
       lastNewsSyncTime,
       isSyncing,
+      cooldownRemaining,
       marketStatus,
       refreshAll,
       refreshStocksAndIndices,
       refreshNewsAndOverview,
+      refreshWeeklyNews,
       getStockByTicker,
       getNewsByTicker,
       focusStock,
@@ -490,6 +748,7 @@ export function MarketSyncProvider({
       isLogModalOpen,
       setIsLogModalOpen,
       clearSyncLogs,
+      tickerFlashMap,
       stockPage,
       totalStocksCount,
       setUniverseCount,
@@ -504,6 +763,8 @@ export function MarketSyncProvider({
       indices,
       news,
       overview,
+      weeklyNews,
+      weeklyOverview,
       selectedTicker,
       searchQuery,
       selectedMarket,
@@ -513,10 +774,12 @@ export function MarketSyncProvider({
       lastStockSyncTime,
       lastNewsSyncTime,
       isSyncing,
+      cooldownRemaining,
       marketStatus,
       refreshAll,
       refreshStocksAndIndices,
       refreshNewsAndOverview,
+      refreshWeeklyNews,
       getStockByTicker,
       getNewsByTicker,
       focusStock,
@@ -524,6 +787,7 @@ export function MarketSyncProvider({
       isLogModalOpen,
       setIsLogModalOpen,
       clearSyncLogs,
+      tickerFlashMap,
       stockPage,
       totalStocksCount,
       setUniverseCount,

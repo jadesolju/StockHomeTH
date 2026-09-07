@@ -5,7 +5,7 @@ import type { StockFundamental } from '../../lib/schemas/marketSchema';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { Sparkline } from '../ui/Sparkline';
-import { getStockTags, getMarketScopedTagFilters, THAI_7_GIANTS, MAGNIFICENT_7, SET50_TICKERS, SET100_TICKERS, DOW_JONES_30, NASDAQ_100 } from '../../lib/utils/stockTagHelper';
+import { getStockTags, getMarketScopedTagFilters, getStockPopularityRank, THAI_7_GIANTS, MAGNIFICENT_7, SET50_TICKERS, SET100_TICKERS, DOW_JONES_30, NASDAQ_100, RECENT_IPOS } from '../../lib/utils/stockTagHelper';
 import {
   Search,
   Filter,
@@ -79,6 +79,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
     activeNewsModal,
     setActiveNewsModal,
     isSyncing,
+    cooldownRemaining,
     refreshAll,
     getNewsByTicker,
     stockPage,
@@ -88,6 +89,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
     hasMoreStocks,
     isLoadingMoreStocks,
     loadNextStockChunk,
+    tickerFlashMap,
   } = useMarketSync();
   const { t, tDynamic, language } = useLanguage();
 
@@ -118,13 +120,22 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
   const [modalStockNews, setModalStockNews] = useState<any[]>([]);
   const [isLoadingModalNews, setIsLoadingModalNews] = useState<boolean>(false);
 
-  // Combine live stocks with any search-fetched extra stocks
+  // Combine live stocks with any search-fetched extra stocks and strictly guarantee 100% uniqueness
   const stocks = useMemo(() => {
     const base = liveStocks && liveStocks.length > 0 ? liveStocks : initialStocks || [];
-    if (localExtraStocks.length === 0) return base;
-    const existingKeys = new Set(base.map((s) => `${s.market}-${s.ticker.toUpperCase()}`));
-    const extras = localExtraStocks.filter((s) => !existingKeys.has(`${s.market}-${s.ticker.toUpperCase()}`));
-    return [...extras, ...base];
+    const combined = [...localExtraStocks, ...base];
+    const seen = new Set<string>();
+    const uniqueList: StockFundamental[] = [];
+
+    for (const item of combined) {
+      if (!item || !item.ticker) continue;
+      const key = `${(item.market || 'SET').toUpperCase()}-${item.ticker.toUpperCase()}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueList.push(item);
+      }
+    }
+    return uniqueList;
   }, [liveStocks, initialStocks, localExtraStocks]);
 
   const [selectedSector, setSelectedSector] = useState<string>('ALL');
@@ -169,48 +180,77 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
     return ['ALL', ...Array.from(set)];
   }, [stocks]);
 
-  // Instant Search Engine: If search query doesn't match locally loaded items, fetch from backend 1,500 universe immediately
+  // Fast On-Demand Search Engine: Query Yahoo Finance & Webull directly for real-time tickers
+  const performApiSearch = useCallback(async (query: string) => {
+    const q = query.trim();
+    if (!q) return;
+    setIsSearchingApi(true);
+    try {
+      const res = await fetch(
+        `/api/stocks/live?search=${encodeURIComponent(q)}&market=${selectedMarket}&limit=50`
+      ).then((r) => (r.ok ? r.json() : null));
+
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        setLocalExtraStocks((prev) => {
+          const combined = [...res.data, ...prev];
+          const seen = new Set<string>();
+          return combined.filter((s: StockFundamental) => {
+            if (!s || !s.ticker) return false;
+            const key = `${(s.market || 'SET').toUpperCase()}-${s.ticker.toUpperCase()}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+        });
+        setVisibleCount((prev) => Math.max(prev, res.data.length));
+      }
+    } catch (err) {
+      console.warn('[StockExplorer] Search API warning:', err);
+    } finally {
+      setIsSearchingApi(false);
+    }
+  }, [selectedMarket]);
+
   useEffect(() => {
     const q = searchQuery.trim();
     if (!q) {
       setLocalExtraStocks([]);
+      setIsSearchingApi(false);
       return;
     }
 
-    const timer = setTimeout(async () => {
-      setIsSearchingApi(true);
-      try {
-        const res = await fetch(
-          `/api/stocks/live?search=${encodeURIComponent(q)}&market=${selectedMarket}&limit=50`
-        ).then((r) => (r.ok ? r.json() : null));
+    // Adaptive debounce: 60ms for fast ticker symbols (e.g. SNDK, SPCX, NVDA, PTT), 150ms for longer queries
+    const delay = q.length <= 6 && /^[A-Za-z0-9.\-]+$/.test(q) ? 60 : 150;
 
-        if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
-          setLocalExtraStocks(res.data);
-          setVisibleCount((prev) => Math.max(prev, res.data.length));
-        }
-      } catch (err) {
-        console.warn('[StockExplorer] Search API warning:', err);
-      } finally {
-        setIsSearchingApi(false);
-      }
-    }, 200);
+    const timer = setTimeout(() => {
+      performApiSearch(q);
+    }, delay);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedMarket]);
+  }, [searchQuery, performApiSearch]);
 
-  // On-Demand Tag Fetcher: If user selects a tag, fetch matching stocks from server if not already in local memory
+  // Prioritized On-Demand Tag Fetcher: If user selects a tag, fetch and display all matching stocks immediately
   useEffect(() => {
     if (selectedTag === 'ALL') return;
 
+    // Immediately expand visible count so all constituents are visible without scrolling
+    setVisibleCount(200);
+
     let isCancelled = false;
-    fetch(`/api/stocks/live?tag=${encodeURIComponent(selectedTag)}&market=${selectedMarket}&limit=100`)
+    fetch(`/api/stocks/live?tag=${encodeURIComponent(selectedTag)}&market=${selectedMarket}&limit=200&all=true`)
       .then((r) => (r.ok ? r.json() : null))
       .then((res) => {
         if (!isCancelled && res && res.success && Array.isArray(res.data) && res.data.length > 0) {
           setLocalExtraStocks((prev) => {
-            const existingKeys = new Set(prev.map((s) => `${s.market}-${s.ticker.toUpperCase()}`));
-            const newItems = res.data.filter((s: StockFundamental) => !existingKeys.has(`${s.market}-${s.ticker.toUpperCase()}`));
-            return [...prev, ...newItems];
+            const combined = [...res.data, ...prev];
+            const seen = new Set<string>();
+            return combined.filter((s: StockFundamental) => {
+              if (!s || !s.ticker) return false;
+              const key = `${(s.market || 'SET').toUpperCase()}-${s.ticker.toUpperCase()}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
           });
         }
       })
@@ -239,6 +279,9 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
         const tags = metrics?.tags || getStockTags(s);
         const tickerUpper = s.ticker.toUpperCase();
 
+        if (targetTag.includes('ipo')) {
+          return RECENT_IPOS.has(tickerUpper) || tags.some((t) => t.toLowerCase().includes('ipo'));
+        }
         if (targetTag.includes('นางฟ้า') || targetTag.includes('thai 7')) {
           return s.market === 'SET' && (THAI_7_GIANTS.has(tickerUpper) || tags.some((t) => t.toLowerCase().includes('นางฟ้า')));
         }
@@ -269,16 +312,17 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
 
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase().trim();
+      const rawUpper = searchQuery.toUpperCase().trim();
       list = list.filter((s) => {
         if (s.ticker.toLowerCase().includes(q) || s.name.toLowerCase().includes(q)) return true;
         const tags = stockMetricsMap.get(`${s.market}-${s.ticker}`)?.tags || [];
         return tags.some((t) => t.toLowerCase().includes(q));
       });
 
-      // Boost exact matches and prefix matches
+      // Boost exact ticker matches to absolute top (rank 1), followed by prefix matches and volume
       list.sort((a, b) => {
-        const aExact = a.ticker.toLowerCase() === q ? 1 : 0;
-        const bExact = b.ticker.toLowerCase() === q ? 1 : 0;
+        const aExact = a.ticker.toUpperCase() === rawUpper ? 3 : a.ticker.toLowerCase() === q ? 2 : 0;
+        const bExact = b.ticker.toUpperCase() === rawUpper ? 3 : b.ticker.toLowerCase() === q ? 2 : 0;
         if (aExact !== bExact) return bExact - aExact;
 
         const aStarts = a.ticker.toLowerCase().startsWith(q) ? 1 : 0;
@@ -299,7 +343,16 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
       const metricB = stockMetricsMap.get(`${b.market}-${b.ticker}`);
 
       switch (sortBy) {
-        case 'popular':
+        case 'popular': {
+          const rankA = getStockPopularityRank(a, selectedMarket);
+          const rankB = getStockPopularityRank(b, selectedMarket);
+          if (rankA !== rankB) return rankA - rankB;
+
+          // Within same tier, sort by Market Cap then Volume
+          const capDiff = (metricB?.numCap ?? 0) - (metricA?.numCap ?? 0);
+          if (capDiff !== 0) return capDiff;
+          return (metricB?.numVol ?? 0) - (metricA?.numVol ?? 0);
+        }
         case 'volume': {
           const volDiff = (metricB?.numVol ?? 0) - (metricA?.numVol ?? 0);
           if (volDiff !== 0) return volDiff;
@@ -373,23 +426,46 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
     };
   }, [activeStockModal]);
 
+  // Fetch real-time live stock quote & fundamentals from Yahoo Finance & Webull when opening modal
+  useEffect(() => {
+    if (!activeStockModal) return;
+    const ticker = activeStockModal.ticker;
+    const market = activeStockModal.market;
+    let isCancelled = false;
+
+    fetch(`/api/stocks/live?ticker=${encodeURIComponent(ticker)}&market=${market}&forceLive=true`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (!isCancelled && res && res.success && res.data) {
+          const freshData = res.data as StockFundamental;
+          setActiveStockModal(freshData);
+        }
+      })
+      .catch((err) => {
+        console.warn('[StockExplorer] Live stock quote refresh warning:', err);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeStockModal?.ticker, activeStockModal?.market]);
+
   const relatedNews = useMemo(() => {
     if (!activeStockModal) return [];
     if (modalStockNews.length > 0) return modalStockNews;
     return getNewsByTicker(activeStockModal.ticker);
   }, [activeStockModal, modalStockNews, getNewsByTicker]);
 
-  // Auto-scroll countdown state (1.5-second buffer)
-  const [isWaitingBuffer, setIsWaitingBuffer] = useState<boolean>(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const bufferTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Reset pagination when filter criteria changes
+  // Reset pagination when filter criteria changes (if not filtered by tag)
   useEffect(() => {
-    setVisibleCount(50);
-  }, [selectedMarket, selectedSector, searchQuery, sortBy]);
+    if (selectedTag === 'ALL') {
+      setVisibleCount(50);
+    }
+  }, [selectedMarket, selectedSector, searchQuery, sortBy, selectedTag]);
 
-  // Protected auto-load on scroll (1.5-second delay buffer)
+  // Smooth auto-load on scroll
   useEffect(() => {
     if (!sentinelRef.current) return;
 
@@ -401,38 +477,19 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
           (hasMoreStocks || visibleCount < filteredStocks.length) &&
           !isLoadingMoreStocks
         ) {
-          if (bufferTimerRef.current) return;
-
-          setIsWaitingBuffer(true);
-
-          bufferTimerRef.current = setTimeout(() => {
-            bufferTimerRef.current = null;
-            setIsWaitingBuffer(false);
-
-            if (visibleCount < filteredStocks.length) {
-              setVisibleCount((prev) => prev + 50);
-            } else if (hasMoreStocks) {
-              loadNextStockChunk();
-            }
-          }, 1500); // 1.5 second buffer
-        } else if (!entry.isIntersecting) {
-          if (bufferTimerRef.current) {
-            clearTimeout(bufferTimerRef.current);
-            bufferTimerRef.current = null;
-            setIsWaitingBuffer(false);
+          if (visibleCount < filteredStocks.length) {
+            setVisibleCount((prev) => prev + 50);
+          } else if (hasMoreStocks) {
+            loadNextStockChunk();
           }
         }
       },
-      { rootMargin: '120px' }
+      { rootMargin: '200px' }
     );
 
     observer.observe(sentinelRef.current);
     return () => {
       observer.disconnect();
-      if (bufferTimerRef.current) {
-        clearTimeout(bufferTimerRef.current);
-        bufferTimerRef.current = null;
-      }
     };
   }, [hasMoreStocks, visibleCount, filteredStocks.length, isLoadingMoreStocks, loadNextStockChunk]);
 
@@ -500,27 +557,35 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
               </button>
             </div>
 
-            {/* Live Status & Refresh */}
+            {/* Live Status & Refresh with Anti-Spam Protection */}
             <button
               onClick={() => refreshAll()}
-              disabled={isSyncing}
-              title={t('refreshData')}
+              disabled={isSyncing || cooldownRemaining > 0}
+              title={cooldownRemaining > 0 ? `โปรดรอ ${cooldownRemaining} วินาทีก่อนรีเฟรชอีกครั้ง` : t('refreshData')}
               style={{
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'var(--card-sub-bg)',
                 border: '1px solid var(--glass-border)',
                 borderRadius: '8px',
                 padding: '6px 10px',
-                color: '#00E676',
-                cursor: 'pointer',
+                color: (isSyncing || cooldownRemaining > 0) ? 'var(--text-tertiary)' : 'var(--accent-bullish)',
+                cursor: (isSyncing || cooldownRemaining > 0) ? 'not-allowed' : 'pointer',
+                opacity: (isSyncing || cooldownRemaining > 0) ? 0.7 : 1,
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
                 fontSize: '0.75rem',
-                fontWeight: 700
+                fontWeight: 700,
+                transition: 'all 0.15s ease'
               }}
             >
               <Activity size={14} className={isSyncing ? 'animate-spin' : ''} />
-              <span>{isSyncing ? t('syncing') : t('liveConnected')}</span>
+              <span>
+                {isSyncing
+                  ? t('syncing')
+                  : cooldownRemaining > 0
+                  ? (language === 'en' ? `Wait ${cooldownRemaining}s` : `รออีก ${cooldownRemaining}s`)
+                  : t('liveConnected')}
+              </span>
             </button>
 
             <div className="ios-segmented-control" style={{ padding: '3px' }}>
@@ -547,13 +612,19 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
         {/* Search, Sector Filter & Comprehensive Sort Dropdown */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
           {/* Instant Search Bar */}
-          <div style={{ position: 'relative' }}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              performApiSearch(searchQuery);
+            }}
+            style={{ position: 'relative' }}
+          >
             <Search size={16} color="var(--text-tertiary)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ค้นหาชื่อหุ้น / บริษัท (ดึงข้อมูลทันทีทุกตัว)..."
+              placeholder={language === 'en' ? 'Search stock symbol / company (e.g. SNDK, SPCX, NVDA, PTT)...' : 'ค้นหาชื่อย่อหุ้น หรือบริษัท (เช่น SNDK, SPCX, NVDA, PTT)...'}
               style={{
                 width: '100%',
                 padding: '10px 36px 10px 38px',
@@ -570,6 +641,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
             )}
             {!isSearchingApi && searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery('')}
                 style={{
                   position: 'absolute',
@@ -586,7 +658,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                 <X size={14} />
               </button>
             )}
-          </div>
+          </form>
 
           {/* Sector Filter */}
           <select
@@ -668,9 +740,9 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                   });
                 }}
                 style={{
-                  background: isActive ? 'var(--accent-blue-gradient)' : 'var(--card-sub-bg)',
+                  background: isActive ? 'var(--accent-blue)' : 'var(--card-sub-bg)',
                   color: isActive ? '#ffffff' : 'var(--text-secondary)',
-                  border: isActive ? '1px solid rgba(0, 122, 255, 0.4)' : '1px solid var(--card-sub-border)',
+                  border: isActive ? '1px solid var(--accent-blue)' : '1px solid var(--card-sub-border)',
                   borderRadius: '100px',
                   padding: '4px 12px',
                   fontSize: '0.75rem',
@@ -705,7 +777,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-blue)', fontWeight: 700 }}>
               <Tag size={14} />
-              <span>{language === 'en' ? `Filtered by tag: #${selectedTag}` : `กำลังกรองเฉพาะหุ้นแท็ก: #${selectedTag}`} ({filteredStocks.length} {language === 'en' ? 'stocks' : 'หุ้น'})</span>
+              <span>{language === 'en' ? `Filtered by tag: #${selectedTag}` : `กำลังกรองเฉพาะแท็ก: #${selectedTag}`}</span>
             </div>
             <button
               onClick={() => setSelectedTag('ALL')}
@@ -727,16 +799,82 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
         )}
       </div>
 
-      {/* Empty State when no matching stocks found */}
-      {filteredStocks.length === 0 && (
+      {/* Live Exchange Real-Time Search Loading State (Active Search & No Local Match Yet) */}
+      {isSearchingApi && filteredStocks.length === 0 && (
         <div
           className="glass-card"
           style={{
             padding: '48px 24px',
             textAlign: 'center',
-            borderRadius: '24px',
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
-            border: '1px dashed rgba(255, 255, 255, 0.15)',
+            borderRadius: '20px',
+            background: 'var(--accent-blue-bg)',
+            border: '1px solid var(--accent-blue-border)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '16px',
+            margin: '20px 0'
+          }}
+        >
+          <div
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              background: 'rgba(0, 113, 227, 0.15)',
+              border: '1px solid var(--accent-blue-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--accent-blue)',
+              position: 'relative'
+            }}
+          >
+            <Activity size={30} className="animate-spin" />
+            <span
+              style={{
+                position: 'absolute',
+                top: '-2px',
+                right: '-2px',
+                width: '12px',
+                height: '12px',
+                borderRadius: '50%',
+                background: '#30d158'
+              }}
+            />
+          </div>
+
+          <div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
+              {language === 'en'
+                ? `Searching "${searchQuery.toUpperCase()}" from Live Exchanges...`
+                : `กำลังค้นหาหุ้น "${searchQuery.toUpperCase()}" จากตลาดหลักทรัพย์ Real-Time...`}
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '520px', margin: '0 auto', lineHeight: 1.6 }}>
+              {language === 'en'
+                ? 'Connecting to Yahoo Finance, Webull & SET Data Pipeline to retrieve real-time quotes and verified fundamentals...'
+                : 'ระบบกำลังดึงข้อมูลสดจาก Yahoo Finance, Webull และ SET Pipeline กรุณารอสักครู่...'}
+            </p>
+          </div>
+
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '100px', background: 'var(--card-sub-bg)', border: '1px solid var(--card-sub-border)', color: 'var(--accent-blue)', fontSize: '0.8rem', fontWeight: 600 }}>
+            <span className="live-dot" />
+            <span>{language === 'en' ? 'Live Exchange Direct Query' : 'กำลังค้นหาหุ้นจากฐานข้อมูลตลาดหลักทรัพย์'}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Empty State when no matching stocks found (Only when search is NOT in progress) */}
+      {!isSearchingApi && filteredStocks.length === 0 && (
+        <div
+          className="glass-card"
+          style={{
+            padding: '48px 24px',
+            textAlign: 'center',
+            borderRadius: '20px',
+            background: 'var(--glass-bg)',
+            border: '1px solid var(--glass-border)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -780,7 +918,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
               {language === 'en' ? 'Try searching for verified symbols:' : 'ตัวอย่างชื่อย่อหุ้นที่ค้นหาได้:'}
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              {['PTT', 'DELTA', 'BDMS', 'CPALL', 'NVDA', 'AAPL', 'TSLA', 'PORT', 'COCOCO'].map((suggested) => (
+              {['SNDK', 'SPCX', 'NVDA', 'AAPL', 'PTT', 'DELTA', 'CPALL', 'BDMS', 'TSLA'].map((suggested) => (
                 <button
                   key={suggested}
                   onClick={() => {
@@ -822,21 +960,47 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
               marginTop: '12px',
               padding: '10px 20px',
               borderRadius: '12px',
-              background: 'var(--accent-blue-gradient)',
+              background: 'var(--accent-blue)',
               color: '#ffffff',
               border: 'none',
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: '0.85rem',
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 4px 14px rgba(0, 122, 255, 0.3)'
+              gap: '6px'
             }}
           >
             <X size={15} />
             <span>{language === 'en' ? 'Reset Filters & Search' : 'ล้างการค้นหาและตัวกรอง'}</span>
           </button>
+        </div>
+      )}
+
+      {/* Inline Live Search Status Indicator when results exist but background lookup is syncing */}
+      {isSearchingApi && filteredStocks.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            borderRadius: '12px',
+            background: 'rgba(0, 122, 255, 0.08)',
+            border: '1px solid rgba(0, 122, 255, 0.25)',
+            marginBottom: '16px',
+            fontSize: '0.8rem',
+            color: 'var(--accent-blue)',
+            fontWeight: 700
+          }}
+        >
+          <Activity size={14} className="animate-spin" />
+          <span>
+            {language === 'en'
+              ? `Syncing live exchange quotes for "${searchQuery.toUpperCase()}"...`
+              : `กำลังอัปเดตและตรวจสอบข้อมูลเพิ่มเติมจากตลาดหลักทรัพย์สำหรับ "${searchQuery.toUpperCase()}"...`}
+          </span>
         </div>
       )}
 
@@ -846,10 +1010,12 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
           {displayedStocks.map((stock) => {
             const isUp = stock.change >= 0;
             const isSelected = selectedTicker?.toUpperCase() === stock.ticker.toUpperCase();
+            const isExactSearchMatch = searchQuery.trim() !== '' && stock.ticker.toUpperCase() === searchQuery.trim().toUpperCase();
+            const flashClass = tickerFlashMap[stock.ticker] === 'up' ? 'price-tick-up' : tickerFlashMap[stock.ticker] === 'down' ? 'price-tick-down' : '';
             return (
               <div
                 key={`${stock.market}-${stock.ticker}`}
-                className="glass-card"
+                className={`glass-card ${flashClass}`}
                 onClick={() => {
                   setActiveStockModal(stock);
                   setSelectedTicker(stock.ticker);
@@ -863,15 +1029,14 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                   justifyContent: 'space-between',
                   gap: '14px',
                   transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
-                  border: isSelected ? '2px solid var(--accent-blue)' : '1px solid var(--glass-border)',
-                  boxShadow: isSelected ? '0 0 20px rgba(0, 122, 255, 0.3)' : undefined,
-                  background: isSelected ? 'linear-gradient(135deg, rgba(0, 122, 255, 0.12) 0%, var(--card-sub-bg) 100%)' : undefined
+                  border: isExactSearchMatch ? '2px solid var(--accent-blue)' : isSelected ? '2px solid var(--accent-blue)' : '1px solid var(--glass-border)',
+                  background: isExactSearchMatch ? 'var(--accent-blue-bg)' : isSelected ? 'var(--accent-blue-bg)' : undefined
                 }}
               >
                 {/* Header Info */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                       <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                         {stock.ticker}
                       </span>
@@ -887,6 +1052,24 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                       >
                         {stock.market}
                       </span>
+                      {isExactSearchMatch && (
+                        <span
+                          style={{
+                            fontSize: '0.65rem',
+                            padding: '2px 8px',
+                            borderRadius: '100px',
+                            background: 'rgba(0, 122, 255, 0.25)',
+                            color: '#007AFF',
+                            fontWeight: 800,
+                            border: '1px solid rgba(0, 122, 255, 0.5)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px'
+                          }}
+                        >
+                          🎯 {language === 'en' ? 'Exact Match' : 'ผลการค้นหาตรงกัน'}
+                        </span>
+                      )}
                     </div>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '2px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {stock.name}
@@ -1000,9 +1183,12 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
               {displayedStocks.map((stock) => {
                 const isUp = stock.change >= 0;
                 const isSelected = selectedTicker?.toUpperCase() === stock.ticker.toUpperCase();
+                const isExactSearchMatch = searchQuery.trim() !== '' && stock.ticker.toUpperCase() === searchQuery.trim().toUpperCase();
+                const flashClass = tickerFlashMap[stock.ticker] === 'up' ? 'price-tick-up' : tickerFlashMap[stock.ticker] === 'down' ? 'price-tick-down' : '';
                 return (
                   <tr
                     key={`${stock.market}-${stock.ticker}`}
+                    className={flashClass}
                     onClick={() => {
                       setActiveStockModal(stock);
                       setSelectedTicker(stock.ticker);
@@ -1011,11 +1197,11 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                       borderBottom: '1px solid rgba(255,255,255,0.04)',
                       cursor: 'pointer',
                       transition: 'background 0.2s ease',
-                      background: isSelected ? 'rgba(0, 122, 255, 0.12)' : undefined
+                      background: isExactSearchMatch ? 'rgba(0, 122, 255, 0.18)' : isSelected ? 'rgba(0, 122, 255, 0.12)' : undefined
                     }}
                   >
                     <td style={{ padding: '14px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{stock.ticker}</span>
                         <span
                           style={{
@@ -1029,6 +1215,21 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                         >
                           {stock.market}
                         </span>
+                        {isExactSearchMatch && (
+                          <span
+                            style={{
+                              fontSize: '0.62rem',
+                              padding: '1px 6px',
+                              borderRadius: '100px',
+                              background: 'rgba(0, 122, 255, 0.25)',
+                              color: '#007AFF',
+                              fontWeight: 800,
+                              border: '1px solid rgba(0, 122, 255, 0.5)'
+                            }}
+                          >
+                            🎯 {language === 'en' ? 'Match' : 'ตรงกัน'}
+                          </span>
+                        )}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{stock.name}</div>
                       <div style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap' }}>
@@ -1136,7 +1337,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
         </div>
       )}
 
-      {/* Auto-Scroll 1.5-Second Delay Sentinel */}
+      {/* Smooth Infinite Scroll Sentinel */}
       {(hasMoreStocks || visibleCount < filteredStocks.length) && filteredStocks.length > 0 && (
         <div
           ref={sentinelRef}
@@ -1147,7 +1348,6 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
             background: 'rgba(255, 255, 255, 0.02)',
             border: '1px dashed var(--glass-border)',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
@@ -1155,30 +1355,13 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
           }}
         >
           {isLoadingMoreStocks ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#007AFF', fontSize: '0.85rem', fontWeight: 700 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#007AFF', fontSize: '0.85rem', fontWeight: 600 }}>
               <Activity size={16} className="animate-spin" />
-              <span>{language === 'en' ? `Fetching stock batch ${stockPage + 1} (+50 stocks)...` : `กำลังดึงข้อมูลหุ้นชุดที่ ${stockPage + 1} (+50 หุ้น)...`}</span>
-            </div>
-          ) : isWaitingBuffer ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#007AFF', fontSize: '0.85rem', fontWeight: 700 }}>
-                <Activity size={15} className="animate-spin" />
-                <span>{language === 'en' ? '⏳ Preparing next batch (1.5s buffer)...' : '⏳ กำลังเตรียมโหลดหุ้นชุดถัดไป (1.5 วินาที)...'}</span>
-              </div>
-              <div style={{ width: '160px', height: '3px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '100px', overflow: 'hidden' }}>
-                <div
-                  style={{
-                    height: '100%',
-                    width: '100%',
-                    background: 'linear-gradient(90deg, #007AFF 0%, #00F0FF 100%)',
-                    animation: 'pulse 1.5s ease-in-out infinite',
-                  }}
-                />
-              </div>
+              <span>{language === 'en' ? 'Loading more stocks...' : 'กำลังโหลดข้อมูลหุ้นเพิ่มเติม...'}</span>
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>
-              <span>{language === 'en' ? 'Scroll down to load more (+50 stocks)' : 'เลื่อนลงมาเพื่อโหลดหุ้นเพิ่ม (+50 หุ้น)'}</span>
+              <span>{language === 'en' ? 'Scroll down to load more' : 'เลื่อนลงเพื่อดูหุ้นเพิ่มเติม'}</span>
             </div>
           )}
         </div>
@@ -1252,6 +1435,26 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                 {activeStockModal.change >= 0 ? '+' : ''}
                 {activeStockModal.change.toFixed(2)}%
               </span>
+
+              <span
+                style={{
+                  marginLeft: 'auto',
+                  fontSize: '0.68rem',
+                  padding: '3px 8px',
+                  borderRadius: '100px',
+                  background: 'var(--accent-bullish-bg)',
+                  color: 'var(--accent-bullish)',
+                  border: '1px solid var(--accent-bullish-border)',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title="เชื่อมต่อดึงข้อมูลสดคู่ขนานจาก Yahoo Finance & Webull OpenAPI"
+              >
+                <span className="live-pulse-dot" style={{ width: '5px', height: '5px' }} />
+                {activeStockModal.market === 'SET' ? 'SET IR & Yahoo Live' : 'Yahoo & Webull Live'}
+              </span>
             </div>
 
             {/* 52-Week Price Range Indicator */}
@@ -1269,7 +1472,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                   style={{
                     height: '100%',
                     width: `${Math.min(100, Math.max(5, ((activeStockModal.price - activeStockModal.low52w) / Math.max(1, activeStockModal.high52w - activeStockModal.low52w)) * 100))}%`,
-                    background: 'linear-gradient(90deg, #007AFF 0%, #00F0FF 100%)',
+                    background: 'var(--accent-blue)',
                     borderRadius: '100px'
                   }}
                 />

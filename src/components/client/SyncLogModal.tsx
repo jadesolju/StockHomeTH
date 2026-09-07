@@ -112,11 +112,10 @@ export function SyncLogModal() {
                 width: '40px',
                 height: '40px',
                 borderRadius: '12px',
-                background: 'linear-gradient(135deg, #007AFF 0%, #00C6FF 100%)',
+                background: 'var(--accent-blue)',
                 display: 'grid',
                 placeItems: 'center',
-                color: '#ffffff',
-                boxShadow: '0 4px 14px rgba(0, 122, 255, 0.35)'
+                color: '#ffffff'
               }}
             >
               <Activity size={22} />
@@ -362,12 +361,12 @@ export function SyncLogModal() {
               onClick={handleManualSyncAll}
               disabled={syncingCategory !== null || isSyncing}
               style={{
-                background: 'var(--accent-blue-gradient)',
+                background: 'var(--accent-blue)',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '6px 12px',
                 fontSize: '0.72rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 color: '#ffffff',
                 cursor: 'pointer',
                 display: 'inline-flex',

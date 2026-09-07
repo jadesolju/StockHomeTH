@@ -1,6 +1,7 @@
 import { MarketTickerBarServer } from '../../../components/server/MarketTickerBarServer';
 import { StockExplorerClient } from '../../../components/client/StockExplorerClient';
 import { fetchLiveStockFundamentals } from '../../../lib/services/stockDataService';
+import { getStockPopularityRank } from '../../../lib/utils/stockTagHelper';
 import { mockMarketIndices } from '../../../data/mockMarketData';
 import { Landmark, Clock, Activity, ShieldCheck, TrendingUp } from 'lucide-react';
 import { getSetMarketStatus } from '../../../lib/utils/marketHours';
@@ -13,7 +14,13 @@ export const metadata = {
 export default async function ThaiStocksPage() {
   const allStocks = await fetchLiveStockFundamentals();
   const thaiStocks = allStocks.filter((s) => s.market === 'SET');
-  const initialStocks = thaiStocks.slice(0, 50);
+  const sortedThai = [...thaiStocks].sort((a, b) => {
+    const rankA = getStockPopularityRank(a, 'SET');
+    const rankB = getStockPopularityRank(b, 'SET');
+    if (rankA !== rankB) return rankA - rankB;
+    return (b.sentimentScore ?? 50) - (a.sentimentScore ?? 50);
+  });
+  const initialStocks = sortedThai.slice(0, 100);
   const setStatus = getSetMarketStatus();
 
   return (

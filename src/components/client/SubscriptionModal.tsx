@@ -82,7 +82,7 @@ export function SubscriptionModal({ isOpen, onClose }: SubscriptionModalProps) {
                     top: '-12px',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    background: 'var(--accent-blue-gradient)',
+                    background: 'var(--accent-blue)',
                     color: '#ffffff',
                     padding: '2px 12px',
                     borderRadius: '100px',

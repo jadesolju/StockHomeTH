@@ -4,7 +4,7 @@ import React from 'react';
 import type { StockNewsItem } from '../../lib/schemas/newsSchema';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useLanguage } from '../../lib/context/LanguageContext';
-import { Bookmark, ChevronRight, Star, TrendingUp, TrendingDown, Minus, Lightbulb, Clock, ExternalLink } from 'lucide-react';
+import { Bookmark, ChevronRight, Star, TrendingUp, TrendingDown, Minus, Lightbulb, Clock, Calendar, ExternalLink } from 'lucide-react';
 
 interface NewsCardProps {
   item: StockNewsItem;
@@ -18,7 +18,26 @@ export function NewsCard({
   onToggleBookmark,
 }: NewsCardProps) {
   const { getStockByTicker, focusStock } = useMarketSync();
-  const { t, tDynamic } = useLanguage();
+  const { t, tDynamic, language } = useLanguage();
+
+  const isEn = language === 'en';
+  const resolvedTitle = isEn
+    ? (item.title_en || tDynamic(item.title_th, item.title_en))
+    : (item.title_th || tDynamic(item.title_th, item.title_en));
+
+  const resolvedSummary = isEn
+    ? (item.summary_en || tDynamic(item.summary_th, item.summary_en))
+    : (item.summary_th || tDynamic(item.summary_th, item.summary_en));
+
+  const resolvedTakeaways = isEn && item.keyTakeaways_en && item.keyTakeaways_en.length > 0
+    ? item.keyTakeaways_en
+    : (!isEn && item.keyTakeaways_th && item.keyTakeaways_th.length > 0)
+    ? item.keyTakeaways_th
+    : item.keyTakeaways.map((takeaway) => tDynamic(takeaway));
+
+  const resolvedPeriodLabel = isEn
+    ? (item.periodLabel_en || tDynamic(item.periodLabel_th, item.periodLabel_en))
+    : (item.periodLabel_th || tDynamic(item.periodLabel_th, item.periodLabel_en));
 
   const getSentimentBadge = () => {
     switch (item.sentiment) {
@@ -60,13 +79,33 @@ export function NewsCard({
       {/* Card Header: Tags, Time, and Sentiment Badge */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {item.timeframe === 'weekly' && (
+            <span
+              style={{
+                background: 'var(--accent-neutral-bg)',
+                color: 'var(--accent-neutral)',
+                padding: '2px 8px',
+                borderRadius: '6px',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                border: '1px solid var(--accent-neutral-border)'
+              }}
+            >
+              <Calendar size={11} /> {isEn ? '7-Day Weekly' : 'สรุปสัปดาห์ (7 Days)'}
+            </span>
+          )}
+
           {item.isFeatured && (
             <span
               style={{
-                background: 'rgba(255, 204, 0, 0.2)',
-                color: '#FFCC00',
+                background: 'var(--accent-neutral-bg)',
+                color: 'var(--accent-neutral)',
+                border: '1px solid var(--accent-neutral-border)',
                 padding: '2px 8px',
-                borderRadius: '4px',
+                borderRadius: '6px',
                 fontSize: '0.7rem',
                 fontWeight: 700,
                 display: 'flex',
@@ -74,7 +113,7 @@ export function NewsCard({
                 gap: '4px',
               }}
             >
-              <Star size={11} fill="#FFCC00" /> Featured
+              <Star size={11} fill="var(--accent-neutral)" color="var(--accent-neutral)" /> Featured
             </span>
           )}
 
@@ -83,8 +122,8 @@ export function NewsCard({
               fontSize: '0.7rem',
               padding: '2px 8px',
               borderRadius: '100px',
-              background: item.region === 'thai' ? 'rgba(0, 122, 255, 0.15)' : 'rgba(139, 92, 246, 0.15)',
-              color: item.region === 'thai' ? '#007AFF' : '#8B5CF6',
+              background: item.region === 'thai' ? 'var(--accent-blue-bg)' : 'rgba(94, 92, 230, 0.15)',
+              color: item.region === 'thai' ? 'var(--accent-blue)' : '#5e5ce6',
               fontWeight: 600,
             }}
           >
@@ -92,7 +131,7 @@ export function NewsCard({
           </span>
 
           <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-            <Clock size={12} /> {tDynamic(item.periodLabel)}
+            <Clock size={12} /> {resolvedPeriodLabel}
           </span>
         </div>
 
@@ -105,26 +144,26 @@ export function NewsCard({
             style={{
               background: 'transparent',
               border: 'none',
-              color: item.isBookmarked ? '#FFCC00' : 'var(--text-tertiary)',
+              color: item.isBookmarked ? 'var(--accent-neutral)' : 'var(--text-tertiary)',
               cursor: 'pointer',
               padding: '4px',
               display: 'flex',
               alignItems: 'center',
             }}
           >
-            <Bookmark size={17} fill={item.isBookmarked ? '#FFCC00' : 'none'} />
+            <Bookmark size={17} fill={item.isBookmarked ? 'var(--accent-neutral)' : 'none'} color={item.isBookmarked ? 'var(--accent-neutral)' : 'var(--text-tertiary)'} />
           </button>
         </div>
       </div>
 
       {/* Main Title */}
       <h3 style={{ fontSize: '1.08rem', fontWeight: 700, lineHeight: 1.4, marginBottom: '8px', color: 'var(--text-primary)' }}>
-        {tDynamic(item.title)}
+        {resolvedTitle}
       </h3>
 
       {/* Short Summary */}
       <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '14px' }}>
-        {tDynamic(item.summary)}
+        {resolvedSummary}
       </p>
 
       {/* Key Takeaways Box */}
@@ -141,10 +180,10 @@ export function NewsCard({
           <Lightbulb size={13} /> {t('keyTakeaways')}:
         </div>
         <div className="takeaway-list">
-          {item.keyTakeaways.slice(0, 3).map((takeaway, idx) => (
+          {resolvedTakeaways.slice(0, 3).map((takeaway, idx) => (
             <div key={idx} className="takeaway-item">
               <div className="takeaway-bullet" />
-              <span style={{ color: 'var(--text-primary)' }}>{tDynamic(takeaway)}</span>
+              <span style={{ color: 'var(--text-primary)' }}>{takeaway}</span>
             </div>
           ))}
         </div>
@@ -183,9 +222,9 @@ export function NewsCard({
                     gap: '4px',
                     padding: '3px 8px',
                     borderRadius: '8px',
-                    background: isUp ? 'rgba(0, 230, 118, 0.12)' : 'rgba(255, 59, 48, 0.12)',
-                    border: `1px solid ${isUp ? 'rgba(0, 230, 118, 0.3)' : 'rgba(255, 59, 48, 0.3)'}`,
-                    color: isUp ? '#00E676' : '#FF3B30',
+                    background: isUp ? 'var(--accent-bullish-bg)' : 'var(--accent-bearish-bg)',
+                    border: `1px solid ${isUp ? 'var(--accent-bullish-border)' : 'var(--accent-bearish-border)'}`,
+                    color: isUp ? 'var(--accent-bullish)' : 'var(--accent-bearish)',
                     fontSize: '0.75rem',
                     fontWeight: 700,
                     cursor: 'pointer',
@@ -226,15 +265,15 @@ export function NewsCard({
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              title={`เปิดอ่านข่าวต้นฉบับจาก ${item.source}`}
+              title={isEn ? `Open original source from ${item.source}` : `เปิดอ่านข่าวต้นฉบับจาก ${item.source}`}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '4px',
                 padding: '4px 10px',
                 borderRadius: '8px',
-                background: 'rgba(0, 122, 255, 0.1)',
-                border: '1px solid rgba(0, 122, 255, 0.3)',
+                background: 'var(--accent-blue-bg)',
+                border: '1px solid var(--accent-blue-border)',
                 color: 'var(--accent-blue)',
                 fontSize: '0.75rem',
                 fontWeight: 600,
@@ -242,7 +281,7 @@ export function NewsCard({
                 transition: 'all 0.15s ease'
               }}
             >
-              <span>อ่านต้นฉบับ</span>
+              <span>{t('originalSource')}</span>
               <ExternalLink size={12} />
             </a>
           )}

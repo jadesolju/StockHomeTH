@@ -43,34 +43,57 @@ export async function GET(request: NextRequest) {
 
       // If still empty, return synthetic AI-generated briefing news card for this specific ticker
       const isThai = market === 'SET' || ['PTT', 'CPALL', 'DELTA', 'AOT', 'KBANK', 'BDMS', 'SCB', 'GULF', 'ADVANC', 'TRUE'].includes(cleanTicker);
+      const title_th = `รายงานสรุปภาพรวมและสารสนเทศสำคัญของหลักทรัพย์ ${cleanTicker}`;
+      const title_en = `Market Intelligence & Executive Briefing for $${cleanTicker}`;
+      const summary_th = `ติดตามผลการดำเนินงาน ปัจจัยพื้นฐาน และสารสนเทศล่าสุดของหุ้น ${cleanTicker} ในตลาดหลักทรัพย์แห่งประเทศไทย พร้อมการวิเคราะห์สัญญาณแนวโน้มโดย AI`;
+      const summary_en = `Comprehensive fundamental overview and recent business catalysts for $${cleanTicker} powered by StockHomeTH AI engine.`;
+
+      const keyTakeaways_th = [
+        `ข้อมูลสารสนเทศทางการของ $${cleanTicker} ส่งตรงจากระบบตลาดทุน`,
+        `การประเมินสัญญาณ: เป็นกลาง/ทรงตัว (Neutral Outlook)`,
+        `สามารถติดตามความเคลื่อนไหวราคาและงบการเงินได้ในหน้าข้อมูลหุ้น`
+      ];
+
+      const keyTakeaways_en = [
+        `Official market disclosure and financial data for $${cleanTicker}`,
+        `AI Sentiment Evaluation: Neutral Outlook`,
+        `Real-time price chart and fundamental data available on stock detail page`
+      ];
+
       const fallbackItem = {
         id: `auto-${cleanTicker}-${Date.now()}`,
-        title: isThai
-          ? `รายงานสรุปภาพรวมและสารสนเทศสำคัญของหลักทรัพย์ ${cleanTicker}`
-          : `Market Intelligence & Executive Briefing for $${cleanTicker}`,
-        summary: isThai
-          ? `ติดตามผลการดำเนินงาน ปัจจัยพื้นฐาน และสารสนเทศล่าสุดของหุ้น ${cleanTicker} ในตลาดหลักทรัพย์แห่งประเทศไทย พร้อมการวิเคราะห์สัญญาณแนวโน้มโดย AI`
-          : `Comprehensive fundamental overview and recent business catalysts for $${cleanTicker} powered by StockHomeTH AI engine.`,
-        keyTakeaways: [
-          `ข้อมูลสารสนเทศทางการของ $${cleanTicker} ส่งตรงจากระบบตลาดทุน`,
-          `การประเมินสัญญาณ: เป็นกลาง/ทรงตัว (Neutral Outlook)`,
-          `สามารถติดตามความเคลื่อนไหวราคาและงบการเงินได้ในหน้าข้อมูลหุ้น`
-        ],
-        fullContent: `รายงานสรุปสำหรับหลักทรัพย์ ${cleanTicker}`,
+        title: isThai ? title_th : title_en,
+        title_th,
+        title_en,
+        summary: isThai ? summary_th : summary_en,
+        summary_th,
+        summary_en,
+        keyTakeaways: isThai ? keyTakeaways_th : keyTakeaways_en,
+        keyTakeaways_th,
+        keyTakeaways_en,
+        fullContent: isThai ? `รายงานสรุปสำหรับหลักทรัพย์ ${cleanTicker}` : `Executive briefing report for $${cleanTicker}`,
+        fullContent_th: `รายงานสรุปสำหรับหลักทรัพย์ ${cleanTicker}`,
+        fullContent_en: `Executive briefing report for $${cleanTicker}`,
         region: isThai ? 'thai' : 'global',
         timeframe: 'daily',
         marketName: isThai ? 'SET Index (ไทย)' : 'US Markets',
-        date: 'วันนี้',
+        date: isThai ? 'วันนี้' : 'Today',
         time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.',
-        periodLabel: 'ข้อมูลสารสนเทศสด',
+        periodLabel: isThai ? 'ข้อมูลสารสนเทศสด' : 'Live Intelligence',
+        periodLabel_th: 'ข้อมูลสารสนเทศสด',
+        periodLabel_en: 'Live Intelligence',
         sentiment: 'neutral',
         tickers: [cleanTicker],
-        readTime: '1 นาที',
+        readTime: isThai ? '1 นาที' : '1 min',
         source: isThai ? 'ตลาดหลักทรัพย์แห่งประเทศไทย (SET)' : 'Finnhub & Yahoo Finance',
         category: 'macro',
         impactAnalysis: {
-          targetSector: isThai ? 'หุ้นไทย (SET)' : 'หุ้นสหรัฐฯ (US)',
-          priceTrendOutlook: 'แกว่งตัวในกรอบ'
+          targetSector: isThai ? 'หุ้นไทย (SET)' : 'US Markets',
+          targetSector_th: 'หุ้นไทย (SET)',
+          targetSector_en: 'US Markets',
+          priceTrendOutlook: isThai ? 'แกว่งตัวในกรอบ' : 'Range-bound consolidation',
+          priceTrendOutlook_th: 'แกว่งตัวในกรอบ',
+          priceTrendOutlook_en: 'Range-bound consolidation'
         },
         isFeatured: false,
         isBookmarked: false,

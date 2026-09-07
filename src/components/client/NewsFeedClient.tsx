@@ -9,7 +9,7 @@ import { NewsCard } from './NewsCard';
 import { NewsDetailSheet } from './NewsDetailSheet';
 import { useStockFilters } from '../../lib/hooks/useStockFilters';
 import { generateAiNewsAction } from '../../lib/actions/newsActions';
-import { Sparkles, RotateCcw, X, Target, Newspaper, Calendar, Search, TrendingUp, ShieldCheck, Zap, Activity } from 'lucide-react';
+import { Sparkles, RotateCcw, X, Target, Newspaper, Calendar, Search, TrendingUp, ShieldCheck, Zap, Activity, ChevronDown, CheckCircle2, Landmark, Globe } from 'lucide-react';
 
 interface NewsFeedClientProps {
   initialNews?: StockNewsItem[];
@@ -17,6 +17,7 @@ interface NewsFeedClientProps {
 
 const POPULAR_THAI_TICKERS = ['PTT', 'CPALL', 'DELTA', 'KBANK', 'AOT', 'ADVANC', 'GULF', 'BDMS', 'SCB', 'TRUE'];
 const POPULAR_US_TICKERS = ['NVDA', 'AAPL', 'TSLA', 'MSFT', 'GOOGL', 'META', 'AMZN', 'AMD'];
+const ITEMS_PER_BATCH = 5;
 
 export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
   const {
@@ -24,21 +25,48 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
     selectedTicker,
     setSelectedTicker,
   } = useMarketSync();
-  const { t, language } = useLanguage();
+  const { t, tDynamic, language } = useLanguage();
 
-  const [newsList, setNewsList] = useState<StockNewsItem[]>(
+  const [dailyNewsList, setDailyNewsList] = useState<StockNewsItem[]>(
     liveNews && liveNews.length > 0 ? liveNews : initialNews || []
   );
+  const [weeklyNewsList, setWeeklyNewsList] = useState<StockNewsItem[]>([]);
+  const [weeklyOverview, setWeeklyOverview] = useState<any | null>(null);
+  const [isLoadingWeekly, setIsLoadingWeekly] = useState<boolean>(false);
   const [selectedNews, setSelectedNews] = useState<StockNewsItem | null>(null);
   const [tickerSpecificNews, setTickerSpecificNews] = useState<StockNewsItem[]>([]);
   const [isLoadingTickerNews, setIsLoadingTickerNews] = useState<boolean>(false);
   const [tickerInput, setTickerInput] = useState<string>('');
 
+  // Pagination & Debounced Load More state
+  const [visibleCount, setVisibleCount] = useState<number>(ITEMS_PER_BATCH);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const [lastClickTime, setLastClickTime] = useState<number>(0);
+
   useEffect(() => {
     if (liveNews && liveNews.length > 0) {
-      setNewsList(liveNews);
+      setDailyNewsList(liveNews);
     }
   }, [liveNews]);
+
+  // Load Weekly News from /api/news/weekly
+  const fetchWeeklyNewsData = async (force = false) => {
+    setIsLoadingWeekly(true);
+    try {
+      const url = `/api/news/weekly${force ? '?refresh=true' : ''}`;
+      const res = await fetch(url).then((r) => (r.ok ? r.json() : null));
+      if (res && res.success && Array.isArray(res.data)) {
+        setWeeklyNewsList(res.data);
+        if (res.overview) {
+          setWeeklyOverview(res.overview);
+        }
+      }
+    } catch (err) {
+      console.warn('[NewsFeedClient] Weekly news fetch error:', err);
+    } finally {
+      setIsLoadingWeekly(false);
+    }
+  };
 
   // Dedicated Stock-Specific Fetcher (Failover engine using SET IR & Finnhub APIs)
   useEffect(() => {
@@ -71,7 +99,21 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
     };
   }, [selectedTicker]);
 
-  const { filters, filteredItems, updateFilter, resetFilters } = useStockFilters(newsList);
+  const isEn = language === 'en';
+
+  // Combined news pool based on active timeframe
+  const activePool = useMemo(() => {
+    return [...dailyNewsList, ...weeklyNewsList];
+  }, [dailyNewsList, weeklyNewsList]);
+
+  const { filters, filteredItems, updateFilter, resetFilters } = useStockFilters(activePool);
+
+  // Trigger weekly fetch when timeframe is switched to weekly
+  useEffect(() => {
+    if (filters.timeframe === 'weekly' && weeklyNewsList.length === 0) {
+      fetchWeeklyNewsData();
+    }
+  }, [filters.timeframe, weeklyNewsList.length]);
 
   const displayItems = useMemo(() => {
     if (!selectedTicker) return filteredItems;
@@ -91,13 +133,41 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
     );
   }, [filteredItems, selectedTicker, tickerSpecificNews]);
 
+  // Reset pagination whenever search query, region, category, sentiment, timeframe, or selected ticker changes
+  useEffect(() => {
+    setVisibleCount(ITEMS_PER_BATCH);
+  }, [filters.region, filters.category, filters.sentiment, filters.searchQuery, filters.timeframe, selectedTicker]);
+
+  // Debounced Load More Handler with anti-spam cooldown and simulated smooth load
+  const handleLoadMore = () => {
+    const now = Date.now();
+    if (isLoadingMore || now - lastClickTime < 600) return; // Ignore rapid clicks
+    setLastClickTime(now);
+    setIsLoadingMore(true);
+
+    setTimeout(() => {
+      setVisibleCount((prev) => prev + ITEMS_PER_BATCH);
+      setIsLoadingMore(false);
+    }, 450);
+  };
+
+  const paginatedItems = useMemo(() => {
+    return displayItems.slice(0, visibleCount);
+  }, [displayItems, visibleCount]);
+
   // Load Bookmarks from LocalStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem('stockhome_bookmarked_ids');
       if (saved) {
         const bookmarkedIds: string[] = JSON.parse(saved);
-        setNewsList((prev) =>
+        setDailyNewsList((prev) =>
+          prev.map((item) => ({
+            ...item,
+            isBookmarked: bookmarkedIds.includes(item.id),
+          }))
+        );
+        setWeeklyNewsList((prev) =>
           prev.map((item) => ({
             ...item,
             isBookmarked: bookmarkedIds.includes(item.id),
@@ -111,14 +181,18 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
 
   const handleToggleBookmark = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setNewsList((prev) => {
+    const updateList = (prev: StockNewsItem[]) => {
       const updated = prev.map((item) =>
         item.id === id ? { ...item, isBookmarked: !item.isBookmarked } : item
       );
       const bookmarkedIds = updated.filter((i) => i.isBookmarked).map((i) => i.id);
       localStorage.setItem('stockhome_bookmarked_ids', JSON.stringify(bookmarkedIds));
       return updated;
-    });
+    };
+
+    setDailyNewsList(updateList);
+    setWeeklyNewsList(updateList);
+    setTickerSpecificNews(updateList);
 
     if (selectedNews && selectedNews.id === id) {
       setSelectedNews((prev) => (prev ? { ...prev, isBookmarked: !prev.isBookmarked } : null));
@@ -130,8 +204,12 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
   const handleGenerateAiNews = async () => {
     setIsGeneratingAi(true);
     try {
-      const newItem = await generateAiNewsAction();
-      setNewsList((prev) => [newItem, ...prev]);
+      if (filters.timeframe === 'weekly') {
+        await fetchWeeklyNewsData(true);
+      } else {
+        const newItem = await generateAiNewsAction();
+        setDailyNewsList((prev) => [newItem, ...prev]);
+      }
     } catch (err) {
       console.error('Failed to generate AI news:', err);
     } finally {
@@ -141,65 +219,190 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
 
   const handleSearchTickerSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const clean = tickerInput.trim().toUpperCase();
-    if (clean) {
-      setSelectedTicker(clean);
-      setTickerInput('');
-    }
+    if (!tickerInput.trim()) return;
+    setSelectedTicker(tickerInput.trim().toUpperCase());
+    setTickerInput('');
   };
 
   return (
-    <div>
-      {/* Timeframe Switcher & AI Generator Button */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', marginBottom: '20px' }}>
-        <div className="ios-segmented-control" style={{ padding: '3px' }}>
+    <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
+      {/* Timeframe Pill Switcher (Daily Market Pulse vs. 7-Day Weekly Briefing) */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
+        <div className="ios-segmented-control" style={{ padding: '4px' }}>
           <button
             onClick={() => updateFilter('timeframe', 'daily')}
             className={`ios-segment-btn ${filters.timeframe === 'daily' ? 'active' : ''}`}
-            style={{ padding: '7px 20px', fontSize: '0.85rem' }}
+            style={{ padding: '7px 18px', fontSize: '0.85rem' }}
           >
-            <Newspaper size={15} /> {t('timeframeDaily')}
+            <Newspaper size={15} />
+            <span>{t('dailyNews')}</span>
           </button>
           <button
-            onClick={() => updateFilter('timeframe', 'weekly')}
+            onClick={() => {
+              updateFilter('timeframe', 'weekly');
+              if (weeklyNewsList.length === 0) fetchWeeklyNewsData();
+            }}
             className={`ios-segment-btn ${filters.timeframe === 'weekly' ? 'active' : ''}`}
-            style={{ padding: '7px 20px', fontSize: '0.85rem' }}
+            style={{ padding: '7px 18px', fontSize: '0.85rem' }}
           >
-            <Calendar size={15} /> {t('timeframeWeekly')}
+            <Calendar size={15} />
+            <span>{isEn ? '7-Day Weekly Digest' : 'สรุปข่าวรอบ 7 วัน (Weekly)'}</span>
+            {weeklyNewsList.length > 0 && (
+              <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: '100px', background: 'var(--accent-neutral)', color: '#000000', fontWeight: 800 }}>
+                {weeklyNewsList.length}
+              </span>
+            )}
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {/* Region Tabs */}
-          <div className="ios-segmented-control" style={{ padding: '3px' }}>
-            {(['all', 'thai', 'global'] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => updateFilter('region', r)}
-                className={`ios-segment-btn ${filters.region === r ? 'active' : ''}`}
-                style={{ padding: '5px 14px', fontSize: '0.78rem' }}
-              >
-                {r === 'all' ? t('regionAll') : r === 'thai' ? t('thaiStocks') : t('foreignStocks')}
-              </button>
-            ))}
-          </div>
-
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
-            onClick={handleGenerateAiNews}
-            disabled={isGeneratingAi}
+            onClick={() => updateFilter('showBookmarkedOnly', !filters.showBookmarkedOnly)}
             className="ios-glass-btn"
             style={{
-              background: 'var(--accent-blue-gradient)',
-              color: '#ffffff',
-              fontWeight: 700,
-              padding: '7px 16px',
+              background: filters.showBookmarkedOnly ? 'var(--accent-neutral-bg)' : 'var(--card-sub-bg)',
+              color: filters.showBookmarkedOnly ? 'var(--accent-neutral)' : 'var(--text-secondary)',
+              border: filters.showBookmarkedOnly ? '1px solid var(--accent-neutral-border)' : '1px solid var(--card-sub-border)',
+              padding: '6px 14px',
+              borderRadius: '10px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
           >
-            <Sparkles size={15} className={isGeneratingAi ? 'spin' : ''} />
-            <span>{isGeneratingAi ? t('generatingAi') : t('liveAiDigest')}</span>
+            <Sparkles size={14} />
+            <span>{filters.showBookmarkedOnly ? (isEn ? 'Showing Saved' : 'กำลังแสดงที่บันทึก') : (isEn ? 'Saved News' : 'ข่าวที่บันทึกไว้')}</span>
           </button>
         </div>
       </div>
+
+      {/* ─── 7-Day Weekly Executive Hub (แสดงเฉพาะเมื่อเลือกแท็บสรุปข่าวรอบสัปดาห์) ─── */}
+      {filters.timeframe === 'weekly' && (
+        <div
+          className="glass-card"
+          style={{
+            padding: '24px',
+            borderRadius: '20px',
+            marginBottom: '24px',
+            border: '1px solid var(--accent-neutral-border)',
+            background: 'var(--glass-bg)',
+          }}
+        >
+          {/* Hub Header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  background: 'var(--accent-neutral-bg)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--accent-neutral)'
+                }}
+              >
+                <Calendar size={20} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>{isEn ? '7-Day Market Intelligence & Keylists' : 'สาระสำคัญและภาพรวมตลาดรอบ 7 วัน'}</span>
+                </h3>
+                <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                  {isEn
+                    ? 'Synthesized from verified Thai & Foreign financial channels over the past 7 days'
+                    : 'รวบรวมและวิเคราะห์จากสำนักข่าวการเงินชั้นนำของไทยและต่างประเทศรอบ 7 วันที่ผ่านมา'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => fetchWeeklyNewsData(true)}
+              disabled={isLoadingWeekly}
+              className="ios-glass-btn"
+              style={{
+                padding: '6px 14px',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                background: 'var(--accent-neutral-bg)',
+                border: '1px solid var(--accent-neutral-border)',
+                color: 'var(--accent-neutral)',
+                cursor: 'pointer'
+              }}
+            >
+              <RotateCcw size={13} className={isLoadingWeekly ? 'spin' : ''} />
+              <span>{isLoadingWeekly ? (isEn ? 'Re-syncing...' : 'กำลังดึงข้อมูลสด...') : (isEn ? 'Live Re-sync 7D' : 'อัปเดตสดรอบ 7 วัน')}</span>
+            </button>
+          </div>
+
+          {/* Dual Column: Thai Keylist vs US/Global Keylist */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '14px' }}>
+            {/* Thai Keylist Box */}
+            <div style={{ background: 'var(--card-sub-bg)', padding: '16px 18px', borderRadius: '16px', border: '1px solid var(--card-sub-border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Landmark size={16} color="var(--accent-blue)" />
+                  <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {isEn ? 'Thai SET Weekly Catalysts' : 'Keylist หุ้นไทยและเศรษฐกิจรอบสัปดาห์'}
+                  </h4>
+                </div>
+                <span style={{ fontSize: '0.68rem', padding: '2px 8px', borderRadius: '100px', background: 'var(--accent-blue-bg)', color: 'var(--accent-blue)', fontWeight: 700 }}>
+                  SET & mai
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                {(weeklyOverview?.thaiCatalysts_th || [
+                  'สัญญาณ Fund Flow ไหลเข้าสะสมในหุ้นขนาดใหญ่ SET50 และหุ้นปันผลสูง (PTT, KBANK, ADVANC)',
+                  'การลงทุนโครงสร้างพื้นฐาน Data Center และศูนย์กลาง AI ในประเทศไทยขยายตัวต่อเนื่อง (DELTA, GULF)',
+                  'ตัวเลขเศรษฐกิจภาคบริการและการท่องเที่ยวไทยขยายตัวดีกว่าคาดการณ์ (AOT, CPALL, BDMS)'
+                ]).map((item: string, idx: number) => {
+                  const text = isEn ? (weeklyOverview?.thaiCatalysts_en?.[idx] || tDynamic(item)) : (weeklyOverview?.thaiCatalysts_th?.[idx] || item);
+                  return (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                      <span style={{ color: 'var(--accent-blue)', fontWeight: 800 }}>•</span>
+                      <span>{text}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Global / US Keylist Box */}
+            <div style={{ background: 'var(--card-sub-bg)', padding: '16px 18px', borderRadius: '16px', border: '1px solid var(--card-sub-border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Globe size={16} color="#5e5ce6" />
+                  <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {isEn ? 'Wall Street & Global Catalysts' : 'Keylist หุ้นต่างประเทศ & วอลล์สตรีท'}
+                  </h4>
+                </div>
+                <span style={{ fontSize: '0.68rem', padding: '2px 8px', borderRadius: '100px', background: 'rgba(94, 92, 230, 0.15)', color: '#5e5ce6', fontWeight: 700 }}>
+                  S&P 500 & Tech
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                {(weeklyOverview?.usCatalysts_th || [
+                  'NVIDIA (NVDA) & ชิป AI: ดีมานด์เซิร์ฟเวอร์ Blackwell AI และ Data Center ระดับโลกเติบโตทำสถิติใหม่',
+                  'Apple (AAPL) & Microsoft (MSFT): ยอดสมัครใช้บริการ Enterprise AI และรายได้ Cloud ขยายตัวแกร่ง',
+                  'Wall Street (S&P 500 & NASDAQ): ทิศทางนโยบายดอกเบี้ย Fed และผลประกอบการกลุ่ม Big Tech ดีกว่าคาด'
+                ]).map((item: string, idx: number) => {
+                  const text = isEn ? (weeklyOverview?.usCatalysts_en?.[idx] || tDynamic(item)) : (weeklyOverview?.usCatalysts_th?.[idx] || item);
+                  return (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                      <span style={{ color: '#5e5ce6', fontWeight: 800 }}>•</span>
+                      <span>{text}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stock-Specific Focus Bar (ศูนย์รวมและค้นหาข่าวสารหุ้นรายตัว) */}
       <div
@@ -225,39 +428,59 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
 
           {/* Quick Ticker Search Form */}
           <form onSubmit={handleSearchTickerSubmit} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{ position: 'relative' }}>
-              <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <Search size={14} style={{ position: 'absolute', left: '10px', color: 'var(--text-tertiary)', pointerEvents: 'none' }} />
               <input
                 type="text"
-                placeholder={language === 'en' ? 'Search stock (e.g. PTT, NVDA)...' : 'พิมพ์ชื่อหุ้น เช่น PTT, NVDA...'}
+                placeholder={language === 'en' ? 'Search stock (e.g. PTT, NVDA)...' : 'ค้นหาชื่อหุ้น เช่น PTT, NVDA...'}
                 value={tickerInput}
                 onChange={(e) => setTickerInput(e.target.value)}
                 style={{
-                  padding: '6px 12px 6px 30px',
+                  padding: '7px 28px 7px 30px',
                   borderRadius: '100px',
                   background: 'rgba(255, 255, 255, 0.08)',
                   border: '1px solid var(--glass-border)',
                   color: 'var(--text-primary)',
                   fontSize: '0.8rem',
                   outline: 'none',
-                  width: '210px'
+                  width: '220px'
                 }}
               />
+              {tickerInput && (
+                <button
+                  type="button"
+                  onClick={() => setTickerInput('')}
+                  style={{
+                    position: 'absolute',
+                    right: '8px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-tertiary)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 0
+                  }}
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
             <button
               type="submit"
               style={{
-                padding: '6px 14px',
+                padding: '7px 16px',
                 borderRadius: '100px',
-                background: 'var(--accent-blue-gradient)',
+                background: 'var(--accent-blue)',
                 color: '#ffffff',
                 border: 'none',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '0.78rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'opacity 0.2s'
               }}
             >
-              {language === 'en' ? 'View Stock' : 'ดูข่าวหุ้นนี้'}
+              {language === 'en' ? 'Search' : 'ค้นหา'}
             </button>
           </form>
         </div>
@@ -272,11 +495,11 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
             onClick={() => setSelectedTicker(null)}
             style={{
               padding: '3px 10px',
-              borderRadius: '100px',
+              borderRadius: '6px',
               fontSize: '0.75rem',
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer',
-              background: !selectedTicker ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.08)',
+              background: !selectedTicker ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.06)',
               color: !selectedTicker ? '#ffffff' : 'var(--text-secondary)',
               border: '1px solid var(--glass-border)'
             }}
@@ -293,13 +516,13 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
                 onClick={() => setSelectedTicker(isSelected ? null : t)}
                 style={{
                   padding: '3px 9px',
-                  borderRadius: '100px',
+                  borderRadius: '6px',
                   fontSize: '0.75rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   cursor: 'pointer',
-                  background: isSelected ? '#007AFF' : 'rgba(0, 122, 255, 0.1)',
-                  color: isSelected ? '#ffffff' : '#007AFF',
-                  border: `1px solid ${isSelected ? '#007AFF' : 'rgba(0, 122, 255, 0.3)'}`
+                  background: isSelected ? 'var(--accent-blue)' : 'rgba(0, 113, 227, 0.08)',
+                  color: isSelected ? '#ffffff' : 'var(--accent-blue)',
+                  border: `1px solid ${isSelected ? 'var(--accent-blue)' : 'rgba(0, 113, 227, 0.25)'}`
                 }}
               >
                 ${t}
@@ -307,7 +530,7 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
             );
           })}
 
-          <div style={{ width: '1px', height: '14px', background: 'rgba(255, 255, 255, 0.15)', margin: '0 4px' }} />
+          <div style={{ width: '1px', height: '14px', background: 'rgba(255, 255, 255, 0.1)', margin: '0 4px' }} />
 
           {/* US Stocks */}
           {POPULAR_US_TICKERS.map((t) => {
@@ -318,13 +541,13 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
                 onClick={() => setSelectedTicker(isSelected ? null : t)}
                 style={{
                   padding: '3px 9px',
-                  borderRadius: '100px',
+                  borderRadius: '6px',
                   fontSize: '0.75rem',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   cursor: 'pointer',
-                  background: isSelected ? '#8B5CF6' : 'rgba(139, 92, 246, 0.1)',
-                  color: isSelected ? '#ffffff' : '#8B5CF6',
-                  border: `1px solid ${isSelected ? '#8B5CF6' : 'rgba(139, 92, 246, 0.3)'}`
+                  background: isSelected ? '#5856d6' : 'rgba(88, 86, 214, 0.08)',
+                  color: isSelected ? '#ffffff' : '#5856d6',
+                  border: `1px solid ${isSelected ? '#5856d6' : 'rgba(88, 86, 214, 0.25)'}`
                 }}
               >
                 ${t}
@@ -336,12 +559,12 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
 
       {/* Filter Bar */}
       <MarketFilterBar
+        selectedRegion={filters.region}
+        onSelectRegion={(r) => updateFilter('region', r)}
         selectedCategory={filters.category}
         onSelectCategory={(c) => updateFilter('category', c)}
         selectedSentiment={filters.sentiment}
         onSelectSentiment={(s) => updateFilter('sentiment', s)}
-        searchQuery={filters.searchQuery}
-        onSearchChange={(q) => updateFilter('searchQuery', q)}
       />
 
       {/* Selected Ticker Filter Banner */}
@@ -351,9 +574,9 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(135deg, rgba(0, 122, 255, 0.18), rgba(139, 92, 246, 0.18))',
-            border: '1px solid rgba(0, 122, 255, 0.5)',
-            borderRadius: '14px',
+            background: 'rgba(0, 113, 227, 0.08)',
+            border: '1px solid rgba(0, 113, 227, 0.3)',
+            borderRadius: '12px',
             padding: '12px 18px',
             marginBottom: '18px',
             flexWrap: 'wrap',
@@ -364,13 +587,13 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
             <Target size={18} color="var(--accent-blue)" />
             <div>
               <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {language === 'en' ? 'Showing Exclusive News for' : 'กำลังแสดงข่าวสารและสารสนเทศเฉพาะหุ้น'}:{' '}
+                {t('showingExclusiveNews')}:{' '}
                 <span style={{ color: 'var(--accent-blue)', fontSize: '1.05rem' }}>${selectedTicker}</span>
               </div>
               <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                 {POPULAR_THAI_TICKERS.includes(selectedTicker)
-                  ? 'ดึงสดตรงจากระบบตลาดหลักทรัพย์แห่งประเทศไทย (SET IR API) & ข่าวหุ้นไทย'
-                  : 'ดึงสดตรงจาก Finnhub Global Intelligence & SEC Filings Database'}
+                  ? t('setIrDesc')
+                  : t('finnhubDesc')}
               </div>
             </div>
           </div>
@@ -384,8 +607,8 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
             <button
               onClick={() => setSelectedTicker(null)}
               style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                border: 'none',
+                background: 'var(--card-sub-bg)',
+                border: '1px solid var(--card-sub-border)',
                 color: 'var(--text-primary)',
                 cursor: 'pointer',
                 padding: '6px 14px',
@@ -398,7 +621,7 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
               }}
             >
               <X size={13} />
-              <span>{language === 'en' ? 'Show All Stocks' : 'ดูข่าวหุ้นทั้งหมด'}</span>
+              <span>{t('showAllStocks')}</span>
             </button>
           </div>
         </div>
@@ -421,7 +644,7 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
       {/* News Cards List */}
       {displayItems.length > 0 ? (
         <div>
-          {displayItems.map((news, idx) => (
+          {paginatedItems.map((news, idx) => (
             <NewsCard
               key={`${news.id || 'news'}-${idx}`}
               item={news}
@@ -429,6 +652,113 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
               onToggleBookmark={handleToggleBookmark}
             />
           ))}
+
+          {/* Apple iOS Minimalist Load More Bar (5 items per batch with anti-spam debounce) */}
+          <div
+            style={{
+              marginTop: '24px',
+              marginBottom: '32px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px'
+            }}
+          >
+            {/* Counter & Progress Bar */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', width: '100%', maxWidth: '380px' }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+                {language === 'en'
+                  ? `Showing ${paginatedItems.length} of ${displayItems.length} stories`
+                  : `กำลังแสดง ${paginatedItems.length} จากทั้งหมด ${displayItems.length} ข่าว`}
+              </span>
+              <div
+                style={{
+                  width: '100%',
+                  height: '4px',
+                  borderRadius: '100px',
+                  background: 'var(--card-sub-bg)',
+                  border: '1px solid var(--glass-border-subtle)',
+                  overflow: 'hidden',
+                  position: 'relative'
+                }}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: `${Math.min(100, Math.max(5, (paginatedItems.length / Math.max(1, displayItems.length)) * 100))}%`,
+                    background: 'var(--accent-blue)',
+                    borderRadius: '100px',
+                    transition: 'width 0.3s ease'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Load More Button or Finished Indicator */}
+            {paginatedItems.length < displayItems.length ? (
+              <button
+                onClick={handleLoadMore}
+                disabled={isLoadingMore}
+                className="ios-glass-btn"
+                style={{
+                  marginTop: '8px',
+                  padding: '10px 24px',
+                  borderRadius: '12px',
+                  background: 'var(--glass-bg)',
+                  border: '1px solid var(--glass-border)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: isLoadingMore ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: 'var(--glass-shadow)',
+                  transition: 'all 0.18s ease',
+                  opacity: isLoadingMore ? 0.7 : 1
+                }}
+              >
+                {isLoadingMore ? (
+                  <>
+                    <RotateCcw size={15} className="spin" />
+                    <span>{language === 'en' ? 'Loading Stories...' : 'กำลังโหลดข่าวสาร...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown size={16} />
+                    <span>
+                      {language === 'en'
+                        ? `Load More News (+${Math.min(ITEMS_PER_BATCH, displayItems.length - paginatedItems.length)})`
+                        : `โหลดข่าวเพิ่มเติม (+${Math.min(ITEMS_PER_BATCH, displayItems.length - paginatedItems.length)} ข่าว)`}
+                    </span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <div
+                style={{
+                  marginTop: '10px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 16px',
+                  borderRadius: '100px',
+                  background: 'var(--accent-bullish-bg)',
+                  border: '1px solid var(--accent-bullish-border)',
+                  color: 'var(--accent-bullish)',
+                  fontSize: '0.78rem',
+                  fontWeight: 600
+                }}
+              >
+                <CheckCircle2 size={14} />
+                <span>{language === 'en' ? 'All available news loaded' : 'แสดงข่าวสารครบทั้งหมดแล้ว'}</span>
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         <div className="glass-card" style={{ padding: '40px', textAlign: 'center', margin: '20px 0' }}>
@@ -444,13 +774,13 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
             }}
             style={{
               marginTop: '12px',
-              background: 'var(--accent-blue-gradient)',
+              background: 'var(--accent-blue)',
               color: '#ffffff',
               border: 'none',
               padding: '9px 20px',
               borderRadius: '100px',
               fontSize: '0.85rem',
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',

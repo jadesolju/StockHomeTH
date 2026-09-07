@@ -17,6 +17,7 @@ import {
   Zap,
   Info
 } from 'lucide-react';
+import { useLanguage } from '../../lib/context/LanguageContext';
 import {
   fetchStockChartData,
   type StockChartResponse,
@@ -29,12 +30,12 @@ interface CustomStockChartProps {
 }
 
 const COUNTRIES = [
-  { code: 'th', label: 'ไทย (SET)', flag: '🇹🇭', suffix: '.BK', currency: 'THB' },
-  { code: 'us', label: 'สหรัฐฯ (US)', flag: '🇺🇸', suffix: '', currency: 'USD' },
-  { code: 'jp', label: 'ญี่ปุ่น (TSE)', flag: '🇯🇵', suffix: '.T', currency: 'JPY' },
-  { code: 'hk', label: 'ฮ่องกง (HKEX)', flag: '🇭🇰', suffix: '.HK', currency: 'HKD' },
-  { code: 'uk', label: 'อังกฤษ (LSE)', flag: '🇬🇧', suffix: '.L', currency: 'GBp' },
-  { code: 'sg', label: 'สิงคโปร์ (SGX)', flag: '🇸🇬', suffix: '.SI', currency: 'SGD' }
+  { code: 'th', labelTh: 'ไทย (SET)', labelEn: 'Thai (SET)', codeBadge: 'TH', suffix: '.BK', currency: 'THB' },
+  { code: 'us', labelTh: 'สหรัฐฯ (US)', labelEn: 'US (US)', codeBadge: 'US', suffix: '', currency: 'USD' },
+  { code: 'jp', labelTh: 'ญี่ปุ่น (TSE)', labelEn: 'Japan (TSE)', codeBadge: 'JP', suffix: '.T', currency: 'JPY' },
+  { code: 'hk', labelTh: 'ฮ่องกง (HKEX)', labelEn: 'Hong Kong (HKEX)', codeBadge: 'HK', suffix: '.HK', currency: 'HKD' },
+  { code: 'uk', labelTh: 'อังกฤษ (LSE)', labelEn: 'UK (LSE)', codeBadge: 'UK', suffix: '.L', currency: 'GBp' },
+  { code: 'sg', labelTh: 'สิงคโปร์ (SGX)', labelEn: 'Singapore (SGX)', codeBadge: 'SG', suffix: '.SI', currency: 'SGD' }
 ] as const;
 
 type CountryCode = typeof COUNTRIES[number]['code'];
@@ -99,6 +100,9 @@ export function CustomStockChart({
   initialSymbol = 'PTT.BK',
   initialCountry = 'th'
 }: CustomStockChartProps) {
+  const { language } = useLanguage();
+  const isEn = language === 'en';
+
   // Normalize symbol
   const cleanInitial = initialSymbol.replace(/^SET:/i, '').replace(/^NASDAQ:/i, '').replace(/^NYSE:/i, '');
   const [selectedCountry, setSelectedCountry] = useState<CountryCode>(initialCountry);
@@ -307,31 +311,16 @@ export function CustomStockChart({
       ref={containerRef}
       className="glass-card custom-stock-chart-container"
       style={{
-        borderRadius: '24px',
+        borderRadius: '20px',
         padding: '24px',
         marginBottom: '32px',
-        background: 'linear-gradient(180deg, rgba(16, 22, 34, 0.85) 0%, rgba(10, 14, 22, 0.95) 100%)',
-        border: '1px solid rgba(0, 240, 255, 0.18)',
-        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+        background: 'var(--glass-bg)',
+        border: '1px solid var(--glass-border)',
+        boxShadow: 'var(--glass-shadow)',
         position: 'relative',
         overflow: 'hidden'
       }}
     >
-      {/* Background ambient lighting */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-100px',
-          right: '-80px',
-          width: '350px',
-          height: '350px',
-          background: isPositive
-            ? 'radial-gradient(circle, rgba(0, 230, 118, 0.08) 0%, transparent 70%)'
-            : 'radial-gradient(circle, rgba(255, 59, 48, 0.08) 0%, transparent 70%)',
-          pointerEvents: 'none',
-          zIndex: 0
-        }}
-      />
 
       {/* Header Bar: Symbol Details, Live Price, 24h Change, Controls */}
       <div
@@ -377,8 +366,8 @@ export function CustomStockChart({
                 fontWeight: 600
               }}
             >
-              {COUNTRIES.find((c) => c.code === selectedCountry)?.flag}{' '}
-              {COUNTRIES.find((c) => c.code === selectedCountry)?.label}
+              {COUNTRIES.find((c) => c.code === selectedCountry)?.codeBadge} •{' '}
+              {isEn ? COUNTRIES.find((c) => c.code === selectedCountry)?.labelEn : COUNTRIES.find((c) => c.code === selectedCountry)?.labelTh}
             </span>
 
             <span
@@ -442,7 +431,7 @@ export function CustomStockChart({
                 type="text"
                 value={customInput}
                 onChange={(e) => setCustomInput(e.target.value)}
-                placeholder={`ค้นหาหุ้น ${COUNTRIES.find((c) => c.code === selectedCountry)?.label}...`}
+                placeholder={isEn ? `Search ${COUNTRIES.find((c) => c.code === selectedCountry)?.labelEn} stock...` : `ค้นหาหุ้น ${COUNTRIES.find((c) => c.code === selectedCountry)?.labelTh}...`}
                 style={{
                   padding: '7px 10px 7px 30px',
                   borderRadius: '10px',
@@ -458,13 +447,13 @@ export function CustomStockChart({
             <button
               type="submit"
               style={{
-                background: 'linear-gradient(135deg, #007AFF 0%, #00C6FF 100%)',
+                background: 'var(--accent-blue)',
                 color: '#FFFFFF',
                 border: 'none',
-                borderRadius: '10px',
-                padding: '7px 12px',
+                borderRadius: '8px',
+                padding: '7px 14px',
                 fontSize: '0.8rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer'
               }}
             >
@@ -516,7 +505,7 @@ export function CustomStockChart({
           overflowX: 'auto',
           paddingBottom: '8px',
           marginBottom: '12px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+          borderBottom: '1px solid var(--glass-border-subtle)',
           position: 'relative',
           zIndex: 1
         }}
@@ -526,9 +515,9 @@ export function CustomStockChart({
             key={c.code}
             onClick={() => handleCountryChange(c.code)}
             style={{
-              background: selectedCountry === c.code ? 'rgba(0, 240, 255, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-              color: selectedCountry === c.code ? '#00F0FF' : 'var(--text-secondary)',
-              border: selectedCountry === c.code ? '1px solid #00F0FF' : '1px solid rgba(255, 255, 255, 0.06)',
+              background: selectedCountry === c.code ? 'var(--accent-blue-bg)' : 'transparent',
+              color: selectedCountry === c.code ? 'var(--accent-blue)' : 'var(--text-secondary)',
+              border: selectedCountry === c.code ? '1px solid var(--accent-blue-border)' : '1px solid var(--glass-border-subtle)',
               padding: '4px 12px',
               borderRadius: '8px',
               fontSize: '0.78rem',
@@ -538,11 +527,22 @@ export function CustomStockChart({
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.15s ease'
             }}
           >
-            <span>{c.flag}</span>
-            <span>{c.label}</span>
+            <span
+              style={{
+                fontSize: '0.68rem',
+                fontWeight: 800,
+                padding: '1px 6px',
+                borderRadius: '4px',
+                background: selectedCountry === c.code ? 'var(--accent-blue)' : 'var(--card-sub-bg)',
+                color: selectedCountry === c.code ? '#ffffff' : 'var(--text-tertiary)'
+              }}
+            >
+              {c.codeBadge}
+            </span>
+            <span>{isEn ? c.labelEn : c.labelTh}</span>
           </button>
         ))}
       </div>
@@ -566,16 +566,16 @@ export function CustomStockChart({
               key={item.symbol}
               onClick={() => setSymbol(item.symbol)}
               style={{
-                background: isActive ? 'linear-gradient(135deg, #007AFF 0%, #00F0FF 100%)' : 'rgba(255, 255, 255, 0.04)',
+                background: isActive ? 'var(--accent-blue)' : 'var(--card-sub-bg)',
                 color: isActive ? '#FFFFFF' : 'var(--text-secondary)',
-                border: isActive ? '1px solid rgba(0, 240, 255, 0.6)' : '1px solid rgba(255, 255, 255, 0.06)',
-                padding: '4px 10px',
+                border: isActive ? '1px solid var(--accent-blue)' : '1px solid var(--card-sub-border)',
+                padding: '4px 12px',
                 borderRadius: '100px',
                 fontSize: '0.75rem',
                 fontWeight: isActive ? 700 : 500,
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.15s ease'
               }}
             >
               {item.ticker} <span style={{ opacity: 0.6, fontSize: '0.7rem' }}>({item.name})</span>
@@ -1056,7 +1056,7 @@ export function CustomStockChart({
                   top: 0,
                   bottom: 0,
                   width: `${Math.min(100, Math.max(0, (((chartData.current_price ?? 0) - (chartData.low52w ?? 0)) / ((chartData.high52w ?? 0) - (chartData.low52w ?? 0) || 1)) * 100))}%`,
-                  background: 'linear-gradient(90deg, #007AFF 0%, #00F0FF 100%)',
+                  background: 'var(--accent-blue)',
                   borderRadius: '100px'
                 }}
               />

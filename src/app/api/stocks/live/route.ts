@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchLiveStockFundamentals, fetchStockByTicker } from '../../../../lib/services/stockDataService';
-import { getStockTags, DOW_JONES_30, NASDAQ_100, MAGNIFICENT_7, THAI_7_GIANTS, SET50_TICKERS, SET100_TICKERS } from '../../../../lib/utils/stockTagHelper';
+import { getStockTags, getStockPopularityRank, DOW_JONES_30, NASDAQ_100, MAGNIFICENT_7, THAI_7_GIANTS, SET50_TICKERS, SET100_TICKERS, RECENT_IPOS } from '../../../../lib/utils/stockTagHelper';
 import type { StockFundamental } from '../../../../lib/schemas/marketSchema';
 
 /**
@@ -22,9 +22,30 @@ function parseNumericValue(val: string | number | undefined): number {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const singleTicker = (searchParams.get('ticker') || searchParams.get('symbol') || '').toUpperCase().trim();
+    const market = searchParams.get('market') || 'ALL';
+    const forceLive = searchParams.get('forceLive') === 'true';
+
+    // 1. Instant Single Stock Live Lookup (Direct from Yahoo Finance & Webull)
+    if (singleTicker && (forceLive || !searchParams.has('page'))) {
+      try {
+        const liveStock = await fetchStockByTicker(singleTicker, market !== 'ALL' ? market : undefined, forceLive);
+        if (liveStock) {
+          return NextResponse.json({
+            success: true,
+            source: 'live_vendor',
+            provider: 'yfinance_webull_bridge',
+            data: liveStock,
+            timestamp: new Date().toISOString()
+          });
+        }
+      } catch (err) {
+        console.warn('[stocks/live] Single live ticker query warning:', err);
+      }
+    }
+
     const page = parseInt(searchParams.get('page') || searchParams.get('chunk') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '50', 10);
-    const market = searchParams.get('market') || 'ALL';
     const sector = searchParams.get('sector') || 'ALL';
     const tag = searchParams.get('tag') || 'ALL';
     const search = searchParams.get('search') || searchParams.get('q') || '';
@@ -55,6 +76,9 @@ export async function GET(request: NextRequest) {
         const stockTags = getStockTags(s);
         const tickerUpper = s.ticker.toUpperCase();
 
+        if (targetTag.includes('ipo')) {
+          return RECENT_IPOS.has(tickerUpper) || stockTags.some((t) => t.toLowerCase().includes('ipo'));
+        }
         if (targetTag.includes('นางฟ้า') || targetTag.includes('thai 7')) {
           return s.market === 'SET' && (THAI_7_GIANTS.has(tickerUpper) || stockTags.some((t) => t.toLowerCase().includes('นางฟ้า') || t.toLowerCase().includes('thai 7')));
         }
@@ -126,7 +150,16 @@ export async function GET(request: NextRequest) {
       // Apply Sorting when no search query
       filtered.sort((a, b) => {
         switch (sortBy) {
-          case 'popular':
+          case 'popular': {
+            const rankA = getStockPopularityRank(a, market);
+            const rankB = getStockPopularityRank(b, market);
+            if (rankA !== rankB) return rankA - rankB;
+
+            // Secondary: Market Cap then Volume
+            const capDiff = parseNumericValue(b.marketCap) - parseNumericValue(a.marketCap);
+            if (capDiff !== 0) return capDiff;
+            return parseNumericValue(b.volume) - parseNumericValue(a.volume);
+          }
           case 'volume':
           case 'liquidity': {
             const volA = parseNumericValue(a.volume);

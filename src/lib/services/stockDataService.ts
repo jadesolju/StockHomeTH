@@ -5,8 +5,8 @@ export async function fetchLiveStockFundamentals(): Promise<StockFundamental[]> 
   return await fetchLiveStocksFromYFinance();
 }
 
-export async function fetchStockByTicker(ticker: string, market?: string): Promise<StockFundamental | null> {
-  return await fetchSingleStockYFinance(ticker, market);
+export async function fetchStockByTicker(ticker: string, market?: string, forceLive = false): Promise<StockFundamental | null> {
+  return await fetchSingleStockYFinance(ticker, market, forceLive);
 }
 
 export async function fetchStocksParallel(symbols: string[], interval = '1d', workers = 8) {

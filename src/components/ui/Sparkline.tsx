@@ -28,7 +28,7 @@ export function Sparkline({
     })
     .join(' ');
 
-  const strokeColor = isPositive ? '#10b981' : '#ef4444';
+  const strokeColor = isPositive ? '#30d158' : '#ff453a';
   const firstX = 0;
   const lastX = width;
   const bottomY = height;

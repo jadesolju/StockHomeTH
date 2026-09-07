@@ -12,7 +12,7 @@ interface MarketTickerBarProps {
 }
 
 export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarProps) {
-  const { indices, isSyncing, lastUpdated, refreshAll, setSelectedMarket } = useMarketSync();
+  const { indices, isSyncing, cooldownRemaining, lastUpdated, refreshAll, setSelectedMarket, tickerFlashMap } = useMarketSync();
   const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'indices' | 'commodities'>('indices');
 
@@ -81,8 +81,8 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
         {/* Live Status Indicator & Tab Switcher */}
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#00E676', boxShadow: '0 0 8px #00E676' }} />
-            <span style={{ fontWeight: 800, color: '#00E676', letterSpacing: '0.5px' }}>
+            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-bullish)', boxShadow: '0 0 6px var(--accent-bullish)' }} />
+            <span style={{ fontWeight: 800, color: 'var(--accent-bullish)', letterSpacing: '0.5px' }}>
               REAL-TIME MARKET FEED
             </span>
             {lastUpdated && <span style={{ opacity: 0.7, fontSize: '0.72rem' }}>• {lastUpdated}</span>}
@@ -102,13 +102,13 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
             <button
               onClick={() => setActiveTab('indices')}
               style={{
-                background: activeTab === 'indices' ? 'var(--accent-blue-gradient)' : 'transparent',
+                background: activeTab === 'indices' ? '#2c2c2e' : 'transparent',
                 color: activeTab === 'indices' ? '#ffffff' : 'var(--text-secondary)',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '4px 10px',
                 fontSize: '0.75rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -118,7 +118,7 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
             >
               <BarChart3 size={13} />
               <span>{language === 'en' ? 'Stock Indices' : 'ดัชนีตลาดหุ้น'}</span>
-              <span style={{ fontSize: '0.65rem', opacity: 0.8, background: 'rgba(255,255,255,0.15)', padding: '1px 5px', borderRadius: '4px' }}>
+              <span style={{ fontSize: '0.65rem', opacity: 0.8, background: 'rgba(255,255,255,0.12)', padding: '1px 5px', borderRadius: '4px' }}>
                 {stockIndices.length || 4}
               </span>
             </button>
@@ -126,13 +126,13 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
             <button
               onClick={() => setActiveTab('commodities')}
               style={{
-                background: activeTab === 'commodities' ? 'linear-gradient(135deg, #FFB800 0%, #FF8C00 100%)' : 'transparent',
+                background: activeTab === 'commodities' ? '#2c2c2e' : 'transparent',
                 color: activeTab === 'commodities' ? '#ffffff' : 'var(--text-secondary)',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '4px 10px',
                 fontSize: '0.75rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -142,25 +142,26 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
             >
               <Coins size={13} />
               <span>{language === 'en' ? 'Gold & Commodities' : 'ทองคำ & สินค้าโภคภัณฑ์'}</span>
-              <span style={{ fontSize: '0.65rem', opacity: 0.8, background: 'rgba(255,255,255,0.15)', padding: '1px 5px', borderRadius: '4px' }}>
+              <span style={{ fontSize: '0.65rem', opacity: 0.8, background: 'rgba(255,255,255,0.12)', padding: '1px 5px', borderRadius: '4px' }}>
                 {commodityItems.length || 4}
               </span>
             </button>
           </div>
         </div>
 
-        {/* Single Manual Refresh Button */}
+        {/* Single Manual Refresh Button with Anti-Spam Protection */}
         <button
           onClick={() => refreshAll()}
-          disabled={isSyncing}
-          title="กดเพื่อดึงข้อมูลราคาสดจากตลาดหุ้นและสมาคมค้าทองคำทันที"
+          disabled={isSyncing || cooldownRemaining > 0}
+          title={cooldownRemaining > 0 ? `โปรดรอ ${cooldownRemaining} วินาทีก่อนรีเฟรชอีกครั้ง` : "กดเพื่อดึงข้อมูลราคาสดจากตลาดหุ้นและสมาคมค้าทองคำทันที"}
           style={{
             background: 'var(--card-sub-bg)',
             border: '1px solid var(--card-sub-border)',
-            color: 'var(--text-secondary)',
+            color: (isSyncing || cooldownRemaining > 0) ? 'var(--text-tertiary)' : 'var(--text-secondary)',
             borderRadius: '8px',
             padding: '5px 10px',
-            cursor: isSyncing ? 'not-allowed' : 'pointer',
+            cursor: (isSyncing || cooldownRemaining > 0) ? 'not-allowed' : 'pointer',
+            opacity: (isSyncing || cooldownRemaining > 0) ? 0.7 : 1,
             display: 'flex',
             alignItems: 'center',
             gap: '5px',
@@ -170,7 +171,13 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
           }}
         >
           <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} color="var(--accent-blue)" />
-          <span>{isSyncing ? (language === 'en' ? 'Syncing...' : 'กำลังดึงสด...') : (language === 'en' ? 'Refresh All' : 'รีเฟรชทั้งหมด')}</span>
+          <span>
+            {isSyncing
+              ? (language === 'en' ? 'Syncing...' : 'กำลังดึงสด...')
+              : cooldownRemaining > 0
+              ? (language === 'en' ? `Wait ${cooldownRemaining}s` : `รออีก ${cooldownRemaining}s`)
+              : (language === 'en' ? 'Refresh All' : 'รีเฟรชทั้งหมด')}
+          </span>
         </button>
       </div>
 
@@ -189,11 +196,12 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
           const isThaiGold = item.category === 'gold_thai' || item.symbol === 'THAI_GOLD';
           const isForex = item.category === 'forex' || item.symbol.includes('USDTHB');
           const isCommodity = item.category === 'commodity' || item.symbol.includes('GC=') || item.symbol.includes('CL=');
+          const flashClass = tickerFlashMap[item.symbol] === 'up' ? 'price-tick-up' : tickerFlashMap[item.symbol] === 'down' ? 'price-tick-down' : '';
 
           return (
             <div
               key={item.symbol}
-              className="glass-card"
+              className={`glass-card ${flashClass}`}
               onClick={() => handleIndexClick(item)}
               title={
                 isThaiGold
@@ -208,8 +216,8 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                border: isThaiGold ? '1px solid rgba(255, 184, 0, 0.35)' : '1px solid var(--glass-border)',
-                background: isThaiGold ? 'linear-gradient(135deg, rgba(255, 184, 0, 0.08) 0%, var(--card-sub-bg) 100%)' : 'var(--card-sub-bg)',
+                border: isThaiGold ? '1px solid rgba(255, 159, 10, 0.3)' : '1px solid var(--glass-border)',
+                background: isThaiGold ? 'rgba(255, 159, 10, 0.06)' : 'var(--card-sub-bg)',
                 cursor: !isCommodity && !isForex && !isThaiGold ? 'pointer' : 'default',
                 transition: 'transform 0.15s ease, border-color 0.15s ease'
               }}
@@ -264,7 +272,7 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
                     gap: '2px',
                     fontSize: '0.8rem',
                     fontWeight: 800,
-                    color: isUp ? '#00E676' : '#FF3B30',
+                    color: isUp ? 'var(--accent-bullish)' : 'var(--accent-bearish)',
                   }}
                 >
                   {isUp ? <TrendingUp size={14} /> : <TrendingDown size={14} />}

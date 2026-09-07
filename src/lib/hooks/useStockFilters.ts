@@ -39,7 +39,7 @@ export function useStockFilters(initialItems: StockNewsItem[]) {
       }
 
       return true;
-    });
+    }).sort((a, b) => (b.relevanceScore ?? 60) - (a.relevanceScore ?? 60));
   }, [initialItems, filters]);
 
   const updateFilter = <K extends keyof NewsFilterState>(key: K, value: NewsFilterState[K]) => {
