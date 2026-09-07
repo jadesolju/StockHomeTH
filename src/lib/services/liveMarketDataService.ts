@@ -145,11 +145,11 @@ export async function fetchLiveMarketOverview(): Promise<DigestSummary> {
       }
 
       if (topGainer) {
-        liveCatalysts.push(`หุ้นนำตลาดสูงสุด: ${topGainer.ticker} (${topGainer.currency === 'THB' ? '฿' : '$'}${topGainer.price.toFixed(2)}) บวก +${topGainer.change.toFixed(2)}% สัดส่วนหุ้นบวก ${gainers} บริษัท`);
+        liveCatalysts.push(`หุ้นนำตลาดสูงสุด: ${topGainer.ticker} (${topGainer.currency === 'THB' ? '฿' : '$'}${(Number(topGainer.price) || 0).toFixed(2)}) บวก +${(Number(topGainer.change) || 0).toFixed(2)}% สัดส่วนหุ้นบวก ${gainers} บริษัท`);
       }
 
-      if (topLoser && topLoser.change < -1.0) {
-        liveCatalysts.push(`หุ้นปรับฐาน: ${topLoser.ticker} (${topLoser.currency === 'THB' ? '฿' : '$'}${topLoser.price.toFixed(2)}) ลบ ${topLoser.change.toFixed(2)}%`);
+      if (topLoser && Number(topLoser.change) < -1.0) {
+        liveCatalysts.push(`หุ้นปรับฐาน: ${topLoser.ticker} (${topLoser.currency === 'THB' ? '฿' : '$'}${(Number(topLoser.price) || 0).toFixed(2)}) ลบ ${(Number(topLoser.change) || 0).toFixed(2)}%`);
       }
 
       if (liveCatalysts.length === 0) {

@@ -1081,7 +1081,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
                       {stock.currency === 'THB' ? '฿' : '$'}
-                      {stock.price.toFixed(2)}
+                      {(Number(stock.price) || 0).toFixed(2)}
                     </div>
                     <div
                       style={{
@@ -1095,7 +1095,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                       }}
                     >
                       {isUp ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                      <span>{isUp ? '+' : ''}{stock.change.toFixed(2)}%</span>
+                      <span>{isUp ? '+' : ''}{(Number(stock.change) || 0).toFixed(2)}%</span>
                     </div>
                   </div>
                 </div>
@@ -1262,7 +1262,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                     </td>
                     <td style={{ padding: '14px 16px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
                       {stock.currency === 'THB' ? '฿' : '$'}
-                      {stock.price.toFixed(2)}
+                      {(Number(stock.price) || 0).toFixed(2)}
                     </td>
                     <td style={{ padding: '14px 16px' }}>
                       <span
@@ -1276,7 +1276,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                       >
                         {isUp ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                         {isUp ? '+' : ''}
-                        {stock.change.toFixed(2)}%
+                        {(Number(stock.change) || 0).toFixed(2)}%
                       </span>
                     </td>
                     <td style={{ padding: '14px 16px', color: 'var(--text-secondary)' }}>{stock.marketCap}</td>
@@ -1421,21 +1421,21 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '20px' }}>
               <span style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
                 {activeStockModal.currency === 'THB' ? '฿' : '$'}
-                {activeStockModal.price.toFixed(2)}
+                {(Number(activeStockModal.price) || 0).toFixed(2)}
               </span>
               <span
                 style={{
                   fontSize: '1rem',
                   fontWeight: 700,
-                  color: activeStockModal.change >= 0 ? 'var(--accent-bullish)' : 'var(--accent-bearish)',
+                  color: Number(activeStockModal.change) >= 0 ? 'var(--accent-bullish)' : 'var(--accent-bearish)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '4px',
                 }}
               >
-                {activeStockModal.change >= 0 ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
-                {activeStockModal.change >= 0 ? '+' : ''}
-                {activeStockModal.change.toFixed(2)}%
+                {Number(activeStockModal.change) >= 0 ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
+                {Number(activeStockModal.change) >= 0 ? '+' : ''}
+                {(Number(activeStockModal.change) || 0).toFixed(2)}%
               </span>
 
               <span
@@ -1466,22 +1466,22 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                   {language === 'en' ? '52-Week Price Range' : 'กรอบราคารอบ 52 สัปดาห์ (52W Low - High)'}
                 </span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
-                  {activeStockModal.currency === 'THB' ? '฿' : '$'}{activeStockModal.low52w.toFixed(2)} - {activeStockModal.currency === 'THB' ? '฿' : '$'}{activeStockModal.high52w.toFixed(2)}
+                  {activeStockModal.currency === 'THB' ? '฿' : '$'}{(Number(activeStockModal.low52w) || 0).toFixed(2)} - {activeStockModal.currency === 'THB' ? '฿' : '$'}{(Number(activeStockModal.high52w) || 0).toFixed(2)}
                 </span>
               </div>
               <div style={{ position: 'relative', height: '8px', background: 'rgba(255,255,255,0.08)', borderRadius: '100px', overflow: 'hidden' }}>
                 <div
                   style={{
                     height: '100%',
-                    width: `${Math.min(100, Math.max(5, ((activeStockModal.price - activeStockModal.low52w) / Math.max(1, activeStockModal.high52w - activeStockModal.low52w)) * 100))}%`,
+                    width: `${Math.min(100, Math.max(5, (((Number(activeStockModal.price) || 0) - (Number(activeStockModal.low52w) || 0)) / Math.max(1, (Number(activeStockModal.high52w) || 0) - (Number(activeStockModal.low52w) || 0))) * 100))}%`,
                     background: 'var(--accent-blue)',
                     borderRadius: '100px'
                   }}
                 />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '6px' }}>
-                <span>52W Low: {activeStockModal.currency === 'THB' ? '฿' : '$'}{activeStockModal.low52w.toFixed(2)}</span>
-                <span>52W High: {activeStockModal.currency === 'THB' ? '฿' : '$'}{activeStockModal.high52w.toFixed(2)}</span>
+                <span>52W Low: {activeStockModal.currency === 'THB' ? '฿' : '$'}{(Number(activeStockModal.low52w) || 0).toFixed(2)}</span>
+                <span>52W High: {activeStockModal.currency === 'THB' ? '฿' : '$'}{(Number(activeStockModal.high52w) || 0).toFixed(2)}</span>
               </div>
             </div>
 
@@ -1509,7 +1509,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
               </div>
               <div style={{ background: 'var(--card-sub-bg)', padding: '12px', borderRadius: '12px' }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{language === 'en' ? 'Target Price' : 'ราคาเป้าหมาย'}</div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent-blue)', marginTop: '2px' }}>{activeStockModal.currency === 'THB' ? '฿' : '$'}{activeStockModal.targetPrice.toFixed(2)}</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent-blue)', marginTop: '2px' }}>{activeStockModal.currency === 'THB' ? '฿' : '$'}{(Number(activeStockModal.targetPrice) || 0).toFixed(2)}</div>
               </div>
             </div>
 

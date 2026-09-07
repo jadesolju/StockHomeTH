@@ -192,10 +192,10 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
               gap: '2px',
             }}
           >
-            {stock.change >= 0 ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+            {Number(stock.change) >= 0 ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
             {stock.currency === 'THB' ? '฿' : '$'}
-            {stock.price.toFixed(2)} ({stock.change >= 0 ? '+' : ''}
-            {stock.change.toFixed(2)}%)
+            {(Number(stock.price) || 0).toFixed(2)} ({Number(stock.change) >= 0 ? '+' : ''}
+            {(Number(stock.change) || 0).toFixed(2)}%)
           </span>
         )}
       </div>

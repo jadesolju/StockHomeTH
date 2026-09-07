@@ -249,12 +249,12 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
               <div style={{ marginTop: '10px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
                   {isThaiGold
-                    ? `฿${item.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                    ? `฿${(Number(item.value) || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
                     : item.currency === 'THB'
-                    ? `${item.value.toFixed(2)} ฿`
+                    ? `${(Number(item.value) || 0).toFixed(2)} ฿`
                     : typeof item.value === 'number'
                     ? item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                    : item.value}
+                    : (Number(item.value) || 0).toFixed(2)}
                 </span>
 
                 <div
@@ -270,7 +270,7 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
                   {isUp ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                   <span>
                     {isUp ? '+' : ''}
-                    {typeof item.changePercent === 'number' ? item.changePercent.toFixed(2) : item.changePercent}%
+                    {(Number(item.changePercent) || 0).toFixed(2)}%
                   </span>
                 </div>
               </div>
@@ -288,8 +288,8 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
                     color: 'var(--text-tertiary)'
                   }}
                 >
-                  <span>ขายออก: ฿{item.sellPrice?.toLocaleString()}</span>
-                  <span>รับซื้อ: ฿{item.buyPrice?.toLocaleString()}</span>
+                  <span>ขายออก: ฿{(Number(item.sellPrice) || 0).toLocaleString()}</span>
+                  <span>รับซื้อ: ฿{(Number(item.buyPrice) || 0).toLocaleString()}</span>
                 </div>
               )}
 
@@ -302,7 +302,7 @@ export function MarketTickerBarServer({ activeRegion = 'all' }: MarketTickerBarP
                     color: 'var(--text-tertiary)'
                   }}
                 >
-                  หน่วย: {item.unit} {item.change !== undefined && item.change !== 0 ? `(${item.change > 0 ? '+' : ''}${item.change.toFixed(2)})` : ''}
+                  หน่วย: {item.unit} {item.change !== undefined && item.change !== 0 ? `(${Number(item.change) > 0 ? '+' : ''}${(Number(item.change) || 0).toFixed(2)})` : ''}
                 </div>
               )}
             </div>

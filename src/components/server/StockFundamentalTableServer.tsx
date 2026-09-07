@@ -24,7 +24,9 @@ export function StockFundamentalTableServer({ stocks }: StockFundamentalTableSer
         </thead>
         <tbody>
           {stocks.map((stock) => {
-            const isUp = stock.change >= 0;
+            const numChange = Number(stock.change) || 0;
+            const numPrice = Number(stock.price) || 0;
+            const isUp = numChange >= 0;
             return (
               <tr
                 key={`${stock.market}-${stock.ticker}`}
@@ -39,7 +41,7 @@ export function StockFundamentalTableServer({ stocks }: StockFundamentalTableSer
                 </td>
                 <td style={{ padding: '14px 16px', fontWeight: 700, color: 'var(--text-primary)' }}>
                   {stock.currency === 'THB' ? '฿' : '$'}
-                  {stock.price.toFixed(2)}
+                  {numPrice.toFixed(2)}
                 </td>
                 <td style={{ padding: '14px 16px' }}>
                   <span
@@ -53,7 +55,7 @@ export function StockFundamentalTableServer({ stocks }: StockFundamentalTableSer
                   >
                     {isUp ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                     {isUp ? '+' : ''}
-                    {stock.change.toFixed(2)}%
+                    {numChange.toFixed(2)}%
                   </span>
                 </td>
                 <td style={{ padding: '14px 16px', color: 'var(--text-secondary)' }}>{stock.marketCap}</td>

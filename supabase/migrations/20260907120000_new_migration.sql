@@ -1,6 +1,6 @@
 -- =========================================================================
 -- StockHomeTH Supabase Production Schema & Security Configuration
--- Copy & Run this script in your Supabase SQL Editor (Dashboard > SQL Editor)
+-- Migration: 20260907120000_new_migration.sql
 -- (Idempotent: Safe to re-run multiple times)
 -- =========================================================================
 

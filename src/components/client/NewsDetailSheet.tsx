@@ -438,10 +438,10 @@ export function NewsDetailSheet({
                   >
                     <span>${stock.ticker}</span>
                     <span style={{ color: 'var(--text-primary)', fontWeight: 800 }}>
-                      {stock.currency === 'THB' ? '฿' : '$'}{stock.price.toFixed(2)}
+                      {stock.currency === 'THB' ? '฿' : '$'}{(Number(stock.price) || 0).toFixed(2)}
                     </span>
                     <span style={{ fontSize: '0.7rem' }}>
-                      ({isUp ? '+' : ''}{stock.change.toFixed(1)}%)
+                      ({isUp ? '+' : ''}{(Number(stock.change) || 0).toFixed(1)}%)
                     </span>
                   </button>
                 );

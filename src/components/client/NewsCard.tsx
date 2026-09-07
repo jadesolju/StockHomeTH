@@ -255,10 +255,10 @@ export function NewsCard({
                 >
                   <span>{stock.market === 'SET' ? 'TH' : 'US'} ${stock.ticker}</span>
                   <span style={{ color: 'var(--text-primary)', fontWeight: 800 }}>
-                    {stock.currency === 'THB' ? '฿' : '$'}{stock.price.toFixed(2)}
+                    {stock.currency === 'THB' ? '฿' : '$'}{(Number(stock.price) || 0).toFixed(2)}
                   </span>
                   <span style={{ fontSize: '0.68rem' }}>
-                    ({isUp ? '+' : ''}{stock.change.toFixed(1)}%)
+                    ({isUp ? '+' : ''}{(Number(stock.change) || 0).toFixed(1)}%)
                   </span>
                 </button>
               );

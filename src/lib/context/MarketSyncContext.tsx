@@ -700,7 +700,7 @@ export function MarketSyncProvider({
             type: 'stocks',
             status: 'success',
             itemCount: 1,
-            summary: `เชื่อมโยงข้อมูลหุ้น $${clean} (${stock.name}) -> ราคาล่าสุด ${stock.currency === 'THB' ? '฿' : '$'}${stock.price.toFixed(2)} (${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}%) พร้อมข้อมูลปัจจัยพื้นฐานและข่าวด่วนที่เกี่ยวข้อง`,
+            summary: `เชื่อมโยงข้อมูลหุ้น $${clean} (${stock.name}) -> ราคาล่าสุด ${stock.currency === 'THB' ? '฿' : '$'}${(Number(stock.price) || 0).toFixed(2)} (${Number(stock.change) >= 0 ? '+' : ''}${(Number(stock.change) || 0).toFixed(2)}%) พร้อมข้อมูลปัจจัยพื้นฐานและข่าวด่วนที่เกี่ยวข้อง`,
             durationMs: 15
           }
         ]);

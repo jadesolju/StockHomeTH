@@ -742,18 +742,18 @@ export function CustomStockChart({
           📅 {activeCandle?.date || '—'}
         </span>
         <span>
-          O: <strong style={{ color: 'var(--text-primary)' }}>{activeCandle?.open?.toFixed(2) || '—'}</strong>
+          O: <strong style={{ color: 'var(--text-primary)' }}>{activeCandle?.open != null ? Number(activeCandle.open).toFixed(2) : '—'}</strong>
         </span>
         <span>
-          H: <strong style={{ color: '#00E676' }}>{activeCandle?.high?.toFixed(2) || '—'}</strong>
+          H: <strong style={{ color: '#00E676' }}>{activeCandle?.high != null ? Number(activeCandle.high).toFixed(2) : '—'}</strong>
         </span>
         <span>
-          L: <strong style={{ color: '#FF3B30' }}>{activeCandle?.low?.toFixed(2) || '—'}</strong>
+          L: <strong style={{ color: '#FF3B30' }}>{activeCandle?.low != null ? Number(activeCandle.low).toFixed(2) : '—'}</strong>
         </span>
         <span>
           C:{' '}
           <strong style={{ color: activeCandle?.isUp ? '#00E676' : '#FF3B30' }}>
-            {activeCandle?.close?.toFixed(2) || '—'}
+            {activeCandle?.close != null ? Number(activeCandle.close).toFixed(2) : '—'}
           </strong>
         </span>
         {showVolume && (
@@ -761,14 +761,14 @@ export function CustomStockChart({
             Vol: <strong style={{ color: '#00F0FF' }}>{activeCandle?.volume?.toLocaleString() || '—'}</strong>
           </span>
         )}
-        {showMA20 && activeCandle?.ma20 && (
+        {showMA20 && activeCandle?.ma20 != null && (
           <span style={{ color: '#00F0FF' }}>
-            MA20: <strong>{activeCandle.ma20.toFixed(2)}</strong>
+            MA20: <strong>{Number(activeCandle.ma20).toFixed(2)}</strong>
           </span>
         )}
-        {showMA50 && activeCandle?.ma50 && (
+        {showMA50 && activeCandle?.ma50 != null && (
           <span style={{ color: '#FFB300' }}>
-            MA50: <strong>{activeCandle.ma50.toFixed(2)}</strong>
+            MA50: <strong>{Number(activeCandle.ma50).toFixed(2)}</strong>
           </span>
         )}
       </div>
@@ -999,7 +999,7 @@ export function CustomStockChart({
                 fontWeight="800"
                 fontFamily="monospace"
               >
-                {hoveredCandle.close.toFixed(2)}
+                {hoveredCandle?.close != null ? Number(hoveredCandle.close).toFixed(2) : ''}
               </text>
             </g>
           )}
