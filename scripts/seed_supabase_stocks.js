@@ -56,6 +56,9 @@ async function seedStocks() {
     }
   }
 
+  // Track SET tickers to prevent US ticker collision
+  const setTickers = new Set();
+  
   // 1. Read Thai Stocks
   if (fs.existsSync(thaiPath)) {
     const raw = fs.readFileSync(thaiPath, 'utf-8');
@@ -64,6 +67,7 @@ async function seedStocks() {
     console.log(`📦 Loaded ${list.length} Thai stocks from ${thaiPath}`);
     for (const s of list) {
       const ticker = s.ticker || s.symbol?.replace('.BK', '');
+      setTickers.add(ticker.toUpperCase());
       const live = cacheMap[`SET-${ticker}`] || {};
       
       stocksToUpsert.push({
@@ -100,6 +104,9 @@ async function seedStocks() {
     console.log(`📦 Loaded ${list.length} US stocks from ${usPath}`);
     for (const s of list) {
       const ticker = s.ticker || s.symbol;
+      if (setTickers.has(ticker.toUpperCase())) {
+        continue; // Skip US stock if it conflicts with Thai SET stock (e.g. PTT)
+      }
       const live = cacheMap[`US-${ticker}`] || {};
       
       stocksToUpsert.push({

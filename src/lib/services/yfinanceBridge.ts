@@ -237,15 +237,25 @@ async function loadSupabaseStocks(): Promise<StockFundamental[] | null> {
 
     if (!supabaseUrl || !supabaseKey) return null;
 
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    const { data, error } = await supabase
-      .from('stocks')
-      .select('*')
-      .eq('is_active', true)
-      .order('price', { ascending: false });
+    // Use REST API to avoid WebSocket issues in Node 20/Edge environments
+    const endpoint = `${supabaseUrl}/rest/v1/stocks?is_active=eq.true&select=*&limit=3000&order=price.desc`;
+    const res = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json'
+      },
+      next: { revalidate: 60 } // Next.js cache 60s
+    });
 
-    if (!error && Array.isArray(data) && data.length > 0) {
+    if (!res.ok) {
+      console.warn('[yfinanceBridge] Supabase REST error:', await res.text());
+      return null;
+    }
+
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
       const rows = data as unknown as SupabaseRow[];
       return rows.map((item) => ({
         ticker: item.ticker,
