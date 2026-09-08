@@ -39,6 +39,7 @@ import {
   AlertTriangle,
   Loader2,
   Lock,
+  LogIn,
   Layers
 } from 'lucide-react';
 
@@ -483,8 +484,9 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
   }, [stocks, selectedMarket, selectedSector, selectedTag, searchQuery, sortBy, stockMetricsMap]);
 
   const displayedStocks = useMemo(() => {
-    return filteredStocks.slice(0, visibleCount);
-  }, [filteredStocks, visibleCount]);
+    const limit = !user ? 24 : visibleCount;
+    return filteredStocks.slice(0, limit);
+  }, [filteredStocks, visibleCount, user]);
 
   // Fetch dedicated live stock news for the active modal from SET IR & Finnhub APIs
   useEffect(() => {
@@ -554,9 +556,9 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
     }
   }, [selectedMarket, selectedSector, searchQuery, sortBy, selectedTag]);
 
-  // Smooth auto-load on scroll
+  // Smooth auto-load on scroll (Only for logged-in members; Guests are capped at 24)
   useEffect(() => {
-    if (!sentinelRef.current) return;
+    if (!sentinelRef.current || !user) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -580,7 +582,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
     return () => {
       observer.disconnect();
     };
-  }, [hasMoreStocks, visibleCount, filteredStocks.length, isLoadingMoreStocks, loadNextStockChunk]);
+  }, [hasMoreStocks, visibleCount, filteredStocks.length, isLoadingMoreStocks, loadNextStockChunk, user]);
 
   return (
     <div id="stock-explorer-section" style={{ marginBottom: '40px', scrollMarginTop: '80px' }}>
@@ -1166,20 +1168,10 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
 
                   <div style={{ textAlign: 'right' }}>
                     <div 
-                      style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace', cursor: !user ? 'pointer' : 'default' }}
-                      onClick={(e) => {
-                        if (!user) {
-                          e.stopPropagation();
-                          openAuthModal('login');
-                        }
-                      }}
+                      style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}
                     >
                       {stock.currency === 'THB' ? '฿' : '$'}
-                      {!user ? (
-                        <span style={{ filter: 'blur(5px)', userSelect: 'none' }}>{(Number(stock.price) || 0).toFixed(2)}</span>
-                      ) : (
-                        (Number(stock.price) || 0).toFixed(2)
-                      )}
+                      {(Number(stock.price) || 0).toFixed(2)}
                     </div>
                     <div
                       style={{
@@ -1202,11 +1194,39 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.15)', padding: '8px 12px', borderRadius: '12px' }}>
                   <div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>P/E Ratio</div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stock.peRatio}x</div>
+                    {!user ? (
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openAuthModal('login');
+                        }}
+                        style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}
+                        title={language === 'en' ? 'Sign in to unlock P/E Ratio' : 'เข้าสู่ระบบเพื่อปลดล็อกค่า P/E'}
+                      >
+                        <span style={{ filter: 'blur(4px)', userSelect: 'none' }}>{stock.peRatio}x</span>
+                        <Lock size={10} color="#007AFF" />
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stock.peRatio}x</div>
+                    )}
                   </div>
                   <div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{t('colMarketCap')}</div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stock.marketCap}</div>
+                    {!user ? (
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openAuthModal('login');
+                        }}
+                        style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}
+                        title={language === 'en' ? 'Sign in to unlock Market Cap' : 'เข้าสู่ระบบเพื่อปลดล็อกมูลค่าตลาด'}
+                      >
+                        <span style={{ filter: 'blur(4px)', userSelect: 'none' }}>{stock.marketCap}</span>
+                        <Lock size={10} color="#007AFF" />
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>{stock.marketCap}</div>
+                    )}
                   </div>
                   <div>
                     <Sparkline data={stock.sparkline7d} isPositive={isUp} width={90} height={28} />
@@ -1242,20 +1262,44 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                     ))}
                   </div>
 
-                  <span
-                    style={{
-                      background: 'rgba(0, 122, 255, 0.1)',
-                      color: 'var(--accent-blue)',
-                      padding: '2px 8px',
-                      borderRadius: '100px',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '3px',
-                    }}
-                  >
-                    <Sparkles size={11} /> AI {stock.sentimentScore}/100
-                  </span>
+                  {!user ? (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openAuthModal('login');
+                      }}
+                      title={language === 'en' ? 'Sign in to unlock AI Score' : 'เข้าสู่ระบบเพื่อปลดล็อกคะแนน AI'}
+                      style={{
+                        background: 'rgba(0, 122, 255, 0.1)',
+                        color: 'var(--accent-blue)',
+                        padding: '2px 8px',
+                        borderRadius: '100px',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer',
+                        border: '1px solid rgba(0, 122, 255, 0.25)',
+                      }}
+                    >
+                      <Sparkles size={11} /> AI <span style={{ filter: 'blur(4px)', userSelect: 'none' }}>{stock.sentimentScore}</span>/100 <Lock size={10} />
+                    </span>
+                  ) : (
+                    <span
+                      style={{
+                        background: 'rgba(0, 122, 255, 0.1)',
+                        color: 'var(--accent-blue)',
+                        padding: '2px 8px',
+                        borderRadius: '100px',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                      }}
+                    >
+                      <Sparkles size={11} /> AI {stock.sentimentScore}/100
+                    </span>
+                  )}
                 </div>
               </div>
             );
@@ -1356,20 +1400,10 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                       </div>
                     </td>
                     <td 
-                      style={{ padding: '14px 16px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace', cursor: !user ? 'pointer' : 'default' }}
-                      onClick={(e) => {
-                        if (!user) {
-                          e.stopPropagation();
-                          openAuthModal('login');
-                        }
-                      }}
+                      style={{ padding: '14px 16px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}
                     >
                       {stock.currency === 'THB' ? '฿' : '$'}
-                      {!user ? (
-                        <span style={{ filter: 'blur(5px)', userSelect: 'none' }}>{(Number(stock.price) || 0).toFixed(2)}</span>
-                      ) : (
-                        (Number(stock.price) || 0).toFixed(2)
-                      )}
+                      {(Number(stock.price) || 0).toFixed(2)}
                     </td>
                     <td style={{ padding: '14px 16px' }}>
                       <span
@@ -1386,9 +1420,57 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                         {(Number(stock.change) || 0).toFixed(2)}%
                       </span>
                     </td>
-                    <td style={{ padding: '14px 16px', color: 'var(--text-secondary)' }}>{stock.marketCap}</td>
-                    <td style={{ padding: '14px 16px', color: 'var(--text-secondary)' }}>{stock.peRatio}x</td>
-                    <td style={{ padding: '14px 16px', color: 'var(--text-secondary)' }}>{stock.dividendYield}%</td>
+                    <td style={{ padding: '14px 16px', color: 'var(--text-secondary)' }}>
+                      {!user ? (
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openAuthModal('login');
+                          }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                          title={language === 'en' ? 'Sign in to unlock Market Cap' : 'เข้าสู่ระบบเพื่อปลดล็อกมูลค่าตลาด'}
+                        >
+                          <span style={{ filter: 'blur(4px)', userSelect: 'none' }}>{stock.marketCap}</span>
+                          <Lock size={11} color="#007AFF" />
+                        </span>
+                      ) : (
+                        stock.marketCap
+                      )}
+                    </td>
+                    <td style={{ padding: '14px 16px', color: 'var(--text-secondary)' }}>
+                      {!user ? (
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openAuthModal('login');
+                          }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                          title={language === 'en' ? 'Sign in to unlock P/E Ratio' : 'เข้าสู่ระบบเพื่อปลดล็อกค่า P/E'}
+                        >
+                          <span style={{ filter: 'blur(4px)', userSelect: 'none' }}>{stock.peRatio}x</span>
+                          <Lock size={11} color="#007AFF" />
+                        </span>
+                      ) : (
+                        `${stock.peRatio}x`
+                      )}
+                    </td>
+                    <td style={{ padding: '14px 16px', color: 'var(--text-secondary)' }}>
+                      {!user ? (
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openAuthModal('login');
+                          }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                          title={language === 'en' ? 'Sign in to unlock Dividend Yield' : 'เข้าสู่ระบบเพื่อปลดล็อกปันผล'}
+                        >
+                          <span style={{ filter: 'blur(4px)', userSelect: 'none' }}>{stock.dividendYield}%</span>
+                          <Lock size={11} color="#007AFF" />
+                        </span>
+                      ) : (
+                        `${stock.dividendYield}%`
+                      )}
+                    </td>
                     <td style={{ padding: '14px 16px' }}>
                       <span
                         style={{
@@ -1436,18 +1518,92 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
             <span>
-              {language === 'en' ? (
-                <>Showing <strong style={{ color: 'var(--text-primary)' }}>{displayedStocks.length}</strong> stocks</>
+              {!user && filteredStocks.length > 24 ? (
+                language === 'en' ? (
+                  <>Showing <strong style={{ color: 'var(--text-primary)' }}>{displayedStocks.length}</strong> of <strong style={{ color: '#007AFF' }}>{filteredStocks.length}</strong> stocks <span style={{ color: '#007AFF', fontWeight: 700 }}>(Guest Preview)</span></>
+                ) : (
+                  <>แสดง <strong style={{ color: 'var(--text-primary)' }}>{displayedStocks.length}</strong> จาก <strong style={{ color: '#007AFF' }}>{filteredStocks.length}</strong> หุ้น <span style={{ color: '#007AFF', fontWeight: 700 }}>(สิทธิ์ Guest ดูตัวอย่าง)</span></>
+                )
               ) : (
-                <>แสดง <strong style={{ color: 'var(--text-primary)' }}>{displayedStocks.length}</strong> หุ้น</>
+                language === 'en' ? (
+                  <>Showing <strong style={{ color: 'var(--text-primary)' }}>{displayedStocks.length}</strong> stocks</>
+                ) : (
+                  <>แสดง <strong style={{ color: 'var(--text-primary)' }}>{displayedStocks.length}</strong> หุ้น</>
+                )
               )}
             </span>
           </div>
         </div>
       )}
 
-      {/* Smooth Infinite Scroll Sentinel */}
-      {(hasMoreStocks || visibleCount < filteredStocks.length) && filteredStocks.length > 0 && (
+      {/* Guest Paywall Barrier Card (Shown at the bottom when not logged in) */}
+      {!user && filteredStocks.length > 24 && (
+        <div
+          className="glass-card"
+          style={{
+            marginTop: '20px',
+            padding: '32px 24px',
+            borderRadius: '24px',
+            background: 'linear-gradient(135deg, rgba(0, 122, 255, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%)',
+            border: '1px solid rgba(0, 122, 255, 0.35)',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px',
+            boxShadow: '0 8px 32px rgba(0, 122, 255, 0.15)',
+          }}
+        >
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: 'rgba(0, 122, 255, 0.2)',
+              border: '1px solid rgba(0, 122, 255, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#007AFF',
+            }}
+          >
+            <Lock size={28} />
+          </div>
+          <div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
+              {language === 'en'
+                ? `Sign in to unlock all ${filteredStocks.length}+ stocks & full financial analytics`
+                : `เข้าสู่ระบบเพื่อดูหุ้นทั้งหมด ${filteredStocks.length}+ ตัว และตัวชี้วัดทางการเงินเชิงลึก`}
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
+              {language === 'en'
+                ? 'Create a free account to access real-time SET & US quotes, deep financial ratios (P/E, Dividend Yield, Market Cap), Gemini AI intelligence scores, and portfolio tracking.'
+                : 'สมัครสมาชิกฟรีเพื่อปลดล็อกข้อมูลหุ้นไทยและต่างประเทศครบทุกตัว อัตราส่วนทางการเงินเชิงลึก (P/E, ปันผล, มูลค่าตลาด), คะแนนวิเคราะห์ AI และระบบบันทึกหุ้นโปรด'}
+            </p>
+          </div>
+          <button
+            onClick={() => openAuthModal('login')}
+            className="ios-btn-primary"
+            style={{
+              padding: '12px 28px',
+              borderRadius: '14px',
+              fontSize: '0.95rem',
+              fontWeight: 800,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 16px rgba(0, 122, 255, 0.4)',
+            }}
+          >
+            <LogIn size={18} />
+            <span>{language === 'en' ? 'Sign In / Register Free' : 'เข้าสู่ระบบ / สมัครสมาชิกฟรี'}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Smooth Infinite Scroll Sentinel (Only for Logged-In Members) */}
+      {user && (hasMoreStocks || visibleCount < filteredStocks.length) && filteredStocks.length > 0 && (
         <div
           ref={sentinelRef}
           style={{
@@ -1476,8 +1632,8 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
         </div>
       )}
 
-      {/* Reached End State */}
-      {!hasMoreStocks && visibleCount >= filteredStocks.length && filteredStocks.length > 0 && (
+      {/* Reached End State (Only for Logged-In Members) */}
+      {user && !hasMoreStocks && visibleCount >= filteredStocks.length && filteredStocks.length > 0 && (
         <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>
           {language === 'en' ? `✓ All matching stocks loaded (${displayedStocks.length} stocks)` : `✓ โหลดข้อมูลหุ้นครบถ้วนตามเงื่อนไขที่ค้นหาแล้ว (${displayedStocks.length} หุ้น)`}
         </div>

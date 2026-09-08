@@ -256,11 +256,7 @@ export function NewsCard({
                   <span>{stock.market === 'SET' ? 'TH' : 'US'} ${stock.ticker}</span>
                   <span style={{ color: 'var(--text-primary)', fontWeight: 800 }}>
                     {stock.currency === 'THB' ? '฿' : '$'}
-                    {!user ? (
-                      <span style={{ filter: 'blur(4px)', userSelect: 'none' }}>{(Number(stock.price) || 0).toFixed(2)}</span>
-                    ) : (
-                      (Number(stock.price) || 0).toFixed(2)
-                    )}
+                    {(Number(stock.price) || 0).toFixed(2)}
                   </span>
                   <span style={{ fontSize: '0.68rem' }}>
                     ({isUp ? '+' : ''}{(Number(stock.change) || 0).toFixed(1)}%)
