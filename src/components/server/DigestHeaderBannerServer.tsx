@@ -147,34 +147,73 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
   const renderCatalystItem = (cat: string, idx: number) => {
     const translatedCat = cat;
 
-    // Find all matching tickers mentioned in this catalyst
-    const matchedTickers = stocks
-      .filter((s) => {
-        const regex = new RegExp(`\\b${s.ticker}\\b`, 'i');
-        return regex.test(cat);
-      })
-      .map((s) => s.ticker.toUpperCase());
+    // Identify specific target ticker from company names or clean $TICKER
+    const STOP_WORDS = new Set(['IS', 'IT', 'OR', 'AS', 'BE', 'AT', 'ON', 'IN', 'TO', 'FOR', 'AND', 'THE', 'ALL', 'SO', 'NO', 'GO', 'DO', 'BY', 'UP', 'OF', 'IF', 'AN', 'ME', 'MY', 'WE', 'HE', 'US', 'AM', 'PM', 'A', 'I', 'SET', 'NOW']);
+    
+    const companyMap: Record<string, string> = {
+      tesla: 'TSLA',
+      tsla: 'TSLA',
+      nvidia: 'NVDA',
+      nvda: 'NVDA',
+      apple: 'AAPL',
+      aapl: 'AAPL',
+      microsoft: 'MSFT',
+      msft: 'MSFT',
+      amazon: 'AMZN',
+      amzn: 'AMZN',
+      meta: 'META',
+      google: 'GOOGL',
+      alphabet: 'GOOGL',
+      delta: 'DELTA',
+      ptt: 'PTT',
+      pttep: 'PTTEP',
+      cpall: 'CPALL',
+      kbank: 'KBANK',
+      scb: 'SCB',
+      advanc: 'ADVANC',
+      gulf: 'GULF',
+      aot: 'AOT',
+      bdms: 'BDMS'
+    };
 
-    const cleanTicker = matchedTickers[0];
+    let cleanTicker: string | undefined;
+    for (const [cName, tkr] of Object.entries(companyMap)) {
+      if (new RegExp(`\\b${cName}\\b`, 'i').test(cat)) {
+        cleanTicker = tkr;
+        break;
+      }
+    }
+
+    if (!cleanTicker) {
+      const explicitMatches = stocks
+        .filter((s) => {
+          if (STOP_WORDS.has(s.ticker.toUpperCase())) {
+            return cat.includes(`$${s.ticker}`);
+          }
+          if (s.ticker.length <= 2) {
+            return cat.includes(`$${s.ticker}`) || new RegExp(`\\b\\$${s.ticker}\\b`, 'i').test(cat);
+          }
+          return new RegExp(`\\b${s.ticker}\\b`, 'i').test(cat);
+        })
+        .map((s) => s.ticker.toUpperCase());
+      if (explicitMatches.length > 0) {
+        cleanTicker = explicitMatches[0];
+      }
+    }
+
     const stock = cleanTicker ? getStockByTicker(cleanTicker) : undefined;
+    const matchedTickers = cleanTicker ? [cleanTicker] : [];
 
     const handleCatalystClick = () => {
-      // 1. Check if there's an existing news item for any matched ticker or keyword
+      // 1. Check if there's an existing news item specifically matching this company / headline
       let matchingNews: StockNewsItem | undefined;
 
-      for (const tkr of matchedTickers) {
-        const tickerNews = getNewsByTicker(tkr);
-        if (tickerNews && tickerNews.length > 0) {
-          matchingNews = tickerNews[0];
-          break;
-        }
-      }
-
-      if (!matchingNews && news && news.length > 0) {
-        const keywords = cat.split(/[\s:,\(\)\+]+/).filter((w) => w.length >= 3);
+      if (cleanTicker && news && news.length > 0) {
         matchingNews = news.find((n) => {
-          const text = `${n.title} ${n.summary} ${(n.tickers || []).join(' ')}`.toLowerCase();
-          return keywords.some((kw) => text.includes(kw.toLowerCase()));
+          const hasTicker = (n.tickers || []).includes(cleanTicker);
+          const hasTitleMention = n.title.toLowerCase().includes(cleanTicker.toLowerCase()) || 
+            (n.summary && n.summary.toLowerCase().includes(cleanTicker.toLowerCase()));
+          return hasTicker && hasTitleMention;
         });
       }
 
@@ -183,8 +222,8 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
         return;
       }
 
-      // 2. Generate dynamic rich News Item if no exact match found
-      const isThai = cleanTicker && stock ? stock.market === 'SET' : activeMarketTab === 'SET' || (!cat.includes('US') && !cat.includes('Wall Street') && !cat.includes('NVIDIA') && !cat.includes('Apple') && !cat.includes('Tesla'));
+      // 2. Generate dynamic rich News Item precisely reflecting this Catalyst
+      const isThai = cleanTicker && stock ? stock.market === 'SET' : activeMarketTab === 'SET' || (!cat.toLowerCase().includes('us') && !cat.toLowerCase().includes('wall street') && !cat.toLowerCase().includes('tesla') && !cat.toLowerCase().includes('nvidia') && !cat.toLowerCase().includes('apple'));
       const catParts = cat.split(':');
       const catTitle = catParts.length > 1 ? catParts[0].trim() : (cat.length > 60 ? `${cat.slice(0, 60)}...` : cat);
       const catSummary = catParts.length > 1 ? catParts.slice(1).join(':').trim() : cat;
@@ -212,7 +251,7 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
           cleanTicker ? `Momentum and fundamentals for $${cleanTicker} align with broad market drivers` : 'Key structural catalyst driving index performance and industry sector rotation',
           'Investors should monitor global capital flows and macroeconomic data releases'
         ],
-        fullContent: `${catSummary}\n\nบทวิเคราะห์ปัจจัยเร่ง (Catalyst Intelligence):\nประเด็นนี้เป็นหนึ่งในตัวขับเคลื่อนสำคัญ (Key Catalyst) ที่นักวิเคราะห์และระบบ Real-time AI ตรวจพบในรอบตลาดปัจจุบัน ส่งผลให้หุ้นที่เกี่ยวข้องมีแรงซื้อขายหนาแน่นและทิศทางราคาโดดเด่น`,
+        fullContent: `${catSummary}\n\nบทวิเคราะห์ปัจจัยเร่ง (Catalyst Intelligence):\nประเด็นนี้เป็นหนึ่งในตัวขับเคลื่อนสำคัญ (Key Catalyst) ที่นักวิเคราะห์และระบบ Real-time AI ตรวจพบในรอบตลาดปัจจุบัน ส่งผลให้หุ้นที่เกี่ยวข้อง (${cleanTicker ? `$${cleanTicker}` : 'กลุ่มอุตสาหกรรมเป้าหมาย'}) มีความเคลื่อนไหวและทิศทางราคาที่น่าจับตา`,
         region: isThai ? 'thai' : 'global',
         timeframe: 'daily',
         marketName: isThai ? 'SET Index (ไทย)' : 'US & Global Markets',
@@ -221,7 +260,7 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
         periodLabel_th: `Key Catalyst • ${summary.periodLabel_th || summary.periodLabel || 'Live Brief'}`,
         periodLabel_en: `Key Catalyst • ${summary.periodLabel_en || 'Live Brief'}`,
         sentiment: stock ? (stock.change >= 0 ? 'bullish' : 'bearish') : 'bullish',
-        tickers: matchedTickers.length > 0 ? matchedTickers : (isThai ? ['SET'] : ['US']),
+        tickers: cleanTicker ? [cleanTicker] : (isThai ? ['SET'] : ['US']),
         readTime: '1 นาที',
         source: 'StockHome Intelligence Catalyst',
         category: isThai ? 'energy' : 'tech',

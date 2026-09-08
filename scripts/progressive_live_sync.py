@@ -10,9 +10,13 @@ import json
 import time
 import sqlite3
 import argparse
+import logging
 import concurrent.futures
 from datetime import datetime
 import yfinance as yf
+
+# Suppress yfinance noisy warnings on delisted tickers
+logging.getLogger('yfinance').setLevel(logging.CRITICAL)
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
@@ -274,18 +278,18 @@ def save_to_sqlite(stocks):
     except Exception as e:
         log(f"SQLite save warning: {e}")
 
-def run_progressive_sync(max_stocks_limit=160, batch_size=15):
+def run_progressive_sync(max_stocks_limit=160, batch_size=25):
     log("=== Starting Progressive Real-Time Ingestion (Zero Old Data) ===")
     
     ticker_targets = []
     
-    # Major SET Tickers
+    # Major SET Tickers (delisted tickers removed)
     set_candidates = [
         "PTT", "PTTEP", "CPALL", "DELTA", "AOT", "KBANK", "SCB", "ADVANC", "TRUE", "GULF",
         "BDMS", "BH", "BBL", "KTB", "TTB", "SCC", "CPN", "CRC", "HMPRO", "BJC",
         "MINT", "TOP", "IVL", "BANPU", "EA", "GPSC", "BGRIM", "RATCH", "EGCO", "TU",
         "CBG", "OSP", "WHA", "AMATA", "LH", "SPALI", "BEM", "BTS", "COM7", "SAWAD",
-        "MTC", "TIDLOR", "TCAP", "KKP", "INTUCH", "CENTEL", "ERW", "JMART", "JMT", "VGI",
+        "MTC", "TIDLOR", "TCAP", "KKP", "GLOBAL", "CENTEL", "ERW", "JMART", "JMT", "VGI",
         "KCE", "HANA", "CCET", "STA", "STGT", "CHG", "BCH", "IRPC", "PTG", "OR"
     ]
     for sym in set_candidates:
@@ -343,22 +347,25 @@ def run_progressive_sync(max_stocks_limit=160, batch_size=15):
     synced_count = 0
     start_time = time.time()
 
-    # Progressively process in batches
+    # Progressively process in fast parallel batches
     for i in range(0, len(ticker_targets), batch_size):
         chunk = ticker_targets[i:i + batch_size]
         chunk_names = [c["ticker"] for c in chunk]
         log(f"Processing Batch {i // batch_size + 1} ({len(chunk)} tickers: {', '.join(chunk_names[:6])}...)...")
         
         batch_results = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=14) as executor:
             future_to_sym = {
                 executor.submit(fetch_single_ticker_live, c["ticker"], c["market"], c): c
                 for c in chunk
             }
             for future in concurrent.futures.as_completed(future_to_sym):
-                res = future.result()
-                if res:
-                    batch_results.append(res)
+                try:
+                    res = future.result()
+                    if res:
+                        batch_results.append(res)
+                except Exception:
+                    pass
         
         for stock in batch_results:
             key = f"{stock['market']}-{stock['ticker']}"
@@ -367,20 +374,30 @@ def run_progressive_sync(max_stocks_limit=160, batch_size=15):
             log(f"  ✓ Live Sync: {stock['ticker']} ({stock['market']}) -> ${stock['price']} ({'+' if stock['change'] >= 0 else ''}{stock['change']}%) | MCap: {stock['marketCap']}")
 
         updated_list = list(universe_map.values())
+        set_count = sum(1 for s in updated_list if s.get("market") == "SET")
+        us_count = sum(1 for s in updated_list if s.get("market") == "US")
+        
+        payload = {
+            "timestamp": datetime.now().isoformat(),
+            "count": len(updated_list),
+            "setCount": set_count,
+            "usCount": us_count,
+            "data": updated_list
+        }
         with open(CACHE_PATH, "w", encoding="utf-8") as f:
-            json.dump(updated_list, f, ensure_ascii=False, indent=2)
+            json.dump(payload, f, ensure_ascii=False, indent=2)
         
         save_to_sqlite(batch_results)
         log(f"Progress saved: {synced_count} stocks live in cache & SQLite ({len(updated_list)} total universe)")
-        time.sleep(0.5)
+        time.sleep(0.05)
 
     elapsed = time.time() - start_time
     log(f"=== Real-Time Multi-Vendor Ingestion Complete: {synced_count} stocks updated in {elapsed:.2f}s ===")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Progressive Live Stock Sync")
-    parser.add_argument("--limit", type=int, default=160, help="Max stocks to sync live")
-    parser.add_argument("--batch", type=int, default=15, help="Batch chunk size")
+    parser.add_argument("--limit", type=int, default=100, help="Max stocks to sync live")
+    parser.add_argument("--batch", type=int, default=25, help="Batch chunk size")
     args = parser.parse_args()
     
     run_progressive_sync(max_stocks_limit=args.limit, batch_size=args.batch)
