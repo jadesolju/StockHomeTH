@@ -250,6 +250,19 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
     return { setCount, usCount, total: totalStocksCount || stocks.length };
   }, [stocks, setUniverseCount, usUniverseCount, totalStocksCount]);
 
+  // Guest Protection: Clicking individual stock pop-up forces Login for guests
+  const handleStockClick = useCallback(
+    (stock: StockFundamental) => {
+      if (!user) {
+        openAuthModal('login');
+        return;
+      }
+      setActiveStockModal(stock);
+      setSelectedTicker(stock.ticker);
+    },
+    [user, openAuthModal, setActiveStockModal, setSelectedTicker]
+  );
+
   const availableSectors = useMemo(() => {
     const set = new Set<string>();
     stocks.forEach((s) => set.add(s.sector));
@@ -1094,10 +1107,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
               <div
                 key={`${stock.market}-${stock.ticker}`}
                 className={`glass-card ${flashClass}`}
-                onClick={() => {
-                  setActiveStockModal(stock);
-                  setSelectedTicker(stock.ticker);
-                }}
+                onClick={() => handleStockClick(stock)}
                 style={{
                   padding: '18px',
                   borderRadius: '18px',
@@ -1279,10 +1289,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                   <tr
                     key={`${stock.market}-${stock.ticker}`}
                     className={flashClass}
-                    onClick={() => {
-                      setActiveStockModal(stock);
-                      setSelectedTicker(stock.ticker);
-                    }}
+                    onClick={() => handleStockClick(stock)}
                     style={{
                       borderBottom: '1px solid rgba(255,255,255,0.04)',
                       cursor: 'pointer',
@@ -1479,10 +1486,120 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
       {/* Stock Detail Sheet / Modal */}
       {activeStockModal && (
         <div className="ios-sheet-overlay" onClick={() => setActiveStockModal(null)}>
-          <div className="ios-sheet-content" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '85vh', overflowY: 'auto' }}>
+          <div className="ios-sheet-content" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '85vh', overflowY: 'auto', position: 'relative' }}>
             <div style={{ width: '40px', height: '4px', background: 'var(--text-tertiary)', borderRadius: '100px', margin: '0 auto 20px auto', opacity: 0.5 }} />
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            {!user ? (
+              <div style={{ padding: '24px 16px 36px 16px', textAlign: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                  <button
+                    onClick={() => setActiveStockModal(null)}
+                    style={{
+                      background: 'var(--card-sub-bg)',
+                      border: '1px solid var(--glass-border)',
+                      borderRadius: '50%',
+                      width: '32px',
+                      height: '32px',
+                      color: 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      display: 'grid',
+                      placeItems: 'center',
+                    }}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div
+                  style={{
+                    width: '68px',
+                    height: '68px',
+                    borderRadius: '20px',
+                    background: 'linear-gradient(135deg, rgba(0, 122, 255, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)',
+                    border: '1px solid rgba(0, 122, 255, 0.35)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    margin: '0 auto 18px auto',
+                    boxShadow: '0 8px 32px rgba(0, 122, 255, 0.2)',
+                  }}
+                >
+                  <Lock size={32} color="var(--accent-blue)" />
+                </div>
+
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '4px 12px',
+                    borderRadius: '100px',
+                    background: 'rgba(0, 122, 255, 0.1)',
+                    border: '1px solid rgba(0, 122, 255, 0.25)',
+                    color: 'var(--accent-blue)',
+                    fontSize: '0.78rem',
+                    fontWeight: 800,
+                    marginBottom: '14px',
+                  }}
+                >
+                  <Sparkles size={13} /> {language === 'en' ? 'Stock Intelligence • Login Required' : 'สิทธิพิเศษเฉพาะสมาชิก StockHomeTH'}
+                </div>
+
+                <h3 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 10px 0' }}>
+                  {language === 'en' ? `Sign In to View ${activeStockModal.ticker}` : `เข้าสู่ระบบเพื่อดูข้อมูลเจาะลึก ${activeStockModal.ticker}`}
+                </h3>
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', maxWidth: '440px', margin: '0 auto 26px auto', lineHeight: 1.6 }}>
+                  {language === 'en'
+                    ? 'Access deep financial fundamentals, real-time P/E & dividend ratios, 52-week price range, and Gemini 1.5 Flash AI stock valuations for free.'
+                    : 'ปลดล็อกข้อมูลงบการเงินย้อนหลัง ค่า P/E อัตราเงินปันผล กราฟราคา Real-time และ AI วิเคราะห์กลยุทธ์การลงทุนรายตัวฟรี เพียงเข้าสู่ระบบ'}
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '320px', margin: '0 auto' }}>
+                  <button
+                    onClick={() => {
+                      setActiveStockModal(null);
+                      openAuthModal('login');
+                    }}
+                    style={{
+                      padding: '13px 24px',
+                      borderRadius: '14px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #007AFF 0%, #3b82f6 100%)',
+                      color: '#ffffff',
+                      fontSize: '0.95rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: '0 8px 24px -4px rgba(0, 122, 255, 0.4)',
+                    }}
+                  >
+                    <Zap size={18} /> {language === 'en' ? 'Sign In with Google / Email' : 'เข้าสู่ระบบด้วย Google / Email'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveStockModal(null);
+                      openAuthModal('register');
+                    }}
+                    style={{
+                      padding: '11px 20px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--glass-border)',
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {language === 'en' ? 'Create Free Account' : 'สมัครสมาชิกใหม่ (ฟรี)'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>{activeStockModal.ticker}</span>
                 <span
@@ -2032,6 +2149,8 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                 <span>{language === 'en' ? `Verify Real-Time Quotes on Yahoo Finance (${activeStockModal.ticker})` : `ตรวจสอบข้อมูลสดบน Yahoo Finance (${activeStockModal.ticker})`}</span>
               </a>
             </div>
+              </>
+            )}
           </div>
         </div>
       )}
