@@ -1577,7 +1577,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
               {language === 'en'
-                ? 'Create a free account to access real-time SET & US quotes, deep financial ratios (P/E, Dividend Yield, Market Cap), Gemini AI intelligence scores, and portfolio tracking.'
+                ? 'Create a free account to access real-time SET & US quotes, deep financial ratios (P/E, Dividend Yield, Market Cap), AI intelligence scores, and portfolio tracking.'
                 : 'สมัครสมาชิกฟรีเพื่อปลดล็อกข้อมูลหุ้นไทยและต่างประเทศครบทุกตัว อัตราส่วนทางการเงินเชิงลึก (P/E, ปันผล, มูลค่าตลาด), คะแนนวิเคราะห์ AI และระบบบันทึกหุ้นโปรด'}
             </p>
           </div>
@@ -1705,7 +1705,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                 </h3>
                 <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', maxWidth: '440px', margin: '0 auto 26px auto', lineHeight: 1.6 }}>
                   {language === 'en'
-                    ? 'Access deep financial fundamentals, real-time P/E & dividend ratios, 52-week price range, and Gemini 1.5 Flash AI stock valuations for free.'
+                    ? 'Access deep financial fundamentals, real-time P/E & dividend ratios, 52-week price range, and AI stock valuations for free.'
                     : 'ปลดล็อกข้อมูลงบการเงินย้อนหลัง ค่า P/E อัตราเงินปันผล กราฟราคา Real-time และ AI วิเคราะห์กลยุทธ์การลงทุนรายตัวฟรี เพียงเข้าสู่ระบบ'}
                 </p>
 
@@ -1939,7 +1939,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue)', fontWeight: 800, fontSize: '0.95rem' }}>
                       <Bot size={18} />
-                      <span>{language === 'en' ? 'Gemini 1.5 Flash AI Intelligence' : 'AI วิเคราะห์หุ้นเจาะลึก (Gemini 1.5 Flash)'}</span>
+                      <span>{language === 'en' ? 'AI Stock Intelligence' : 'AI วิเคราะห์หุ้นเจาะลึก'}</span>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -2150,7 +2150,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                       >
                         {isAnalyzingStock ? (
                           <>
-                            <Loader2 size={16} className="spin" /> กำลังประมวลผลด้วย Gemini 1.5 Flash...
+                            <Loader2 size={16} className="spin" /> {language === 'en' ? 'Processing AI analysis...' : 'กำลังประมวลผลการวิเคราะห์ด้วย AI...'}
                           </>
                         ) : (
                           <>
