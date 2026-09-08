@@ -2,7 +2,7 @@ import type { StockNewsItem, SentimentType, NewsCategory } from '../schemas/news
 import { translateClean } from '../utils/newsTranslationEngine';
 import { classifyNewsIntelligence } from '../utils/newsClassifier';
 
-const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || 'dadd9d9r01qtj63otibgdadd9d9r01qtj63otic0';
+const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || '';
 
 // In-memory cache per symbol with 60-second TTL
 interface FinnhubCacheEntry {

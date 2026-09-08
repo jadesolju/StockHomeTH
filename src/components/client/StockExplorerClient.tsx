@@ -1874,11 +1874,14 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                 {(Number(activeStockModal.change) || 0).toFixed(2)}%
               </span>
 
-              <span
+              <a
+                href={activeStockModal.market === 'SET' ? `https://www.set.or.th/th/market/product/stock/quote/${encodeURIComponent(activeStockModal.ticker)}/price` : `https://finance.yahoo.com/quote/${encodeURIComponent(activeStockModal.ticker)}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
                   marginLeft: 'auto',
                   fontSize: '0.68rem',
-                  padding: '3px 8px',
+                  padding: '3px 10px',
                   borderRadius: '100px',
                   background: 'var(--accent-bullish-bg)',
                   color: 'var(--accent-bullish)',
@@ -1886,13 +1889,15 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                   fontWeight: 700,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '4px',
+                  textDecoration: 'none',
+                  cursor: 'pointer'
                 }}
-                title="เชื่อมต่อดึงข้อมูลสดคู่ขนานจาก Yahoo Finance & Webull OpenAPI"
+                title="Don't Trust, Verify: กดเพื่อตรวจสอบข้อมูลราคาและเอกสารงบการเงินจริงจากต้นทางทางการ"
               >
                 <span className="live-pulse-dot" style={{ width: '5px', height: '5px' }} />
-                {activeStockModal.market === 'SET' ? 'SET IR & Yahoo Live' : 'Yahoo & Webull Live'}
-              </span>
+                <span>{activeStockModal.market === 'SET' ? 'SET IR & Yahoo (Verify ↗)' : 'Yahoo & Webull (Verify ↗)'}</span>
+              </a>
             </div>
 
             {/* 52-Week Price Range Indicator */}

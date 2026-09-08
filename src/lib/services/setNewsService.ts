@@ -2,7 +2,7 @@ import Parser from 'rss-parser';
 import type { StockNewsItem, SentimentType, NewsCategory } from '../schemas/newsSchema';
 import { cleanNewsTitle, cleanNewsSnippet } from '../utils/newsClassifier';
 
-const SET_API_KEY = process.env.SET_MARKETPLACE_API_KEY || 'a0204fed-b7ff-4ed0-a908-d6b85334a07a';
+const SET_API_KEY = process.env.SET_MARKETPLACE_API_KEY || '';
 const SET_API_URL = 'https://marketplace.set.or.th/api/public/news/IR';
 
 const rssParser = new Parser({

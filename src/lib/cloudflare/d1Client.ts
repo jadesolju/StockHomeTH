@@ -17,12 +17,12 @@ export async function executeD1Query<T = unknown>(
   sql: string,
   params: (string | number | boolean | null)[] = []
 ): Promise<D1QueryResult<T> | null> {
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || '16e6214a95760067e9e4e448ce7048c4';
-  const databaseId = process.env.CLOUDFLARE_D1_DATABASE_ID || '808ac1fc-9a58-46c4-8fd1-2bc2b6c85896';
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || '';
+  const databaseId = process.env.CLOUDFLARE_D1_DATABASE_ID || '';
   const apiToken = process.env.CLOUDFLARE_API_TOKEN;
 
-  if (!apiToken) {
-    console.warn('[Cloudflare D1] CLOUDFLARE_API_TOKEN is not set. D1 queries will not execute.');
+  if (!apiToken || !accountId || !databaseId) {
+    console.warn('[Cloudflare D1] Missing credentials. D1 queries will not execute.');
     return null;
   }
 

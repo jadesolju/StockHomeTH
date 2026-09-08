@@ -34,17 +34,27 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
+    const userId = formData.get('userId') as string | null || req.headers.get('x-user-id');
+
+    if (!userId || userId.trim() === '') {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Authentication is required to upload files.' },
+        { status: 401 }
+      );
+    }
+
     const file = formData.get('file') as File | null;
 
     if (!file) {
       return NextResponse.json({ success: false, error: 'No file provided' }, { status: 400 });
     }
 
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ success: false, error: 'Only image files are allowed' }, { status: 400 });
+    const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      return NextResponse.json({ success: false, error: 'Only JPG, PNG, WEBP, and GIF images are allowed' }, { status: 400 });
     }
 
-    // Max 5MB
+    // Max 5MB limit
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json({ success: false, error: 'File size exceeds 5MB limit' }, { status: 400 });
     }
@@ -52,7 +62,9 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const result = await uploadToR2(buffer, file.name, file.type);
+    // Sanitize file name to prevent directory traversal
+    const safeFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const result = await uploadToR2(buffer, safeFileName, file.type);
 
     if (!result) {
       return NextResponse.json({ success: false, error: 'Failed to upload image' }, { status: 500 });

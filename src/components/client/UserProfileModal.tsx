@@ -73,10 +73,16 @@ export function UserProfileModal() {
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      const userId = user?.uid || '';
+      if (userId) {
+        formData.append('userId', userId);
+      }
 
       const res = await fetch('/api/upload/r2', {
         method: 'POST',
+        headers: {
+          'x-user-id': userId,
+        },
         body: formData,
       });
 

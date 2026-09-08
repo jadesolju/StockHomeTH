@@ -14,6 +14,8 @@ import { LocalRoleSwitcher } from '../components/client/LocalRoleSwitcher';
 import { PwaRegisterClient } from '../components/client/PwaRegisterClient';
 import { PwaBottomNav } from '../components/client/PwaBottomNav';
 import { GlobalNewsModal } from '../components/client/GlobalNewsModal';
+import { TermsDisclaimerModal } from '../components/client/TermsDisclaimerModal';
+import { LegalFooter } from '../components/client/LegalFooter';
 
 export const metadata: Metadata = {
   title: 'StockHomeTH • สรุปข่าวหุ้น AI และข้อมูลตลาดหุ้นไทย & สหรัฐฯ',
@@ -66,6 +68,8 @@ export default function RootLayout({
                   <main style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 20px' }}>
                     {children}
                   </main>
+                  <LegalFooter />
+                  <TermsDisclaimerModal />
                   <AuthModal />
                   <UserProfileModal />
                   <PricingModal />

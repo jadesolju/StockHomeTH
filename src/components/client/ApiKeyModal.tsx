@@ -63,10 +63,10 @@ export function ApiKeyModal({
             </div>
             <div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                ตั้งค่า Google Gemini API Key
+                ตั้งค่า Self-Custody AI API Key
               </h3>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                เปิดใช้งาน AI สรุปข่าวสดใหม่ด้วย Gemini 2.5 Flash
+                เปิดใช้งาน AI วิเคราะห์หุ้นและการเงินอัจฉริยะด้วยกุญแจส่วนตัวของคุณ
               </p>
             </div>
           </div>
@@ -79,19 +79,25 @@ export function ApiKeyModal({
           </button>
         </div>
 
-        {/* Info Box */}
+        {/* Bitcoiner Self-Custody Security Banner */}
         <div
           style={{
-            background: 'rgba(0, 122, 255, 0.08)',
-            padding: '12px 14px',
-            borderRadius: '12px',
+            background: 'linear-gradient(135deg, rgba(0, 122, 255, 0.1) 0%, rgba(34, 197, 94, 0.08) 100%)',
+            border: '1px solid rgba(0, 122, 255, 0.25)',
+            padding: '14px 16px',
+            borderRadius: '14px',
             marginBottom: '16px',
             fontSize: '0.8rem',
             color: 'var(--text-secondary)',
-            lineHeight: 1.5,
+            lineHeight: 1.6,
           }}
         >
-          คุณสามารถใส่ <strong>Gemini API Key</strong> ของคุณเพื่อดึงข่าวจริงและให้ AI สรุปข่าวหุ้นไทย/ต่างประเทศ หรือเว้นว่างไว้เพื่อทดลองใช้ระบบสรุปจำลองได้ฟรี
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-blue)', fontWeight: 700, marginBottom: '4px' }}>
+            <span>🔒 มาตรฐานความปลอดภัยแบบ Self-Custody (Not Your Keys, Not Your Data)</span>
+          </div>
+          <div>
+            API Key ของคุณจะถูกบันทึกไว้ใน <strong>Browser (LocalStorage) ของเครื่องคุณเท่านั้น</strong> ไม่มีการส่งไปจัดเก็บบน Database ของเซิร์ฟเวอร์ส่วนกลาง ให้คุณมีอำนาจควบคุมกุญแจ AI ของคุณเอง 100% สามารถใช้งานเพื่อวิเคราะห์หุ้นและสรุปข่าวได้อย่างเป็นส่วนตัวสูงสุด
+          </div>
         </div>
 
         {/* Input */}
@@ -145,26 +151,50 @@ export function ApiKeyModal({
             <ExternalLink size={12} />
           </a>
 
-          <button
-            onClick={handleSave}
-            style={{
-              background: isSaved ? 'var(--accent-bullish)' : 'var(--accent-blue)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '100px',
-              padding: '8px 20px',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            {isSaved ? <Check size={16} /> : <Sparkles size={16} />}
-            <span>{isSaved ? 'บันทึกแล้ว!' : 'บันทึก API Key'}</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {apiKey && (
+              <button
+                type="button"
+                onClick={() => {
+                  setApiKey('');
+                  onSaveApiKey('');
+                }}
+                style={{
+                  background: 'rgba(255, 69, 58, 0.12)',
+                  color: 'var(--accent-bearish)',
+                  border: '1px solid rgba(255, 69, 58, 0.3)',
+                  borderRadius: '100px',
+                  padding: '8px 14px',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                ล้างคีย์
+              </button>
+            )}
+
+            <button
+              onClick={handleSave}
+              style={{
+                background: isSaved ? 'var(--accent-bullish)' : 'var(--accent-blue)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '100px',
+                padding: '8px 20px',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {isSaved ? <Check size={16} /> : <Sparkles size={16} />}
+              <span>{isSaved ? 'บันทึกแล้ว!' : 'บันทึก API Key'}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
