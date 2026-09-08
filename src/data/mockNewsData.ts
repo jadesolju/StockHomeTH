@@ -170,8 +170,8 @@ export function getDynamicMockNewsItems(): StockNewsItem[] {
       title: 'SET Index ขยับบวกสดใส แรงซื้อ PTT-DELTA หนุนตลาดรับทิศทางความเชื่อมั่นการลงทุน',
       title_th: 'SET Index ขยับบวกสดใส แรงซื้อ PTT-DELTA หนุนตลาดรับทิศทางความเชื่อมั่นการลงทุน',
       title_en: 'SET Index Climbs on Strong Buying in PTT & DELTA as Market Sentiment Improves',
-      summary: 'ดัชนีตลาดหุ้นไทยปรับตัวในแดนบวก นำโดยกลุ่มพลังงานและกลุ่มเทคโนโลยี ขานรับทิศทางตลาดโลกและแรงซื้อของนักลงทุนสถาบัน',
-      summary_th: 'ดัชนีตลาดหุ้นไทยปรับตัวในแดนบวก นำโดยกลุ่มพลังงานและกลุ่มเทคโนโลยี ขานรับทิศทางตลาดโลกและแรงซื้อของนักลงทุนสถาบัน',
+      summary: 'ดัชนีตลาดหุ้นไทยปรับตัวในแดนบวก หนุนด้วยแรงซื้อกลุ่มพลังงานและกลุ่มเทคโนโลยี ขานรับทิศทางตลาดโลกและแรงซื้อของนักลงทุนสถาบัน',
+      summary_th: 'ดัชนีตลาดหุ้นไทยปรับตัวในแดนบวก หนุนด้วยแรงซื้อกลุ่มพลังงานและกลุ่มเทคโนโลยี ขานรับทิศทางตลาดโลกและแรงซื้อของนักลงทุนสถาบัน',
       summary_en: 'Thai equities advanced in positive territory, propelled by energy and technology leaders following global momentum and institutional fund inflows.',
       keyTakeaways: [
         'SET Index เคลื่อนไหวในทิศทางบวก ดัชนีตอบรับปัจจัยพื้นฐานและเม็ดเงินลงทุนใหม่',
@@ -191,8 +191,8 @@ export function getDynamicMockNewsItems(): StockNewsItem[] {
         'DELTA electronics surged on rising global orders for AI computing infrastructure.',
         'Robust trading volume reflected growing confidence among domestic and foreign investors.'
       ],
-      fullContent: `ดัชนีตลาดหลักทรัพย์แห่งประเทศไทย (SET Index) ปรับตัวเพิ่มขึ้นอย่างต่อเนื่อง โดยมีมูลค่าการซื้อขายหนาแน่น บรรยากาศการลงทุนเป็นไปอย่างคึกคัก นำโดยหุ้นกลุ่มพลังงานขนาดใหญ่และกลุ่มเทคโนโลยี\n\nนอกจากนี้ หุ้นกลุ่มชิ้นส่วนอิเล็กทรอนิกส์อย่าง DELTA ปรับตัวขึ้นตอบรับกระแสการลงทุนในศูนย์ข้อมูล (Data Center) และโครงสร้างพื้นฐาน AI ในภูมิภาคที่มีอัตราเติบโตสูงต่อเนื่อง`,
-      fullContent_th: `ดัชนีตลาดหลักทรัพย์แห่งประเทศไทย (SET Index) ปรับตัวเพิ่มขึ้นอย่างต่อเนื่อง โดยมีมูลค่าการซื้อขายหนาแน่น บรรยากาศการลงทุนเป็นไปอย่างคึกคัก นำโดยหุ้นกลุ่มพลังงานขนาดใหญ่และกลุ่มเทคโนโลยี\n\nนอกจากนี้ หุ้นกลุ่มชิ้นส่วนอิเล็กทรอนิกส์อย่าง DELTA ปรับตัวขึ้นตอบรับกระแสการลงทุนในศูนย์ข้อมูล (Data Center) และโครงสร้างพื้นฐาน AI ในภูมิภาคที่มีอัตราเติบโตสูงต่อเนื่อง`,
+      fullContent: `ดัชนีตลาดหลักทรัพย์แห่งประเทศไทย (SET Index) ปรับตัวเพิ่มขึ้นอย่างต่อเนื่อง โดยมีมูลค่าการซื้อขายหนาแน่น บรรยากาศการลงทุนเป็นไปอย่างคึกคัก ขับเคลื่อนด้วยหุ้นกลุ่มพลังงานขนาดใหญ่และกลุ่มเทคโนโลยี\n\nนอกจากนี้ หุ้นกลุ่มชิ้นส่วนอิเล็กทรอนิกส์อย่าง DELTA ปรับตัวขึ้นตอบรับกระแสการลงทุนในศูนย์ข้อมูล (Data Center) และโครงสร้างพื้นฐาน AI ในภูมิภาคที่มีอัตราเติบโตสูงต่อเนื่อง`,
+      fullContent_th: `ดัชนีตลาดหลักทรัพย์แห่งประเทศไทย (SET Index) ปรับตัวเพิ่มขึ้นอย่างต่อเนื่อง โดยมีมูลค่าการซื้อขายหนาแน่น บรรยากาศการลงทุนเป็นไปอย่างคึกคัก ขับเคลื่อนด้วยหุ้นกลุ่มพลังงานขนาดใหญ่และกลุ่มเทคโนโลยี\n\nนอกจากนี้ หุ้นกลุ่มชิ้นส่วนอิเล็กทรอนิกส์อย่าง DELTA ปรับตัวขึ้นตอบรับกระแสการลงทุนในศูนย์ข้อมูล (Data Center) และโครงสร้างพื้นฐาน AI ในภูมิภาคที่มีอัตราเติบโตสูงต่อเนื่อง`,
       fullContent_en: `The Stock Exchange of Thailand (SET Index) continued its positive momentum with robust trading turnover. Market sentiment remained upbeat, led by heavyweights in the energy and technology sectors.\n\nElectronics manufacturers such as DELTA advanced on rapid investments in hyperscale Data Centers and regional AI infrastructure.`,
       region: 'thai',
       timeframe: 'daily',
@@ -519,12 +519,12 @@ export function getDynamicMockNewsItems(): StockNewsItem[] {
       summary_en: 'US equity benchmarks closed the week strongly, propelled by AI mega-caps and resilient macroeconomic data supporting a soft-landing scenario.',
       keyTakeaways: [
         'NASDAQ และ S&P 500 ปรับตัวขึ้นต่อเนื่อง',
-        'หุ้น AI และ Semiconductor ปรับตัวขึ้นโดดเด่นนำโดย NVDA, MSFT, AAPL',
+        'หุ้น AI และ Semiconductor ปรับตัวขึ้นโดดเด่น — หุ้นเด่น: $NVDA, $MSFT, $AAPL',
         'ตัวเลขเศรษฐกิจสะท้อนภาพ Soft Landing'
       ],
       keyTakeaways_th: [
         'NASDAQ และ S&P 500 ปรับตัวขึ้นต่อเนื่อง',
-        'หุ้น AI และ Semiconductor ปรับตัวขึ้นโดดเด่นนำโดย NVDA, MSFT, AAPL',
+        'หุ้น AI และ Semiconductor ปรับตัวขึ้นโดดเด่น — หุ้นเด่น: $NVDA, $MSFT, $AAPL',
         'ตัวเลขเศรษฐกิจสะท้อนภาพ Soft Landing'
       ],
       keyTakeaways_en: [

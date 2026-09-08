@@ -1,85 +1,106 @@
-import { supabase as supabaseClient } from '../supabase/client';
 import type { StockNewsItem as NewsItem } from '../schemas/newsSchema';
+
+const STORAGE_KEY_PREFIX = 'stockhome_user_bookmarks_';
+
+function getLocalBookmarks(uid: string): any[] {
+  if (typeof window === 'undefined' || !uid) return [];
+  try {
+    const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${uid}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalBookmarks(uid: string, items: any[]) {
+  if (typeof window === 'undefined' || !uid) return;
+  try {
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}${uid}`, JSON.stringify(items));
+    // Also save simple id array for backward compatibility
+    localStorage.setItem('stockhome_bookmarked_ids', JSON.stringify(items.map(i => i.newsId || i.id)));
+  } catch {}
+}
 
 export async function isNewsBookmarked(uid: string, newsId: string): Promise<boolean> {
   if (!uid || !newsId) return false;
-  try {
-    const { data, error } = await supabaseClient
-      .from('user_bookmarks')
-      .select('id')
-      .eq('user_id', uid)
-      .eq('news_id', newsId)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error checking bookmark in Supabase:', error);
-      return false;
-    }
-    
-    return !!data;
-  } catch (error) {
-    console.error('Error checking bookmark:', error);
-    return false;
-  }
+  const local = getLocalBookmarks(uid);
+  return local.some(b => (b.newsId || b.id) === newsId);
 }
 
 export async function toggleBookmark(uid: string, newsItem: NewsItem, currentlyBookmarked: boolean): Promise<boolean> {
   if (!uid || !newsItem || !newsItem.id) return currentlyBookmarked;
+
+  // 1. Update Local Storage instantly
+  const local = getLocalBookmarks(uid);
+  let updatedLocal: any[] = [];
+  if (currentlyBookmarked) {
+    updatedLocal = local.filter(b => (b.newsId || b.id) !== newsItem.id);
+  } else {
+    updatedLocal = [
+      {
+        id: `bm-${newsItem.id}`,
+        newsId: newsItem.id,
+        title: newsItem.title,
+        link: newsItem.link || newsItem.sourceUrl || '',
+        source: newsItem.source || 'StockHomeTH',
+        symbols: newsItem.tickers || [],
+        savedAt: new Date().toISOString(),
+      },
+      ...local.filter(b => (b.newsId || b.id) !== newsItem.id)
+    ];
+  }
+  saveLocalBookmarks(uid, updatedLocal);
+
+  // 2. Persist to Supabase via Server API Route (Vercel & Local ready)
   try {
-    if (currentlyBookmarked) {
-      const { error } = await supabaseClient
-        .from('user_bookmarks')
-        .delete()
-        .eq('user_id', uid)
-        .eq('news_id', newsItem.id);
-        
-      if (error) throw error;
-      return false;
-    } else {
-      const { error } = await supabaseClient
-        .from('user_bookmarks')
-        .insert({
-          user_id: uid,
-          news_id: newsItem.id,
-          title: newsItem.title,
-          source: newsItem.source,
-          link: newsItem.link || newsItem.sourceUrl || '',
-          symbols: newsItem.tickers || [],
-          published_at: newsItem.date || new Date().toISOString(),
-        });
-        
-      if (error) throw error;
-      return true;
+    const res = await fetch('/api/bookmarks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: uid,
+        newsItem,
+        isBookmarked: currentlyBookmarked
+      })
+    });
+    if (res.ok) {
+      const json = await res.json();
+      return json.isBookmarked ?? !currentlyBookmarked;
     }
   } catch (error) {
-    console.error('Error toggling bookmark in Supabase:', error);
-    return currentlyBookmarked;
+    console.warn('Network error saving bookmark to Supabase:', error);
   }
+
+  return !currentlyBookmarked;
 }
 
 export async function getUserBookmarks(uid: string) {
   if (!uid) return [];
-  try {
-    const { data, error } = await supabaseClient
-      .from('user_bookmarks')
-      .select('*')
-      .eq('user_id', uid)
-      .order('created_at', { ascending: false });
+  const local = getLocalBookmarks(uid);
 
-    if (error) throw error;
-    
-    // Map to expected format
-    return (data || []).map(b => ({
-      id: b.id,
-      newsId: b.news_id,
-      title: b.title,
-      link: b.link,
-      source: b.source,
-      symbols: b.symbols,
-      savedAt: b.created_at,
-    }));
+  try {
+    const res = await fetch(`/api/bookmarks?userId=${encodeURIComponent(uid)}`);
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && Array.isArray(json.bookmarks)) {
+        // Merge Supabase items with local items
+        const mergedMap = new Map();
+        for (const b of json.bookmarks) {
+          mergedMap.set(b.newsId, b);
+        }
+        for (const b of local) {
+          if (!mergedMap.has(b.newsId || b.id)) {
+            mergedMap.set(b.newsId || b.id, b);
+          }
+        }
+        const merged = Array.from(mergedMap.values());
+        saveLocalBookmarks(uid, merged);
+        return merged;
+      }
+    }
   } catch (error) {
-    console.error('Error fetching bookmarks from Supabase:', error);
-    return [];
+    console.warn('Error fetching bookmarks from Supabase:', error);
   }
+
+  return local;
 }
+

@@ -189,13 +189,14 @@ interface EntityTickerRule {
   category: NewsCategory;
   region: MarketRegion;
   marketName: string;
+  isMacroRule?: boolean;
 }
 
 const ENTITY_RULES: EntityTickerRule[] = [
   // --- US & Global Tech / AI Giants ---
   {
     keywords: ['openai', 'chatgpt', 'gpt-4', 'gpt-5', 'gpt-6', 'sora', 'sam altman', 'แซม อัลท์แมน', 'dall-e'],
-    tickers: ['MSFT', 'NVDA', 'QQQ'],
+    tickers: ['MSFT'],
     category: 'tech',
     region: 'global',
     marketName: 'Global Tech & US Markets',
@@ -222,7 +223,7 @@ const ENTITY_RULES: EntityTickerRule[] = [
     marketName: 'US Markets (Nasdaq)',
   },
   {
-    keywords: ['tesla', 'เทสลา', 'elon musk', 'อีลอน มัสก์', 'model 3', 'model y', 'cybertruck', 'gigafactory', 'รถยนต์ไฟฟ้า', 'tsla'],
+    keywords: ['tesla', 'เทสลา', 'elon musk', 'อีลอน มัสก์', 'model 3', 'model y', 'cybertruck', 'gigafactory', 'tsla'],
     tickers: ['TSLA'],
     category: 'tech',
     region: 'global',
@@ -236,7 +237,7 @@ const ENTITY_RULES: EntityTickerRule[] = [
     marketName: 'US Markets (Nasdaq)',
   },
   {
-    keywords: ['google', 'alphabet', 'กูเกิล', 'gemini ai', 'youtube', 'sundar pichai', 'แอนดรอยด์', 'googl', 'goog'],
+    keywords: ['google', 'alphabet', 'กูเกิล', 'gemini ai', 'youtube', 'sundar pichai', 'googl', 'goog'],
     tickers: ['GOOGL'],
     category: 'tech',
     region: 'global',
@@ -316,24 +317,25 @@ const ENTITY_RULES: EntityTickerRule[] = [
   // --- Crypto & Digital Assets ---
   {
     keywords: ['bitcoin', 'บิตคอยน์', 'btc', 'crypto', 'คริปโท', 'ethereum', 'อีเธอร์เรียม', 'eth', 'binance', 'coinbase', 'สินทรัพย์ดิจิทัล', 'stablecoin'],
-    tickers: ['BTC', 'COIN', 'MSTR'],
+    tickers: ['BTC', 'COIN'],
     category: 'finance',
     region: 'global',
     marketName: 'Global Digital Assets',
   },
 
-  // --- US & Global Macro / Central Banks ---
+  // --- US & Global Macro / Central Banks (Proxy macro only) ---
   {
     keywords: ['fed', 'เฟด', 'ธนาคารกลางสหรัฐ', 'jerome powell', 'เจอโรม พาวเวลล์', 'ดอกเบี้ยสหรัฐ', 'wall street', 'วอลล์สตรีท', 's&p 500', 's&p500', 'dow jones', 'ดาวโจนส์', 'treasury yield', 'บอนด์ยีลด์', 'เงินเฟ้อสหรัฐ', 'us cpi'],
     tickers: ['SPY', 'QQQ', 'DIA'],
-    category: 'finance',
+    category: 'macro',
     region: 'global',
     marketName: 'Global Markets (สหรัฐฯ & โลก)',
+    isMacroRule: true,
   },
 
   // --- Top Thai Stocks (SET) ---
   {
-    keywords: ['ปตท', 'ptt', 'pttep', 'โออาร์', 'ปตท.สผ', 'ปตท.น้ำมัน'],
+    keywords: ['ปตท', 'ptt', 'pttep', 'โออาร์', 'ปตท.สผ', 'ปตท.น้ำมัน', 'ไทยออยล์', 'top', 'bcp', 'บางจาก'],
     tickers: ['PTT', 'PTTEP', 'OR'],
     category: 'energy',
     region: 'thai',
@@ -417,8 +419,8 @@ const ENTITY_RULES: EntityTickerRule[] = [
     marketName: 'SET Index (ไทย)',
   },
   {
-    keywords: ['gpsc', 'bgrim', 'บีเคพีเอ็ม', 'ea', 'พลังงานบริสุทธิ์', 'top', 'ไทยออยล์', 'bcp', 'บางจาก'],
-    tickers: ['GPSC', 'BGRIM', 'TOP', 'BCP'],
+    keywords: ['gpsc', 'bgrim', 'บีเคพีเอ็ม', 'ea', 'พลังงานบริสุทธิ์'],
+    tickers: ['GPSC', 'BGRIM'],
     category: 'energy',
     region: 'thai',
     marketName: 'SET Index (ไทย)',
@@ -434,9 +436,9 @@ const ENTITY_RULES: EntityTickerRule[] = [
 
 // Explicit SET Keywords
 const THAI_SET_MARKET_KEYWORDS = [
-  'set', 'set50', 'set100', 'mai', 'ตลาดหลักทรัพย์แห่งประเทศไทย', 'หุ้นไทย',
+  'set', 'set50', 'set100', 'mai', 'ตลาดหลักทรัพย์แห่งประเทศไทย', 'ตลาดหุ้นไทย', 'หุ้นไทย',
   'ดัชนีหุ้นไทย', 'ตลท.', 'กลต.', 'ธปท.', 'แบงก์ชาติ', 'กนง.', 'ครม.',
-  'กระทรวงการคลัง', 'เงินบาท', 'บาทแข็ง', 'บาทอ่อน'
+  'กระทรวงการคลัง', 'เงินบาท', 'บาทแข็ง', 'บาทอ่อน', 'xd', 'หุ้นใหญ่', 'พ.ร.บ.', 'งบประมาณ', 'งบฯ', 'โบรกฯ', 'บล.', 'บลจ.'
 ];
 
 // ==========================================
@@ -585,6 +587,17 @@ export function classifyNewsIntelligence(
   let detectedRegion: MarketRegion = feedCategory;
   let marketName = feedCategory === 'thai' ? 'SET Index (ไทย)' : 'US / Global Markets';
 
+  // Check if text has strong Thai SET market indicators
+  const hasThaiSetKeywords = THAI_SET_MARKET_KEYWORDS.some((kw) => {
+    if (kw.length <= 3) {
+      const regex = new RegExp(`(^|[^a-zA-Z0-9\u0E00-\u0E7F])${kw}([^a-zA-Z0-9\u0E00-\u0E7F]|$)`, 'i');
+      return regex.test(fullText);
+    }
+    return fullText.includes(kw);
+  });
+
+  const isFundamentallyThai = feedCategory === 'thai' || hasThaiSetKeywords;
+
   // 1. Check all Entity Rules and prioritize by appearance position in headline first, then summary
   interface MatchCandidate {
     rule: EntityTickerRule;
@@ -597,6 +610,11 @@ export function classifyNewsIntelligence(
   const lowerSummary = cleanSummary.toLowerCase();
 
   for (const rule of ENTITY_RULES) {
+    // If the article is fundamentally a Thai market story, ignore generic US macro rules
+    if (isFundamentallyThai && rule.isMacroRule) {
+      continue;
+    }
+
     let bestPos = Infinity;
     let foundInTitle = false;
 
@@ -633,40 +651,49 @@ export function classifyNewsIntelligence(
     }
   }
 
-  // Sort candidates so the company appearing first in the headline is primary!
+  // Sort candidates so the entity appearing earliest in the headline is primary
   matchedCandidates.sort((a, b) => a.position - b.position);
 
   let matchedRule: EntityTickerRule | null = null;
   if (matchedCandidates.length > 0) {
     matchedRule = matchedCandidates[0].rule;
-    detectedCategory = matchedRule.category;
+
+    // Only inherit category from rule if not macro, or if rule is company-specific
+    if (matchedRule.category) {
+      detectedCategory = matchedRule.category;
+    }
     detectedRegion = matchedRule.region;
     marketName = matchedRule.marketName;
 
-    for (const cand of matchedCandidates) {
-      for (const tkr of cand.rule.tickers) {
-        if (!matchedTickers.includes(tkr)) {
-          matchedTickers.push(tkr);
+    // For the primary candidate, take its tickers
+    for (const tkr of matchedRule.tickers) {
+      if (!matchedTickers.includes(tkr)) {
+        matchedTickers.push(tkr);
+      }
+    }
+
+    // If other candidates also appear in the headline, add their primary ticker
+    for (let i = 1; i < matchedCandidates.length; i++) {
+      if (matchedCandidates[i].inTitle) {
+        for (const tkr of matchedCandidates[i].rule.tickers) {
+          if (!matchedTickers.includes(tkr)) {
+            matchedTickers.push(tkr);
+          }
         }
       }
     }
   }
 
-  // 2. Check if text is specifically Thai SET despite coming from global feed, or vice versa
-  const hasThaiKeywords = THAI_SET_MARKET_KEYWORDS.some((kw) => fullText.includes(kw));
-  
-  if (matchedRule) {
-    // If an explicit entity like OpenAI or Nvidia or Palantir was matched and has no Thai SET keywords, lock to Global!
-    if (matchedRule.region === 'global') {
-      detectedRegion = 'global';
-    }
-  } else {
-    // No specific rule matched - deduce from keywords
-    if (hasThaiKeywords) {
-      detectedRegion = 'thai';
-      marketName = 'SET Index (ไทย)';
+  // 2. Region & SET Fallback Harmonization
+  if (isFundamentallyThai) {
+    // Lock region to Thai
+    detectedRegion = 'thai';
+    marketName = 'SET Index (ไทย)';
+    if (matchedTickers.length === 0) {
       matchedTickers.push('SET');
-    } else if (feedCategory === 'global' || fullText.includes('wall street') || fullText.includes('สหรัฐ') || fullText.includes('ต่างประเทศ') || fullText.includes('โลก')) {
+    }
+  } else if (!matchedRule) {
+    if (feedCategory === 'global' || fullText.includes('wall street') || fullText.includes('สหรัฐ') || fullText.includes('ต่างประเทศ') || fullText.includes('โลก')) {
       detectedRegion = 'global';
       marketName = 'US / Global Markets';
       matchedTickers.push(detectedCategory === 'tech' ? 'QQQ' : 'SPY');
@@ -710,8 +737,12 @@ export function classifyNewsIntelligence(
 
   const targetSectorTh = sectorNamesTh[detectedCategory] || 'ตลาดหุ้น';
   const targetSectorEn = sectorNamesEn[detectedCategory] || 'Equities Market';
-  const tickerListTh = uniqueTickers.map(t => `$${t}`).join(', ');
-  const tickerListEn = uniqueTickers.map(t => `$${t}`).join(', ');
+  const tickerListTh = uniqueTickers.length === 1 && uniqueTickers[0] === 'SET'
+    ? 'SET Index'
+    : uniqueTickers.map(t => `$${t}`).join(', ');
+  const tickerListEn = uniqueTickers.length === 1 && uniqueTickers[0] === 'SET'
+    ? 'SET Index'
+    : uniqueTickers.map(t => `$${t}`).join(', ');
 
   const bullishReasonTh = sentiment === 'bullish'
     ? `ปัจจัยหนุนเชิงบวกต่อกลุ่ม ${targetSectorTh} จากนวัตกรรม ความต้องการของตลาด หรือผลประกอบการที่แข็งแกร่ง`

@@ -1329,11 +1329,11 @@ export const AdminBackofficeClient: React.FC = () => {
                 (status?.availableScripts && status.availableScripts.length > 0)
                   ? status.availableScripts
                   : [
-                      { id: 'progressive_sync', name: 'Progressive Live Vendor Ingestion', file: 'scripts/progressive_live_sync.py', desc: 'Progressively query Yahoo Finance & Webull APIs with zero dummy fallback' },
-                      { id: 'build_thai', name: 'Build Thai Universe (SET & mai)', file: 'scripts/build_thai_universe.py', desc: 'Generate & sync SET universe pricing (277+ stocks)' },
-                      { id: 'build_global', name: 'Build Global Universe (US)', file: 'scripts/build_global_universe.py', desc: 'Generate & sync US/Global universe pricing (1,024+ stocks)' },
-                      { id: 'sync_yfinance', name: 'Live Yahoo Finance Sync', file: 'scripts/sync_real_yfinance_universe.py', desc: 'Pull live market snapshot from Yahoo Finance' },
-                      { id: 'webull_parallel', name: 'Webull Parallel Test', file: 'server/webull_engine.py', desc: 'Run concurrent multi-stock batch test' },
+                      { id: 'progressive_sync', name: 'Progressive Live Vendor Ingestion', file: 'api/cron/sync (Node.js yahoo-finance2)', desc: 'Progressively query Yahoo Finance & sync quotes with zero dummy fallback' },
+                      { id: 'seed_supabase', name: 'Sync All 10,689 Stocks to Supabase', file: 'scripts/seed_supabase_stocks.js', desc: 'Sync Thai SET 277+ and US 10,412 stocks directly into Supabase Cloud Database' },
+                      { id: 'build_thai', name: 'Build Thai Universe (SET & mai)', file: 'scripts/build_thai_universe.js', desc: 'Generate & sync SET universe pricing (277+ stocks)' },
+                      { id: 'build_global', name: 'Build Global Universe (US)', file: 'scripts/build_global_universe.js', desc: 'Generate & sync US/Global universe pricing (10,412+ stocks)' },
+                      { id: 'full_pipeline', name: 'Full Pipeline Sync (Multi-Market)', file: 'scripts/full_pipeline_sync.js', desc: '1-Click: Sync Yahoo Finance, update local DB & push to Supabase Cloud' },
                     ]
               ).map((script) => (
                 <div

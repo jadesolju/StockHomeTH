@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     // Fetch a batch of stocks to update, sorted by oldest updated_at
     const { data: stocks, error: fetchError } = await supabase
       .from('stocks')
-      .select('ticker, market, name')
+      .select('ticker, market, name, price, change, pe_ratio, dividend_yield')
       .order('updated_at', { ascending: true })
       .limit(limit);
 
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     }
 
     const updatedData = [];
-    const symbolsToFetch = stocks.map(s => {
+    const symbolsToFetch = stocks.map((s: any) => {
       if (s.market === 'SET' && s.ticker) {
         return `${s.ticker}.BK`;
       }
@@ -44,32 +44,23 @@ export async function GET(request: Request) {
     if (symbolsToFetch.length > 0) {
       const results = await yahooFinance.quote(symbolsToFetch as string[]);
       
-      for (const stock of stocks) {
+      for (const stock of stocks as any[]) {
         const querySymbol = stock.market === 'SET' ? `${stock.ticker}.BK` : stock.ticker;
         const quote = (Array.isArray(results) ? results : [results]).find((r: any) => r.symbol === querySymbol);
         
-        if (quote && quote.regularMarketPrice) {
-          const change = quote.regularMarketChangePercent || 0;
-          
-          updatedData.push({
-            ticker: stock.ticker,
-            name: stock.name,
-            market: stock.market,
-            price: quote.regularMarketPrice,
-            change: change,
-            pe_ratio: quote.trailingPE || null,
-            dividend_yield: quote.trailingAnnualDividendYield || null,
-            updated_at: new Date().toISOString()
-          });
-        } else {
-          // Update timestamp anyway so we don't get stuck in a loop trying to fetch invalid symbols
-          updatedData.push({
-            ticker: stock.ticker,
-            name: stock.name,
-            market: stock.market,
-            updated_at: new Date().toISOString()
-          });
-        }
+        const price = quote?.regularMarketPrice ?? stock.price ?? 0;
+        const change = quote?.regularMarketChangePercent ?? stock.change ?? 0;
+
+        updatedData.push({
+          ticker: stock.ticker,
+          name: stock.name,
+          market: stock.market,
+          price: price,
+          change: change,
+          pe_ratio: quote?.trailingPE || stock.pe_ratio || null,
+          dividend_yield: quote?.trailingAnnualDividendYield || stock.dividend_yield || null,
+          updated_at: new Date().toISOString()
+        });
       }
 
       if (updatedData.length > 0) {

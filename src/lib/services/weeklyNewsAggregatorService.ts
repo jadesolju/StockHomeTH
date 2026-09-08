@@ -286,8 +286,8 @@ function getBaselineWeeklyNews(): StockNewsItem[] {
       title: 'สรุปสัปดาห์ Wall Street: S&P 500 และ NASDAQ เดินหน้าทำนิวไฮ รับงบ Big Tech & ชิป AI',
       title_th: 'สรุปสัปดาห์ Wall Street: S&P 500 และ NASDAQ เดินหน้าทำนิวไฮ รับงบ Big Tech & ชิป AI',
       title_en: 'Wall Street Weekly Wrap: S&P 500 & NASDAQ Reach Fresh Highs on Big Tech & AI Momentum',
-      summary: 'ดัชนีหลักตลาดหุ้นสหรัฐฯ ปิดสัปดาห์ในแดนบวกอย่างแข็งแกร่ง นำโดยหุ้นกลุ่มเซมิคอนดักเตอร์และเทคโนโลยี AI หลังตัวเลขเศรษฐกิจและผลประกอบการบริษัทชั้นนำส่งสัญญาณเติบโต',
-      summary_th: 'ดัชนีหลักตลาดหุ้นสหรัฐฯ ปิดสัปดาห์ในแดนบวกอย่างแข็งแกร่ง นำโดยหุ้นกลุ่มเซมิคอนดักเตอร์และเทคโนโลยี AI หลังตัวเลขเศรษฐกิจและผลประกอบการบริษัทชั้นนำส่งสัญญาณเติบโต',
+      summary: 'ดัชนีหลักตลาดหุ้นสหรัฐฯ ปิดสัปดาห์ในแดนบวกอย่างแข็งแกร่ง ด้วยแรงซื้อหนุนในหุ้นกลุ่มเซมิคอนดักเตอร์และเทคโนโลยี AI หลังตัวเลขเศรษฐกิจและผลประกอบการบริษัทชั้นนำส่งสัญญาณเติบโต',
+      summary_th: 'ดัชนีหลักตลาดหุ้นสหรัฐฯ ปิดสัปดาห์ในแดนบวกอย่างแข็งแกร่ง ด้วยแรงซื้อหนุนในหุ้นกลุ่มเซมิคอนดักเตอร์และเทคโนโลยี AI หลังตัวเลขเศรษฐกิจและผลประกอบการบริษัทชั้นนำส่งสัญญาณเติบโต',
       summary_en: 'Major US equity indices finished the week strong in the green, propelled by semiconductor and enterprise AI tech leaders amid positive macroeconomic data and stellar corporate earnings.',
       keyTakeaways: [
         'NVIDIA (NVDA) และกลุ่มชิป AI ทำสถิติรายได้และความต้องการประมวลผลสูงเป็นประวัติการณ์',

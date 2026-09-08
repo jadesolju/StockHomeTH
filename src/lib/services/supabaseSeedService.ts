@@ -3,19 +3,17 @@ import fs from 'fs';
 
 export interface SupabaseStockRow {
   ticker: string;
-  symbol: string;
   name: string;
   market: 'SET' | 'US';
   sector: string;
   price: number;
   currency: 'THB' | 'USD';
   change: number;
-  change_amount: number;
   market_cap: string;
   pe_ratio: number;
   dividend_yield: number;
-  high52w: number;
-  low52w: number;
+  high_52w: number;
+  low_52w: number;
   volume: string;
   sparkline_7d: number[];
   analyst_rating: string;
@@ -43,7 +41,9 @@ interface RawStockRecord {
   dividendYield?: number | string;
   dividend_yield?: number | string;
   high52w?: number | string;
+  high_52w?: number | string;
   low52w?: number | string;
+  low_52w?: number | string;
   volume?: string;
   sparkline7d?: number[];
   sparkline_7d?: number[];
@@ -126,24 +126,22 @@ export async function syncAllStocksToSupabase(limitPerMarket?: number): Promise<
 
         stocksToUpsert.push({
           ticker: s.ticker,
-          symbol: s.symbol || s.ticker,
           name: s.name || s.ticker,
           market: 'SET',
           sector: s.sector || 'General',
           price,
           currency: 'THB',
           change,
-          change_amount: Number(s.changeAmount || 0),
           market_cap: s.marketCap || s.market_cap || '-',
           pe_ratio: Number(s.peRatio || s.pe_ratio || 0),
           dividend_yield: Number(s.dividendYield || s.dividend_yield || 0),
-          high52w: Number(s.high52w || price),
-          low52w: Number(s.low52w || price),
+          high_52w: Number(s.high52w || s.high_52w || price),
+          low_52w: Number(s.low52w || s.low_52w || price),
           volume: s.volume || '-',
-          sparkline_7d: Array.isArray(s.sparkline7d) ? s.sparkline7d : [],
+          sparkline_7d: Array.isArray(s.sparkline7d) ? s.sparkline7d : Array.isArray(s.sparkline_7d) ? s.sparkline_7d : [],
           analyst_rating: s.analystRating || s.analyst_rating || 'Hold',
           target_price: Number(s.targetPrice || s.target_price || price),
-          sentiment_score: Number(s.sentimentScore || s.sentiment_score || 0.5),
+          sentiment_score: Number(s.sentimentScore || s.sentiment_score || 50),
           ai_insight: s.aiInsight || s.ai_insight || `สรุปข้อมูลพื้นฐานของ ${s.name || s.ticker}`,
           description: s.description || '',
           is_active: true,
@@ -167,24 +165,22 @@ export async function syncAllStocksToSupabase(limitPerMarket?: number): Promise<
 
         stocksToUpsert.push({
           ticker: s.ticker,
-          symbol: s.symbol || s.ticker,
           name: s.name || s.ticker,
           market: 'US',
           sector: s.sector || 'US Equities',
           price,
           currency: 'USD',
           change,
-          change_amount: Number(s.changeAmount || 0),
           market_cap: s.marketCap || s.market_cap || '-',
           pe_ratio: Number(s.peRatio || s.pe_ratio || 0),
           dividend_yield: Number(s.dividendYield || s.dividend_yield || 0),
-          high52w: Number(s.high52w || price),
-          low52w: Number(s.low52w || price),
+          high_52w: Number(s.high52w || s.high_52w || price),
+          low_52w: Number(s.low52w || s.low_52w || price),
           volume: s.volume || '-',
-          sparkline_7d: Array.isArray(s.sparkline7d) ? s.sparkline7d : [],
+          sparkline_7d: Array.isArray(s.sparkline7d) ? s.sparkline7d : Array.isArray(s.sparkline_7d) ? s.sparkline_7d : [],
           analyst_rating: s.analystRating || s.analyst_rating || 'Hold',
           target_price: Number(s.targetPrice || s.target_price || price),
-          sentiment_score: Number(s.sentimentScore || s.sentiment_score || 0.5),
+          sentiment_score: Number(s.sentimentScore || s.sentiment_score || 50),
           ai_insight: s.aiInsight || s.ai_insight || `Fundamental market profile for ${s.name || s.ticker}`,
           description: s.description || '',
           is_active: true,

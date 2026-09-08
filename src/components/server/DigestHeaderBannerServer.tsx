@@ -431,7 +431,7 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
         {activeMarketTab === 'SET'
           ? (isEn ? 'Thai Stock Market (SET Index) Real-Time Intelligence' : 'ภาวะตลาดหุ้นไทย (SET Index): เม็ดเงินไหลเข้ากลุ่มพลังงาน ธนาคาร และอิเล็กทรอนิกส์')
           : activeMarketTab === 'US'
-          ? (isEn ? 'US & Global Markets (S&P 500 / NASDAQ / Dow Jones) Live Briefing' : 'ภาวะตลาดหุ้นสหรัฐฯ และตลาดโลก: กลุ่ม AI & Big Tech ขับเคลื่อนดัชนีนำโดย Magnificent 7')
+          ? (isEn ? 'US & Global Markets (S&P 500 / NASDAQ / Dow Jones) Live Briefing' : 'ภาวะตลาดหุ้นสหรัฐฯ และตลาดโลก: แรงขับเคลื่อนกลุ่ม AI & Big Tech — หุ้นโดดเด่นประจำวัน: Magnificent 7 ($NVDA, $AAPL, $MSFT)')
           : (isEn ? (summary.mainHeadline_en || tDynamic(summary.mainHeadline_th, summary.mainHeadline_en)) : (summary.mainHeadline_th || tDynamic(summary.mainHeadline_th, summary.mainHeadline_en)))}
       </h2>
 
