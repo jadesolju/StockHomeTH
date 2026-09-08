@@ -53,6 +53,8 @@ SQLite
 # Dev Scripts (Local Development Only)
 dev_admin_portal.bat
 src/app/api/dev/admin/
+scratch/
+scripts/test_*.js
 
 # Editor directories and files
 .vscode/*

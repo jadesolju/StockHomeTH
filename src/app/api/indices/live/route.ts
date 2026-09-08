@@ -40,7 +40,56 @@ const MAJOR_INDEX_DEFINITIONS = [
 async function fetchOfficialThaiGold(): Promise<IndexItem | null> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3500);
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch('https://classic.goldtraders.or.th/', {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      next: { revalidate: 60 }
+    });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const html = await res.text();
+      const sellMatch = html.match(/id="DetailPlace_uc_goldprices1_lblBLSell"[^>]*>([\d,]+\.?\d*)<\/span>/i);
+      const buyMatch = html.match(/id="DetailPlace_uc_goldprices1_lblBLBuy"[^>]*>([\d,]+\.?\d*)<\/span>/i);
+      const timeMatch = html.match(/id="DetailPlace_uc_goldprices1_lblAsTime"[^>]*>([^<]+)<\/span>/i);
+
+      if (sellMatch && sellMatch[1]) {
+        const sell = parseFloat(sellMatch[1].replace(/,/g, '')) || 0;
+        const buy = buyMatch ? parseFloat(buyMatch[1].replace(/,/g, '')) || (sell - 100) : (sell - 100);
+        const updateTime = timeMatch ? timeMatch[1].trim() : 'สมาคมค้าทองคำ';
+
+        if (sell > 0) {
+          return {
+            symbol: 'GOLD_THAI',
+            name: 'ทองคำแท่ง 96.5% (สมาคม)',
+            value: sell,
+            price: sell,
+            sellPrice: sell,
+            buyPrice: buy,
+            change: 0,
+            changePercent: 0,
+            currency: 'THB',
+            category: 'gold_thai',
+            country: 'TH',
+            region: 'thai',
+            isPositive: true,
+            sparklineData: [sell - 100, sell - 50, sell],
+            updateRound: updateTime,
+            lastUpdated: updateTime,
+            timestamp: new Date().toISOString()
+          };
+        }
+      }
+    }
+  } catch {}
+
+  // Fallback to secondary JSON API
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
     const res = await fetch('https://api.chnwt.dev/thai-gold-api/latest', {
       signal: controller.signal,
       headers: { 'User-Agent': 'Mozilla/5.0' },
@@ -48,35 +97,35 @@ async function fetchOfficialThaiGold(): Promise<IndexItem | null> {
     });
     clearTimeout(timeout);
 
-    if (!res.ok) return null;
-    const json = await res.json();
-    if (json?.status === 'success' && json?.response?.price?.gold_bar) {
-      const bar = json.response.price.gold_bar;
-      const sell = parseFloat(String(bar.sell).replace(/,/g, '')) || 0;
-      const buy = parseFloat(String(bar.buy).replace(/,/g, '')) || (sell - 100);
-      const updateTime = json.response.update_time || 'สมาคมค้าทองคำ';
+    if (res.ok) {
+      const json = await res.json();
+      if (json?.status === 'success' && json?.response?.price?.gold_bar) {
+        const bar = json.response.price.gold_bar;
+        const sell = parseFloat(String(bar.sell).replace(/,/g, '')) || 0;
+        const buy = parseFloat(String(bar.buy).replace(/,/g, '')) || (sell - 100);
+        const updateTime = json.response.update_time || 'สมาคมค้าทองคำ';
 
-      // Validate realistic Thai Gold range (current market is ~40,000 - 52,000 THB)
-      if (sell >= 35000 && sell <= 52000) {
-        return {
-          symbol: 'GOLD_THAI',
-          name: 'ทองคำแท่ง 96.5% (สมาคม)',
-          value: sell,
-          price: sell,
-          sellPrice: sell,
-          buyPrice: buy,
-          change: 0,
-          changePercent: 0,
-          currency: 'THB',
-          category: 'gold_thai',
-          country: 'TH',
-          region: 'thai',
-          isPositive: true,
-          sparklineData: [sell * 0.995, sell * 0.998, sell],
-          updateRound: updateTime,
-          lastUpdated: updateTime,
-          timestamp: new Date().toISOString()
-        };
+        if (sell > 0) {
+          return {
+            symbol: 'GOLD_THAI',
+            name: 'ทองคำแท่ง 96.5% (สมาคม)',
+            value: sell,
+            price: sell,
+            sellPrice: sell,
+            buyPrice: buy,
+            change: 0,
+            changePercent: 0,
+            currency: 'THB',
+            category: 'gold_thai',
+            country: 'TH',
+            region: 'thai',
+            isPositive: true,
+            sparklineData: [sell * 0.995, sell * 0.998, sell],
+            updateRound: updateTime,
+            lastUpdated: updateTime,
+            timestamp: new Date().toISOString()
+          };
+        }
       }
     }
   } catch {}
@@ -159,10 +208,8 @@ async function fetchLiveIndicesFromYahoo(): Promise<IndexItem[] | null> {
       const usdThb = valid.find((v) => v.symbol === 'THB=X');
       const fxRate = usdThb && usdThb.value > 0 ? usdThb.value : 32.84;
       
-      // Real spot gold is ~2,880 - 2,940 USD/oz
-      let realSpotPrice = 2895.50;
-      if (goldSpot && goldSpot.value > 0) {
-        realSpotPrice = goldSpot.value > 3500 ? Number((goldSpot.value * 0.648).toFixed(2)) : goldSpot.value;
+      let realSpotPrice = goldSpot && goldSpot.value > 0 ? goldSpot.value : 4476.60;
+      if (goldSpot) {
         goldSpot.value = realSpotPrice;
         goldSpot.price = realSpotPrice;
       }

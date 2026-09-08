@@ -36,9 +36,13 @@ export function UserProfileModal() {
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [isLocalEnv, setIsLocalEnv] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsLocalEnv(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    }
     if (user) {
       setDisplayName(user.displayName || '');
       setErrorMessage('');
@@ -284,49 +288,51 @@ export function UserProfileModal() {
             {user.email}
           </p>
 
-          {/* Membership Tier Upgrade Banner */}
-          <div
-            style={{
-              marginTop: '14px',
-              padding: '12px 14px',
-              borderRadius: '14px',
-              background: currentTier === 'free' ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%)' : 'rgba(255, 255, 255, 0.04)',
-              border: `1px solid ${currentTier === 'free' ? 'rgba(59, 130, 246, 0.3)' : 'var(--card-sub-border)'}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '10px',
-              textAlign: 'left',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {currentTier === 'free' ? '⭐ อัปเกรดเป็น Pro Investor' : `👑 สิทธิพิเศษระดับ ${currentPlan.name}`}
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                {currentTier === 'free' ? 'ปลดล็อก AI วิเคราะห์งบ และเตือนเข้า LINE' : `สถานะใช้งานได้ถึง ${currentPlan.expiresAt || 'ตลอดชีพ'}`}
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                closeProfileModal();
-                openPricingModal();
-              }}
+          {/* Membership Tier Status (Local Sandbox Only) */}
+          {isLocalEnv && (
+            <div
               style={{
-                padding: '6px 12px',
-                borderRadius: '10px',
-                border: 'none',
-                background: currentTier === 'free' ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.1)',
-                color: '#ffffff',
-                fontSize: '11.5px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
+                marginTop: '14px',
+                padding: '12px 14px',
+                borderRadius: '14px',
+                background: currentTier === 'free' ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%)' : 'rgba(255, 255, 255, 0.04)',
+                border: `1px solid ${currentTier === 'free' ? 'rgba(59, 130, 246, 0.3)' : 'var(--card-sub-border)'}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '10px',
+                textAlign: 'left',
               }}
             >
-              {currentTier === 'free' ? 'ดูแพ็กเกจ' : 'เปลี่ยนแผน'}
-            </button>
-          </div>
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  {currentTier === 'free' ? '⭐ อัปเกรดเป็น Pro Investor' : `👑 สิทธิพิเศษระดับ ${currentPlan.name}`}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  {currentTier === 'free' ? 'ปลดล็อก AI วิเคราะห์งบ และเตือนเข้า LINE' : `สถานะใช้งานได้ถึง ${currentPlan.expiresAt || 'ตลอดชีพ'}`}
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  closeProfileModal();
+                  openPricingModal();
+                }}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: currentTier === 'free' ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.1)',
+                  color: '#ffffff',
+                  fontSize: '11.5px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {currentTier === 'free' ? 'ดูแพ็กเกจ' : 'เปลี่ยนแผน'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Feedback Messages */}

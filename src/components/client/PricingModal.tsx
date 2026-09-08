@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSubscription, type SubscriptionTier } from '../../lib/context/SubscriptionContext';
 import { PRICING_PLANS } from '../../config/pricingPlans';
 import { MockPaymentModal } from './MockPaymentModal';
@@ -8,10 +8,17 @@ import { X, Check, Zap, Sparkles, ShieldCheck, Crown, ArrowRight, Coffee, QrCode
 
 export function PricingModal() {
   const { isPricingModalOpen, closePricingModal, currentTier, setTier, billingCycle, setBillingCycle } = useSubscription();
+  const [isLocal, setIsLocal] = useState<boolean>(false);
   const [successToast, setSuccessToast] = useState<string | null>(null);
   const [paymentModalTier, setPaymentModalTier] = useState<SubscriptionTier | null>(null);
 
-  if (!isPricingModalOpen) return null;
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsLocal(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    }
+  }, []);
+
+  if (!isLocal || !isPricingModalOpen) return null;
 
   const handleSelectPlan = (planId: SubscriptionTier) => {
     if (planId === 'free') {

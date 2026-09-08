@@ -85,23 +85,37 @@ export async function POST(req: NextRequest) {
       });
     } else {
       // User requested to save the bookmark
-      const { error } = await supabase
+      const symbols = Array.isArray(newsItem.tickers) && newsItem.tickers.length > 0
+        ? newsItem.tickers
+        : Array.isArray(newsItem.stocks) && newsItem.stocks.length > 0
+        ? newsItem.stocks
+        : [];
+
+      const publishedAt = newsItem.date || newsItem.publishedAt || newsItem.savedAt || new Date().toISOString();
+
+      const { data, error } = await supabase
         .from('user_bookmarks')
         .upsert(
           {
             user_id: userId,
-            news_id: newsItem.id,
-            title: newsItem.title || '',
+            news_id: String(newsItem.id),
+            title: newsItem.title || 'Untitled News',
             source: newsItem.source || 'StockHomeTH',
             link: newsItem.link || newsItem.sourceUrl || '',
-            symbols: newsItem.tickers || [],
-            published_at: newsItem.date || new Date().toISOString(),
+            symbols: symbols,
+            published_at: publishedAt,
           },
           { onConflict: 'user_id, news_id' }
-        );
+        )
+        .select();
 
       if (error) {
-        console.warn('Supabase upsert error:', error.message);
+        console.error('Supabase upsert error on user_bookmarks:', error);
+        return NextResponse.json({
+          success: false,
+          error: error.message,
+          action: 'error'
+        }, { status: 500 });
       }
 
       return NextResponse.json({
@@ -109,6 +123,7 @@ export async function POST(req: NextRequest) {
         action: 'saved',
         isBookmarked: true,
         newsId: newsItem.id,
+        data: data?.[0]
       });
     }
   } catch (err: any) {
