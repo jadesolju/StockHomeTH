@@ -5,6 +5,7 @@ import fs from 'fs';
 import YahooFinance from 'yahoo-finance2';
 import { StockFundamentalSchema, type StockFundamental } from '../schemas/marketSchema';
 import { fullMarketStocks } from '../../data/fullMarketStocks';
+import { SET100_TICKERS, THAI_7_GIANTS } from '../utils/stockTagHelper';
 
 const execAsync = promisify(exec);
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
@@ -380,75 +381,90 @@ function parseLastJsonLine(output: string): Record<string, unknown> | null {
 
 export async function fetchSingleStockYFinance(symbol: string, market?: string, forceLive = false): Promise<StockFundamental | null> {
   const cleanSym = symbol.replace('.BK', '').toUpperCase();
-  const isSET = market === 'SET' || (!market && cleanSym.length <= 6 && !['AAPL', 'NVDA', 'TSLA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'AMD', 'NFLX', 'QCOM', 'AVGO', 'INTC'].includes(cleanSym));
-  const targetSymbol = isSET ? `${cleanSym}.BK` : cleanSym;
+  
+  // Accurate market detection:
+  let isSET = false;
+  if (market === 'SET') {
+    isSET = true;
+  } else if (market === 'US') {
+    isSET = false;
+  } else {
+    isSET = symbol.endsWith('.BK') || SET100_TICKERS.has(cleanSym) || THAI_7_GIANTS.has(cleanSym);
+  }
 
-  // 1. Fast Cache Check (< 1ms): Return immediately if already in hot memory with complete data
+  const primarySymbol = isSET ? `${cleanSym}.BK` : cleanSym;
+  const fallbackSymbol = isSET ? cleanSym : `${cleanSym}.BK`;
+
+  // 1. Fast Cache Check (< 1ms): Return immediately if already in hot memory with complete, non-placeholder data
   if (!forceLive) {
     const cacheList = cachedStocks || loadMarketCacheFile() || loadBundledUniverseFiles();
     if (cacheList && cacheList.length > 0) {
       const match = cacheList.find(
         (s) => s.ticker.toUpperCase() === cleanSym && (!market || market === 'ALL' || s.market.toUpperCase() === market.toUpperCase())
       );
-      if (match && match.marketCap && match.marketCap !== '—' && match.volume && match.volume !== '—') {
+      if (match && match.marketCap && match.marketCap !== '—' && match.volume && match.volume !== '—' && !(match.price === 50 && match.change === 0)) {
         return match;
       }
     }
   }
 
   // 2. Query Live Real-Time Quote from Yahoo Finance Node SDK (Zero Python, Vercel Ready)
-  try {
-    const q = await yf.quote(targetSymbol);
-    if (q && q.regularMarketPrice != null) {
-      const livePrice = q.regularMarketPrice;
-      const change = q.regularMarketChangePercent != null ? Number(q.regularMarketChangePercent) : 0;
-      const currency = (isSET || q.currency === 'THB') ? 'THB' : 'USD';
-      const marketCapFormatted = formatMarketCap(q.marketCap, currency);
-      const volumeFormatted = formatVolume(q.regularMarketVolume);
-      const peRatio = q.trailingPE || q.forwardPE || (isSET ? 16.5 : 24.0);
-      const dividendYield = q.dividendYield != null ? Number(q.dividendYield.toFixed(2)) : (q.trailingAnnualDividendYield != null ? Number(q.trailingAnnualDividendYield.toFixed(2)) : (isSET ? 2.5 : 1.2));
-      const high52w = q.fiftyTwoWeekHigh || livePrice * 1.15;
-      const low52w = q.fiftyTwoWeekLow || livePrice * 0.85;
+  const symbolsToTry = [primarySymbol, fallbackSymbol];
+  for (const sym of symbolsToTry) {
+    try {
+      const q = await yf.quote(sym);
+      if (q && q.regularMarketPrice != null) {
+        const isThaiResult = sym.endsWith('.BK') || q.currency === 'THB';
+        const livePrice = q.regularMarketPrice;
+        const change = q.regularMarketChangePercent != null ? Number(q.regularMarketChangePercent) : 0;
+        const currency = isThaiResult ? 'THB' : 'USD';
+        const marketCapFormatted = formatMarketCap(q.marketCap, currency);
+        const volumeFormatted = formatVolume(q.regularMarketVolume);
+        const peRatio = q.trailingPE || q.forwardPE || (isThaiResult ? 16.5 : 24.0);
+        const dividendYield = q.dividendYield != null ? Number(q.dividendYield.toFixed(2)) : (q.trailingAnnualDividendYield != null ? Number(q.trailingAnnualDividendYield.toFixed(2)) : (isThaiResult ? 2.5 : 1.2));
+        const high52w = q.fiftyTwoWeekHigh || livePrice * 1.15;
+        const low52w = q.fiftyTwoWeekLow || livePrice * 0.85;
 
-      const singleStock: StockFundamental = {
-        ticker: cleanSym,
-        name: q.longName || q.shortName || cleanSym,
-        market: isSET ? 'SET' : 'US',
-        sector: isSET ? 'SET Index' : 'US Equity',
-        price: livePrice,
-        currency,
-        change: Number(change.toFixed(2)),
-        marketCap: marketCapFormatted,
-        peRatio: Number(Number(peRatio).toFixed(1)),
-        dividendYield: Number(Number(dividendYield).toFixed(2)),
-        high52w: Number(Number(high52w).toFixed(2)),
-        low52w: Number(Number(low52w).toFixed(2)),
-        volume: volumeFormatted,
-        sparkline7d: [low52w, livePrice * 0.98, livePrice * 1.01, livePrice],
-        analystRating: change >= 0 ? 'Buy' : 'Hold',
-        targetPrice: q.targetMeanPrice ? Number(q.targetMeanPrice.toFixed(2)) : Number((livePrice * 1.08).toFixed(2)),
-        sentimentScore: change >= 0 ? 68 : 45,
-        aiInsight: `${cleanSym} Real-time quote: ${livePrice.toFixed(2)} (${change >= 0 ? '+' : ''}${change.toFixed(2)}%) มูลค่าตลาด ${marketCapFormatted}`,
-        description: q.longName || q.shortName || `Live trading quote for ${cleanSym}`
-      };
+        const singleStock: StockFundamental = {
+          ticker: cleanSym,
+          name: q.longName || q.shortName || cleanSym,
+          market: isThaiResult ? 'SET' : 'US',
+          sector: isThaiResult ? 'SET Index' : 'US Equity',
+          price: livePrice,
+          currency,
+          change: Number(change.toFixed(2)),
+          marketCap: marketCapFormatted,
+          peRatio: Number(Number(peRatio).toFixed(1)),
+          dividendYield: Number(Number(dividendYield).toFixed(2)),
+          high52w: Number(Number(high52w).toFixed(2)),
+          low52w: Number(Number(low52w).toFixed(2)),
+          volume: volumeFormatted,
+          sparkline7d: [low52w, livePrice * 0.98, livePrice * 1.01, livePrice],
+          analystRating: change >= 0 ? 'Buy' : 'Hold',
+          targetPrice: q.targetMeanPrice ? Number(q.targetMeanPrice.toFixed(2)) : Number((livePrice * 1.08).toFixed(2)),
+          sentimentScore: change >= 0 ? 68 : 45,
+          aiInsight: `${cleanSym} Real-time quote: ${currency === 'THB' ? '฿' : '$'}${livePrice.toFixed(2)} (${change >= 0 ? '+' : ''}${change.toFixed(2)}%) มูลค่าตลาด ${marketCapFormatted}`,
+          description: q.longName || q.shortName || `Live trading quote for ${cleanSym}`
+        };
 
-      if (cachedStocks) {
-        const existingIdx = cachedStocks.findIndex((s) => s.ticker.toUpperCase() === cleanSym);
-        if (existingIdx >= 0) {
-          cachedStocks[existingIdx] = singleStock;
-        } else {
-          cachedStocks.unshift(singleStock);
+        if (cachedStocks) {
+          const existingIdx = cachedStocks.findIndex((s) => s.ticker.toUpperCase() === cleanSym);
+          if (existingIdx >= 0) {
+            cachedStocks[existingIdx] = singleStock;
+          } else {
+            cachedStocks.unshift(singleStock);
+          }
         }
+        return singleStock;
       }
-      return singleStock;
+    } catch {
+      // Continue to fallback symbol
     }
-  } catch (yfErr) {
-    console.warn(`[yfinanceBridge] yahoo-finance2 SDK quote failed for ${targetSymbol}, falling back to REST:`, yfErr);
   }
 
   // 3. Fallback: Query Direct Yahoo Finance Chart REST API
   try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(targetSymbol)}?interval=1d&range=5d`;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(primarySymbol)}?interval=1d&range=5d`;
 
     const res = await fetch(url, {
       headers: {

@@ -122,14 +122,20 @@ export async function GET(request: NextRequest) {
         }
       );
 
-      // Instant On-Demand Ticker Retrieval: If not in local list and looks like a ticker symbol, fetch immediately
-      const hasExactMatch = filtered.some((s) => s.ticker.toUpperCase() === rawTicker);
-      if (!hasExactMatch && /^[A-Z0-9.\-]{1,10}$/i.test(rawTicker)) {
+      // Instant On-Demand Ticker Retrieval: Actively fetch live quote for exact ticker match or missing data
+      if (/^[A-Z0-9.\-]{1,10}$/i.test(rawTicker)) {
         try {
-          const onDemandStock = await fetchStockByTicker(rawTicker, market !== 'ALL' ? market : undefined);
-          if (onDemandStock) {
-            if (market === 'ALL' || onDemandStock.market === market) {
-              filtered.unshift(onDemandStock);
+          const exactIdx = filtered.findIndex((s) => s.ticker.toUpperCase() === rawTicker);
+          const needsEnrichment = exactIdx === -1 || filtered[exactIdx].volume === '—' || (filtered[exactIdx].price === 50 && filtered[exactIdx].change === 0);
+          
+          if (needsEnrichment) {
+            const onDemandStock = await fetchStockByTicker(rawTicker, market !== 'ALL' ? market : undefined, true);
+            if (onDemandStock) {
+              if (exactIdx >= 0) {
+                filtered[exactIdx] = onDemandStock;
+              } else if (market === 'ALL' || onDemandStock.market === market) {
+                filtered.unshift(onDemandStock);
+              }
             }
           }
         } catch (err) {
