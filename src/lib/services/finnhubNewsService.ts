@@ -1,5 +1,6 @@
 import type { StockNewsItem, SentimentType, NewsCategory } from '../schemas/newsSchema';
 import { translateClean } from '../utils/newsTranslationEngine';
+import { classifyNewsIntelligence } from '../utils/newsClassifier';
 
 const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || 'dadd9d9r01qtj63otibgdadd9d9r01qtj63otic0';
 
@@ -104,72 +105,65 @@ export async function fetchFinnhubCompanyNews(symbol: string): Promise<StockNews
     const items: StockNewsItem[] = rawList.slice(0, 15).map((item: any) => {
       const headline = item.headline || `Breaking news for ${cleanSymbol}`;
       const summary = item.summary || headline;
-      const combinedText = `${headline} ${summary}`;
-      const sentiment = detectSentiment(combinedText);
-      const category = detectCategory(combinedText);
+      const sourceName = item.source ? `${item.source} (Finnhub)` : 'Finnhub Global';
+
+      // Run advanced multi-entity intelligence & ticker prioritizer
+      const intelligence = classifyNewsIntelligence(headline, summary, 'global', sourceName);
+
       const epoch = item.datetime || Math.floor(Date.now() / 1000);
       const dateStrTh = formatRelativeTime(epoch);
       const dateStrEn = formatRelativeTimeEn(epoch);
-      const sourceName = item.source ? `${item.source} (Finnhub)` : 'Finnhub Global';
 
-      const title_th = translateClean(headline, 'th');
-      const title_en = headline;
-      const summary_th = translateClean(summary, 'th');
-      const summary_en = summary;
+      // Merge cleanSymbol into tickers if it was queried and not yet included
+      const resolvedTickers = intelligence.tickers.length > 0 
+        ? [...intelligence.tickers] 
+        : [cleanSymbol];
+      if (!resolvedTickers.includes(cleanSymbol) && `${headline} ${summary}`.toUpperCase().includes(cleanSymbol)) {
+        resolvedTickers.push(cleanSymbol);
+      }
+
+      const tickerListLabel = resolvedTickers.map((t) => `$${t}`).join(', ');
 
       const keyTakeaways_th = [
-        `${title_th} - ข่าวสารตรงจากสำนักข่าวชั้นนำระดับสากล (${item.source || 'Global'})`,
-        `การประเมินสัญญาณข่าวจาก AI: ${sentiment === 'bullish' ? 'เชิงบวก (Bullish Outlook)' : sentiment === 'bearish' ? 'ระวังแรงกดดัน (Bearish Outlook)' : 'ทรงตัวเป็นกลาง (Neutral)'}`,
-        `หุ้นเป้าหมาย: $${cleanSymbol} • ข้อมูลสดรับรองโดย Finnhub Intelligence Platform`
+        `${intelligence.title_th} - ข่าวสารตรงจากสำนักข่าวชั้นนำระดับสากล (${item.source || 'Global'})`,
+        `การประเมินสัญญาณข่าวจาก AI: ${intelligence.sentiment === 'bullish' ? 'เชิงบวก (Bullish Outlook)' : intelligence.sentiment === 'bearish' ? 'ระวังแรงกดดัน (Bearish Outlook)' : 'ทรงตัวเป็นกลาง (Neutral)'}`,
+        `หุ้นที่เกี่ยวข้อง: ${tickerListLabel} • ข้อมูลสดรับรองโดย Finnhub Intelligence Platform`
       ];
 
       const keyTakeaways_en = [
-        `${headline} - Direct intelligence from verified international source (${item.source || 'Global'})`,
-        `AI Sentiment Assessment: ${sentiment === 'bullish' ? 'Bullish Catalyst' : sentiment === 'bearish' ? 'Bearish Pressure' : 'Neutral Outlook'}`,
-        `Target Asset: $${cleanSymbol} • Verified by Finnhub Intelligence Platform`
+        `${intelligence.title_en} - Direct intelligence from verified international source (${item.source || 'Global'})`,
+        `AI Sentiment Assessment: ${intelligence.sentiment === 'bullish' ? 'Bullish Catalyst' : intelligence.sentiment === 'bearish' ? 'Bearish Pressure' : 'Neutral Outlook'}`,
+        `Related Equities: ${tickerListLabel} • Verified by Finnhub Intelligence Platform`
       ];
 
       return {
         id: `finnhub-${item.id || Math.random().toString(36).substring(2, 9)}`,
-        title: headline,
-        title_th,
-        title_en,
-        summary,
-        summary_th,
-        summary_en,
+        title: intelligence.cleanTitle,
+        title_th: intelligence.title_th,
+        title_en: intelligence.title_en,
+        summary: intelligence.cleanSummary,
+        summary_th: intelligence.summary_th,
+        summary_en: intelligence.summary_en,
         keyTakeaways: keyTakeaways_en,
         keyTakeaways_th,
         keyTakeaways_en,
-        fullContent: `${headline}\n\n${summary}\n\nSource: ${item.source || 'Finnhub News'}\nURL: ${item.url || ''}`,
-        fullContent_th: `${title_th}\n\n${summary_th}\n\nที่มา: ${item.source || 'Finnhub News'}\nลิงก์ต้นฉบับ: ${item.url || ''}`,
-        fullContent_en: `${headline}\n\n${summary}\n\nSource: ${item.source || 'Finnhub News'}\nURL: ${item.url || ''}`,
+        fullContent: `${intelligence.cleanTitle}\n\n${intelligence.cleanSummary}\n\nSource: ${item.source || 'Finnhub News'}\nURL: ${item.url || ''}`,
+        fullContent_th: `${intelligence.title_th}\n\n${intelligence.summary_th}\n\nที่มา: ${item.source || 'Finnhub News'}\nลิงก์ต้นฉบับ: ${item.url || ''}`,
+        fullContent_en: `${intelligence.cleanTitle}\n\n${intelligence.cleanSummary}\n\nSource: ${item.source || 'Finnhub News'}\nURL: ${item.url || ''}`,
         region: 'global',
         timeframe: 'daily',
-        marketName: 'US / Global Markets',
+        marketName: intelligence.marketName || 'US / Global Markets',
         date: dateStrEn,
         time: new Date(epoch * 1000).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.',
         periodLabel: `Live Finnhub • ${dateStrEn}`,
         periodLabel_th: `ข่าวสด Finnhub • ${dateStrTh}`,
         periodLabel_en: `Live Finnhub • ${dateStrEn}`,
-        sentiment,
-        tickers: [cleanSymbol],
+        sentiment: intelligence.sentiment,
+        tickers: resolvedTickers,
         readTime: '2 min',
         source: sourceName,
-        category,
-        impactAnalysis: {
-          bullishReason: sentiment === 'bullish' ? `Finnhub Intelligence: Strong buying momentum and growth signals for $${cleanSymbol}` : undefined,
-          bullishReason_th: sentiment === 'bullish' ? `Finnhub Intelligence: สัญญาณการเติบโตเชิงบวกและแรงซื้อต่อเนื่องในหุ้น $${cleanSymbol}` : undefined,
-          bullishReason_en: sentiment === 'bullish' ? `Finnhub Intelligence: Strong buying momentum and growth signals for $${cleanSymbol}` : undefined,
-          bearishReason: sentiment === 'bearish' ? `Finnhub Intelligence: Potential short-term volatility or pressure on $${cleanSymbol}` : undefined,
-          bearishReason_th: sentiment === 'bearish' ? `Finnhub Intelligence: แรงกดดันจากความผันผวนหรือความกังวลระยะสั้นในหุ้น $${cleanSymbol}` : undefined,
-          bearishReason_en: sentiment === 'bearish' ? `Finnhub Intelligence: Potential short-term volatility or pressure on $${cleanSymbol}` : undefined,
-          targetSector: 'US & Global Markets',
-          targetSector_th: 'หุ้นสหรัฐฯ & สากล',
-          targetSector_en: 'US & Global Markets',
-          priceTrendOutlook: sentiment === 'bullish' ? 'Upward momentum expected' : sentiment === 'bearish' ? 'Caution on short-term pullback' : 'Consolidation range (Sideways)',
-          priceTrendOutlook_th: sentiment === 'bullish' ? 'แนวโน้มเชิงบวก มีโอกาสทดสอบระดับสูงสุดใหม่' : sentiment === 'bearish' ? 'แนวโน้มชะลอตัว ระมัดระวังความผันผวนระยะสั้น' : 'แกว่งตัวรอปัจจัยบวกใหม่ (Sideways)',
-          priceTrendOutlook_en: sentiment === 'bullish' ? 'Upward momentum expected' : sentiment === 'bearish' ? 'Caution on short-term pullback' : 'Consolidation range (Sideways)',
-        },
+        category: intelligence.category,
+        impactAnalysis: intelligence.impactAnalysis,
         isFeatured: false,
         isBookmarked: false,
         link: item.url || `https://finance.yahoo.com/quote/${cleanSymbol}`,

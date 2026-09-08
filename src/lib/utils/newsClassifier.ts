@@ -201,35 +201,42 @@ const ENTITY_RULES: EntityTickerRule[] = [
     marketName: 'Global Tech & US Markets',
   },
   {
-    keywords: ['nvidia', 'เอ็นวิเดีย', 'jensen huang', 'เจนเซ่น หวง', 'blackwell', 'h100', 'b200', 'geforce', 'ชิป ai'],
-    tickers: ['NVDA', 'SMCI'],
+    keywords: ['nvidia', 'เอ็นวิเดีย', 'jensen huang', 'เจนเซ่น หวง', 'blackwell', 'h100', 'b200', 'geforce', 'nvda'],
+    tickers: ['NVDA'],
     category: 'tech',
     region: 'global',
     marketName: 'US Markets (Nasdaq)',
   },
   {
-    keywords: ['apple', 'แอปเปิ้ล', 'iphone', 'ipad', 'macbook', 'tim cook', 'ทิม คุก', 'vision pro', 'ios'],
+    keywords: ['super micro', 'supermicro', 'smci', 'charles liang'],
+    tickers: ['SMCI'],
+    category: 'tech',
+    region: 'global',
+    marketName: 'US Markets (Nasdaq)',
+  },
+  {
+    keywords: ['apple', 'แอปเปิ้ล', 'iphone', 'ipad', 'macbook', 'tim cook', 'ทิม คุก', 'vision pro', 'ios', 'aapl'],
     tickers: ['AAPL'],
     category: 'tech',
     region: 'global',
     marketName: 'US Markets (Nasdaq)',
   },
   {
-    keywords: ['tesla', 'เทสลา', 'elon musk', 'อีลอน มัสก์', 'model 3', 'model y', 'cybertruck', 'gigafactory', 'รถยนต์ไฟฟ้า'],
+    keywords: ['tesla', 'เทสลา', 'elon musk', 'อีลอน มัสก์', 'model 3', 'model y', 'cybertruck', 'gigafactory', 'รถยนต์ไฟฟ้า', 'tsla'],
     tickers: ['TSLA'],
     category: 'tech',
     region: 'global',
     marketName: 'US Markets (Nasdaq)',
   },
   {
-    keywords: ['microsoft', 'ไมโครซอฟท์', 'copilot', 'azure', 'satya nadella', 'windows'],
+    keywords: ['microsoft', 'ไมโครซอฟท์', 'copilot', 'azure', 'satya nadella', 'windows', 'msft'],
     tickers: ['MSFT'],
     category: 'tech',
     region: 'global',
     marketName: 'US Markets (Nasdaq)',
   },
   {
-    keywords: ['google', 'alphabet', 'กูเกิล', 'gemini ai', 'youtube', 'sundar pichai', 'แอนดรอยด์'],
+    keywords: ['google', 'alphabet', 'กูเกิล', 'gemini ai', 'youtube', 'sundar pichai', 'แอนดรอยด์', 'googl', 'goog'],
     tickers: ['GOOGL'],
     category: 'tech',
     region: 'global',
@@ -243,7 +250,7 @@ const ENTITY_RULES: EntityTickerRule[] = [
     marketName: 'US Markets (Nasdaq)',
   },
   {
-    keywords: ['amazon', 'อเมซอน', 'aws', 'jeff bezos', 'เจฟฟ์ เบโซส์', 'cloud computing'],
+    keywords: ['amazon', 'อเมซอน', 'aws', 'jeff bezos', 'เจฟฟ์ เบโซส์', 'cloud computing', 'amzn'],
     tickers: ['AMZN'],
     category: 'tech',
     region: 'global',
@@ -257,7 +264,7 @@ const ENTITY_RULES: EntityTickerRule[] = [
     marketName: 'US Markets (Nasdaq)',
   },
   {
-    keywords: ['tsmc', 'ไต้หวันเซมิคอนดักเตอร์', 'taiwan semiconductor', 'foundry'],
+    keywords: ['tsmc', 'ไต้หวันเซมิคอนดักเตอร์', 'taiwan semiconductor', 'foundry', 'tsm'],
     tickers: ['TSM'],
     category: 'tech',
     region: 'global',
@@ -271,29 +278,39 @@ const ENTITY_RULES: EntityTickerRule[] = [
     marketName: 'Global Tech (Nasdaq/AEX)',
   },
   {
-    keywords: ['palantir', 'พาแลนเทียร์', 'pltr', 'alex karp'],
+    keywords: ['palantir', 'พาแลนเทียร์', 'pltr', 'alex karp', 'palantir technologies'],
     tickers: ['PLTR'],
     category: 'tech',
     region: 'global',
     marketName: 'US Markets (NYSE)',
   },
-
-  // --- Commodities & Gold ---
   {
-    keywords: ['ราคาทองคำ', 'ทองคำ', 'gold spot', 'xauusd', 'ราคาทอง', 'ฮั่วเซ่งเฮง', 'mts gold'],
-    tickers: ['GLD', 'GOLD'],
-    category: 'macro',
-    region: 'global',
-    marketName: 'Global Commodities (ทองคำ)',
-  },
-
-  // --- Cloud & Enterprise SaaS ---
-  {
-    keywords: ['snowflake', 'สโนว์เฟลก', 'salesforce', 'crm', 'oracle', 'ออราเคิล', 'adobe', 'servicenow', 'datadog'],
-    tickers: ['SNOW', 'CRM', 'ORCL'],
+    keywords: ['salesforce', 'เซลส์ฟอร์ซ', 'crm', 'marc benioff'],
+    tickers: ['CRM'],
     category: 'tech',
     region: 'global',
-    marketName: 'US Markets (Cloud & AI)',
+    marketName: 'US Markets (NYSE)',
+  },
+  {
+    keywords: ['broadcom', 'บรอดคอม', 'avgo', 'hock tan'],
+    tickers: ['AVGO'],
+    category: 'tech',
+    region: 'global',
+    marketName: 'US Markets (Nasdaq)',
+  },
+  {
+    keywords: ['oracle', 'ออราเคิล', 'orcl', 'larry ellison'],
+    tickers: ['ORCL'],
+    category: 'tech',
+    region: 'global',
+    marketName: 'US Markets (NYSE)',
+  },
+  {
+    keywords: ['snowflake', 'สโนว์เฟลก', 'snow'],
+    tickers: ['SNOW'],
+    category: 'tech',
+    region: 'global',
+    marketName: 'US Markets (NYSE)',
   },
 
   // --- Crypto & Digital Assets ---
@@ -568,25 +585,70 @@ export function classifyNewsIntelligence(
   let detectedRegion: MarketRegion = feedCategory;
   let marketName = feedCategory === 'thai' ? 'SET Index (ไทย)' : 'US / Global Markets';
 
-  // 1. Check Entity Rules for specific proxies (OpenAI -> MSFT/NVDA, etc.)
-  let matchedRule: EntityTickerRule | null = null;
-  for (const rule of ENTITY_RULES) {
-    const isMatched = rule.keywords.some((kw) => {
-      const lowerKw = kw.toLowerCase();
-      if (/^[a-z0-9]+$/i.test(lowerKw) && lowerKw.length <= 4) {
-        const wordRegex = new RegExp(`\\b${lowerKw}\\b`, 'i');
-        return wordRegex.test(fullText);
-      }
-      return fullText.includes(lowerKw);
-    });
+  // 1. Check all Entity Rules and prioritize by appearance position in headline first, then summary
+  interface MatchCandidate {
+    rule: EntityTickerRule;
+    position: number;
+    inTitle: boolean;
+  }
 
-    if (isMatched) {
-      matchedRule = rule;
-      matchedTickers.push(...rule.tickers);
-      detectedCategory = rule.category;
-      detectedRegion = rule.region;
-      marketName = rule.marketName;
-      break;
+  const matchedCandidates: MatchCandidate[] = [];
+  const lowerTitle = cleanTitle.toLowerCase();
+  const lowerSummary = cleanSummary.toLowerCase();
+
+  for (const rule of ENTITY_RULES) {
+    let bestPos = Infinity;
+    let foundInTitle = false;
+
+    for (const kw of rule.keywords) {
+      const lowerKw = kw.toLowerCase();
+      let posInTitle = -1;
+      let posInSummary = -1;
+
+      if (/^[a-z0-9]+$/i.test(lowerKw) && lowerKw.length <= 4) {
+        const regex = new RegExp(`\\b${lowerKw}\\b`, 'i');
+        const matchTitle = lowerTitle.search(regex);
+        const matchSum = lowerSummary.search(regex);
+        posInTitle = matchTitle;
+        posInSummary = matchSum;
+      } else {
+        posInTitle = lowerTitle.indexOf(lowerKw);
+        posInSummary = lowerSummary.indexOf(lowerKw);
+      }
+
+      if (posInTitle !== -1 && posInTitle < bestPos) {
+        bestPos = posInTitle;
+        foundInTitle = true;
+      } else if (posInSummary !== -1 && !foundInTitle && (1000 + posInSummary) < bestPos) {
+        bestPos = 1000 + posInSummary;
+      }
+    }
+
+    if (bestPos !== Infinity) {
+      matchedCandidates.push({
+        rule,
+        position: bestPos,
+        inTitle: foundInTitle
+      });
+    }
+  }
+
+  // Sort candidates so the company appearing first in the headline is primary!
+  matchedCandidates.sort((a, b) => a.position - b.position);
+
+  let matchedRule: EntityTickerRule | null = null;
+  if (matchedCandidates.length > 0) {
+    matchedRule = matchedCandidates[0].rule;
+    detectedCategory = matchedRule.category;
+    detectedRegion = matchedRule.region;
+    marketName = matchedRule.marketName;
+
+    for (const cand of matchedCandidates) {
+      for (const tkr of cand.rule.tickers) {
+        if (!matchedTickers.includes(tkr)) {
+          matchedTickers.push(tkr);
+        }
+      }
     }
   }
 
@@ -594,7 +656,7 @@ export function classifyNewsIntelligence(
   const hasThaiKeywords = THAI_SET_MARKET_KEYWORDS.some((kw) => fullText.includes(kw));
   
   if (matchedRule) {
-    // If an explicit entity like OpenAI or Nvidia was matched and has no Thai SET keywords, lock to Global!
+    // If an explicit entity like OpenAI or Nvidia or Palantir was matched and has no Thai SET keywords, lock to Global!
     if (matchedRule.region === 'global') {
       detectedRegion = 'global';
     }
@@ -615,7 +677,7 @@ export function classifyNewsIntelligence(
     }
   }
 
-  // Deduplicate tickers
+  // Deduplicate tickers and keep top 4 sorted by relevance
   const uniqueTickers = Array.from(new Set(matchedTickers)).slice(0, 4);
 
   // 3. Detect Sentiment
