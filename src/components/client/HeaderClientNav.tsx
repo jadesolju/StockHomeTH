@@ -152,7 +152,7 @@ export function HeaderClientNav({
                 <Sparkles size={9} /> AI
               </span>
             </div>
-            <p className="desktop-nav-bar" style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', margin: '0', marginTop: '1px' }}>
+            <p suppressHydrationWarning className="desktop-nav-bar" style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', margin: '0', marginTop: '1px' }}>
               {currentDate}
             </p>
           </div>
