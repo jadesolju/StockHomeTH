@@ -311,6 +311,47 @@ async function loadSupabaseStocks(): Promise<StockFundamental[] | null> {
   return null;
 }
 
+export async function updateSupabaseStock(stock: StockFundamental): Promise<void> {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'https://vxfyflltpdqkddnmpwdg.supabase.co';
+    const supabaseKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.SUPABASE_SECRET_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      process.env.SUPABASE_ANON_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.SUPABASE_PUBLISHABLE_KEY ||
+      'sb_publishable_4uyj29eoy8YuXHj4sCejPg_gEcfN1AM';
+
+    if (!supabaseUrl || !supabaseKey) return;
+
+    const endpoint = `${supabaseUrl}/rest/v1/stocks?ticker=eq.${encodeURIComponent(stock.ticker)}`;
+    await fetch(endpoint, {
+      method: 'PATCH',
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        price: stock.price,
+        change: stock.change,
+        market_cap: stock.marketCap,
+        pe_ratio: stock.peRatio,
+        dividend_yield: stock.dividendYield,
+        high_52w: stock.high52w,
+        low_52w: stock.low52w,
+        volume: stock.volume,
+        analyst_rating: stock.analystRating,
+        target_price: stock.targetPrice,
+        updated_at: new Date().toISOString()
+      })
+    });
+  } catch (err) {
+    // Non-blocking sync
+  }
+}
+
 export async function fetchLiveStocksFromYFinance(): Promise<StockFundamental[]> {
   const now = Date.now();
 
@@ -455,6 +496,7 @@ export async function fetchSingleStockYFinance(symbol: string, market?: string, 
             cachedStocks.unshift(singleStock);
           }
         }
+        updateSupabaseStock(singleStock).catch(() => {});
         return singleStock;
       }
     } catch {
@@ -539,6 +581,7 @@ export async function fetchSingleStockYFinance(symbol: string, market?: string, 
             cachedStocks.unshift(singleStock);
           }
         }
+        updateSupabaseStock(singleStock).catch(() => {});
         return singleStock;
       }
     }

@@ -23,6 +23,8 @@ interface MarketSyncContextType {
   setSelectedMarket: (market: 'ALL' | 'SET' | 'US') => void;
   activeStockModal: StockFundamental | null;
   setActiveStockModal: (stock: StockFundamental | null) => void;
+  updateStock: (stock: StockFundamental) => void;
+  updateStocks: (stocks: StockFundamental[]) => void;
   activeNewsModal: StockNewsItem | null;
   setActiveNewsModal: (news: StockNewsItem | null) => void;
   lastUpdated: string;
@@ -607,6 +609,47 @@ export function MarketSyncProvider({
     [getStockByTicker, addLogEntries]
   );
 
+  // Update single stock data in global context (guarantees cards & modal are 100% in sync)
+  const updateStock = useCallback((freshStock: StockFundamental) => {
+    if (!freshStock || !freshStock.ticker) return;
+    const cleanSym = freshStock.ticker.toUpperCase();
+    const market = freshStock.market;
+
+    setStocks((prev) => {
+      const idx = prev.findIndex(
+        (s) => s.ticker.toUpperCase() === cleanSym && (!market || s.market === market)
+      );
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], ...freshStock };
+        return next;
+      }
+      return [freshStock, ...prev];
+    });
+  }, []);
+
+  // Bulk update multiple stocks (from parallel/live feeds)
+  const updateStocks = useCallback((freshList: StockFundamental[]) => {
+    if (!freshList || freshList.length === 0) return;
+    const freshMap = new Map(
+      freshList.map((s) => [`${(s.market || 'SET').toUpperCase()}-${s.ticker.toUpperCase()}`, s])
+    );
+
+    setStocks((prev) => {
+      let changed = false;
+      const next = prev.map((item) => {
+        const key = `${(item.market || 'SET').toUpperCase()}-${item.ticker.toUpperCase()}`;
+        const fresh = freshMap.get(key);
+        if (fresh) {
+          changed = true;
+          return { ...item, ...fresh };
+        }
+        return item;
+      });
+      return changed ? next : prev;
+    });
+  }, []);
+
   const contextValue = useMemo(
     () => ({
       stocks,
@@ -623,6 +666,8 @@ export function MarketSyncProvider({
       setSelectedMarket,
       activeStockModal,
       setActiveStockModal,
+      updateStock,
+      updateStocks,
       activeNewsModal,
       setActiveNewsModal,
       lastUpdated,
@@ -663,6 +708,8 @@ export function MarketSyncProvider({
       searchQuery,
       selectedMarket,
       activeStockModal,
+      updateStock,
+      updateStocks,
       activeNewsModal,
       lastUpdated,
       lastStockSyncTime,

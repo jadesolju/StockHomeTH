@@ -101,6 +101,8 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
     isLoadingMoreStocks,
     loadNextStockChunk,
     tickerFlashMap,
+    updateStock,
+    updateStocks,
   } = useMarketSync();
   const { t, tDynamic, language } = useLanguage();
   const { user, openAuthModal } = useClientAuth();
@@ -517,6 +519,55 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
     };
   }, [activeStockModal]);
 
+  const stocksRef = useRef(stocks);
+  useEffect(() => {
+    stocksRef.current = stocks;
+  }, [stocks]);
+
+  // Background live quote sync for top active/featured stocks on mount (ensures cards match live modal quotes right away)
+  useEffect(() => {
+    let isCancelled = false;
+    const topSymbols = ['DELTA', 'PTT', 'CPALL', 'AOT', 'KBANK', 'SCB', 'GULF', 'NVDA', 'AAPL', 'MSFT', 'TSLA'];
+    fetch(`/api/stocks/parallel?symbols=${topSymbols.join(',')}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (isCancelled || !res?.success || !res.data) return;
+        const freshList: StockFundamental[] = [];
+        for (const [sym, quote] of Object.entries(res.data as Record<string, any>)) {
+          if (!quote || typeof quote.current_price !== 'number') continue;
+          const match = stocksRef.current.find((s) => s.ticker.toUpperCase() === sym.toUpperCase());
+          if (match) {
+            freshList.push({
+              ...match,
+              price: quote.current_price,
+              change: typeof quote.change_percent === 'number' ? quote.change_percent : match.change,
+              high52w: quote.high52w || match.high52w,
+              low52w: quote.low52w || match.low52w,
+            });
+          }
+        }
+        if (freshList.length > 0) {
+          updateStocks(freshList);
+          setLocalExtraStocks((prev) => {
+            const next = [...prev];
+            for (const item of freshList) {
+              const idx = next.findIndex(
+                (s) => s.ticker.toUpperCase() === item.ticker.toUpperCase() && s.market === item.market
+              );
+              if (idx >= 0) next[idx] = item;
+              else next.push(item);
+            }
+            return next;
+          });
+        }
+      })
+      .catch((err) => console.warn('[StockExplorer] Background parallel sync warning:', err));
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [updateStocks]);
+
   // Fetch real-time live stock quote & fundamentals from Yahoo Finance & Webull when opening modal
   useEffect(() => {
     if (!activeStockModal) return;
@@ -530,6 +581,18 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
         if (!isCancelled && res && res.success && res.data) {
           const freshData = res.data as StockFundamental;
           setActiveStockModal(freshData);
+          updateStock(freshData);
+          setLocalExtraStocks((prev) => {
+            const idx = prev.findIndex(
+              (s) => s.ticker.toUpperCase() === freshData.ticker.toUpperCase() && s.market === freshData.market
+            );
+            if (idx >= 0) {
+              const next = [...prev];
+              next[idx] = freshData;
+              return next;
+            }
+            return [freshData, ...prev];
+          });
         }
       })
       .catch((err) => {
@@ -539,7 +602,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
     return () => {
       isCancelled = true;
     };
-  }, [activeStockModal?.ticker, activeStockModal?.market]);
+  }, [activeStockModal?.ticker, activeStockModal?.market, updateStock]);
 
   const relatedNews = useMemo(() => {
     if (!activeStockModal) return [];
