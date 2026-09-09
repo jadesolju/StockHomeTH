@@ -3,10 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Newspaper, Globe, Landmark, Building, User } from 'lucide-react';
+import { Newspaper, Globe, Landmark, Building, User, BrainCircuit } from 'lucide-react';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
-import { GemCoinIcon } from '../ui/GemCoinIcon';
 import { UserAvatar } from '../ui/UserAvatar';
 
 export function PwaBottomNav() {
@@ -201,7 +200,7 @@ export function PwaBottomNav() {
           position: 'relative',
         }}
       >
-        <GemCoinIcon className="w-5 h-5" glow={isAiHelperActive} />
+        <BrainCircuit size={22} strokeWidth={isAiHelperActive ? 2.4 : 1.8} />
         {isAiHelperActive && (
           <span
             style={{

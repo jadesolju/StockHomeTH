@@ -28,7 +28,6 @@ import { useTheme } from '../../lib/context/ThemeContext';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
 import { useSubscription } from '../../lib/context/SubscriptionContext';
-import { GemCoinIcon } from '../ui/GemCoinIcon';
 import { UserAvatar } from '../ui/UserAvatar';
 
 interface HeaderClientNavProps {
@@ -54,7 +53,7 @@ export function HeaderClientNav({
   const { theme, resolvedTheme, cycleTheme } = useTheme();
   const { setSelectedMarket, refreshAll, isSyncing, cooldownRemaining } = useMarketSync();
   const { user, openAuthModal, openProfileModal, signOut } = useClientAuth();
-  const { openPricingModal, currentTier, totalGemCoinsAvailable, openGemCoinModal } = useSubscription();
+  const { openPricingModal, currentTier } = useSubscription();
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLocalEnv, setIsLocalEnv] = useState(false);
@@ -298,30 +297,6 @@ export function HeaderClientNav({
               <span>{currentTier === 'vip' ? 'VIP Trader' : currentTier === 'pro' ? 'Pro Member' : 'แพ็กเกจสมาชิก'}</span>
             </button>
           )}
-
-          {/* GemCoin Wallet Quick Button */}
-          <button
-            onClick={() => openGemCoinModal('topup')}
-            className="ios-glass-btn"
-            title="เปิดกระเป๋าเหรียญ GemCoin & ร้านค้า"
-            style={{
-              background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(59, 130, 246, 0.1) 100%)',
-              border: '1px solid rgba(6, 182, 212, 0.4)',
-              borderRadius: '100px',
-              padding: '5px 10px',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '5px',
-              color: '#38bdf8',
-              fontSize: '0.75rem',
-              fontWeight: 800,
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <GemCoinIcon className="w-4 h-4" glow={false} />
-            <span>{totalGemCoinsAvailable?.toLocaleString() || 0}</span>
-          </button>
 
           {/* Member Auth Button / Profile Dropdown (Desktop view) */}
           <div className="desktop-nav-bar" style={{ position: 'relative' }} ref={userMenuRef}>
