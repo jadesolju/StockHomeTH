@@ -273,7 +273,7 @@ export function MockPaymentModal({ isOpen, onClose, targetTier, onSuccess }: Moc
                 }}
               >
                 <Upload size={16} />
-                <span>{slipFile ? '✓ อัปโหลดสลิปเรียบร้อย (Mock)' : 'อัปโหลดสลิป (Mock Slip)'}</span>
+                <span>{slipFile ? 'อัปโหลดสลิปเรียบร้อย (Mock)' : 'อัปโหลดสลิป (Mock Slip)'}</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -345,9 +345,9 @@ export function MockPaymentModal({ isOpen, onClose, targetTier, onSuccess }: Moc
               </button>
             </div>
 
-            {/* Sandbox Notice */}
-            <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
-              🔒 สภาพแวดล้อม Local Sandbox — ปลอดภัย 100% ไม่มีตัดเงินจริง
+            <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '11px', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+              <ShieldCheck size={13} />
+              <span>สภาพแวดล้อม Local Sandbox — ปลอดภัย 100% ไม่มีตัดเงินจริง</span>
             </div>
           </div>
         )}

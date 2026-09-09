@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import '../styles/glass-ios.css';
+import '../styles/ai-chat.css';
 import { HeaderClientNav } from '../components/client/HeaderClientNav';
 import { SyncLogModal } from '../components/client/SyncLogModal';
 import { AuthModal } from '../components/client/AuthModal';
@@ -10,6 +11,8 @@ import { ThemeProvider } from '../lib/context/ThemeContext';
 import { ClientAuthProvider } from '../lib/context/ClientAuthContext';
 import { SubscriptionProvider } from '../lib/context/SubscriptionContext';
 import { PricingModal } from '../components/client/PricingModal';
+import { GemCoinModal } from '../components/client/GemCoinModal';
+import { AiFloatingLauncher } from '../components/client/AiFloatingLauncher';
 import { LocalRoleSwitcher } from '../components/client/LocalRoleSwitcher';
 import { PwaRegisterClient } from '../components/client/PwaRegisterClient';
 import { PwaBottomNav } from '../components/client/PwaBottomNav';
@@ -73,6 +76,8 @@ export default function RootLayout({
                   <AuthModal />
                   <UserProfileModal />
                   <PricingModal />
+                  <GemCoinModal />
+                  <AiFloatingLauncher />
                   <LocalRoleSwitcher />
                   <PwaBottomNav />
                   <GlobalNewsModal />

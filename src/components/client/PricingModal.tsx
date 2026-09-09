@@ -23,7 +23,7 @@ export function PricingModal() {
   const handleSelectPlan = (planId: SubscriptionTier) => {
     if (planId === 'free') {
       setTier('free');
-      setSuccessToast(`🎉 ปรับสิทธิ์เป็น Free Member เรียบร้อยแล้ว`);
+      setSuccessToast(`ปรับสิทธิ์เป็น Free Member เรียบร้อยแล้ว`);
       setTimeout(() => {
         setSuccessToast(null);
         closePricingModal();
@@ -369,7 +369,7 @@ export function PricingModal() {
 
         {/* Local Test Mode Disclaimer */}
         <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
-          🔒 Local Sandbox Environment — รองรับ PromptPay QR จำลอง พร้อมปุ่ม [Dev: Simulate Success] เพื่อทดสอบสิทธิ์ทันที
+          Local Sandbox Environment — รองรับ PromptPay QR จำลอง พร้อมปุ่ม [Dev: Simulate Success] เพื่อทดสอบสิทธิ์ทันที
         </div>
       </div>
 
@@ -380,7 +380,7 @@ export function PricingModal() {
           targetTier={paymentModalTier}
           onClose={() => setPaymentModalTier(null)}
           onSuccess={() => {
-            setSuccessToast(`🎉 อัปเกรดเป็น ${paymentModalTier.toUpperCase()} เรียบร้อยแล้ว!`);
+            setSuccessToast(`อัปเกรดเป็น ${paymentModalTier.toUpperCase()} เรียบร้อยแล้ว!`);
             setTimeout(() => {
               setSuccessToast(null);
               closePricingModal();

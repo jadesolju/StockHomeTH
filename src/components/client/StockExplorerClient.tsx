@@ -1220,7 +1220,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                             gap: '3px'
                           }}
                         >
-                          🎯 {language === 'en' ? 'Exact Match' : 'ผลการค้นหาตรงกัน'}
+                          {language === 'en' ? 'Exact Match' : 'ผลการค้นหาตรงกัน'}
                         </span>
                       )}
                     </div>
@@ -1431,7 +1431,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                               border: '1px solid rgba(0, 122, 255, 0.5)'
                             }}
                           >
-                            🎯 {language === 'en' ? 'Match' : 'ตรงกัน'}
+                            {language === 'en' ? 'Match' : 'ตรงกัน'}
                           </span>
                         )}
                       </div>
@@ -2078,7 +2078,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                           cursor: 'pointer',
                         }}
                       >
-                        ⚡ อัปเกรดรับโควตาเพิ่ม
+                        อัปเกรดรับโควตาเพิ่ม
                       </button>
                     </div>
                   )}
@@ -2182,10 +2182,10 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                         }}
                       >
                         <div style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
-                          📊 กราฟ & เทคนิค: <span style={{ color: currentAnalysis.technicalInsight.trend === 'BULLISH' ? 'var(--accent-bullish)' : '#eab308' }}>{currentAnalysis.technicalInsight.trend}</span> • แนวรับ {currentAnalysis.currency === 'THB' ? '฿' : '$'}{currentAnalysis.technicalInsight.supportLevel} • แนวต้าน {currentAnalysis.currency === 'THB' ? '฿' : '$'}{currentAnalysis.technicalInsight.resistanceLevel}
+                          กราฟ & เทคนิค: <span style={{ color: currentAnalysis.technicalInsight.trend === 'BULLISH' ? 'var(--accent-bullish)' : '#eab308' }}>{currentAnalysis.technicalInsight.trend}</span> • แนวรับ {currentAnalysis.currency === 'THB' ? '฿' : '$'}{currentAnalysis.technicalInsight.supportLevel} • แนวต้าน {currentAnalysis.currency === 'THB' ? '฿' : '$'}{currentAnalysis.technicalInsight.resistanceLevel}
                         </div>
                         <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
-                          🎯 <b>กลยุทธ์:</b> {currentAnalysis.actionableVerdict}
+                          <b>กลยุทธ์:</b> {currentAnalysis.actionableVerdict}
                         </div>
                       </div>
                     </div>

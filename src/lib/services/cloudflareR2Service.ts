@@ -1,10 +1,10 @@
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 
-const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || '';
+const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || '16e6214a95760067e9e4e448ce7048c4';
 const bucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME || 'stockhometh';
-const endpoint = process.env.CLOUDFLARE_R2_ENDPOINT || (accountId ? `https://${accountId}.r2.cloudflarestorage.com` : '');
-const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID || '';
-const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || '';
+const endpoint = process.env.CLOUDFLARE_R2_ENDPOINT || (accountId ? `https://${accountId}.r2.cloudflarestorage.com` : 'https://16e6214a95760067e9e4e448ce7048c4.r2.cloudflarestorage.com');
+const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID || '6b30f689e7171c85e3a7c6d935690345';
+const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || 'a5d647fb464de7432b926a050fec44aeb24a128355bc7f28d5311fefb89b9ac1';
 const publicDomain = process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN || '/api/upload/r2?key=';
 
 export function getR2Client(): S3Client | null {

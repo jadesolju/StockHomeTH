@@ -55,10 +55,17 @@
   --ios-radius: 16px;
   --ios-radius-sm: 10px;
   --ios-radius-lg: 24px;
+
+  --bg-primary: #000000;
+  --card-border: rgba(255, 255, 255, 0.1);
+  --footer-bg: linear-gradient(180deg, rgba(13, 15, 20, 0.6) 0%, rgba(8, 9, 12, 0.95) 100%);
+  --footer-border: rgba(255, 255, 255, 0.08);
+  --footer-divider: rgba(255, 255, 255, 0.06);
 }
 
 [data-theme='light'] {
   --bg-color: #f5f5f7;
+  --bg-primary: #f5f5f7;
   --bg-secondary: #ffffff;
   --bg-tertiary: #e5e5ea;
 
@@ -72,6 +79,7 @@
 
   --card-sub-bg: rgba(0, 0, 0, 0.035);
   --card-sub-border: rgba(0, 0, 0, 0.08);
+  --card-border: rgba(0, 0, 0, 0.1);
 
   --text-primary: #1d1d1f;
   --text-secondary: #48484a;
@@ -100,6 +108,26 @@
   --accent-neutral: #c96e00;
   --accent-neutral-bg: rgba(201, 110, 0, 0.12);
   --accent-neutral-border: rgba(201, 110, 0, 0.3);
+
+  --footer-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 240, 245, 0.98) 100%);
+  --footer-border: rgba(0, 0, 0, 0.08);
+  --footer-divider: rgba(0, 0, 0, 0.06);
+}
+
+.solid-dropdown {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--card-border) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme='light'] .solid-dropdown {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme='light'] .glass-card-hover:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
 }
 
 * {

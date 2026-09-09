@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Key, X, Check, ExternalLink, Sparkles } from 'lucide-react';
+import { Key, X, Check, ExternalLink, Sparkles, Lock } from 'lucide-react';
 
 interface ApiKeyModalProps {
   isOpen: boolean;
@@ -93,7 +93,8 @@ export function ApiKeyModal({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-blue)', fontWeight: 700, marginBottom: '4px' }}>
-            <span>🔒 มาตรฐานความปลอดภัยแบบ Self-Custody (Not Your Keys, Not Your Data)</span>
+            <Lock size={14} />
+            <span>มาตรฐานความปลอดภัยแบบ Self-Custody (Not Your Keys, Not Your Data)</span>
           </div>
           <div>
             API Key ของคุณจะถูกบันทึกไว้ใน <strong>Browser (LocalStorage) ของเครื่องคุณเท่านั้น</strong> ไม่มีการส่งไปจัดเก็บบน Database ของเซิร์ฟเวอร์ส่วนกลาง ให้คุณมีอำนาจควบคุมกุญแจ AI ของคุณเอง 100% สามารถใช้งานเพื่อวิเคราะห์หุ้นและสรุปข่าวได้อย่างเป็นส่วนตัวสูงสุด

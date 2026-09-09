@@ -739,7 +739,7 @@ export function CustomStockChart({
         }}
       >
         <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
-          📅 {activeCandle?.date || '—'}
+          {activeCandle?.date || '—'}
         </span>
         <span>
           O: <strong style={{ color: 'var(--text-primary)' }}>{activeCandle?.open != null ? Number(activeCandle.open).toFixed(2) : '—'}</strong>

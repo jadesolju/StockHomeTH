@@ -28,6 +28,8 @@ import { useTheme } from '../../lib/context/ThemeContext';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
 import { useSubscription } from '../../lib/context/SubscriptionContext';
+import { GemCoinIcon } from '../ui/GemCoinIcon';
+import { UserAvatar } from '../ui/UserAvatar';
 
 interface HeaderClientNavProps {
   onRefresh?: () => void;
@@ -52,7 +54,7 @@ export function HeaderClientNav({
   const { theme, resolvedTheme, cycleTheme } = useTheme();
   const { setSelectedMarket, refreshAll, isSyncing, cooldownRemaining } = useMarketSync();
   const { user, openAuthModal, openProfileModal, signOut } = useClientAuth();
-  const { openPricingModal, currentTier } = useSubscription();
+  const { openPricingModal, currentTier, totalGemCoinsAvailable, openGemCoinModal } = useSubscription();
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLocalEnv, setIsLocalEnv] = useState(false);
@@ -192,6 +194,13 @@ export function HeaderClientNav({
           >
             <Building size={15} /> {t('foreignStocks')}
           </Link>
+          <Link
+            href="/ai-helper"
+            className={`ios-segment-btn ${pathname === '/ai-helper' ? 'active' : ''}`}
+            style={{ textDecoration: 'none', padding: '6px 14px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Sparkles size={15} color="#06b6d4" /> AI Helper
+          </Link>
         </nav>
 
         {/* Header Action Controls: Language Switcher, Theme, Refresh & Member Auth */}
@@ -286,9 +295,33 @@ export function HeaderClientNav({
               }}
             >
               <Sparkles size={13} color={currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : '#fbbf24'} />
-              <span>{currentTier === 'vip' ? 'VIP Trader' : currentTier === 'pro' ? 'Pro Member' : '⭐ แพ็กเกจสมาชิก'}</span>
+              <span>{currentTier === 'vip' ? 'VIP Trader' : currentTier === 'pro' ? 'Pro Member' : 'แพ็กเกจสมาชิก'}</span>
             </button>
           )}
+
+          {/* GemCoin Wallet Quick Button */}
+          <button
+            onClick={() => openGemCoinModal('topup')}
+            className="ios-glass-btn"
+            title="เปิดกระเป๋าเหรียญ GemCoin & ร้านค้า"
+            style={{
+              background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(59, 130, 246, 0.1) 100%)',
+              border: '1px solid rgba(6, 182, 212, 0.4)',
+              borderRadius: '100px',
+              padding: '5px 10px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              color: '#38bdf8',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <GemCoinIcon className="w-4 h-4" glow={false} />
+            <span>{totalGemCoinsAvailable?.toLocaleString() || 0}</span>
+          </button>
 
           {/* Member Auth Button / Profile Dropdown (Desktop view) */}
           <div className="desktop-nav-bar" style={{ position: 'relative' }} ref={userMenuRef}>
@@ -311,38 +344,13 @@ export function HeaderClientNav({
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <div
-                    style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      background: '#007AFF',
-                      color: '#ffffff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.7rem',
-                      fontWeight: 800,
-                      overflow: 'hidden',
-                      position: 'relative',
-                      flexShrink: 0,
-                      border: '1.5px solid rgba(0, 122, 255, 0.4)',
-                    }}
-                  >
-                    {user.photoURL ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={user.photoURL}
-                        alt={user.displayName || 'Profile Avatar'}
-                        referrerPolicy="no-referrer"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', display: 'block' }}
-                      />
-                    ) : (
-                      <span>
-                        {user.displayName ? user.displayName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || 'M'}
-                      </span>
-                    )}
-                  </div>
+                  <UserAvatar
+                    photoURL={user.photoURL}
+                    displayName={user.displayName}
+                    email={user.email}
+                    size={24}
+                    border="1.5px solid rgba(0, 122, 255, 0.4)"
+                  />
                   <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {user.displayName || user.email?.split('@')[0]}
                   </span>
@@ -386,37 +394,13 @@ export function HeaderClientNav({
                       }}
                       className="glass-card-hover"
                     >
-                      <div
-                        style={{
-                          width: '34px',
-                          height: '34px',
-                          borderRadius: '50%',
-                          background: '#007AFF',
-                          color: '#ffffff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '0.85rem',
-                          fontWeight: 800,
-                          overflow: 'hidden',
-                          flexShrink: 0,
-                          border: '1.5px solid rgba(0, 122, 255, 0.4)',
-                        }}
-                      >
-                        {user.photoURL ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={user.photoURL}
-                            alt="Avatar"
-                            referrerPolicy="no-referrer"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        ) : (
-                          <span>
-                            {user.displayName ? user.displayName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || 'M'}
-                          </span>
-                        )}
-                      </div>
+                      <UserAvatar
+                        photoURL={user.photoURL}
+                        displayName={user.displayName}
+                        email={user.email}
+                        size={34}
+                        border="1.5px solid rgba(0, 122, 255, 0.4)"
+                      />
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {user.displayName || 'StockHome Member'}

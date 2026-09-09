@@ -775,7 +775,7 @@ export const AdminBackofficeClient: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
                 <div style={{ background: 'var(--card-sub-bg)', padding: '16px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
                   <h5 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--accent-blue)' }}>
-                    🇹🇭 ตลาดหุ้นไทย (SET / mai Universe)
+                    ตลาดหุ้นไทย (SET / mai Universe)
                   </h5>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
                     ประมวลผลผ่าน `scripts/build_thai_universe.py` ดึงรายชื่อหุ้นไทยจริงจาก SET.or.th แบ่งตาม Sector / Industry และจัดกลุ่มเป็นหมวดแท็ก `#SET50`, `#SET100`, `#sSET`, `#SETHD`, `#mai` และ `#SETESG` พร้อมดึงราคาจริงผ่าน Yahoo Finance (`*.BK`)
@@ -783,7 +783,7 @@ export const AdminBackofficeClient: React.FC = () => {
                 </div>
                 <div style={{ background: 'var(--card-sub-bg)', padding: '16px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
                   <h5 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 8px 0', color: '#a855f7' }}>
-                    🇺🇸 ตลาดหุ้นสหรัฐฯ (US Global Universe)
+                    ตลาดหุ้นสหรัฐฯ (US Global Universe)
                   </h5>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
                     ประมวลผลผ่าน `scripts/build_global_universe.py` ดึงข้อมูลหลักทรัพย์จาก SEC EDGAR Company Tickers (10,412 ตัว) และจัดหมวดหมู่อย่างเป็นทางการเป็น `#NASDAQ-100` (100 ตัวจริง), `#S&P 500`, `#Dow Jones` (30 ตัวจริง), `#Magnificent 7`, `#Semiconductors`, `#AI & Cloud`, `#EV & Clean Energy`
@@ -796,7 +796,7 @@ export const AdminBackofficeClient: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
                 <div style={{ background: 'var(--card-sub-bg)', padding: '16px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
                   <h5 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--accent-bullish)' }}>
-                    🗄️ SQLite Ingestion Data Lake (`market_data.db`)
+                    SQLite Ingestion Data Lake (`market_data.db`)
                   </h5>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
                     รันผ่าน `market_ingestion_pipeline.py` ทำการเก็บข้อมูลแบบ ACID มีตาราง `stocks`, `daily_ohlcv`, `market_snapshots`, และ `ingestion_checkpoints` รองรับการ Ingest ข้อมูลแบบ chunked batch และ resume ได้อัตโนมัติเมื่อเกิดการขัดข้อง
@@ -804,7 +804,7 @@ export const AdminBackofficeClient: React.FC = () => {
                 </div>
                 <div style={{ background: 'var(--card-sub-bg)', padding: '16px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
                   <h5 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 8px 0', color: '#f59e0b' }}>
-                    ⚡ In-Memory High-Speed Cache (`market_cache.json`)
+                    In-Memory High-Speed Cache (`market_cache.json`)
                   </h5>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
                     เก็บข้อมูล 3,790 ตัว สำหรับ Frontend ให้เข้าถึงได้เร็วระดับ 1-5 มิลลิวินาที เมื่อ Admin รัน `scripts/sync_real_yfinance_universe.py` ระบบจะอัปเดตราคาล่าสุดลงใน Cache และบันทึก baseline กลับเข้าไปในไฟล์ builder อัตโนมัติ
@@ -817,7 +817,7 @@ export const AdminBackofficeClient: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
                 <div style={{ background: 'var(--card-sub-bg)', padding: '16px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
                   <h5 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 8px 0', color: '#38bdf8' }}>
-                    💫 Virtual Micro-Tick Streaming Engine
+                    Virtual Micro-Tick Streaming Engine
                   </h5>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
                     ใน `MarketSyncContext.tsx` มี Event Loop ทำงานทุก 3.5 วินาที สุ่มราคา Micro-Tick (±0.03% ถึง ±0.18%) ให้กับหุ้น 2-4 ตัว พร้อมกระตุ้น CSS Animation `.price-tick-up` (เขียว) และ `.price-tick-down` (แดง) ในหน้าจอ Grid และ Table ให้เหมือน Streaming กระดานหุ้นสด
@@ -825,7 +825,7 @@ export const AdminBackofficeClient: React.FC = () => {
                 </div>
                 <div style={{ background: 'var(--card-sub-bg)', padding: '16px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
                   <h5 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 8px 0', color: '#4ade80' }}>
-                    🔄 Silent Background REST Polling
+                    Silent Background REST Polling
                   </h5>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
                     ทุก 30 วินาที ระบบจะยิง REST Request เบื้องหลังไปยัง `/api/stocks/live` และ `/api/indices/live` อย่างเงียบๆ เพื่อนำราคาจริงจากเซิร์ฟเวอร์มา merge ทับลงใน React State Bus โดยที่ผู้ใช้ไม่ต้องกดปุ่ม Refresh เอง
@@ -838,7 +838,7 @@ export const AdminBackofficeClient: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
                 <div style={{ background: 'var(--card-sub-bg)', padding: '16px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
                   <h5 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 8px 0', color: '#fbbf24' }}>
-                    ⚡ Prioritized On-Demand Tag Loading
+                    Prioritized On-Demand Tag Loading
                   </h5>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
                     เมื่อผู้ใช้กดเลือก Tag ใดๆ เช่น `#SET50` หรือ `#NASDAQ-100` ระบบจะดึงและเรนเดอร์สมาชิกทั้งหมดของกลุ่มนั้นทันทีโดยไม่ต้องรอโหลดตามรอบ Scroll Pagination และซ่อนตัวเลขจำนวนหุ้นในปุ่ม Tag ตามที่กำหนด
@@ -846,7 +846,7 @@ export const AdminBackofficeClient: React.FC = () => {
                 </div>
                 <div style={{ background: 'var(--card-sub-bg)', padding: '16px', borderRadius: '12px', border: '1px solid var(--card-sub-border)' }}>
                   <h5 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 8px 0', color: '#60a5fa' }}>
-                    🔒 Client UI Isolation & Clean Experience
+                    Client UI Isolation & Clean Experience
                   </h5>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
                     หน้า Client จะไม่มีปุ่ม Log, ไม่มีการแสดงข้อความหลังบ้าน "1.5 วิ", ไม่มี Badge หน่วงเวลา และไม่มีปุ่ม Sync Activity ให้รกตา โดย Log ทั้งหมดจะถูกย้ายมารวบรวมและแสดงผลเฉพาะที่หน้า Admin Portal นี้เท่านั้น
@@ -882,21 +882,21 @@ export const AdminBackofficeClient: React.FC = () => {
                 className={`admin-pill-btn ${logSubTab === 'live' ? 'active' : ''}`}
               >
                 <Activity size={14} />
-                <span>⚡ Real-Time Live Sync Feed ({syncLogs.length})</span>
+                <span>Real-Time Live Sync Feed ({syncLogs.length})</span>
               </button>
               <button
                 onClick={() => setLogSubTab('server')}
                 className={`admin-pill-btn ${logSubTab === 'server' ? 'active' : ''}`}
               >
                 <Server size={14} />
-                <span>🖥️ Backend Server Log Terminal</span>
+                <span>Backend Server Log Terminal</span>
               </button>
               <button
                 onClick={() => setLogSubTab('terminal')}
                 className={`admin-pill-btn ${logSubTab === 'terminal' ? 'active' : ''}`}
               >
                 <Code2 size={14} />
-                <span>💻 Action Execution Console</span>
+                <span>Action Execution Console</span>
               </button>
             </div>
 
@@ -941,10 +941,10 @@ export const AdminBackofficeClient: React.FC = () => {
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   {[
                     { id: 'all', label: 'ทั้งหมด' },
-                    { id: 'stocks', label: '📊 ราคาหุ้น (Stocks)' },
-                    { id: 'indices', label: '📈 ดัชนี & ทองคำ (Indices)' },
-                    { id: 'news', label: '📰 ข่าวสาร (News)' },
-                    { id: 'overview', label: '🤖 AI Market Briefing' },
+                    { id: 'stocks', label: 'ราคาหุ้น (Stocks)' },
+                    { id: 'indices', label: 'ดัชนี & ทองคำ (Indices)' },
+                    { id: 'news', label: 'ข่าวสาร (News)' },
+                    { id: 'overview', label: 'AI Market Briefing' },
                   ].map((f) => (
                     <button
                       key={f.id}

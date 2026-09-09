@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
 import { useSubscription } from '../../lib/context/SubscriptionContext';
+import { UserAvatar } from '../ui/UserAvatar';
 
 export function UserProfileModal() {
   const {
@@ -73,6 +74,7 @@ export function UserProfileModal() {
 
     try {
       const formData = new FormData();
+      formData.append('file', file);
       const userId = user?.uid || '';
       if (userId) {
         formData.append('userId', userId);
@@ -193,21 +195,13 @@ export function UserProfileModal() {
                 zIndex: 2,
               }}
             >
-              {user.photoURL ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={user.photoURL}
-                  alt={user.displayName || 'Profile Avatar'}
-                  referrerPolicy="no-referrer"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', zIndex: 3 }}
-                />
-              ) : (
-                <span>
-                  {user.displayName
-                    ? user.displayName.charAt(0).toUpperCase()
-                    : user.email?.charAt(0).toUpperCase() || 'M'}
-                </span>
-              )}
+              <UserAvatar
+                photoURL={user.photoURL}
+                displayName={user.displayName}
+                email={user.email}
+                size={80}
+                border="none"
+              />
 
               {isUploading && (
                 <div
@@ -312,7 +306,7 @@ export function UserProfileModal() {
             >
               <div>
                 <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  {currentTier === 'free' ? '⭐ อัปเกรดเป็น Pro Investor' : `👑 สิทธิพิเศษระดับ ${currentPlan.name}`}
+                  {currentTier === 'free' ? 'อัปเกรดเป็น Pro Investor' : `สิทธิพิเศษระดับ ${currentPlan.name}`}
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
                   {currentTier === 'free' ? 'ปลดล็อก AI วิเคราะห์งบ และเตือนเข้า LINE' : `สถานะใช้งานได้ถึง ${currentPlan.expiresAt || 'ตลอดชีพ'}`}

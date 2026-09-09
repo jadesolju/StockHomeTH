@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ========================================================
-    // 3. Deduct credit & Execute Gemini 1.5 Flash
+    // 3. Deduct credit & Execute
     // ========================================================
     const newUsage = consumeUserCredit(userId);
     const analysis = await analyzeStockWithGemini15Flash({

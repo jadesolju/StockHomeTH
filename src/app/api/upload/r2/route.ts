@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
       headers: {
         'Content-Type': object.contentType,
         'Cache-Control': 'public, max-age=31536000, immutable',
+        'Access-Control-Allow-Origin': '*',
       },
     });
   } catch (err: any) {

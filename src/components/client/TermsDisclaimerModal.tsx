@@ -22,7 +22,6 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
       setIsOpen(propIsOpen);
       return;
     }
-    // Check if user has previously accepted
     try {
       const accepted = localStorage.getItem('stockhome_terms_accepted');
       if (!accepted) {
@@ -56,7 +55,7 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
         position: 'fixed',
         inset: 0,
         zIndex: 99999,
-        background: 'rgba(0, 0, 0, 0.85)',
+        background: 'rgba(0, 0, 0, 0.75)',
         backdropFilter: 'blur(12px)',
         display: 'flex',
         alignItems: 'center',
@@ -66,17 +65,16 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
       }}
     >
       <div
-        className="glass-card"
         style={{
           width: '100%',
-          maxWidth: '680px',
-          maxHeight: '90vh',
+          maxWidth: '700px',
+          maxHeight: '92vh',
           display: 'flex',
           flexDirection: 'column',
-          background: 'linear-gradient(180deg, #151821 0%, #0d0f14 100%)',
-          border: '1px solid rgba(0, 122, 255, 0.3)',
-          borderRadius: '24px',
-          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 122, 255, 0.15)',
+          background: 'var(--bg-primary)',
+          border: '1px solid var(--card-border)',
+          borderRadius: '20px',
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.4)',
           overflow: 'hidden',
           animation: 'fadeInScale 0.25s ease-out',
         }}
@@ -84,12 +82,13 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
         {/* Header */}
         <div
           style={{
-            padding: '22px 26px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            padding: '20px 24px',
+            borderBottom: '1px solid var(--card-border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'rgba(255, 255, 255, 0.02)',
+            background: 'var(--bg-secondary)',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -103,155 +102,162 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '1px solid rgba(255, 159, 10, 0.3)',
+                border: '1px solid rgba(255, 159, 10, 0.35)',
+                flexShrink: 0,
               }}
             >
               <ShieldAlert size={22} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+              <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
                 ข้อกำหนด นโยบาย และคำเตือนความเสี่ยงการลงทุน
               </h2>
-              <p style={{ fontSize: '0.76rem', color: 'var(--text-tertiary)', margin: '2px 0 0 0' }}>
-                โปรดอ่านและทำความเข้าใจข้อตกลงและขอบเขตการให้บริการก่อนเข้าใช้งานแพลตฟอร์ม
+              <p style={{ fontSize: '0.76rem', color: 'var(--text-tertiary)', margin: '3px 0 0 0', lineHeight: 1.4 }}>
+                โปรดอ่านและทำความเข้าใจข้อตกลงก่อนเข้าใช้งานแพลตฟอร์ม
               </p>
             </div>
           </div>
-
-          {/* Close button only visible if user already accepted before (opened manually from footer) */}
           {(propIsOpen || forceOpen) && (
             <button
               type="button"
               onClick={handleCloseManual}
+              title="ปิด"
               style={{
-                background: 'rgba(255, 255, 255, 0.06)',
-                border: 'none',
+                background: 'var(--card-sub-bg)',
+                border: '1px solid var(--card-border)',
                 borderRadius: '50%',
-                width: '32px',
-                height: '32px',
+                width: '34px',
+                height: '34px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'var(--text-secondary)',
                 cursor: 'pointer',
+                flexShrink: 0,
               }}
             >
-              <X size={18} />
+              <X size={17} />
             </button>
           )}
         </div>
 
-        {/* Scrollable Content Body */}
+        {/* Scrollable Content */}
         <div
           style={{
-            padding: '24px 26px',
+            padding: '22px 24px',
             overflowY: 'auto',
             fontSize: '0.86rem',
-            lineHeight: 1.7,
+            lineHeight: 1.75,
             color: 'var(--text-secondary)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '20px',
+            gap: '16px',
           }}
         >
           {/* Section 1: Developer Identity */}
           <div
             style={{
-              background: 'rgba(0, 122, 255, 0.05)',
-              border: '1px solid rgba(0, 122, 255, 0.2)',
-              borderRadius: '16px',
+              background: 'rgba(0, 122, 255, 0.06)',
+              border: '1px solid rgba(0, 122, 255, 0.25)',
+              borderRadius: '14px',
               padding: '16px 18px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue)', fontWeight: 700, marginBottom: '6px' }}>
-              <UserCheck size={18} />
-              <span>๑. คำแถลงสถานะผู้พัฒนา (Developer Identity & Legal Status)</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue, #007AFF)', fontWeight: 700, marginBottom: '8px', fontSize: '0.88rem' }}>
+              <UserCheck size={17} strokeWidth={2.5} />
+              <span>๑. คำแถลงสถานะผู้พัฒนา (Developer Identity &amp; Legal Status)</span>
             </div>
-            <p style={{ margin: 0 }}>
-              แพลตฟอร์ม <strong>StockHomeTH</strong> ได้รับการริเริ่ม พัฒนา และดูแลระบบโดย<strong>บุคคลธรรมดาในฐานะนักพัฒนาอิสระ (Independent Developer / Technology Enthusiast)</strong> เพื่อการค้นคว้า ทดลอง และแลกเปลี่ยนองค์ความรู้ทางเทคโนโลยีทางการเงิน 
-              <strong>มิได้ดำเนินงานในรูปแบบนิติบุคคล บริษัทจำกัด บริษัทมหาชน หรือสถาบันการเงินใดๆ ทั้งสิ้น</strong> และมิได้เป็นผู้ประกอบธุรกิจหลักทรัพย์ ที่ปรึกษาการลงทุน หรือผู้ให้บริการจัดอันดับหรือวิเคราะห์หลักทรัพย์ที่ได้รับใบอนุญาตหรือขึ้นทะเบียนกับสำนักงานคณะกรรมการกำกับหลักทรัพย์และตลาดหลักทรัพย์ (ก.ล.ต.) หรือหน่วยงานกำกับดูแลใดๆ
+            <p style={{ margin: 0, color: 'var(--text-primary)' }}>
+              แพลตฟอร์ม <strong>StockHomeTH</strong> ได้รับการพัฒนาโดย{' '}
+              <strong>บุคคลธรรมดาในฐานะนักพัฒนาอิสระ (Independent Developer)</strong>{' '}
+              เพื่อการค้นคว้าและแลกเปลี่ยนองค์ความรู้ทางเทคโนโลยีทางการเงิน{' '}
+              <strong>มิได้ดำเนินงานในรูปแบบนิติบุคคล</strong> และมิได้เป็นผู้ให้บริการด้านหลักทรัพย์ที่ได้รับใบอนุญาตจากสำนักงาน ก.ล.ต. หรือหน่วยงานกำกับดูแลใดๆ
             </p>
           </div>
 
           {/* Section 2: Non-Advice Disclaimer */}
           <div
             style={{
-              background: 'rgba(255, 159, 10, 0.05)',
-              border: '1px solid rgba(255, 159, 10, 0.25)',
-              borderRadius: '16px',
+              background: 'rgba(255, 159, 10, 0.06)',
+              border: '1px solid rgba(255, 159, 10, 0.3)',
+              borderRadius: '14px',
               padding: '16px 18px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-warning, #FF9F0A)', fontWeight: 700, marginBottom: '6px' }}>
-              <AlertTriangle size={18} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#D97706', fontWeight: 700, marginBottom: '8px', fontSize: '0.88rem' }}>
+              <AlertTriangle size={17} strokeWidth={2.5} />
               <span>๒. คำเตือนความเสี่ยงและข้อสงวนสิทธิ์ทางการเงิน (Non-Advice / DYOR)</span>
             </div>
-            <p style={{ margin: 0 }}>
-              ข้อมูลทั้งหมดที่ปรากฏบนระบบ รวมถึงข้อมูลราคา ดัชนี สถิติ อัตราส่วนทางการเงิน ตลอดจนบทสรุปข่าวและข้อมูลเชิงลึกที่ประมวลผลด้วยปัญญาประดิษฐ์ (AI) 
-              <strong>จัดทำขึ้นเพื่อวัตถุประสงค์ในการศึกษา ค้นคว้าข้อมูลส่วนบุคคล และเพื่อประโยชน์ทางสถิติเท่านั้น</strong> ไม่ถือเป็นคำแนะนำทางการเงิน (Financial Advice) ไม่ใช่คำปรึกษาด้านการลงทุน และมิใช่การชักชวน ชี้แนะ หรือเสนอแนะให้ซื้อ ขาย หรือถือครองหลักทรัพย์ สินทรัพย์ดิจิทัล หรือตราสารทางการเงินใดๆ
+            <p style={{ margin: 0, color: 'var(--text-primary)' }}>
+              ข้อมูลทั้งหมดที่ปรากฏบนระบบ รวมถึงบทสรุปข่าวและข้อมูลเชิงลึกที่ประมวลผลด้วย AI{' '}
+              <strong>จัดทำขึ้นเพื่อวัตถุประสงค์ในการศึกษาเท่านั้น</strong>{' '}
+              ไม่ถือเป็นคำแนะนำทางการเงิน (Financial Advice) และมิใช่การชักชวนให้ซื้อ ขาย หรือถือครองหลักทรัพย์ใดๆ
             </p>
           </div>
 
           {/* Section 3: Limitation of Liability */}
           <div
             style={{
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '16px',
+              background: 'var(--card-sub-bg)',
+              border: '1px solid var(--card-border)',
+              borderRadius: '14px',
               padding: '16px 18px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', fontWeight: 700, marginBottom: '6px' }}>
-              <FileText size={18} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', fontWeight: 700, marginBottom: '8px', fontSize: '0.88rem' }}>
+              <FileText size={17} strokeWidth={2.5} />
               <span>๓. ข้อจำกัดความรับผิดและการยอมรับความเสี่ยง (Limitation of Liability)</span>
             </div>
-            <p style={{ margin: 0 }}>
-              การลงทุนในตลาดหลักทรัพย์มีความเสี่ยงสูง ราคาอาจมีความผันผวนรุนแรง และผู้ลงทุนอาจสูญเสียเงินลงทุนทั้งหมดหรือบางส่วน 
-              <strong>ผู้ใช้บริการพึงตระหนักว่าการตัดสินใจลงทุนใดๆ ต้องกระทำด้วยเจตจำนง วิจารณญาณ และการศึกษาค้นคว้าด้วยตนเองอย่างรอบคอบ (Do Your Own Research - DYOR)</strong> 
-              ผู้พัฒนาระบบให้บริการในลักษณะ &ldquo;ตามสภาพที่เป็นอยู่&rdquo; (As-Is Basis) โดยไม่รับประกันความครบถ้วนสมบูรณ์ ความถูกต้องปราศจากข้อผิดพลาด หรือความต่อเนื่องของการเชื่อมต่อข้อมูล และไม่ต้องรับผิดชอบต่อความสูญเสีย ความเสียหาย หรือผลขาดทุนใดๆ ไม่ว่าทางตรงหรือทางอ้อมที่เกิดขึ้นจากการนำข้อมูลบนแพลตฟอร์มนี้ไปใช้ในทุกกรณี
+            <p style={{ margin: 0, color: 'var(--text-primary)' }}>
+              การลงทุนในตลาดหลักทรัพย์มีความเสี่ยงสูง ราคาอาจมีความผันผวนรุนแรง{' '}
+              <strong>ผู้ใช้บริการพึงตระหนักว่าการตัดสินใจลงทุนใดๆ ต้องกระทำด้วยวิจารณญาณและการศึกษาค้นคว้าด้วยตนเอง (DYOR)</strong>{' '}
+              ผู้พัฒนาไม่รับประกันความถูกต้องสมบูรณ์ และไม่ต้องรับผิดชอบต่อความสูญเสียใดๆ จากการนำข้อมูลบนแพลตฟอร์มนี้ไปใช้
             </p>
           </div>
 
-          {/* Section 4: Privacy & Bitcoiner Sovereignty */}
+          {/* Section 4: Privacy & Data Sovereignty */}
           <div
             style={{
-              background: 'rgba(34, 197, 94, 0.05)',
-              border: '1px solid rgba(34, 197, 94, 0.2)',
-              borderRadius: '16px',
+              background: 'rgba(34, 197, 94, 0.06)',
+              border: '1px solid rgba(34, 197, 94, 0.25)',
+              borderRadius: '14px',
               padding: '16px 18px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-bullish, #22C55E)', fontWeight: 700, marginBottom: '6px' }}>
-              <Lock size={18} />
-              <span>๔. มาตรฐานความเป็นส่วนตัวและสิทธิเสรีภาพข้อมูล (Privacy & Self-Custody)</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#16A34A', fontWeight: 700, marginBottom: '8px', fontSize: '0.88rem' }}>
+              <Lock size={17} strokeWidth={2.5} />
+              <span>๔. มาตรฐานความเป็นส่วนตัวและสิทธิเสรีภาพข้อมูล (Privacy &amp; Self-Custody)</span>
             </div>
-            <p style={{ margin: 0 }}>
-              ระบบยึดมั่นในปรัชญาความโปร่งใสแบบ <strong>&ldquo;Don&apos;t Trust, Verify&rdquo;</strong> ข้อมูลราคาและบทวิเคราะห์จะมีลิงก์เพื่อตรวจสอบเทียบกับแหล่งข้อมูลทางการเสมอ (SET, SEC, Yahoo Finance) 
-              สำหรับกุญแจส่วนตัว (Self-Custody AI API Key) จะถูกจัดเก็บไว้เฉพาะใน Browser (LocalStorage) ของผู้ใช้เอง ไม่มีการส่งไปเก็บไว้ในฐานข้อมูลของเซิร์ฟเวอร์ และระบบไม่มีนโยบายจำหน่าย จ่ายแจก หรือส่งต่อข้อมูลส่วนบุคคลให้แก่บุคคลภายนอกโดยเด็ดขาด
+            <p style={{ margin: 0, color: 'var(--text-primary)' }}>
+              ระบบยึดมั่นในปรัชญาความโปร่งใสแบบ{' '}
+              <strong>&ldquo;Don&apos;t Trust, Verify&rdquo;</strong>{' '}
+              กุญแจ API ส่วนตัว (Self-Custody AI API Key) จะถูกจัดเก็บไว้เฉพาะใน Browser ของผู้ใช้เอง ไม่มีการส่งไปเก็บไว้ในฐานข้อมูลเซิร์ฟเวอร์ และระบบไม่มีนโยบายส่งต่อข้อมูลส่วนบุคคลให้แก่บุคคลภายนอกโดยเด็ดขาด
             </p>
           </div>
         </div>
 
-        {/* Footer & Consent Check */}
+        {/* Footer: Consent */}
         <div
           style={{
-            padding: '18px 26px',
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-            background: 'rgba(10, 12, 16, 0.95)',
+            padding: '18px 24px',
+            borderTop: '1px solid var(--card-border)',
+            background: 'var(--bg-secondary)',
             display: 'flex',
             flexDirection: 'column',
             gap: '14px',
+            flexShrink: 0,
           }}
         >
           <label
             style={{
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               gap: '10px',
               cursor: 'pointer',
               fontSize: '0.84rem',
               color: 'var(--text-primary)',
               userSelect: 'none',
+              lineHeight: 1.5,
             }}
           >
             <input
@@ -263,6 +269,8 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
                 height: '18px',
                 accentColor: 'var(--accent-blue)',
                 cursor: 'pointer',
+                marginTop: '2px',
+                flexShrink: 0,
               }}
             />
             <span>
@@ -270,7 +278,7 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
             </span>
           </label>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button
               type="button"
               disabled={!hasAcknowledged}
@@ -278,11 +286,11 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
               style={{
                 background: hasAcknowledged
                   ? 'linear-gradient(135deg, #007AFF 0%, #0051B3 100%)'
-                  : 'rgba(255, 255, 255, 0.1)',
-                color: hasAcknowledged ? '#ffffff' : 'rgba(255, 255, 255, 0.3)',
-                border: 'none',
+                  : 'var(--card-sub-bg)',
+                color: hasAcknowledged ? '#ffffff' : 'var(--text-tertiary)',
+                border: hasAcknowledged ? 'none' : '1px solid var(--card-border)',
                 borderRadius: '12px',
-                padding: '12px 28px',
+                padding: '11px 28px',
                 fontSize: '0.9rem',
                 fontWeight: 700,
                 cursor: hasAcknowledged ? 'pointer' : 'not-allowed',
@@ -290,7 +298,7 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
                 alignItems: 'center',
                 gap: '8px',
                 transition: 'all 0.2s ease',
-                boxShadow: hasAcknowledged ? '0 4px 16px rgba(0, 122, 255, 0.4)' : 'none',
+                boxShadow: hasAcknowledged ? '0 4px 16px rgba(0, 122, 255, 0.35)' : 'none',
               }}
             >
               <CheckCircle2 size={18} />

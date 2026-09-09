@@ -45,56 +45,56 @@ if (DEVELOPER_EMAIL) {
 // ─── Stock Universe ────────────────────────────────────────────────────────────
 const STOCK_TICKERS = [
   // Thai SET Stocks (Yahoo Finance uses .BK suffix)
-  { symbol: 'PTT.BK',   ticker: 'PTT',   market: 'SET', name: 'PTT Public Company Limited',       sector: 'Energy & Utilities' },
-  { symbol: 'CPALL.BK', ticker: 'CPALL', market: 'SET', name: 'CP ALL Public Company Limited',     sector: 'Commerce & Retail' },
-  { symbol: 'AOT.BK',   ticker: 'AOT',   market: 'SET', name: 'Airports of Thailand PCL',          sector: 'Transportation & Logistics' },
-  { symbol: 'KBANK.BK', ticker: 'KBANK', market: 'SET', name: 'Kasikornbank PCL',                  sector: 'Banking & Financials' },
-  { symbol: 'DELTA.BK', ticker: 'DELTA', market: 'SET', name: 'Delta Electronics (Thailand) PCL',  sector: 'Electronics' },
-  { symbol: 'BDMS.BK',  ticker: 'BDMS',  market: 'SET', name: 'Bangkok Dusit Medical PCL',         sector: 'Healthcare' },
-  { symbol: 'SCB.BK',   ticker: 'SCB',   market: 'SET', name: 'SCB X Public Company Limited',      sector: 'Banking & Financials' },
-  { symbol: 'GULF.BK',  ticker: 'GULF',  market: 'SET', name: 'Gulf Energy Development PCL',       sector: 'Energy & Utilities' },
+  { symbol: 'PTT.BK', ticker: 'PTT', market: 'SET', name: 'PTT Public Company Limited', sector: 'Energy & Utilities' },
+  { symbol: 'CPALL.BK', ticker: 'CPALL', market: 'SET', name: 'CP ALL Public Company Limited', sector: 'Commerce & Retail' },
+  { symbol: 'AOT.BK', ticker: 'AOT', market: 'SET', name: 'Airports of Thailand PCL', sector: 'Transportation & Logistics' },
+  { symbol: 'KBANK.BK', ticker: 'KBANK', market: 'SET', name: 'Kasikornbank PCL', sector: 'Banking & Financials' },
+  { symbol: 'DELTA.BK', ticker: 'DELTA', market: 'SET', name: 'Delta Electronics (Thailand) PCL', sector: 'Electronics' },
+  { symbol: 'BDMS.BK', ticker: 'BDMS', market: 'SET', name: 'Bangkok Dusit Medical PCL', sector: 'Healthcare' },
+  { symbol: 'SCB.BK', ticker: 'SCB', market: 'SET', name: 'SCB X Public Company Limited', sector: 'Banking & Financials' },
+  { symbol: 'GULF.BK', ticker: 'GULF', market: 'SET', name: 'Gulf Energy Development PCL', sector: 'Energy & Utilities' },
   // US Global Stocks
-  { symbol: 'NVDA',  ticker: 'NVDA',  market: 'US', name: 'NVIDIA Corporation',         sector: 'Semiconductors & AI' },
-  { symbol: 'AAPL',  ticker: 'AAPL',  market: 'US', name: 'Apple Inc.',                 sector: 'Consumer Electronics' },
-  { symbol: 'TSLA',  ticker: 'TSLA',  market: 'US', name: 'Tesla, Inc.',                sector: 'Automotive & Clean Energy' },
-  { symbol: 'MSFT',  ticker: 'MSFT',  market: 'US', name: 'Microsoft Corporation',      sector: 'Software & Cloud' },
-  { symbol: 'GOOGL', ticker: 'GOOGL', market: 'US', name: 'Alphabet Inc. (Google)',     sector: 'Internet & Search' },
-  { symbol: 'META',  ticker: 'META',  market: 'US', name: 'Meta Platforms, Inc.',       sector: 'Social Media & Tech' },
+  { symbol: 'NVDA', ticker: 'NVDA', market: 'US', name: 'NVIDIA Corporation', sector: 'Semiconductors & AI' },
+  { symbol: 'AAPL', ticker: 'AAPL', market: 'US', name: 'Apple Inc.', sector: 'Consumer Electronics' },
+  { symbol: 'TSLA', ticker: 'TSLA', market: 'US', name: 'Tesla, Inc.', sector: 'Automotive & Clean Energy' },
+  { symbol: 'MSFT', ticker: 'MSFT', market: 'US', name: 'Microsoft Corporation', sector: 'Software & Cloud' },
+  { symbol: 'GOOGL', ticker: 'GOOGL', market: 'US', name: 'Alphabet Inc. (Google)', sector: 'Internet & Search' },
+  { symbol: 'META', ticker: 'META', market: 'US', name: 'Meta Platforms, Inc.', sector: 'Social Media & Tech' },
 ];
 
 // ─── Static fallback values (reasonable placeholders when API is down) ─────────
 const FALLBACK = {
-  'PTT':   { price: 34.50, change: 1.47, peRatio: 9.8,  div: 6.2, cap: '985.4B THB', target: 39.00, score: 84, analystRating: 'Strong Buy' },
-  'CPALL': { price: 64.75, change: -0.77,peRatio: 28.4, div: 2.1, cap: '581.6B THB', target: 74.00, score: 72, analystRating: 'Buy' },
-  'AOT':   { price: 61.25, change: 2.08, peRatio: 36.2, div: 1.8, cap: '875.0B THB', target: 72.50, score: 89, analystRating: 'Strong Buy' },
-  'KBANK': { price: 154.5, change: 0.98, peRatio: 8.5,  div: 5.8, cap: '366.0B THB', target: 170.0, score: 78, analystRating: 'Buy' },
-  'DELTA': { price: 142.0, change: 4.41, peRatio: 72.1, div: 0.6, cap: '1.77T THB',  target: 155.0, score: 92, analystRating: 'Buy' },
-  'BDMS':  { price: 27.50, change: -0.9, peRatio: 29.8, div: 2.9, cap: '437.0B THB', target: 32.00, score: 68, analystRating: 'Buy' },
-  'SCB':   { price: 114.0, change: 1.33, peRatio: 9.1,  div: 8.9, cap: '383.9B THB', target: 126.0, score: 85, analystRating: 'Strong Buy' },
-  'GULF':  { price: 66.50, change: 3.10, peRatio: 44.2, div: 1.3, cap: '780.3B THB', target: 75.00, score: 91, analystRating: 'Strong Buy' },
-  'NVDA':  { price: 128.5, change: 3.85, peRatio: 54.2, div: 0.08,cap: '$3.15T',     target: 150.0, score: 96, analystRating: 'Strong Buy' },
-  'AAPL':  { price: 226.4, change: 1.12, peRatio: 33.8, div: 0.44,cap: '$3.44T',     target: 250.0, score: 82, analystRating: 'Buy' },
-  'TSLA':  { price: 215.8, change: -2.35,peRatio: 62.4, div: 0.0, cap: '$688.2B',    target: 235.0, score: 58, analystRating: 'Hold' },
-  'MSFT':  { price: 418.2, change: 0.88, peRatio: 34.6, div: 0.72,cap: '$3.11T',     target: 480.0, score: 90, analystRating: 'Strong Buy' },
-  'GOOGL': { price: 165.9, change: 1.45, peRatio: 23.1, div: 0.48,cap: '$2.06T',     target: 195.0, score: 83, analystRating: 'Buy' },
-  'META':  { price: 512.3, change: 2.64, peRatio: 25.8, div: 0.39,cap: '$1.30T',     target: 580.0, score: 94, analystRating: 'Strong Buy' },
+  'PTT': { price: 34.50, change: 1.47, peRatio: 9.8, div: 6.2, cap: '985.4B THB', target: 39.00, score: 84, analystRating: 'Strong Buy' },
+  'CPALL': { price: 64.75, change: -0.77, peRatio: 28.4, div: 2.1, cap: '581.6B THB', target: 74.00, score: 72, analystRating: 'Buy' },
+  'AOT': { price: 61.25, change: 2.08, peRatio: 36.2, div: 1.8, cap: '875.0B THB', target: 72.50, score: 89, analystRating: 'Strong Buy' },
+  'KBANK': { price: 154.5, change: 0.98, peRatio: 8.5, div: 5.8, cap: '366.0B THB', target: 170.0, score: 78, analystRating: 'Buy' },
+  'DELTA': { price: 142.0, change: 4.41, peRatio: 72.1, div: 0.6, cap: '1.77T THB', target: 155.0, score: 92, analystRating: 'Buy' },
+  'BDMS': { price: 27.50, change: -0.9, peRatio: 29.8, div: 2.9, cap: '437.0B THB', target: 32.00, score: 68, analystRating: 'Buy' },
+  'SCB': { price: 114.0, change: 1.33, peRatio: 9.1, div: 8.9, cap: '383.9B THB', target: 126.0, score: 85, analystRating: 'Strong Buy' },
+  'GULF': { price: 66.50, change: 3.10, peRatio: 44.2, div: 1.3, cap: '780.3B THB', target: 75.00, score: 91, analystRating: 'Strong Buy' },
+  'NVDA': { price: 128.5, change: 3.85, peRatio: 54.2, div: 0.08, cap: '$3.15T', target: 150.0, score: 96, analystRating: 'Strong Buy' },
+  'AAPL': { price: 226.4, change: 1.12, peRatio: 33.8, div: 0.44, cap: '$3.44T', target: 250.0, score: 82, analystRating: 'Buy' },
+  'TSLA': { price: 215.8, change: -2.35, peRatio: 62.4, div: 0.0, cap: '$688.2B', target: 235.0, score: 58, analystRating: 'Hold' },
+  'MSFT': { price: 418.2, change: 0.88, peRatio: 34.6, div: 0.72, cap: '$3.11T', target: 480.0, score: 90, analystRating: 'Strong Buy' },
+  'GOOGL': { price: 165.9, change: 1.45, peRatio: 23.1, div: 0.48, cap: '$2.06T', target: 195.0, score: 83, analystRating: 'Buy' },
+  'META': { price: 512.3, change: 2.64, peRatio: 25.8, div: 0.39, cap: '$1.30T', target: 580.0, score: 94, analystRating: 'Strong Buy' },
 };
 
 const AI_INSIGHTS = {
-  'PTT':   'Strong cash flow driven by energy sector diversification and LNG hub expansion in Southeast Asia.',
+  'PTT': 'Strong cash flow driven by energy sector diversification and LNG hub expansion in Southeast Asia.',
   'CPALL': 'Retail sales momentum surging following tourism recovery and digital wallet stimulus policy.',
-  'AOT':   'Passenger traffic at Suvarnabhumi and Don Mueang airports back to 95% pre-pandemic capacity.',
+  'AOT': 'Passenger traffic at Suvarnabhumi and Don Mueang airports back to 95% pre-pandemic capacity.',
   'KBANK': 'Digital banking leader leveraging K PLUS for AI-driven retail micro-lending and SME financing.',
   'DELTA': 'High demand for AI data center power supplies and EV components propelling record market cap.',
-  'BDMS':  'International medical tourism experiencing double-digit revenue growth from Middle East and ASEAN.',
-  'SCB':   'High dividend payout attracting institutional investors alongside Fintech venture portfolio growth.',
-  'GULF':  'Synergies with INTUCH and AIS positioning GULF as a cloud infrastructure and data center leader.',
-  'NVDA':  'Blackwell architecture GPUs seeing historic demand across hyperscaler AI data centers worldwide.',
-  'AAPL':  'Apple Intelligence rollout creating major iPhone upgrade cycle across 1.5B active device install base.',
-  'TSLA':  'FSD V12 autonomous driving progress and Robotaxi launch key catalysts for re-rating valuation.',
-  'MSFT':  'Azure AI Cloud revenues growing 30%+ YoY with Copilot enterprise adoption expanding rapidly.',
-  'GOOGL': 'Gemini 1.5 Pro integration into Search, YouTube, and Cloud driving multi-quarter margin expansion.',
-  'META':  'Llama open-source AI powering Meta AI assistant across Facebook, Instagram, and WhatsApp globally.',
+  'BDMS': 'International medical tourism experiencing double-digit revenue growth from Middle East and ASEAN.',
+  'SCB': 'High dividend payout attracting institutional investors alongside Fintech venture portfolio growth.',
+  'GULF': 'Synergies with INTUCH and AIS positioning GULF as a cloud infrastructure and data center leader.',
+  'NVDA': 'Blackwell architecture GPUs seeing historic demand across hyperscaler AI data centers worldwide.',
+  'AAPL': 'Apple Intelligence rollout creating major iPhone upgrade cycle across 1.5B active device install base.',
+  'TSLA': 'FSD V12 autonomous driving progress and Robotaxi launch key catalysts for re-rating valuation.',
+  'MSFT': 'Azure AI Cloud revenues growing 30%+ YoY with Copilot enterprise adoption expanding rapidly.',
+  'GOOGL': 'Ai integration into Search, YouTube, and Cloud driving multi-quarter margin expansion.',
+  'META': 'Llama open-source AI powering Meta AI assistant across Facebook, Instagram, and WhatsApp globally.',
 };
 
 // ─── Helper: Fetch Yahoo Finance chart (single stock) ─────────────────────────
@@ -144,10 +144,10 @@ app.get('/api/stocks/live', async (_req, res) => {
         const live = await fetchYahooChart(item.symbol);
         const fb = FALLBACK[item.ticker] || {};
 
-        const price   = live?.price   ?? fb.price   ?? 100;
-        const change  = live?.change  ?? fb.change  ?? 0;
-        const hi52    = live?.high52w ?? price * 1.15;
-        const lo52    = live?.low52w  ?? price * 0.85;
+        const price = live?.price ?? fb.price ?? 100;
+        const change = live?.change ?? fb.change ?? 0;
+        const hi52 = live?.high52w ?? price * 1.15;
+        const lo52 = live?.low52w ?? price * 0.85;
         const currency = live?.currency ?? (item.market === 'SET' ? 'THB' : 'USD');
         const sparkline = live?.sparkline7d ?? (
           // Generate reasonable fake sparkline from fallback price
@@ -217,10 +217,12 @@ app.get('/api/auth/google/callback', async (req, res) => {
   const cookieState = req.headers.cookie?.split(';').map(v => v.trim()).find(v => v.startsWith('google_oauth_state='))?.split('=').slice(1).join('=');
   if (!req.query.code || !req.query.state || !cookieState || req.query.state !== cookieState) return res.redirect(`${appUrl}?auth_error=google_state`);
   try {
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({
-      code: String(req.query.code), client_id: process.env.GOOGLE_CLIENT_ID, client_secret: process.env.GOOGLE_CLIENT_SECRET,
-      redirect_uri: process.env.GOOGLE_REDIRECT_URI || `http://127.0.0.1:${PORT}/api/auth/google/callback`, grant_type: 'authorization_code',
-    }) });
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({
+        code: String(req.query.code), client_id: process.env.GOOGLE_CLIENT_ID, client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: process.env.GOOGLE_REDIRECT_URI || `http://127.0.0.1:${PORT}/api/auth/google/callback`, grant_type: 'authorization_code',
+      })
+    });
     const tokens = await tokenResponse.json();
     if (!tokenResponse.ok || !tokens.access_token) throw new Error('Google token exchange failed');
     const profileResponse = await fetch('https://openidconnect.googleapis.com/v1/userinfo', { headers: { Authorization: `Bearer ${tokens.access_token}` } });

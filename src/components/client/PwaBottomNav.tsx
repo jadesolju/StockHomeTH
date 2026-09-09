@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import { Newspaper, Globe, Landmark, Building, User } from 'lucide-react';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
+import { GemCoinIcon } from '../ui/GemCoinIcon';
+import { UserAvatar } from '../ui/UserAvatar';
 
 export function PwaBottomNav() {
   const pathname = usePathname();
@@ -16,6 +18,7 @@ export function PwaBottomNav() {
   const isStocksActive = pathname === '/stocks';
   const isThaiActive = pathname === '/stocks/thai';
   const isUsActive = pathname === '/stocks/us';
+  const isAiHelperActive = pathname === '/ai-helper';
 
   return (
     <nav
@@ -179,7 +182,42 @@ export function PwaBottomNav() {
         )}
       </Link>
 
-      {/* 5. User Profile / Auth Tab */}
+      {/* 5. AI Helper Tab */}
+      <Link
+        href="/ai-helper"
+        title="AI Helper"
+        aria-label="AI Helper"
+        style={{
+          flex: 1,
+          height: '44px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textDecoration: 'none',
+          color: isAiHelperActive ? '#06b6d4' : 'var(--text-tertiary)',
+          borderRadius: '14px',
+          background: isAiHelperActive ? 'rgba(6, 182, 212, 0.16)' : 'transparent',
+          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          position: 'relative',
+        }}
+      >
+        <GemCoinIcon className="w-5 h-5" glow={isAiHelperActive} />
+        {isAiHelperActive && (
+          <span
+            style={{
+              position: 'absolute',
+              bottom: '5px',
+              width: '4px',
+              height: '4px',
+              borderRadius: '50%',
+              background: '#06b6d4',
+              boxShadow: '0 0 6px #06b6d4',
+            }}
+          />
+        )}
+      </Link>
+
+      {/* 6. User Profile / Auth Tab */}
       <button
         onClick={() => {
           if (user) {
@@ -203,40 +241,31 @@ export function PwaBottomNav() {
           transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        <div
-          style={{
-            width: '28px',
-            height: '28px',
-            borderRadius: '50%',
-            background: user ? '#007AFF' : 'var(--card-sub-bg)',
-            color: user ? '#ffffff' : 'var(--text-tertiary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '0.78rem',
-            fontWeight: 800,
-            overflow: 'hidden',
-            position: 'relative',
-            border: user ? '2px solid rgba(0, 122, 255, 0.45)' : '1.5px solid var(--glass-border)',
-            boxShadow: user ? '0 2px 8px rgba(0, 122, 255, 0.3)' : 'none',
-          }}
-        >
-          {user ? (
-            user.photoURL ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={user.photoURL}
-                alt="Avatar"
-                referrerPolicy="no-referrer"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            ) : (
-              <span>{user.displayName ? user.displayName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || 'M'}</span>
-            )
-          ) : (
+        {user ? (
+          <UserAvatar
+            photoURL={user.photoURL}
+            displayName={user.displayName}
+            email={user.email}
+            size={28}
+            border="2px solid rgba(0, 122, 255, 0.45)"
+          />
+        ) : (
+          <div
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              background: 'var(--card-sub-bg)',
+              color: 'var(--text-tertiary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1.5px solid var(--glass-border)',
+            }}
+          >
             <User size={16} />
-          )}
-        </div>
+          </div>
+        )}
       </button>
     </nav>
   );
