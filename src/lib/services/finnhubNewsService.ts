@@ -296,3 +296,98 @@ export async function fetchFinnhubFilings(symbol: string): Promise<StockNewsItem
     return [];
   }
 }
+
+// Cache for general market news (90-second TTL)
+let marketNewsCache: StockNewsItem[] | null = null;
+let marketNewsCacheTime = 0;
+const MARKET_NEWS_TTL_MS = 90_000;
+
+/**
+ * Fetch Finnhub general market news (category=general)
+ * Used as a priority-1 source in the live aggregator feed.
+ * Returns [] silently if FINNHUB_API_KEY is not configured.
+ */
+export async function fetchFinnhubMarketNews(): Promise<StockNewsItem[]> {
+  if (!FINNHUB_API_KEY) return []; // Key not configured – skip silently
+
+  if (marketNewsCache && Date.now() - marketNewsCacheTime < MARKET_NEWS_TTL_MS) {
+    return marketNewsCache;
+  }
+
+  try {
+    const url = `https://finnhub.io/api/v1/news?category=general&token=${FINNHUB_API_KEY}`;
+    const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!resp.ok) throw new Error(`Finnhub /news HTTP ${resp.status}`);
+
+    const raw: Array<{
+      id: number;
+      headline: string;
+      summary: string;
+      source: string;
+      url: string;
+      datetime: number;
+      related?: string;
+      category?: string;
+    }> = await resp.json();
+
+    const items: StockNewsItem[] = raw.slice(0, 20).map((item) => {
+      const title = item.headline || 'Finnhub Market News';
+      const snippet = item.summary || title;
+      const relTimeTh = formatRelativeTime(item.datetime);
+      const relTimeEn = formatRelativeTimeEn(item.datetime);
+      const sentiment = detectSentiment(title + ' ' + snippet);
+      const category = detectCategory(title + ' ' + snippet);
+      const tickers = item.related ? item.related.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+      return {
+        id: `finnhub-market-${item.id}`,
+        title,
+        title_th: title,
+        title_en: title,
+        summary: snippet,
+        summary_th: snippet,
+        summary_en: snippet,
+        keyTakeaways: [snippet],
+        keyTakeaways_th: [snippet],
+        keyTakeaways_en: [snippet],
+        fullContent: `${title}\n\n${snippet}\n\nSource: ${item.source} via Finnhub`,
+        fullContent_th: `${title}\n\n${snippet}\n\nรายงานโดย ${item.source} ผ่าน Finnhub`,
+        fullContent_en: `${title}\n\n${snippet}\n\nSource: ${item.source} via Finnhub`,
+        region: 'global' as const,
+        timeframe: 'daily' as const,
+        marketName: 'Global Markets',
+        date: relTimeTh,
+        time: new Date(item.datetime * 1000).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.',
+        periodLabel: `Live • ${relTimeEn}`,
+        periodLabel_th: `ข่าวสด • ${relTimeTh}`,
+        periodLabel_en: `Live • ${relTimeEn}`,
+        sentiment,
+        tickers,
+        readTime: '2 min',
+        source: item.source || 'Finnhub',
+        category,
+        relevanceScore: 80, // High baseline – Finnhub curated financial news
+        impactAnalysis: {
+          targetSector: 'Global Markets',
+          targetSector_th: 'ตลาดโลก',
+          targetSector_en: 'Global Markets',
+          priceTrendOutlook: 'See article',
+          priceTrendOutlook_th: 'ดูรายละเอียดในบทความ',
+          priceTrendOutlook_en: 'See article for details'
+        },
+        isFeatured: false,
+        isBookmarked: false,
+        link: item.url || 'https://finnhub.io',
+        url: item.url || 'https://finnhub.io',
+        sourceUrl: item.url || 'https://finnhub.io'
+      };
+    });
+
+    marketNewsCache = items;
+    marketNewsCacheTime = Date.now();
+    return items;
+  } catch (err) {
+    console.warn('[Finnhub Market News] Fetch failed:', err);
+    return [];
+  }
+}

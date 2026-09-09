@@ -1,7 +1,7 @@
 import Parser from 'rss-parser';
 import type { StockNewsItem, MarketRegion, NewsCategory, SentimentType } from '../schemas/newsSchema';
 import { mockNewsItems } from '../../data/mockNewsData';
-import { fetchFinnhubCompanyNews, fetchFinnhubFilings } from './finnhubNewsService';
+import { fetchFinnhubCompanyNews, fetchFinnhubFilings, fetchFinnhubMarketNews } from './finnhubNewsService';
 import { fetchSetStockNews } from './setNewsService';
 import { classifyNewsIntelligence } from '../utils/newsClassifier';
 import { enrichDualLanguageNewsItemAsync } from './deeplTranslationService';
@@ -118,21 +118,24 @@ export async function fetchStockSpecificNews(ticker: string, marketHint?: string
       return thaiNews;
     }
   } else {
-    // For US stocks: Fetch both Finnhub Company News & SEC Regulatory Filings
+    // For US stocks: Finnhub Company News (PRIORITY 1) + SEC Filings (PRIORITY 2)
     const [newsRes, filingsRes] = await Promise.allSettled([
       fetchFinnhubCompanyNews(cleanTicker),
       fetchFinnhubFilings(cleanTicker)
     ]);
 
     const combinedUs: StockNewsItem[] = [];
-    if (newsRes.status === 'fulfilled' && Array.isArray(newsRes.value)) {
-      combinedUs.push(...newsRes.value);
+
+    // Finnhub company news first – boost relevanceScore to ensure it floats to top
+    if (newsRes.status === 'fulfilled' && Array.isArray(newsRes.value) && newsRes.value.length > 0) {
+      combinedUs.push(...newsRes.value.map(item => ({ ...item, relevanceScore: Math.max(item.relevanceScore ?? 70, 80) })));
     }
     if (filingsRes.status === 'fulfilled' && Array.isArray(filingsRes.value)) {
       combinedUs.push(...filingsRes.value);
     }
 
     if (combinedUs.length > 0) {
+      combinedUs.sort((a, b) => (b.relevanceScore ?? 70) - (a.relevanceScore ?? 70));
       return combinedUs;
     }
   }
@@ -142,11 +145,20 @@ export async function fetchStockSpecificNews(ticker: string, marketHint?: string
 
 /**
  * Main function to fetch live financial news from multiple real-world sources
+ * Priority order: 1) Finnhub General Market News → 2) Multi-source RSS feeds → 3) Mock fallback
  */
 export async function fetchLiveAggregatedNews(): Promise<StockNewsItem[]> {
   const now = Date.now();
   if (cachedNews && now - newsCacheTime < NEWS_CACHE_TTL_MS && cachedNews.length > 0) {
     return cachedNews;
+  }
+
+  // ─── PRIORITY 1: Finnhub General Market News (if FINNHUB_API_KEY is set) ───
+  let finnhubGeneralNews: StockNewsItem[] = [];
+  try {
+    finnhubGeneralNews = await fetchFinnhubMarketNews();
+  } catch {
+    // Non-fatal – continue with RSS fallback
   }
 
   try {
@@ -243,8 +255,22 @@ export async function fetchLiveAggregatedNews(): Promise<StockNewsItem[]> {
       }
     }
 
-    // Sort by Financial Relevance Score (Highest confidence 70-100 on top, 50-69 at bottom)
+    // Sort RSS results by relevance score
     combined.sort((a, b) => (b.relevanceScore ?? 60) - (a.relevanceScore ?? 60));
+
+    // Merge: Finnhub General (priority 1) + RSS feeds (priority 2), deduped by ID
+    const finnhubIds = new Set(finnhubGeneralNews.map(f => f.id));
+    const allResults: StockNewsItem[] = [
+      ...finnhubGeneralNews,
+      ...combined.filter(item => !finnhubIds.has(item.id))
+    ];
+
+    if (allResults.length > 0) {
+      allResults[0].isFeatured = true;
+      cachedNews = allResults;
+      newsCacheTime = now;
+      return allResults;
+    }
 
     if (combined.length > 0) {
       combined[0].isFeatured = true;
