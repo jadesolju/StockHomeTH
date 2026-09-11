@@ -14,8 +14,6 @@ import {
   BarChart3,
   RefreshCw,
   Globe,
-  Building,
-  Landmark,
   User,
   LogIn,
   LogOut,
@@ -28,7 +26,6 @@ import { useLanguage } from '../../lib/context/LanguageContext';
 import { useTheme } from '../../lib/context/ThemeContext';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
-import { useSubscription } from '../../lib/context/SubscriptionContext';
 import { UserAvatar } from '../ui/UserAvatar';
 
 interface HeaderClientNavProps {
@@ -54,10 +51,10 @@ export function HeaderClientNav({
   const { theme, resolvedTheme, cycleTheme } = useTheme();
   const { setSelectedMarket, refreshAll, isSyncing, cooldownRemaining } = useMarketSync();
   const { user, openAuthModal, openProfileModal, signOut } = useClientAuth();
-  const { openPricingModal, currentTier } = useSubscription();
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLocalEnv, setIsLocalEnv] = useState(false);
+
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const [currentDate, setCurrentDate] = useState<string>(() => {
@@ -175,24 +172,10 @@ export function HeaderClientNav({
           </Link>
           <Link
             href="/stocks"
-            className={`ios-segment-btn ${pathname === '/stocks' ? 'active' : ''}`}
+            className={`ios-segment-btn ${pathname.startsWith('/stocks') ? 'active' : ''}`}
             style={{ textDecoration: 'none', padding: '6px 14px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
             <Globe size={15} /> {t('marketAndCharts')}
-          </Link>
-          <Link
-            href="/stocks/thai"
-            className={`ios-segment-btn ${pathname === '/stocks/thai' ? 'active' : ''}`}
-            style={{ textDecoration: 'none', padding: '6px 14px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-          >
-            <Landmark size={15} /> {t('thaiStocks')}
-          </Link>
-          <Link
-            href="/stocks/us"
-            className={`ios-segment-btn ${pathname === '/stocks/us' ? 'active' : ''}`}
-            style={{ textDecoration: 'none', padding: '6px 14px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-          >
-            <Building size={15} /> {t('foreignStocks')}
           </Link>
           <Link
             href="/ai-helper"
@@ -280,29 +263,6 @@ export function HeaderClientNav({
             )}
           </button>
 
-          {/* Membership / Pricing Button */}
-          <button
-            onClick={openPricingModal}
-            className="ios-glass-btn"
-            title="ดูแพ็กเกจสมาชิกและเติม GemCoin"
-            style={{
-              background: currentTier === 'vip' ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)' : currentTier === 'pro' ? 'linear-gradient(135deg, rgba(0, 122, 255, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)' : 'rgba(255, 255, 255, 0.06)',
-              border: `1px solid ${currentTier === 'vip' ? 'rgba(168, 85, 247, 0.4)' : currentTier === 'pro' ? 'rgba(0, 122, 255, 0.4)' : 'var(--glass-border)'}`,
-              borderRadius: '100px',
-              padding: '5px 12px',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              color: currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : '#10b981',
-              fontSize: '0.75rem',
-              fontWeight: 800,
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <Sparkles size={13} color={currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : '#10b981'} />
-            <span>{currentTier === 'vip' ? 'VIP Trader' : currentTier === 'pro' ? 'Pro Member' : 'แพ็กเกจสมาชิก'}</span>
-          </button>
 
           {/* Member Auth Button / Profile Dropdown (Desktop view) */}
           <div className="desktop-nav-bar" style={{ position: 'relative' }} ref={userMenuRef}>
