@@ -665,7 +665,7 @@ body {
 .payment-page-container {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 0 16px calc(110px + env(safe-area-inset-bottom, 20px)) 16px;
+  padding: 0 16px calc(140px + env(safe-area-inset-bottom, 30px)) 16px !important;
   box-sizing: border-box;
   overflow-x: hidden;
   width: 100%;
@@ -725,7 +725,8 @@ body {
 .payment-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
+  gap: 28px 16px;
+  margin-top: 18px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -733,7 +734,8 @@ body {
 @media (max-width: 640px) {
   .payment-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: clamp(8px, 2.5vw, 12px);
+    gap: 28px clamp(8px, 2.5vw, 12px) !important;
+    margin-top: 18px !important;
     width: 100%;
     box-sizing: border-box;
   }
@@ -741,11 +743,15 @@ body {
 
 .payment-subscription-grid {
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  margin-top: 24px;
+  gap: 28px 16px;
 }
 
 @media (max-width: 640px) {
   .payment-subscription-grid {
     grid-template-columns: 1fr !important;
+    margin-top: 24px !important;
+    gap: 28px 16px !important;
   }
 }
 
@@ -758,6 +764,7 @@ body {
   border: 1px solid var(--glass-border);
   border-radius: 20px;
   padding: 20px;
+  overflow: visible !important;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -791,11 +798,11 @@ body {
 
 .payment-tag {
   position: absolute;
-  top: -10px;
+  top: -11px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.25);
+  border: 1px solid rgba(239, 68, 68, 0.5);
   color: #f87171;
   font-size: 0.65rem;
   font-weight: 800;
@@ -803,6 +810,10 @@ body {
   border-radius: 100px;
   white-space: nowrap;
   letter-spacing: 0.02em;
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  line-height: 1.3;
 }
 
 .payment-icon-box {
@@ -963,7 +974,7 @@ body {
     border-radius: 16px !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
-    overflow: hidden;
+    overflow: visible !important;
   }
 
   .payment-icon-box {
@@ -1039,9 +1050,10 @@ body {
   }
 
   .payment-tag {
-    top: -8px !important;
-    font-size: 0.58rem !important;
-    padding: 1px 7px !important;
+    top: -10px !important;
+    font-size: 0.62rem !important;
+    padding: 2px 8px !important;
+    z-index: 10 !important;
   }
 }
 
@@ -1501,17 +1513,32 @@ body {
   padding: 0 !important;
   margin: 0 !important;
   max-width: 100% !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+.ai-helper-main-container {
+  width: 100vw !important;
+  height: 100dvh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 @media (max-width: 768px) {
   .app-content-wrapper {
-    padding: 0 12px calc(56px + env(safe-area-inset-bottom, 16px)) 12px;
+    padding: 0 12px calc(90px + env(safe-area-inset-bottom, 20px)) 12px;
   }
 
   .app-content-wrapper:has(.ai-helper-main-container) {
     padding: 0 !important;
     margin: 0 !important;
     max-width: 100% !important;
+    width: 100vw !important;
+    height: 100dvh !important;
   }
 
   .hide-on-mobile-ai-helper {

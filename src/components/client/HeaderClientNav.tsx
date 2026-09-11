@@ -51,6 +51,11 @@ export function HeaderClientNav({
 }: HeaderClientNavProps) {
   const pathname = usePathname();
   const router = useRouter();
+
+  // On AI Helper page, hide site header so chat has 100% full screen view
+  if (pathname === '/ai-helper') {
+    return null;
+  }
   const { language, setLanguage, toggleLanguage, t } = useLanguage();
   const { theme, resolvedTheme, cycleTheme } = useTheme();
   const { setSelectedMarket, refreshAll, isSyncing, cooldownRemaining } = useMarketSync();

@@ -5,7 +5,7 @@ import { useSubscription } from '@/lib/context/SubscriptionContext';
 import { useClientAuth } from '@/lib/context/ClientAuthContext';
 import { GemCoinIcon } from '@/components/ui/GemCoinIcon';
 import { ModelPickerPopup } from '@/components/client/ModelPickerPopup';
-import { CURATED_MODELS, MODEL_FAMILIES, ModelSpec, DEFAULT_MODEL_ID } from '@/config/curated-models';
+import { CURATED_MODELS, MODEL_FAMILIES, ModelSpec, DEFAULT_MODEL_ID, getModelGemCoinsEst } from '@/config/curated-models';
 import { FAMILY_ICON_MAP } from '@/components/ui/ModelFamilyIcons';
 import { IosMarkdownRenderer } from '@/components/ui/IosMarkdownRenderer';
 import {
@@ -16,8 +16,9 @@ import {
   updateSession,
   deleteSession,
   clearAllSessions,
+  subscribeToUserCloudSessions,
 } from '@/lib/services/aiChatHistoryService';
-import { Copy, Check, History, ArrowLeft, Menu, X, Brain, Plus, Trash2, Zap } from 'lucide-react';
+import { Copy, Check, History, ArrowLeft, Menu, X, Brain, Plus, Trash2, Zap, Settings } from 'lucide-react';
 import Link from 'next/link';
 
 // Pure SVG icons with currentColor (no emoji)
@@ -156,10 +157,17 @@ export const AiHelperChatClient: React.FC = () => {
     }
   }, []);
 
-  // Load user sessions when user changes
+  // Load user sessions when user changes & establish realtime Cloud Sync
   useEffect(() => {
     const loaded = loadUserSessions(userUid);
     setSessions(loaded);
+
+    if (userUid) {
+      const unsubscribe = subscribeToUserCloudSessions(userUid, (cloudSessions) => {
+        setSessions(cloudSessions);
+      });
+      return () => unsubscribe();
+    }
   }, [userUid]);
 
   // Auto-scroll to bottom
@@ -291,10 +299,11 @@ export const AiHelperChatClient: React.FC = () => {
         const updated = updateSession(userUid, currentSessionId, finalMessages, data.model || selectedModel.id);
         setSessions(updated);
       } catch (err: any) {
+        const estCoins = getModelGemCoinsEst(selectedModel);
         const errorMsg: ChatMessage = {
           id: 'msg_err_' + Date.now(),
           role: 'assistant',
-          content: `ขออภัย: ${err.message || 'ไม่สามารถรับคำตอบได้ กรุณาลองใหม่อีกครั้ง'}`,
+          content: `**[SYSTEM NOTICE]** เกิดข้อผิดพลาดในการเชื่อมต่อโมเดลวิเคราะห์หุ้น (${err.message || 'Connection Error'}) ระบบทำการคืนเงิน/ไม่หักจำนวน **${estCoins} GemCoins** กลับเข้าสู่บัญชีของคุณเรียบร้อยแล้ว โปรดลองใหม่อีกครั้ง`,
           timestamp: new Date().toISOString(),
         };
         const finalMessages = [...newMessages, errorMsg];
@@ -460,7 +469,7 @@ export const AiHelperChatClient: React.FC = () => {
           <div className="ai-chat-main-area">
             {/* Header Bar - Clean 3-Column Mobile & Desktop Architecture */}
             <header className="ai-header-bar">
-              {/* Left Column: iOS Back Navigation */}
+              {/* Left Column: iOS Back Navigation + Hamburger Sidebar Toggle + New Chat */}
               <div className="ai-header-left">
                 <button
                   onClick={() => {
@@ -474,8 +483,27 @@ export const AiHelperChatClient: React.FC = () => {
                   title="ย้อนกลับ (Back)"
                   aria-label="ย้อนกลับ"
                 >
-                  <ArrowLeft size={18} strokeWidth={2.4} />
+                  <ArrowLeft size={17} strokeWidth={2.4} />
                   <span className="ai-back-text">กลับ</span>
+                </button>
+
+                {/* Hamburger Toggle Button for History Sidebar (Desktop & Mobile) */}
+                <button
+                  onClick={() => setIsSidebarOpen((prev) => !prev)}
+                  className={`ai-sidebar-hamburger-btn ios-tappable ${isSidebarOpen ? 'active' : ''}`}
+                  title={isSidebarOpen ? 'ซ่อนแถบประวัติ' : 'เปิดประวัติการสนทนา'}
+                  aria-label="ประวัติการสนทนา"
+                >
+                  <Menu size={18} strokeWidth={2.2} />
+                </button>
+
+                {/* New Chat Button */}
+                <button
+                  onClick={handleNewChat}
+                  className="ai-header-new-chat-btn ios-tappable"
+                  title="เริ่มแชทใหม่ (New Chat)"
+                >
+                  <PlusIconSvg />
                 </button>
               </div>
 
@@ -513,56 +541,26 @@ export const AiHelperChatClient: React.FC = () => {
                 </button>
               </div>
 
-              {/* Right Column: Desktop Action Controls & Mobile Hamburger Button */}
+              {/* Right Column: Wallet Pill + Settings Action Menu */}
               <div className="ai-header-right">
-                {/* Desktop-only Action Bar (Hidden on Mobile) */}
-                <div className="ai-desktop-actions">
-                  <button
-                    onClick={() => setEnableMemory((prev) => !prev)}
-                    className={`ai-memory-pill-btn ios-tappable ${enableMemory ? 'active' : ''}`}
-                    title={enableMemory ? 'ความจำบอท: เปิด (จำบทสนทนาต่อเนื่อง)' : 'ความจำบอท: ปิด (โหมดประหยัดเหรียญ)'}
-                  >
-                    <Brain size={14} />
-                    <span>{enableMemory ? 'ความจำ: เปิด' : 'ความจำ: ปิด'}</span>
-                  </button>
+                <button
+                  onClick={() => openGemCoinModal('topup')}
+                  className="ai-gemcoin-wallet-pill ios-tappable"
+                  title="คลิกเพื่อจัดการกระเป๋าเหรียญ เติม GemCoins และดูประวัติ"
+                >
+                  <GemCoinIcon size={16} glow />
+                  <span>{totalGemCoinsAvailable.toLocaleString()}</span>
+                  <span className="pill-add">+เติม</span>
+                </button>
 
-                  <button
-                    onClick={() => openGemCoinModal('logs')}
-                    className="ai-history-log-btn ios-tappable"
-                    title="ดูประวัติการใช้งาน GemCoins ทั้งหมดแบบโปร่งใส"
-                  >
-                    <History size={14} />
-                    <span className="ai-history-btn-text">ประวัติเหรียญ</span>
-                  </button>
-
-                  <button
-                    onClick={() => openGemCoinModal('topup')}
-                    className="ai-gemcoin-wallet-pill ios-tappable"
-                    title="คลิกเพื่อจัดการกระเป๋าเหรียญ เติม GemCoins และดูประวัติ"
-                  >
-                    <GemCoinIcon size={16} glow />
-                    <span>{totalGemCoinsAvailable.toLocaleString()}</span>
-                    <span className="ai-wallet-label">GemCoins</span>
-                    <span className="pill-add">+เติม</span>
-                  </button>
-
-                  <button
-                    onClick={handleNewChat}
-                    className="ai-header-new-chat-btn ios-tappable"
-                    title="เริ่มแชทใหม่"
-                  >
-                    <PlusIconSvg />
-                  </button>
-                </div>
-
-                {/* Mobile Hamburger Menu Button (Takes zero space, stops header overlap!) */}
+                {/* Settings / Actions Hamburger Menu Button */}
                 <button
                   onClick={() => setIsHamburgerOpen((prev) => !prev)}
-                  className="ai-hamburger-btn ios-tappable"
-                  aria-label="เปิดเมนูการจัดการ AI"
-                  title="เมนูตั้งค่าและกระเป๋าเหรียญ"
+                  className="ai-actions-menu-btn ios-tappable"
+                  aria-label="เปิดเมนูตั้งค่าและกระเป๋าเหรียญ"
+                  title="เมนูตั้งค่าความจำ & เหรียญ"
                 >
-                  <Menu size={20} strokeWidth={2.2} />
+                  <Settings size={18} strokeWidth={2.2} />
                 </button>
               </div>
             </header>

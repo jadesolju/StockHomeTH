@@ -12,35 +12,35 @@
   }
 }
 
-/* Outer Full Workspace Wrapper */
+/* Outer Full Workspace Wrapper (100% Full-Page Edge-to-Edge like ChatGPT & Claude) */
 .ai-workspace-page {
-  min-height: calc(100vh - 80px);
-  padding: clamp(0.5rem, 2vw, 1.25rem);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  width: 100%;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  max-width: 100vw !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
 }
 
-/* Chat Main Glass Container (Claude / ChatGPT / Apple Intelligence Fluid Layout) */
+/* Chat Main Glass Container (Full-Page Edge-to-Edge Layout) */
 .ai-chat-card {
-  width: 100%;
-  max-width: 980px;
-  height: calc(100dvh - clamp(2.5rem, 6vh, 4.5rem));
-  min-height: 480px;
-  max-height: 920px;
-  display: flex;
-  flex-direction: column;
-  background: rgba(13, 17, 23, 0.88);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: clamp(1rem, 2vw, 1.5rem);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.05);
-  overflow: hidden;
-  position: relative;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  max-height: 100dvh !important;
+  display: flex !important;
+  flex-direction: row !important;
+  background: rgba(13, 17, 23, 0.98);
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+  position: relative !important;
 }
 
 /* Header Bar */
@@ -1933,7 +1933,7 @@
 .ai-header-left {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -1982,39 +1982,48 @@
   letter-spacing: -0.01em;
 }
 
-/* Desktop Action Controls */
-.ai-desktop-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Memory Toggle Pill (Desktop Header) */
-.ai-memory-pill-btn {
+/* Sidebar Hamburger Toggle Button (Desktop & Mobile) */
+.ai-sidebar-hamburger-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.05);
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: #94a3b8;
-  font-size: 0.76rem;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 100px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
-.ai-memory-pill-btn.active {
-  background: rgba(56, 189, 248, 0.12);
-  border-color: rgba(56, 189, 248, 0.4);
+.ai-sidebar-hamburger-btn:hover,
+.ai-sidebar-hamburger-btn.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.35);
   color: #38bdf8;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
 }
 
-.ai-memory-pill-btn:hover {
-  transform: translateY(-1px);
+/* Actions Menu Button (Settings & Extras) */
+.ai-actions-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.ai-actions-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
 }
 
 /* Mobile Hamburger Menu Button */
@@ -2351,4 +2360,183 @@
 .ai-sidebar-memory-status {
   font-size: 0.68rem;
   font-weight: 500;
+}
+
+/* ==========================================================================
+   Enterprise-Grade Markdown Rendering Engine Styles (.ios-markdown-body)
+   ========================================================================== */
+.ios-markdown-body {
+  color: #f1f5f9;
+  font-size: 0.92rem;
+  line-height: 1.68;
+}
+
+.ios-markdown-body p {
+  margin: 0 0 10px 0;
+}
+
+.ios-markdown-body p:last-child {
+  margin-bottom: 0;
+}
+
+.ios-markdown-body h1 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin: 16px 0 8px 0;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.ios-markdown-body h2 {
+  font-size: 1.2rem;
+  font-weight: 750;
+  margin: 14px 0 6px 0;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.ios-markdown-body h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 12px 0 6px 0;
+  color: #ffffff;
+}
+
+.ios-markdown-body h4,
+.ios-markdown-body h5,
+.ios-markdown-body h6 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 10px 0 4px 0;
+  color: #cbd5e1;
+}
+
+.ios-markdown-body strong {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.ios-markdown-body em {
+  font-style: italic;
+  color: #cbd5e1;
+}
+
+.ios-markdown-body del {
+  text-decoration: line-through;
+  opacity: 0.65;
+}
+
+.ios-markdown-body a {
+  color: #38bdf8;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+
+.ios-markdown-body a:hover {
+  color: #0ea5e9;
+}
+
+.ios-markdown-body hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 14px 0;
+}
+
+.ios-markdown-body blockquote {
+  margin: 8px 0;
+  padding: 6px 14px;
+  border-left: 3px solid #38bdf8;
+  background: rgba(56, 189, 248, 0.06);
+  border-radius: 0 8px 8px 0;
+}
+
+.ios-markdown-body blockquote blockquote {
+  margin-top: 6px;
+  border-left-color: #0ea5e9;
+  background: rgba(14, 165, 233, 0.08);
+}
+
+.ios-markdown-body ul,
+.ios-markdown-body ol {
+  margin: 8px 0 10px 0;
+  padding-left: 22px;
+}
+
+.ios-markdown-body li {
+  margin-bottom: 4px;
+  line-height: 1.6;
+}
+
+.ios-markdown-body code {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.84em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #38bdf8;
+}
+
+.ios-markdown-body pre {
+  background: rgba(8, 12, 18, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px 16px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.ios-markdown-body pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #f1f5f9;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.ios-markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ios-markdown-body th {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 8px 12px;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+}
+
+.ios-markdown-body td {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+}
+
+.ios-markdown-body tr:last-child td {
+  border-bottom: none;
+}
+
+.ios-markdown-body details {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 10px 0;
+}
+
+.ios-markdown-body summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #38bdf8;
+  user-select: none;
 }

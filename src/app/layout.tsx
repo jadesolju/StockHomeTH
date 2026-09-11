@@ -17,6 +17,7 @@ import { PwaBottomNav } from '../components/client/PwaBottomNav';
 import { GlobalNewsModal } from '../components/client/GlobalNewsModal';
 import { TermsDisclaimerModal } from '../components/client/TermsDisclaimerModal';
 import { LegalFooter } from '../components/client/LegalFooter';
+import { GemCoinModal } from '../components/client/GemCoinModal';
 
 export const metadata: Metadata = {
   title: 'StockHomeTH • สรุปข่าวหุ้น AI และข้อมูลตลาดหุ้นไทย & สหรัฐฯ',
@@ -76,6 +77,7 @@ export default function RootLayout({
                   <AuthModal />
                   <UserProfileModal />
                   <PricingModal />
+                  <GemCoinModal />
                   <LocalRoleSwitcher />
                   <PwaBottomNav />
                   <GlobalNewsModal />

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   CURATED_MODELS,
   MODEL_FAMILIES,
@@ -35,7 +35,7 @@ const TIER_LOCK_LABEL: Record<string, string> = {
   whale: 'Whale',
 };
 
-export const ModelPickerPopup: React.FC<ModelPickerPopupProps> = ({
+export const ModelPickerPopup: React.FC<ModelPickerPopupProps> = React.memo(({
   isOpen,
   onClose,
   onSelect,
@@ -60,15 +60,24 @@ export const ModelPickerPopup: React.FC<ModelPickerPopupProps> = ({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
-  const filteredModels =
-    activeFamily === 'all'
+  const filteredModels = useMemo(() => {
+    return activeFamily === 'all'
       ? CURATED_MODELS
       : CURATED_MODELS.filter((m) => m.family === activeFamily);
+  }, [activeFamily]);
 
-  const getFamilyMeta = (key: string): ModelFamilyMeta | undefined =>
-    MODEL_FAMILIES.find((f) => f.key === key);
+  const getFamilyMeta = useCallback((key: string): ModelFamilyMeta | undefined => {
+    return MODEL_FAMILIES.find((f) => f.key === key);
+  }, []);
+
+  const handleSelectModel = useCallback((model: ModelSpec, unlocked: boolean) => {
+    if (unlocked) {
+      onSelect(model);
+      onClose();
+    }
+  }, [onSelect, onClose]);
+
+  if (!isOpen) return null;
 
   return (
     <div
@@ -104,7 +113,7 @@ export const ModelPickerPopup: React.FC<ModelPickerPopupProps> = ({
               )}
             </div>
             <div className="model-popup-subtitle">
-              คัดสรร {CURATED_MODELS.length} โมเดลชั้นนำ • แสดงอัตราการใช้ GemCoins ตามจริง (ไม่มีค่าบริการแอบแฝง)
+              คัดสรร {CURATED_MODELS.length} โมเดลชั้นนำ • แสดงอัตราการใช้ GemCoins ตามจริง
             </div>
           </div>
           <button
@@ -118,7 +127,6 @@ export const ModelPickerPopup: React.FC<ModelPickerPopupProps> = ({
 
         {/* ── Family Filter Tabs ── */}
         <div className="model-popup-family-bar">
-          {/* All tab */}
           <FamilyTabBtn
             isActive={activeFamily === 'all'}
             color="#38bdf8"
@@ -131,22 +139,22 @@ export const ModelPickerPopup: React.FC<ModelPickerPopupProps> = ({
               <rect x="14" y="14" width="7" height="7" rx="1.5" fill="#38bdf8" fillOpacity="0.9" />
             </svg>
             <span>ทั้งหมด</span>
+            <span className="family-count-pill">{CURATED_MODELS.length}</span>
           </FamilyTabBtn>
 
-          {MODEL_FAMILIES.map((f) => {
-            const FamilyIcon = FAMILY_ICON_MAP[f.key];
-            const isActive = activeFamily === f.key;
+          {MODEL_FAMILIES.map((family) => {
+            const count = CURATED_MODELS.filter((m) => m.family === family.key).length;
+            const Icon = FAMILY_ICON_MAP[family.key];
             return (
               <FamilyTabBtn
-                key={f.key}
-                isActive={isActive}
-                color={f.color}
-                onClick={() => setActiveFamily(f.key as ModelFamily)}
+                key={family.key}
+                isActive={activeFamily === family.key}
+                color={family.color}
+                onClick={() => setActiveFamily(family.key)}
               >
-                {FamilyIcon && (
-                  <FamilyIcon style={{ width: '16px', height: '16px', flexShrink: 0 }} />
-                )}
-                <span>{f.shortLabel}</span>
+                <Icon style={{ width: '14px', height: '14px' }} />
+                <span>{family.shortLabel}</span>
+                <span className="family-count-pill">{count}</span>
               </FamilyTabBtn>
             );
           })}
@@ -171,12 +179,7 @@ export const ModelPickerPopup: React.FC<ModelPickerPopupProps> = ({
                 FamilyIcon={FamilyIcon}
                 familyShortLabel={family?.shortLabel ?? model.family}
                 tierLockLabel={TIER_LOCK_LABEL[model.minTier]}
-                onSelect={() => {
-                  if (unlocked) {
-                    onSelect(model);
-                    onClose();
-                  }
-                }}
+                onSelect={() => handleSelectModel(model, unlocked)}
               />
             );
           })}
@@ -184,9 +187,11 @@ export const ModelPickerPopup: React.FC<ModelPickerPopupProps> = ({
       </div>
     </div>
   );
-};
+});
 
-/* ── Sub-components ── */
+ModelPickerPopup.displayName = 'ModelPickerPopup';
+
+/* ── Sub-components (Memoized) ── */
 
 interface FamilyTabBtnProps {
   isActive: boolean;
@@ -194,7 +199,7 @@ interface FamilyTabBtnProps {
   onClick: () => void;
   children: React.ReactNode;
 }
-const FamilyTabBtn: React.FC<FamilyTabBtnProps> = ({ isActive, color, onClick, children }) => (
+const FamilyTabBtn: React.FC<FamilyTabBtnProps> = React.memo(({ isActive, color, onClick, children }) => (
   <button
     onClick={onClick}
     className={`model-family-tab-btn ${isActive ? 'active' : ''}`}
@@ -204,7 +209,8 @@ const FamilyTabBtn: React.FC<FamilyTabBtnProps> = ({ isActive, color, onClick, c
   >
     {children}
   </button>
-);
+));
+FamilyTabBtn.displayName = 'FamilyTabBtn';
 
 interface ModelCardProps {
   model: ModelSpec;
@@ -216,7 +222,7 @@ interface ModelCardProps {
   tierLockLabel?: string;
   onSelect: () => void;
 }
-const ModelCard: React.FC<ModelCardProps> = ({
+const ModelCard: React.FC<ModelCardProps> = React.memo(({
   model,
   isSelected,
   unlocked,
@@ -226,20 +232,15 @@ const ModelCard: React.FC<ModelCardProps> = ({
   tierLockLabel,
   onSelect,
 }) => {
-  const [hovered, setHovered] = useState(false);
-
   return (
     <button
       onClick={onSelect}
       disabled={!unlocked}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       className={`model-card-btn ${isSelected ? 'selected' : ''}`}
       style={{
-        borderColor: isSelected ? color : hovered && unlocked ? `${color}77` : undefined,
+        borderColor: isSelected ? color : undefined,
         cursor: unlocked ? 'pointer' : 'not-allowed',
         opacity: unlocked ? 1 : 0.45,
-        transform: hovered && unlocked && !isSelected ? 'translateY(-1px)' : 'none',
       }}
     >
       {/* Top-right badges */}
@@ -318,7 +319,7 @@ const ModelCard: React.FC<ModelCardProps> = ({
         {model.highlight}
       </div>
 
-      {/* GemCoins estimate footer — NO raw USD In/Out tokens */}
+      {/* GemCoins estimate footer */}
       <div className="model-card-cost-row">
         <div className="model-card-gemcoin-pill">
           <GemCoinIcon size={12} glow={false} />
@@ -343,11 +344,12 @@ const ModelCard: React.FC<ModelCardProps> = ({
       )}
     </button>
   );
-};
+});
+ModelCard.displayName = 'ModelCard';
 
 const Badge: React.FC<{
   bg: string; color: string; border: string; children: React.ReactNode;
-}> = ({ bg, color, border, children }) => (
+}> = React.memo(({ bg, color, border, children }) => (
   <span
     style={{
       fontSize: '0.58rem',
@@ -362,4 +364,5 @@ const Badge: React.FC<{
   >
     {children}
   </span>
-);
+));
+Badge.displayName = 'Badge';
