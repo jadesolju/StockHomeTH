@@ -2,9 +2,22 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { PRICING_PLANS, PricingPlan } from '../../config/pricingPlans';
+import {
+  GEMCOIN_SUBSCRIPTION_TIERS,
+  GemCoinSubscriptionTierInfo,
+} from '../../config/gemCoinPackages';
 
-export type SubscriptionTier = 'free' | 'lite' | 'pro' | 'vip';
+export type SubscriptionTier = 'free' | 'lite' | 'pro' | 'vip' | 'whale';
 export type BillingCycle = 'monthly' | 'yearly';
+
+export interface GemCoinLogEntry {
+  id: string;
+  timestamp: string;
+  model: string;
+  gemCoinsUsed: number;
+  source: 'daily' | 'topup';
+  summary?: string;
+}
 
 interface SubscriptionContextType {
   currentPlan: SubscriptionPlan;
@@ -24,6 +37,23 @@ interface SubscriptionContextType {
   resetAiUsage: () => void;
   isProOrAbove: boolean;
   isVip: boolean;
+
+  // GemCoin Economy
+  dailyGemCoins: number;
+  dailyGemCoinsRemaining: number;
+  topupGemCoins: number;
+  totalGemCoinsAvailable: number;
+  gemCoinLogs: GemCoinLogEntry[];
+  isGemCoinModalOpen: boolean;
+  gemCoinModalInitialTab: 'topup' | 'plans' | 'redeem' | 'logs';
+  openGemCoinModal: (initialTab?: 'topup' | 'plans' | 'redeem' | 'logs') => void;
+  closeGemCoinModal: () => void;
+  deductGemCoins: (amount: number, model: string, summary?: string) => boolean;
+  topupGemCoinsDirect: (amount: number, packageName: string) => void;
+  redeemPromoCode: (
+    code: string
+  ) => Promise<{ success: boolean; message: string; gemCoinsAdded?: number }>;
+  currentTierInfo: GemCoinSubscriptionTierInfo;
 }
 
 export interface SubscriptionPlan extends PricingPlan {
@@ -37,63 +67,287 @@ const STORAGE_KEY = 'stockhome_local_subscription_tier';
 const AI_USAGE_KEY = 'stockhome_local_ai_usage_count';
 const AI_RESET_DATE_KEY = 'stockhome_local_ai_reset_date';
 
+// GemCoin Storage Keys
+const GEMCOIN_DAILY_KEY = 'stockhome_gemcoin_daily_remaining';
+const GEMCOIN_TOPUP_KEY = 'stockhome_gemcoin_topup_balance';
+const GEMCOIN_LOGS_KEY = 'stockhome_gemcoin_logs';
+const GEMCOIN_USER_ID_KEY = 'stockhome_device_user_id';
+
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const [currentTier, setCurrentTierState] = useState<SubscriptionTier>('free');
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
   const [isPricingModalOpen, setIsPricingModalOpen] = useState<boolean>(false);
   const [aiUsageToday, setAiUsageToday] = useState<number>(0);
 
-  // Helper to get today's date string YYYY-MM-DD
+  // GemCoin States
+  const [dailyGemCoinsRemaining, setDailyGemCoinsRemaining] = useState<number>(500);
+  const [topupGemCoins, setTopupGemCoins] = useState<number>(0);
+  const [gemCoinLogs, setGemCoinLogs] = useState<GemCoinLogEntry[]>([]);
+  const [isGemCoinModalOpen, setIsGemCoinModalOpen] = useState<boolean>(false);
+  const [gemCoinModalInitialTab, setGemCoinModalInitialTab] = useState<
+    'topup' | 'plans' | 'redeem' | 'logs'
+  >('topup');
+  const [userId, setUserId] = useState<string>('local_device_user');
+
   const getTodayStr = () => new Date().toISOString().split('T')[0];
 
-  // Load saved subscription state from localStorage on mount (Local-first persistence)
+  const currentTierInfo =
+    GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === currentTier) ||
+    GEMCOIN_SUBSCRIPTION_TIERS[0];
+  const dailyGemCoins = currentTierInfo.dailyGemCoins;
+
+  // Initialize state on client mount
   useEffect(() => {
     try {
+      // 1. User ID (Device fingerprint)
+      let savedUserId = localStorage.getItem(GEMCOIN_USER_ID_KEY);
+      if (!savedUserId) {
+        savedUserId = 'user_' + Math.random().toString(36).substring(2, 10);
+        localStorage.setItem(GEMCOIN_USER_ID_KEY, savedUserId);
+      }
+      setUserId(savedUserId);
+
+      // 2. Subscription Tier
       const savedTier = localStorage.getItem(STORAGE_KEY) as SubscriptionTier;
-      if (savedTier && ['free', 'lite', 'pro', 'vip'].includes(savedTier)) {
+      let effectiveTier: SubscriptionTier = 'free';
+      if (savedTier && ['free', 'lite', 'pro', 'vip', 'whale'].includes(savedTier)) {
         setCurrentTierState(savedTier);
+        effectiveTier = savedTier;
       }
 
+      const effectiveTierInfo =
+        GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === effectiveTier) ||
+        GEMCOIN_SUBSCRIPTION_TIERS[0];
+
+      // 3. Daily Reset Logic
       const today = getTodayStr();
       const lastResetDate = localStorage.getItem(AI_RESET_DATE_KEY);
 
-      // Check daily reset rule: if new day, reset credits_used = 0
       if (lastResetDate !== today) {
+        // Midnight reset!
         localStorage.setItem(AI_RESET_DATE_KEY, today);
         localStorage.setItem(AI_USAGE_KEY, '0');
         setAiUsageToday(0);
+
+        // Reset Daily GemCoins to tier full quota
+        localStorage.setItem(
+          GEMCOIN_DAILY_KEY,
+          effectiveTierInfo.dailyGemCoins.toString()
+        );
+        setDailyGemCoinsRemaining(effectiveTierInfo.dailyGemCoins);
       } else {
         const savedAi = localStorage.getItem(AI_USAGE_KEY);
-        if (savedAi) {
-          setAiUsageToday(parseInt(savedAi, 10) || 0);
+        if (savedAi) setAiUsageToday(parseInt(savedAi, 10) || 0);
+
+        const savedDaily = localStorage.getItem(GEMCOIN_DAILY_KEY);
+        if (savedDaily !== null) {
+          setDailyGemCoinsRemaining(parseInt(savedDaily, 10) || 0);
+        } else {
+          setDailyGemCoinsRemaining(effectiveTierInfo.dailyGemCoins);
         }
+      }
+
+      // 4. Permanent Top-up Balance (never expires)
+      const savedTopup = localStorage.getItem(GEMCOIN_TOPUP_KEY);
+      if (savedTopup) {
+        setTopupGemCoins(parseInt(savedTopup, 10) || 0);
+      }
+
+      // 5. Logs
+      const savedLogs = localStorage.getItem(GEMCOIN_LOGS_KEY);
+      if (savedLogs) {
+        try {
+          setGemCoinLogs(JSON.parse(savedLogs));
+        } catch {}
       }
     } catch {}
   }, []);
 
-  const setTier = useCallback((tier: SubscriptionTier) => {
-    setCurrentTierState(tier);
-    try {
-      localStorage.setItem(STORAGE_KEY, tier);
-    } catch {}
-  }, []);
+  // Save changes to Tier
+  const setTier = useCallback(
+    (tier: SubscriptionTier) => {
+      setCurrentTierState(tier);
+      try {
+        localStorage.setItem(STORAGE_KEY, tier);
+        const tierInfo =
+          GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === tier) ||
+          GEMCOIN_SUBSCRIPTION_TIERS[0];
+
+        // If user upgrades, immediately grant permanent topup bonus!
+        if (tierInfo.permanentTopupBonus > 0) {
+          setTopupGemCoins((prev) => {
+            const updated = prev + tierInfo.permanentTopupBonus;
+            localStorage.setItem(GEMCOIN_TOPUP_KEY, updated.toString());
+            return updated;
+          });
+        }
+
+        // Adjust daily remaining if lower than new tier's quota
+        setDailyGemCoinsRemaining((prev) => {
+          const updated = Math.max(prev, tierInfo.dailyGemCoins);
+          localStorage.setItem(GEMCOIN_DAILY_KEY, updated.toString());
+          return updated;
+        });
+      } catch {}
+    },
+    []
+  );
 
   const openPricingModal = useCallback(() => setIsPricingModalOpen(true), []);
   const closePricingModal = useCallback(() => setIsPricingModalOpen(false), []);
 
-  const basePlan = PRICING_PLANS.find((p) => p.id === currentTier) || PRICING_PLANS[0];
+  const openGemCoinModal = useCallback(
+    (initialTab: 'topup' | 'plans' | 'redeem' | 'logs' = 'topup') => {
+      setGemCoinModalInitialTab(initialTab);
+      setIsGemCoinModalOpen(true);
+    },
+    []
+  );
+  const closeGemCoinModal = useCallback(() => setIsGemCoinModalOpen(false), []);
+
+  // Deduct GemCoins (Deducts from Daily Free first, then from Top-up)
+  const deductGemCoins = useCallback(
+    (amount: number, model: string, summary?: string): boolean => {
+      const totalAvailable = dailyGemCoinsRemaining + topupGemCoins;
+      if (totalAvailable < amount) {
+        return false;
+      }
+
+      let source: 'daily' | 'topup' = 'daily';
+      let newDaily = dailyGemCoinsRemaining;
+      let newTopup = topupGemCoins;
+
+      if (dailyGemCoinsRemaining >= amount) {
+        newDaily = dailyGemCoinsRemaining - amount;
+        source = 'daily';
+      } else {
+        const remainingToDeduct = amount - dailyGemCoinsRemaining;
+        newDaily = 0;
+        newTopup = topupGemCoins - remainingToDeduct;
+        source = 'topup';
+      }
+
+      setDailyGemCoinsRemaining(newDaily);
+      setTopupGemCoins(newTopup);
+
+      const logEntry: GemCoinLogEntry = {
+        id: 'log_' + Date.now(),
+        timestamp: new Date().toISOString(),
+        model,
+        gemCoinsUsed: amount,
+        source,
+        summary: summary || 'แชทสอบถามการเงินและวิเคราะห์หุ้น',
+      };
+
+      setGemCoinLogs((prev) => {
+        const updated = [logEntry, ...prev.slice(0, 49)];
+        try {
+          localStorage.setItem(GEMCOIN_DAILY_KEY, newDaily.toString());
+          localStorage.setItem(GEMCOIN_TOPUP_KEY, newTopup.toString());
+          localStorage.setItem(GEMCOIN_LOGS_KEY, JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+
+      return true;
+    },
+    [dailyGemCoinsRemaining, topupGemCoins]
+  );
+
+  // Top up GemCoins directly (from store package)
+  const topupGemCoinsDirect = useCallback(
+    (amount: number, packageName: string) => {
+      setTopupGemCoins((prev) => {
+        const updated = prev + amount;
+        try {
+          localStorage.setItem(GEMCOIN_TOPUP_KEY, updated.toString());
+        } catch {}
+        return updated;
+      });
+
+      const logEntry: GemCoinLogEntry = {
+        id: 'topup_' + Date.now(),
+        timestamp: new Date().toISOString(),
+        model: 'Top-up Package',
+        gemCoinsUsed: 0,
+        source: 'topup',
+        summary: `เติมเหรียญแพ็กเกจ "${packageName}" (+${amount.toLocaleString()} GemCoins)`,
+      };
+
+      setGemCoinLogs((prev) => {
+        const updated = [logEntry, ...prev.slice(0, 49)];
+        try {
+          localStorage.setItem(GEMCOIN_LOGS_KEY, JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+    },
+    []
+  );
+
+  // Redeem Promo Code via Backend API
+  const redeemPromoCode = useCallback(
+    async (
+      code: string
+    ): Promise<{ success: boolean; message: string; gemCoinsAdded?: number }> => {
+      try {
+        const res = await fetch('/api/gemcoin/redeem', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, userId }),
+        });
+
+        const data = await res.json();
+        if (data.success && data.gemCoinsAdded) {
+          const added = Number(data.gemCoinsAdded);
+          setTopupGemCoins((prev) => {
+            const updated = prev + added;
+            try {
+              localStorage.setItem(GEMCOIN_TOPUP_KEY, updated.toString());
+            } catch {}
+            return updated;
+          });
+
+          const logEntry: GemCoinLogEntry = {
+            id: 'redeem_' + Date.now(),
+            timestamp: new Date().toISOString(),
+            model: 'Promo Voucher',
+            gemCoinsUsed: 0,
+            source: 'topup',
+            summary: `แลกรับรหัสโปรโมชั่น "${code.toUpperCase()}" (+${added.toLocaleString()} GemCoins)`,
+          };
+
+          setGemCoinLogs((prev) => {
+            const updated = [logEntry, ...prev.slice(0, 49)];
+            try {
+              localStorage.setItem(GEMCOIN_LOGS_KEY, JSON.stringify(updated));
+            } catch {}
+            return updated;
+          });
+        }
+        return data;
+      } catch (err: any) {
+        return { success: false, message: err.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้' };
+      }
+    },
+    [userId]
+  );
+
+  const basePlan =
+    PRICING_PLANS.find((p) => p.id === currentTier) || PRICING_PLANS[0];
   const currentPlan: SubscriptionPlan = {
     ...basePlan,
     status: 'active',
     expiresAt: currentTier !== 'free' ? '31 ธ.ค. 2026' : undefined,
   };
 
-  const isProOrAbove = currentTier === 'pro' || currentTier === 'vip';
-  const isVip = currentTier === 'vip';
+  const isProOrAbove =
+    currentTier === 'pro' || currentTier === 'vip' || currentTier === 'whale';
+  const isVip = currentTier === 'vip' || currentTier === 'whale';
 
   const canUseAiOnDemand = useCallback(() => {
-    return aiUsageToday < currentPlan.limits.aiOnDemandDailyLimit;
-  }, [aiUsageToday, currentPlan.limits.aiOnDemandDailyLimit]);
+    return dailyGemCoinsRemaining + topupGemCoins > 0;
+  }, [dailyGemCoinsRemaining, topupGemCoins]);
 
   const canSetLineAlerts = useCallback(() => {
     return currentPlan.limits.lineAlerts;
@@ -148,6 +402,21 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         resetAiUsage,
         isProOrAbove,
         isVip,
+
+        // GemCoin Economy
+        dailyGemCoins,
+        dailyGemCoinsRemaining,
+        topupGemCoins,
+        totalGemCoinsAvailable: dailyGemCoinsRemaining + topupGemCoins,
+        gemCoinLogs,
+        isGemCoinModalOpen,
+        gemCoinModalInitialTab,
+        openGemCoinModal,
+        closeGemCoinModal,
+        deductGemCoins,
+        topupGemCoinsDirect,
+        redeemPromoCode,
+        currentTierInfo,
       }}
     >
       {children}

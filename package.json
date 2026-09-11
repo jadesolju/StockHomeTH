@@ -15,6 +15,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1127.0",
     "@google/genai": "^2.19.0",
+    "@stripe/stripe-js": "^9.15.0",
     "@supabase/server": "^1.4.1",
     "@supabase/ssr": "^0.12.6",
     "@supabase/supabase-js": "^2.109.0",
@@ -27,6 +28,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "rss-parser": "^3.13.0",
+    "stripe": "^22.6.1",
     "yahoo-finance2": "^3.15.4",
     "zod": "^3.24.2"
   },
