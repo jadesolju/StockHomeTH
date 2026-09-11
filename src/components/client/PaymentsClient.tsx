@@ -117,50 +117,24 @@ export default function PaymentsClient() {
       <div className="payment-page-container">
         {/* ──── Exclusive Owner Status Banner (Visible ONLY to afillly002@gmail.com) ──── */}
         {isOwnerUser && (
-          <div
-            style={{
-              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(236, 72, 153, 0.12) 100%)',
-              border: '1px solid rgba(168, 85, 247, 0.45)',
-              borderRadius: '18px',
-              padding: '16px 20px',
-              marginBottom: '28px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '12px',
-              boxShadow: '0 8px 32px rgba(168, 85, 247, 0.15)',
-            }}
-          >
+          <div className="payment-owner-banner">
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div
-                style={{
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '12px',
-                  background: 'rgba(168, 85, 247, 0.25)',
-                  border: '1px solid rgba(168, 85, 247, 0.5)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <Crown size={22} color="#c084fc" />
+              <div className="payment-owner-icon-wrap">
+                <Crown size={22} />
               </div>
               <div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f3e8ff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>👑 ยินดีต้อนรับผู้พัฒนา & เจ้าของระบบ (Owner)</span>
-                  <span style={{ fontSize: '0.7rem', padding: '1px 8px', borderRadius: '100px', background: '#a855f7', color: '#fff', fontWeight: 700 }}>
+                <div className="payment-owner-title">
+                  <span>ยินดีต้อนรับผู้พัฒนา & เจ้าของระบบ (Owner)</span>
+                  <span className="payment-owner-god-badge">
                     God Mode
                   </span>
                 </div>
-                <div style={{ fontSize: '0.78rem', color: '#d8b4fe', marginTop: '2px' }}>
+                <div className="payment-owner-desc">
                   บัญชี <strong>afillly002@gmail.com</strong> ได้รับสิทธิ์เข้าถึงทุกฟังก์ชัน AI และ GemCoins 99,999,999 ถาวรโดยไม่ต้องชำระเงิน
                 </div>
               </div>
             </div>
-            <div style={{ fontSize: '0.74rem', color: 'rgba(216, 180, 254, 0.8)', fontWeight: 600 }}>
+            <div className="payment-owner-note">
               (สถานะนี้เห็นเฉพาะบัญชีของคุณคนเดียว บุคคลภายนอกจะไม่เห็นแถบนี้)
             </div>
           </div>
@@ -250,7 +224,7 @@ export default function PaymentsClient() {
                     <div className="payment-price-row">
                       <span className="payment-price-promo">฿{pkg.promoPrice}</span>
                       <span className="payment-price-regular">฿{pkg.regularPrice}</span>
-                      <span style={{ fontSize: '0.68rem', color: 'rgba(251, 191, 36, 0.8)', marginLeft: 'auto' }}>
+                      <span className="payment-price-promo-subtext" style={{ marginLeft: 'auto' }}>
                         1 ด. แรก
                       </span>
                     </div>
@@ -289,7 +263,7 @@ export default function PaymentsClient() {
                   style={{ padding: '6px 16px', fontSize: '0.82rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                 >
                   <span>รายปี</span>
-                  <span style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '1px 6px', borderRadius: '100px', fontSize: '0.65rem', fontWeight: 800 }}>
+                  <span className="payment-discount-pill">
                     ลด 2 เดือน
                   </span>
                 </button>

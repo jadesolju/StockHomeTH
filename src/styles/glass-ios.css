@@ -64,52 +64,59 @@
 }
 
 [data-theme='light'] {
-  --bg-color: #f5f5f7;
-  --bg-primary: #f5f5f7;
+  --bg-color: #f2f2f7;
+  --bg-primary: #f2f2f7;
   --bg-secondary: #ffffff;
   --bg-tertiary: #e5e5ea;
 
-  --glass-bg: rgba(255, 255, 255, 0.88);
-  --glass-bg-hover: rgba(242, 242, 247, 0.98);
-  --glass-bg-active: #e5e5ea;
-  --glass-border: rgba(0, 0, 0, 0.1);
-  --glass-border-subtle: rgba(0, 0, 0, 0.06);
-  --glass-border-active: rgba(0, 113, 227, 0.6);
-  --glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  /* Apple iOS Pure White Cards on System Gray Background */
+  --glass-bg: #ffffff;
+  --glass-bg-hover: #ffffff;
+  --glass-bg-active: #f2f2f7;
+  --glass-border: rgba(0, 0, 0, 0.09);
+  --glass-border-subtle: rgba(0, 0, 0, 0.05);
+  --glass-border-active: rgba(0, 122, 255, 0.6);
+  --glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
 
-  --card-sub-bg: rgba(0, 0, 0, 0.035);
+  /* Cards must be crisp white on system gray background */
+  --card-sub-bg: #ffffff;
   --card-sub-border: rgba(0, 0, 0, 0.08);
-  --card-border: rgba(0, 0, 0, 0.1);
+  --card-border: rgba(0, 0, 0, 0.08);
 
-  --text-primary: #1d1d1f;
-  --text-secondary: #48484a;
-  --text-tertiary: #636366;
+  /* High-Contrast WCAG AAA Crisp Typography for Light Mode */
+  --text-primary: #000000;
+  --text-secondary: #1f2937;
+  --text-tertiary: #4b5563;
   --text-inverse: #ffffff;
 
   --input-bg: #ffffff;
-  --input-border: rgba(0, 0, 0, 0.18);
-  --input-text: #1d1d1f;
+  --input-border: rgba(0, 0, 0, 0.16);
+  --input-text: #000000;
 
-  --accent-blue: #0071e3;
-  --accent-blue-hover: #0077ed;
-  --accent-blue-bg: rgba(0, 113, 227, 0.1);
-  --accent-blue-border: rgba(0, 113, 227, 0.3);
-  --accent-blue-gradient: #0071e3;
-  --accent-blue-glow: rgba(0, 113, 227, 0.15);
+  /* High-Contrast Accent Tones for Light Mode */
+  --accent-blue: #007aff;
+  --accent-blue-hover: #0062cc;
+  --accent-blue-bg: rgba(0, 122, 255, 0.1);
+  --accent-blue-border: rgba(0, 122, 255, 0.35);
+  --accent-blue-gradient: #007aff;
+  --accent-blue-glow: rgba(0, 122, 255, 0.2);
 
-  --accent-bullish: #248a3d;
-  --accent-bullish-bg: rgba(36, 138, 61, 0.12);
-  --accent-bullish-border: rgba(36, 138, 61, 0.3);
+  /* Deep emerald green for bull market indicator */
+  --accent-bullish: #15803d;
+  --accent-bullish-bg: rgba(21, 128, 61, 0.1);
+  --accent-bullish-border: rgba(21, 128, 61, 0.3);
 
-  --accent-bearish: #d70015;
-  --accent-bearish-bg: rgba(215, 0, 21, 0.1);
-  --accent-bearish-border: rgba(215, 0, 21, 0.3);
+  /* Deep crimson red for bear market indicator */
+  --accent-bearish: #dc2626;
+  --accent-bearish-bg: rgba(220, 38, 38, 0.1);
+  --accent-bearish-border: rgba(220, 38, 38, 0.3);
 
-  --accent-neutral: #c96e00;
-  --accent-neutral-bg: rgba(201, 110, 0, 0.12);
-  --accent-neutral-border: rgba(201, 110, 0, 0.3);
+  /* Rich amber bronze for neutral market indicator */
+  --accent-neutral: #b45309;
+  --accent-neutral-bg: rgba(180, 83, 9, 0.1);
+  --accent-neutral-border: rgba(180, 83, 9, 0.3);
 
-  --footer-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 240, 245, 0.98) 100%);
+  --footer-bg: #ffffff;
   --footer-border: rgba(0, 0, 0, 0.08);
   --footer-divider: rgba(0, 0, 0, 0.06);
 }
@@ -690,6 +697,15 @@ body {
   margin: 0 auto;
 }
 
+.payment-discount-pill {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  padding: 1px 6px;
+  border-radius: 100px;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
 .payment-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -908,6 +924,204 @@ body {
   color: #fca5a5;
   font-size: 0.85rem;
 }
+
+/* ==========================================================================
+   Store & Pricing Page: High-Contrast Light Mode Overrides
+   ========================================================================== */
+
+/* Owner God Mode Banner - Base (Dark Theme) */
+.payment-owner-banner {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(236, 72, 153, 0.12) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  border-radius: 18px;
+  padding: 16px 20px;
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 8px 32px rgba(168, 85, 247, 0.15);
+}
+
+.payment-owner-icon-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(168, 85, 247, 0.25);
+  border: 1px solid rgba(168, 85, 247, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #c084fc;
+}
+
+.payment-owner-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #f3e8ff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.payment-owner-god-badge {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: #a855f7;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.payment-owner-desc {
+  font-size: 0.78rem;
+  color: #d8b4fe;
+  margin-top: 2px;
+}
+
+.payment-owner-note {
+  font-size: 0.74rem;
+  color: rgba(216, 180, 254, 0.85);
+  font-weight: 600;
+}
+
+/* Light Mode: High-Contrast Pure White Cards & Dark Text */
+[data-theme='light'] .payment-owner-banner {
+  background: #faf5ff !important;
+  border: 1px solid #d8b4fe !important;
+  box-shadow: 0 4px 18px rgba(147, 51, 234, 0.08) !important;
+}
+
+[data-theme='light'] .payment-owner-icon-wrap {
+  background: #ede9fe !important;
+  border: 1px solid #c4b5fd !important;
+  color: #6b21a8 !important;
+}
+
+[data-theme='light'] .payment-owner-title {
+  color: #3b0764 !important; /* Bold deep royal purple - ultra-sharp on light background */
+}
+
+[data-theme='light'] .payment-owner-god-badge {
+  background: #7e22ce !important;
+  color: #ffffff !important;
+}
+
+[data-theme='light'] .payment-owner-desc {
+  color: #4c1d95 !important; /* Dark readable purple */
+}
+
+[data-theme='light'] .payment-owner-note {
+  color: #6b21a8 !important;
+  font-weight: 600 !important;
+}
+
+[data-theme='light'] .payment-discount-pill {
+  background: rgba(21, 128, 61, 0.12) !important;
+  color: #15803d !important;
+  border: 1px solid rgba(21, 128, 61, 0.25) !important;
+}
+
+[data-theme='light'] .payment-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.09) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+
+[data-theme='light'] .payment-card:hover {
+  border-color: rgba(0, 0, 0, 0.18) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme='light'] .payment-card-popular {
+  border: 2px solid #007aff !important;
+  background: linear-gradient(180deg, rgba(0, 122, 255, 0.03) 0%, #ffffff 100%) !important;
+  box-shadow: 0 8px 24px rgba(0, 122, 255, 0.1) !important;
+}
+
+[data-theme='light'] .payment-card-best {
+  border: 2px solid #d97706 !important;
+  background: linear-gradient(180deg, rgba(217, 119, 6, 0.03) 0%, #ffffff 100%) !important;
+  box-shadow: 0 8px 24px rgba(217, 119, 6, 0.1) !important;
+}
+
+[data-theme='light'] .payment-icon-box {
+  background: #f1f5f9 !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+}
+
+[data-theme='light'] .payment-card-title {
+  color: #000000 !important;
+}
+
+[data-theme='light'] .payment-coins-val {
+  color: #0284c7 !important; /* Deep Cyan/Sky Blue for high WCAG contrast */
+}
+
+[data-theme='light'] .payment-coins-label {
+  color: #4b5563 !important;
+  font-weight: 600;
+}
+
+[data-theme='light'] .payment-bonus-badge {
+  color: #92400e !important; /* Rich Dark Amber */
+  background: rgba(245, 158, 11, 0.12) !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+  padding: 2px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  font-weight: 700;
+}
+
+[data-theme='light'] .payment-price-promo {
+  color: #15803d !important; /* Dark emerald green */
+}
+
+[data-theme='light'] .payment-price-regular {
+  color: #6b7280 !important;
+  font-weight: 600;
+}
+
+[data-theme='light'] .payment-tag {
+  background: #fee2e2 !important;
+  border: 1px solid #fca5a5 !important;
+  color: #b91c1c !important;
+}
+
+[data-theme='light'] .payment-btn-dark {
+  background: #18181b !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-theme='light'] .payment-btn-dark:hover:not(:disabled) {
+  background: #000000 !important;
+}
+
+[data-theme='light'] .payment-btn-cyan {
+  background: #007aff !important;
+  color: #ffffff !important;
+}
+
+[data-theme='light'] .payment-btn-cyan:hover:not(:disabled) {
+  background: #0062cc !important;
+}
+
+[data-theme='light'] .payment-hero-title {
+  color: #000000 !important;
+}
+
+[data-theme='light'] .payment-hero-desc {
+  color: #374151 !important;
+}
+
+[data-theme='light'] .payment-price-promo-subtext {
+  color: #b45309 !important;
+}
+
 
 
 

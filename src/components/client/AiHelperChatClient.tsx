@@ -214,31 +214,9 @@ export const AiHelperChatClient: React.FC = () => {
               <button
                 id="model-picker-btn"
                 onClick={() => setIsModelPickerOpen(true)}
+                className="ai-model-picker-btn"
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '7px 14px',
-                  borderRadius: '12px',
-                  background: 'rgba(255,255,255,0.06)',
                   border: `1px solid ${familyInfo?.color || '#38bdf8'}44`,
-                  color: '#f1f5f9',
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  fontFamily: 'inherit',
-                  whiteSpace: 'nowrap',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget).style.borderColor = familyInfo?.color || '#38bdf8';
-                  (e.currentTarget).style.background = `${familyInfo?.color || '#38bdf8'}14`;
-                  (e.currentTarget).style.boxShadow = `0 0 14px ${familyInfo?.color || '#38bdf8'}30`;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget).style.borderColor = `${familyInfo?.color || '#38bdf8'}44`;
-                  (e.currentTarget).style.background = 'rgba(255,255,255,0.06)';
-                  (e.currentTarget).style.boxShadow = 'none';
                 }}
                 title="คลิกเพื่อเปลี่ยนโมเดล AI"
               >
@@ -288,7 +266,7 @@ export const AiHelperChatClient: React.FC = () => {
               >
                 <GemCoinIcon size={16} glow />
                 <span>{totalGemCoinsAvailable.toLocaleString()}</span>
-                <span style={{ color: '#94a3b8', fontWeight: 400 }}>GemCoins</span>
+                <span className="ai-wallet-label">GemCoins</span>
                 <span className="pill-add">+เติม</span>
               </button>
 
@@ -296,24 +274,7 @@ export const AiHelperChatClient: React.FC = () => {
                 <button
                   onClick={clearChat}
                   title="ล้างการสนทนา"
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#64748b',
-                    fontSize: '0.75rem',
-                    cursor: 'pointer',
-                    padding: '6px 8px',
-                    borderRadius: '8px',
-                    transition: 'all 0.15s',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.color = '#ffffff';
-                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.07)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.color = '#64748b';
-                    (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                  }}
+                  className="ai-clear-chat-btn"
                 >
                   {/* Trash SVG icon — no emoji */}
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -480,9 +441,9 @@ export const AiHelperChatClient: React.FC = () => {
             <div className="ai-input-subtext">
               <span>
                 โควตาฟรีวันนี้:{' '}
-                <strong style={{ color: '#34d399' }}>{dailyGemCoinsRemaining.toLocaleString()}</strong>
+                <strong className="ai-quota-daily">{dailyGemCoinsRemaining.toLocaleString()}</strong>
                 {' '}/{' '}{dailyGemCoins.toLocaleString()} · Top-up ถาวร:{' '}
-                <strong style={{ color: '#fbbf24' }}>{topupGemCoins.toLocaleString()}</strong>
+                <strong className="ai-quota-topup">{topupGemCoins.toLocaleString()}</strong>
               </span>
               <span style={{ display: 'none' }} className="sm-only">
                 DYOR: ข้อมูลเพื่อการศึกษาเท่านั้น
