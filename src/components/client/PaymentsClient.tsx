@@ -14,7 +14,7 @@ import {
   WhaleSvg,
 } from '@/components/ui/TierSvgIcons';
 import type { GemCoinTopupPackage } from '@/config/gemCoinPackages';
-import { Loader2, Zap, Crown, AlertCircle, ShieldCheck, ArrowRight, Check, Sparkles } from 'lucide-react';
+import { Loader2, Zap, Crown, AlertCircle, ShieldCheck, ArrowRight, Check, Sparkles, CreditCard, Smartphone, QrCode } from 'lucide-react';
 import { useClientAuth } from '@/lib/context/ClientAuthContext';
 import { OWNER_DEV_IDENTIFIERS } from '@/lib/context/SubscriptionContext';
 
@@ -334,6 +334,128 @@ export default function PaymentsClient() {
                   </div>
                 );
               })}
+            </div>
+
+            {/* ──── Thai Payment Methods & Alternatives Guide ──── */}
+            <div
+              style={{
+                marginTop: '32px',
+                padding: '20px 24px',
+                borderRadius: '16px',
+                background: 'var(--card-sub-bg, rgba(255, 255, 255, 0.03))',
+                border: '1px solid var(--glass-border, rgba(255, 255, 255, 0.08))',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                <Smartphone size={18} color="var(--accent-blue)" />
+                <h4 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  ช่องทางชำระเงินสำหรับคนไทย & ทางเลือกยอดนิยม
+                </h4>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '12px' }}>
+                {/* 1. Debit Cards */}
+                <div
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    background: 'var(--card-bg, rgba(255, 255, 255, 0.02))',
+                    border: '1px solid var(--glass-border, rgba(255, 255, 255, 0.06))',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <CreditCard size={15} color="#3b82f6" />
+                    <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      บัตรเดบิตไทยทุกธนาคาร
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    ใช้บัตร ATM/เดบิต (กสิกร KBank, SCB, กรุงเทพ, กรุงไทย, TTB ฯลฯ) ที่เปิดใช้งานช้อปปิ้งออนไลน์ในแอปธนาคาร กรอกเลขบัตร 16 หลักสมัครได้ทันที
+                  </p>
+                </div>
+
+                {/* 2. Google Pay & Apple Pay */}
+                <div
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    background: 'var(--card-bg, rgba(255, 255, 255, 0.02))',
+                    border: '1px solid var(--glass-border, rgba(255, 255, 255, 0.06))',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <Smartphone size={15} color="#10b981" />
+                    <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Google Pay & Apple Pay
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    บนมือถือ Android (Chrome) หรือ iPhone (Safari) จะมีปุ่ม <strong>Google Pay</strong> หรือ <strong>Apple Pay</strong> ให้แตะสแกนนิ้ว/หน้าจ่ายได้ทันที
+                  </p>
+                </div>
+
+                {/* 3. TrueMoney & Virtual Card */}
+                <div
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    background: 'var(--card-bg, rgba(255, 255, 255, 0.02))',
+                    border: '1px solid var(--glass-border, rgba(255, 255, 255, 0.06))',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <Sparkles size={15} color="#f59e0b" />
+                    <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      TrueMoney Wallet & YouTrip
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    ใช้ Virtual Mastercard ในแอป TrueMoney หรือบัตร YouTrip กรอกเลขบัตร 16 หลักเพื่อสมัครสมาชิกได้สะดวก ปลอดภัย
+                  </p>
+                </div>
+              </div>
+
+              {/* PromptPay QR Note & Direct Switch CTA */}
+              <div
+                style={{
+                  marginTop: '14px',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  background: 'rgba(59, 130, 246, 0.08)',
+                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--text-primary)' }}>
+                  <QrCode size={18} color="var(--accent-blue)" />
+                  <span>
+                    <strong>ต้องการสแกนจ่ายด้วย QR พร้อมเพย์ (PromptPay)?</strong> สลับไปที่แท็บ &quot;เติม GemCoins&quot; สแกนผ่านแอปธนาคารไทยได้ทุกแห่ง เหรียญอยู่ถาวรไม่มีวันหมดอายุ
+                  </span>
+                </div>
+                <button
+                  onClick={() => setActiveTab('topup')}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: 'var(--accent-blue)',
+                    color: '#ffffff',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <span>ไปที่เติม GemCoins</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
             </div>
           </div>
         )}

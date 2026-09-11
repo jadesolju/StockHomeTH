@@ -8,7 +8,18 @@ import Link from 'next/link';
 import { ADMIN_PORTAL_PATH } from '../../config/adminConfig';
 
 export function LocalRoleSwitcher() {
-  const { currentTier, setTier, isOwnerOrDev, isOwnerAccount, restoreOwnerGodMode, openPricingModal, aiUsageToday, getWatchlistLimit } = useSubscription();
+  const {
+    currentTier,
+    setTier,
+    isOwnerOrDev,
+    isOwnerAccount,
+    restoreOwnerGodMode,
+    openPricingModal,
+    aiUsageToday,
+    getWatchlistLimit,
+    currentPlan,
+    totalGemCoinsAvailable,
+  } = useSubscription();
   const { user } = useClientAuth();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isLocalEnv, setIsLocalEnv] = useState<boolean>(false);
@@ -108,8 +119,19 @@ export function LocalRoleSwitcher() {
             </div>
 
             <div className="local-role-info-box">
-              <div>• โควตา AI วันนี้: <b>{aiUsageToday} ครั้ง</b></div>
-              <div>• ขีดจำกัด Watchlist: <b>{getWatchlistLimit()} ตัว</b></div>
+              {currentTier === 'dev' ? (
+                <>
+                  <div>• สิทธิ์ AI: <b style={{ color: '#10b981' }}>ใช้งานได้ไม่จำกัด (Unlimited God Mode)</b></div>
+                  <div>• เหรียญ GemCoins: <b>{totalGemCoinsAvailable.toLocaleString()} Coins</b></div>
+                  <div>• ขีดจำกัด Watchlist: <b>ไม่จำกัด (99,999 ตัว)</b></div>
+                </>
+              ) : (
+                <>
+                  <div>• เรียกใช้ AI วันนี้: <b>{aiUsageToday} ครั้ง</b> (โควตา {currentPlan.limits.aiOnDemandDailyLimit} ครั้ง/วัน)</div>
+                  <div>• เหรียญ GemCoins: <b>{totalGemCoinsAvailable.toLocaleString()} Coins</b></div>
+                  <div>• ขีดจำกัด Watchlist: <b>{getWatchlistLimit()} ตัว</b></div>
+                </>
+              )}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

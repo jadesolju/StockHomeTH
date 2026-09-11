@@ -292,21 +292,28 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === tier) ||
           GEMCOIN_SUBSCRIPTION_TIERS[0];
 
-        // If user upgrades, immediately grant permanent topup bonus!
-        if (tierInfo.permanentTopupBonus > 0) {
-          setTopupGemCoins((prev) => {
-            const updated = prev + tierInfo.permanentTopupBonus;
-            localStorage.setItem(GEMCOIN_TOPUP_KEY, updated.toString());
+        if (tier === 'dev') {
+          setTopupGemCoins(99999999);
+          setDailyGemCoinsRemaining(10000000);
+          localStorage.setItem(GEMCOIN_TOPUP_KEY, '99999999');
+          localStorage.setItem(GEMCOIN_DAILY_KEY, '10000000');
+        } else {
+          // If user upgrades, immediately grant permanent topup bonus!
+          if (tierInfo.permanentTopupBonus > 0) {
+            setTopupGemCoins((prev) => {
+              const updated = prev + tierInfo.permanentTopupBonus;
+              localStorage.setItem(GEMCOIN_TOPUP_KEY, updated.toString());
+              return updated;
+            });
+          }
+
+          // Adjust daily remaining if lower than new tier's quota
+          setDailyGemCoinsRemaining((prev) => {
+            const updated = Math.max(prev, tierInfo.dailyGemCoins);
+            localStorage.setItem(GEMCOIN_DAILY_KEY, updated.toString());
             return updated;
           });
         }
-
-        // Adjust daily remaining if lower than new tier's quota
-        setDailyGemCoinsRemaining((prev) => {
-          const updated = Math.max(prev, tierInfo.dailyGemCoins);
-          localStorage.setItem(GEMCOIN_DAILY_KEY, updated.toString());
-          return updated;
-        });
       } catch {}
     },
     []
@@ -546,7 +553,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         dailyGemCoins,
         dailyGemCoinsRemaining,
         topupGemCoins,
-        totalGemCoinsAvailable: dailyGemCoinsRemaining + topupGemCoins,
+        totalGemCoinsAvailable:
+          currentTier === 'dev' || isOwnerAccount
+            ? 99999999
+            : dailyGemCoinsRemaining + topupGemCoins,
         gemCoinLogs,
         isGemCoinModalOpen,
         gemCoinModalInitialTab,

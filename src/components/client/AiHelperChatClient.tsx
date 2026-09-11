@@ -112,7 +112,7 @@ export const AiHelperChatClient: React.FC = () => {
       const text = (textToSend || inputMessage).trim();
       if (!text || isLoading) return;
 
-      if (totalGemCoinsAvailable <= 0) {
+      if (currentTier !== 'dev' && totalGemCoinsAvailable <= 0) {
         openGemCoinModal('topup');
         return;
       }
