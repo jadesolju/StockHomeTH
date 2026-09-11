@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { stripe } from '@/lib/stripe';
 
+export const dynamic = 'force-dynamic';
+
 // ---------------------------------------------------------------------------
 // In-memory rate limiter: 1 session create per IP per 30 seconds
 // ---------------------------------------------------------------------------
@@ -17,6 +19,13 @@ function getClientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json(
+      { error: 'STRIPE_SECRET_KEY is not configured on this environment' },
+      { status: 500 }
+    );
+  }
+
   // --- Rate limit check ---
   const ip = getClientIp(req);
   const now = Date.now();
