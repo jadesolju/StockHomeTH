@@ -1122,6 +1122,204 @@ body {
   color: #b45309 !important;
 }
 
+/* ==========================================================================
+   Local Role Switcher (Dark & Light Theme Adaptive)
+   ========================================================================== */
+
+.local-role-container {
+  background: rgba(20, 20, 22, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.local-role-toggle-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.local-role-tier-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.local-role-panel {
+  padding: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 240px;
+}
+
+.local-role-panel-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.local-role-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+  color: #e2e8f0;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.local-role-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.local-role-btn.active {
+  font-weight: 800;
+  color: #ffffff !important;
+}
+
+.local-role-info-box {
+  font-size: 11.5px;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 8px 10px;
+  border-radius: 8px;
+  line-height: 1.45;
+}
+
+.local-role-restore-btn {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(236, 72, 153, 0.45);
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.25) 0%, rgba(168, 85, 247, 0.25) 100%);
+  color: #f472b6;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 2px 10px rgba(236, 72, 153, 0.2);
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.local-role-admin-link {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  font-size: 11.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.local-role-payment-link {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, var(--accent-blue) 0%, #a855f7 100%);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  text-decoration: none;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+/* Light Mode Overrides for Local Role Switcher (WCAG AAA High Contrast) */
+[data-theme='light'] .local-role-container {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.14) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme='light'] .local-role-panel {
+  border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme='light'] .local-role-panel-header {
+  color: #475569 !important;
+}
+
+[data-theme='light'] .local-role-btn {
+  background: #f8fafc !important;
+  border: 1px solid rgba(0, 0, 0, 0.09) !important;
+  color: #0f172a !important; /* Crisp Dark Charcoal - zero strain */
+}
+
+[data-theme='light'] .local-role-btn:hover {
+  background: #f1f5f9 !important;
+  border-color: rgba(0, 0, 0, 0.18) !important;
+  color: #000000 !important;
+}
+
+[data-theme='light'] .local-role-btn.active {
+  color: #ffffff !important;
+}
+
+[data-theme='light'] .local-role-info-box {
+  background: #f1f5f9 !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  color: #1e293b !important;
+}
+
+[data-theme='light'] .local-role-restore-btn {
+  background: #fdf2f8 !important;
+  border: 1px solid #fbcfe8 !important;
+  color: #be185d !important;
+}
+
+[data-theme='light'] .local-role-admin-link {
+  background: #f0fdf4 !important;
+  border: 1px solid #bbf7d0 !important;
+  color: #15803d !important;
+}
+
+[data-theme='light'] .local-role-payment-link {
+  background: #007aff !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25) !important;
+}
+
+
 
 
 

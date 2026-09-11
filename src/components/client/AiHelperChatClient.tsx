@@ -7,6 +7,7 @@ import { ModelPickerPopup } from '@/components/client/ModelPickerPopup';
 import { CURATED_MODELS, MODEL_FAMILIES, ModelSpec, DEFAULT_MODEL_ID } from '@/config/curated-models';
 import { FAMILY_ICON_MAP } from '@/components/ui/ModelFamilyIcons';
 import { Copy, Check } from 'lucide-react';
+import Link from 'next/link';
 
 interface ChatMessage {
   id: string;
@@ -247,28 +248,29 @@ export const AiHelperChatClient: React.FC = () => {
               </button>
 
               {currentTier === 'free' && (
-                <button
-                  onClick={() => openGemCoinModal('plans')}
+                <Link
+                  href="/payments"
                   className="ai-model-tag-link"
-                  style={{ border: 'none' }}
+                  style={{ border: 'none', textDecoration: 'none' }}
                 >
                   ปลดล็อก Claude & GPT-4o
-                </button>
+                </Link>
               )}
             </div>
 
             {/* Right side: wallet + clear */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button
-                onClick={() => openGemCoinModal('topup')}
+              <Link
+                href="/payments"
                 className="ai-gemcoin-wallet-pill"
-                title="คลิกเพื่อดูกระเป๋า GemCoins"
+                title="คลิกเพื่อไปที่หน้าร้านค้า เติม GemCoins และจัดการแพ็กเกจ (/payments)"
+                style={{ textDecoration: 'none' }}
               >
                 <GemCoinIcon size={16} glow />
                 <span>{totalGemCoinsAvailable.toLocaleString()}</span>
                 <span className="ai-wallet-label">GemCoins</span>
                 <span className="pill-add">+เติม</span>
-              </button>
+              </Link>
 
               {messages.length > 0 && (
                 <button

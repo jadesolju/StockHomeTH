@@ -893,6 +893,169 @@
   padding: 14px 18px;
 }
 
+/* ==========================================================================
+   Model Picker Popup Styles (Apple Clean Dialog)
+   ========================================================================== */
+
+.model-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 72px 16px 20px 16px;
+  animation: aiModalFadeIn 0.18s ease-out;
+}
+
+.model-popup-container {
+  width: 100%;
+  max-width: 860px;
+  max-height: calc(100vh - 110px);
+  background: #0c1118;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 22px;
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.8), 0 0 40px rgba(6, 182, 212, 0.12);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #f1f5f9;
+}
+
+.model-popup-header {
+  padding: 16px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: #080d12;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.model-popup-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.model-popup-subtitle {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.model-popup-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 8px;
+  line-height: 1;
+  transition: all 0.15s;
+}
+
+.model-popup-close-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.model-popup-family-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #080c12;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.model-family-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.model-family-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.model-popup-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  align-content: start;
+}
+
+.model-card-btn {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  font-family: inherit;
+}
+
+.model-card-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #ffffff;
+  padding-right: 36px;
+  line-height: 1.25;
+}
+
+.model-card-highlight {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+.model-card-cost-row {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.model-card-gemcoin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(6, 182, 212, 0.12);
+  border: 1px solid rgba(6, 182, 212, 0.25);
+  color: #38bdf8;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
 /* Floating Launcher */
 .ai-floating-launcher-btn {
   position: fixed;
@@ -1150,28 +1313,94 @@
   font-weight: 700 !important;
 }
 
-/* ── Model Picker & Modals (Light Mode) ── */
-[data-theme='light'] .model-popup-content {
+/* ── Model Picker & Modals (Light Mode - WCAG AAA High Contrast) ── */
+[data-theme='light'] .model-popup-container {
   background: #ffffff !important;
   border: 1px solid rgba(0, 0, 0, 0.12) !important;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.16) !important;
   color: #0f172a !important;
 }
 
-[data-theme='light'] .model-card-item {
-  background: #fbfbfd !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
+[data-theme='light'] .model-popup-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
-[data-theme='light'] .model-card-item:hover {
-  background: #f5f5f7 !important;
-  border-color: rgba(0, 0, 0, 0.16) !important;
-}
-
-[data-theme='light'] .model-search-bar {
-  background: #f5f5f7 !important;
-  border-color: rgba(0, 0, 0, 0.12) !important;
+[data-theme='light'] .model-popup-title {
   color: #0f172a !important;
+}
+
+[data-theme='light'] .model-popup-subtitle {
+  color: #475569 !important;
+}
+
+[data-theme='light'] .model-popup-close-btn {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(0, 0, 0, 0.09) !important;
+  color: #475569 !important;
+}
+
+[data-theme='light'] .model-popup-close-btn:hover {
+  background: rgba(0, 0, 0, 0.09) !important;
+  color: #000000 !important;
+}
+
+[data-theme='light'] .model-popup-family-bar {
+  background: #f8fafc !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07) !important;
+}
+
+[data-theme='light'] .model-family-tab-btn {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #475569 !important;
+}
+
+[data-theme='light'] .model-family-tab-btn:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .model-family-tab-btn.active {
+  background: #007aff !important;
+  color: #ffffff !important;
+  border-color: #007aff !important;
+}
+
+[data-theme='light'] .model-card-btn {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-theme='light'] .model-card-btn:hover {
+  background: #f8fafc !important;
+  border-color: #007aff !important;
+  box-shadow: 0 6px 18px rgba(0, 122, 255, 0.12) !important;
+}
+
+[data-theme='light'] .model-card-btn.selected {
+  background: #f0f7ff !important;
+  border-color: #007aff !important;
+  box-shadow: 0 0 16px rgba(0, 122, 255, 0.18) !important;
+}
+
+[data-theme='light'] .model-card-name {
+  color: #0f172a !important; /* Crisp pure dark text */
+}
+
+[data-theme='light'] .model-card-highlight {
+  color: #334155 !important; /* Slate 700 - very readable */
+}
+
+[data-theme='light'] .model-card-cost-row {
+  border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme='light'] .model-card-gemcoin-pill {
+  background: #f0fdf4 !important;
+  border: 1px solid #86efac !important;
+  color: #15803d !important; /* Deep emerald green */
 }
 
 [data-theme='light'] .ai-floating-launcher-btn {

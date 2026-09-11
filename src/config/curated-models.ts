@@ -31,8 +31,9 @@ export interface ModelSpec {
   family: ModelFamily;
   tag: string;            // Short badge label (e.g. "Fast", "Reasoning")
   context: string;        // Context window (e.g. "1M", "200K")
-  priceInput: string;     // $/M input tokens (approx)
-  priceOutput: string;    // $/M output tokens (approx)
+  gemCoinsEstimate?: number; // Estimated GemCoins per query (e.g. 4, 6, 12, 25)
+  priceInput?: string;    // Deprecated for end-users, kept for internal reference
+  priceOutput?: string;   // Deprecated for end-users, kept for internal reference
   highlight: string;      // Thai one-liner description
   isNew?: boolean;        // Show NEW badge
   isPopular?: boolean;    // Show HOT badge
@@ -447,3 +448,17 @@ export const CURATED_MODELS: ModelSpec[] = [
 
 /** Default model to use when none is selected */
 export const DEFAULT_MODEL_ID = 'google/gemini-3.8-flash';
+
+/**
+ * Calculates estimated GemCoins consumed per user query
+ * Clean abstraction so users only see GemCoins and never raw dollar token prices
+ */
+export function getModelGemCoinsEst(model: ModelSpec): number {
+  if (model.gemCoinsEstimate) return model.gemCoinsEstimate;
+  if (model.id.includes('claude-3-7-sonnet') || model.id.includes('gpt-5')) return 35;
+  if (model.minTier === 'whale' || model.minTier === 'vip' || model.id.includes('claude') || model.id.includes('gpt-4o')) return 25;
+  if (model.minTier === 'pro' || model.id.includes('gemini-3.1-pro') || model.id.includes('gemini-2.5-pro') || model.id.includes('deepseek-r1')) return 15;
+  if (model.minTier === 'lite') return 10;
+  if (model.isFree || model.id.includes('flash-lite')) return 4;
+  return 6;
+}
