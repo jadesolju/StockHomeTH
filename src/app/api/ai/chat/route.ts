@@ -17,7 +17,7 @@ interface ChatMessage {
 interface ChatRequestBody {
   messages: ChatMessage[];
   model?: string;
-  userTier?: 'free' | 'lite' | 'pro' | 'vip' | 'whale';
+  userTier?: 'free' | 'lite' | 'pro' | 'vip' | 'whale' | 'dev';
   stockContext?: {
     ticker: string;
     name?: string;
@@ -86,9 +86,10 @@ export async function POST(req: NextRequest) {
 
     // 2. Idle Protection & 1-call-per-day enforcement
     // If no real user is chatting or it's an automated ping, cap at 1 request per day
+    const isDev = userTier === 'dev';
     const isBackgroundHeader = Boolean(req.headers.get('x-background-job') || req.headers.get('x-cron'));
-    const isRealUser = !isBackgroundHeader && lastUserMsg.length > 0;
-    const guard = canExecuteOpenRouterRequest(isRealUser);
+    const isRealUser = isDev || (!isBackgroundHeader && lastUserMsg.length > 0);
+    const guard = isDev ? { allowed: true, reason: undefined } : canExecuteOpenRouterRequest(isRealUser);
     if (!guard.allowed) {
       return NextResponse.json(
         {

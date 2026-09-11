@@ -19,9 +19,10 @@ interface ModelPickerPopupProps {
   currentTier: string;
 }
 
-const TIER_ORDER = ['free', 'lite', 'pro', 'vip', 'whale'];
+const TIER_ORDER = ['free', 'lite', 'pro', 'vip', 'whale', 'dev'];
 
 function isTierUnlocked(modelTier: string, userTier: string): boolean {
+  if (userTier === 'dev') return true;
   return TIER_ORDER.indexOf(userTier) >= TIER_ORDER.indexOf(modelTier);
 }
 
@@ -116,11 +117,28 @@ export const ModelPickerPopup: React.FC<ModelPickerPopupProps> = ({
           }}
         >
           <div>
-            <div style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', marginBottom: '2px' }}>
-              เลือกโมเดล AI
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', marginBottom: '2px' }}>
+                เลือกโมเดล AI
+              </div>
+              {currentTier === 'dev' && (
+                <span
+                  style={{
+                    background: 'rgba(236, 72, 153, 0.2)',
+                    border: '1px solid rgba(236, 72, 153, 0.4)',
+                    color: '#f472b6',
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
+                    padding: '2px 8px',
+                    borderRadius: '100px',
+                  }}
+                >
+                  👑 DEV UNLOCKED
+                </span>
+              )}
             </div>
             <div style={{ fontSize: '0.72rem', color: '#475569' }}>
-              คัดสรร {CURATED_MODELS.length} โมเดลยอดนิยมแต่ละตระกูล
+              คัดสรร {CURATED_MODELS.length} โมเดลยอดนิยมแต่ละตระกูล {currentTier === 'dev' ? '• ปลดล็อกทุกโมเดลสำหรับสิทธิ์ Dev' : ''}
             </div>
           </div>
           <button

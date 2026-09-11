@@ -20,12 +20,14 @@ import {
   Key,
   Shield,
   Check,
-  CreditCard
+  CreditCard,
+  Crown,
 } from 'lucide-react';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { useTheme } from '../../lib/context/ThemeContext';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
+import { useSubscription, OWNER_DEV_IDENTIFIERS } from '../../lib/context/SubscriptionContext';
 import { UserAvatar } from '../ui/UserAvatar';
 
 interface HeaderClientNavProps {
@@ -51,6 +53,16 @@ export function HeaderClientNav({
   const { theme, resolvedTheme, cycleTheme } = useTheme();
   const { setSelectedMarket, refreshAll, isSyncing, cooldownRemaining } = useMarketSync();
   const { user, openAuthModal, openProfileModal, signOut } = useClientAuth();
+  const { isOwnerOrDev, isOwnerAccount } = useSubscription();
+
+  const isOwnerUser =
+    isOwnerAccount ||
+    isOwnerOrDev ||
+    Boolean(
+      user &&
+        (OWNER_DEV_IDENTIFIERS.emails.includes(user.email?.toLowerCase().trim() ?? '') ||
+          OWNER_DEV_IDENTIFIERS.firebaseUids.includes(user.uid))
+    );
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLocalEnv, setIsLocalEnv] = useState(false);
@@ -351,6 +363,33 @@ export function HeaderClientNav({
                         </p>
                       </div>
                     </div>
+
+                    {/* Admin Backoffice Portal shortcut (Strictly Owner/Dev Only) */}
+                    {isOwnerUser && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        style={{
+                          background: 'rgba(236, 72, 153, 0.12)',
+                          border: '1px solid rgba(236, 72, 153, 0.3)',
+                          color: '#f472b6',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          padding: '7px 8px',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          textDecoration: 'none',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          marginBottom: '2px',
+                        }}
+                        className="glass-card-hover"
+                      >
+                        <Crown size={14} color="#ec4899" /> 👑 Admin & Dev Portal
+                      </Link>
+                    )}
 
                     <button
                       onClick={() => {

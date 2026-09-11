@@ -14,10 +14,12 @@ import {
   AlertCircle,
   Loader2,
   Upload,
-  Crown
+  Crown,
+  Settings
 } from 'lucide-react';
+import Link from 'next/link';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
-import { useSubscription } from '../../lib/context/SubscriptionContext';
+import { useSubscription, SubscriptionTier, OWNER_DEV_IDENTIFIERS } from '../../lib/context/SubscriptionContext';
 import { UserAvatar } from '../ui/UserAvatar';
 
 export function UserProfileModal() {
@@ -30,7 +32,24 @@ export function UserProfileModal() {
     openAuthModal,
   } = useClientAuth();
 
-  const { currentPlan, currentTier, openPricingModal } = useSubscription();
+  const {
+    currentPlan,
+    currentTier,
+    setTier,
+    isOwnerOrDev,
+    isOwnerAccount,
+    restoreOwnerGodMode,
+    openPricingModal,
+  } = useSubscription();
+
+  const isOwner =
+    isOwnerAccount ||
+    isOwnerOrDev ||
+    Boolean(
+      user &&
+        (OWNER_DEV_IDENTIFIERS.emails.includes(user.email?.toLowerCase().trim() ?? '') ||
+          OWNER_DEV_IDENTIFIERS.firebaseUids.includes(user.uid))
+    );
 
   const [displayName, setDisplayName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
@@ -334,6 +353,129 @@ export function UserProfileModal() {
             </div>
           )}
         </div>
+
+        {/* ─── Dedicated Admin & Dev Control Panel (Strictly Owner/Dev Only) ─── */}
+        {isOwner && (
+          <div
+            style={{
+              marginBottom: '20px',
+              padding: '16px',
+              borderRadius: '18px',
+              background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%)',
+              border: '1px solid rgba(236, 72, 153, 0.3)',
+              boxShadow: '0 4px 20px rgba(236, 72, 153, 0.1)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Crown size={18} color="#ec4899" />
+                <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#f472b6' }}>
+                  Owner & Developer Controls
+                </span>
+              </div>
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  padding: '2px 8px',
+                  borderRadius: '100px',
+                  background: 'rgba(236, 72, 153, 0.2)',
+                  color: '#f472b6',
+                  fontWeight: 800,
+                  border: '1px solid rgba(236, 72, 153, 0.35)',
+                }}
+              >
+                CURRENT TIER: {currentTier.toUpperCase()}
+              </span>
+            </div>
+
+            <p style={{ margin: '0 0 12px 0', fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+              บัญชีผู้ดูแลระบบ ({user.email}): คุณสามารถสลับสิทธิ์เพื่อทดสอบ และกู้คืนสิทธิ์ Dev + Owner ได้ตลอดเวลา
+            </p>
+
+            {/* Quick Switch Buttons */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: '6px', marginBottom: '12px' }}>
+              {[
+                { id: 'dev' as SubscriptionTier, label: '👑 Dev Mode', color: '#ec4899' },
+                { id: 'whale' as SubscriptionTier, label: '💎 Whale', color: '#06b6d4' },
+                { id: 'vip' as SubscriptionTier, label: '👑 VIP Trader', color: '#a855f7' },
+                { id: 'pro' as SubscriptionTier, label: '⚡ Pro Investor', color: 'var(--accent-blue)' },
+                { id: 'free' as SubscriptionTier, label: '🛡️ Free', color: 'var(--accent-bullish)' },
+              ].map((tierItem) => (
+                <button
+                  key={tierItem.id}
+                  onClick={() => {
+                    setTier(tierItem.id);
+                    setSuccessMessage(`สลับสิทธิ์เป็นระดับ ${tierItem.label} สำเร็จ`);
+                  }}
+                  style={{
+                    padding: '7px 8px',
+                    borderRadius: '10px',
+                    border: currentTier === tierItem.id ? `1px solid ${tierItem.color}` : '1px solid var(--card-sub-border)',
+                    background: currentTier === tierItem.id ? `${tierItem.color}25` : 'var(--card-sub-bg)',
+                    color: currentTier === tierItem.id ? '#ffffff' : 'var(--text-secondary)',
+                    fontSize: '0.72rem',
+                    fontWeight: currentTier === tierItem.id ? 800 : 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {tierItem.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                onClick={() => {
+                  restoreOwnerGodMode();
+                  setSuccessMessage('👑 คืนสิทธิ์ Dev + Owner (God Mode) และเติม 99,999,999 GemCoins เรียบร้อยแล้ว!');
+                }}
+                style={{
+                  width: '100%',
+                  padding: '9px 12px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(236, 72, 153, 0.45)',
+                  background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.25) 0%, rgba(168, 85, 247, 0.25) 100%)',
+                  color: '#f472b6',
+                  fontSize: '0.82rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 10px rgba(236, 72, 153, 0.2)',
+                }}
+              >
+                <Crown size={15} color="#ec4899" /> คืนสิทธิ์ Dev + Owner (99,999,999 GemCoins)
+              </button>
+
+              <Link
+                href="/admin"
+                onClick={() => closeProfileModal()}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  color: '#34d399',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  textDecoration: 'none',
+                }}
+              >
+                <Settings size={14} color="#10b981" /> เข้าสู่ระบบ Admin Backoffice (/admin)
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Feedback Messages */}
         {errorMessage && (

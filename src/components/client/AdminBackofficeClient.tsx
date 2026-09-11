@@ -34,9 +34,12 @@ import {
   Sparkles,
   Lock,
   Boxes,
-  Workflow
+  Workflow,
+  Crown
 } from 'lucide-react';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
+import { useSubscription, SubscriptionTier } from '../../lib/context/SubscriptionContext';
+import { CURATED_MODELS } from '../../config/curated-models';
 import type { SyncLogItem } from '../../types/syncLog';
 
 interface SystemStatus {
@@ -75,11 +78,22 @@ export const AdminBackofficeClient: React.FC = () => {
   // Sync context for real-time client & REST engine logs
   const { syncLogs, clearSyncLogs, isSyncing, refreshAll, totalStocksCount, setUniverseCount, usUniverseCount } = useMarketSync();
 
+  const {
+    currentTier,
+    setTier,
+    isOwnerOrDev,
+    isOwnerAccount,
+    restoreOwnerGodMode,
+    totalGemCoinsAvailable,
+    resetAiUsage,
+    aiUsageToday,
+  } = useSubscription();
+
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [runningAction, setRunningAction] = useState<string | null>(null);
   const [logsOutput, setLogsOutput] = useState<string>('Ready. Click any action or switch to Engine Terminal & Logs.');
-  const [activeTab, setActiveTab] = useState<'control' | 'logs' | 'architecture' | 'database' | 'endpoints' | 'quotas'>('control');
+  const [activeTab, setActiveTab] = useState<'control' | 'roles' | 'logs' | 'architecture' | 'database' | 'endpoints' | 'quotas'>('control');
   const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
 
   // Quotas State
@@ -560,6 +574,7 @@ export const AdminBackofficeClient: React.FC = () => {
       >
         {[
           { id: 'control', label: 'Action Control Center', icon: Zap },
+          { id: 'roles', label: '👑 สลับสิทธิ์ & Dev Mode', icon: Crown, highlight: true },
           { id: 'quotas', label: 'ตรวจโควตา API (Quotas & Health)', icon: ShieldCheck, highlight: true },
           { id: 'logs', label: `Engine Terminal & Logs (${syncLogs.length})`, icon: Terminal, highlight: true },
           { id: 'architecture', label: 'ผังข้อมูล & Pipeline Map', icon: Network, highlight: true },
@@ -588,6 +603,172 @@ export const AdminBackofficeClient: React.FC = () => {
           );
         })}
       </div>
+
+      {/* ══════════════════════════════════════════════════════════════
+          TAB: สลับสิทธิ์ & DEV MODE (ROLE & ACCOUNT SIMULATOR)
+          ══════════════════════════════════════════════════════════════ */}
+      {activeTab === 'roles' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px' }}>
+          {/* Main Control Card */}
+          <div className="admin-glass-panel" style={{ padding: '24px', borderRadius: '18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', marginBottom: '18px' }}>
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Crown size={22} color="#ec4899" /> Role & Account Simulator (แผงควบคุมสิทธิ์ Admin & Dev)
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  ควบคุมและจำลองระดับสมาชิกเพื่อทดสอบระบบ สามารถสลับไปมาและกดคืนสิทธิ์ Dev + Owner ได้ทันที
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>สิทธิ์ที่เปิดใช้งาน:</span>
+                <span
+                  style={{
+                    padding: '4px 12px',
+                    borderRadius: '100px',
+                    background: currentTier === 'dev' ? 'rgba(236, 72, 153, 0.2)' : 'rgba(168, 85, 247, 0.2)',
+                    border: `1px solid ${currentTier === 'dev' ? '#ec4899' : '#a855f7'}`,
+                    color: currentTier === 'dev' ? '#f472b6' : '#c084fc',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                  }}
+                >
+                  {currentTier.toUpperCase()}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Tier Switch Buttons */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+              {[
+                { id: 'dev' as SubscriptionTier, name: '👑 Dev + Owner (God Mode)', desc: 'ปลดล็อกทุกโมเดล AI 100%, เหรียญไม่จำกัด, บายพาสลิมิต', color: '#ec4899' },
+                { id: 'whale' as SubscriptionTier, name: '💎 Whale Trader', desc: 'ระดับวาฬ ปลดล็อกโมเดล Claude 3.7 & GPT-4.5', color: '#06b6d4' },
+                { id: 'vip' as SubscriptionTier, name: '👑 VIP Trader', desc: 'ระดับ VIP ปลดล็อก o3-mini, Gemini 2.0 Pro', color: '#a855f7' },
+                { id: 'pro' as SubscriptionTier, name: '⚡ Pro Investor', desc: 'ระดับโปร ปลดล็อก Gemini Flash, DeepSeek V3', color: 'var(--accent-blue)' },
+                { id: 'free' as SubscriptionTier, name: '🛡️ Free Member', desc: 'ระดับสายฟรี (จำกัดโมเดลและโควตาใช้งาน)', color: 'var(--accent-bullish)' },
+              ].map((item) => {
+                const isActive = currentTier === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setTier(item.id)}
+                    style={{
+                      padding: '14px',
+                      borderRadius: '14px',
+                      border: isActive ? `2px solid ${item.color}` : '1px solid var(--card-sub-border)',
+                      background: isActive ? `${item.color}20` : 'var(--card-sub-bg)',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <div style={{ fontSize: '13px', fontWeight: 800, color: isActive ? '#ffffff' : item.color }}>
+                      {item.name}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+                      {item.desc}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Action Bar */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+              <button
+                onClick={() => {
+                  restoreOwnerGodMode();
+                  alert('คืนสิทธิ์ Dev + Owner (God Mode) และเติม 99,999,999 GemCoins เรียบร้อยแล้ว!');
+                }}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 14px rgba(236, 72, 153, 0.3)',
+                }}
+              >
+                <Crown size={16} /> กู้คืนสิทธิ์ Dev + Owner ทันที (99.9M GemCoins)
+              </button>
+
+              <button
+                onClick={() => {
+                  resetAiUsage();
+                  alert('รีเซ็ตจำนวนครั้งการเรียกใช้งาน AI วันนี้เรียบร้อยแล้ว');
+                }}
+                className="ios-btn-secondary"
+                style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600 }}
+              >
+                <RefreshCw size={15} /> รีเซ็ตสถิติ AI รายวัน (ปัจจุบัน: {aiUsageToday} ครั้ง)
+              </button>
+            </div>
+          </div>
+
+          {/* AI Model Unlock Status Table */}
+          <div className="admin-glass-panel" style={{ padding: '20px', borderRadius: '18px' }}>
+            <h4 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 14px 0', color: 'var(--text-primary)' }}>
+              รายการโมเดล AI และสถานะการปลดล็อก ({CURATED_MODELS.length} โมเดล)
+            </h4>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--card-sub-border)', textAlign: 'left', color: 'var(--text-secondary)' }}>
+                    <th style={{ padding: '8px 12px' }}>โมเดล</th>
+                    <th style={{ padding: '8px 12px' }}>ตระกูล</th>
+                    <th style={{ padding: '8px 12px' }}>สิทธิ์ขั้นต่ำ</th>
+                    <th style={{ padding: '8px 12px' }}>ราคา Token</th>
+                    <th style={{ padding: '8px 12px' }}>สถานะในสิทธิ์ปัจจุบัน ({currentTier.toUpperCase()})</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {CURATED_MODELS.map((m) => {
+                    const tierOrder = ['free', 'lite', 'pro', 'vip', 'whale', 'dev'];
+                    const isUnlocked = currentTier === 'dev' || tierOrder.indexOf(currentTier) >= tierOrder.indexOf(m.minTier);
+                    return (
+                      <tr key={m.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                          {m.name} <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>({m.id})</span>
+                        </td>
+                        <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                          {m.family}
+                        </td>
+                        <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                          {m.minTier}
+                        </td>
+                        <td style={{ padding: '10px 12px', color: 'var(--text-tertiary)' }}>
+                          {m.priceInput} / {m.priceOutput}
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          {isUnlocked ? (
+                            <span style={{ color: 'var(--accent-bullish)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <CheckCircle2 size={14} /> ปลดล็อกแล้ว
+                            </span>
+                          ) : (
+                            <span style={{ color: '#ef4444', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <Lock size={14} /> ล็อก (ต้องการ {m.minTier.toUpperCase()})
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════
           TAB 3: ผังข้อมูลการซิง & การทำงานหลังบ้าน (ARCHITECTURE & DATAFLOW MAP)

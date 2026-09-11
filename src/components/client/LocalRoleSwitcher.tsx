@@ -1,11 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useSubscription, SubscriptionTier } from '../../lib/context/SubscriptionContext';
-import { ShieldCheck, Zap, Crown, Sparkles, ChevronUp, ChevronDown, Check } from 'lucide-react';
+import { useSubscription, SubscriptionTier, OWNER_DEV_IDENTIFIERS } from '../../lib/context/SubscriptionContext';
+import { useClientAuth } from '../../lib/context/ClientAuthContext';
+import { ShieldCheck, Zap, Crown, Sparkles, ChevronUp, ChevronDown, Check, Settings } from 'lucide-react';
+import Link from 'next/link';
 
 export function LocalRoleSwitcher() {
-  const { currentTier, setTier, isOwnerOrDev, openPricingModal, aiUsageToday, getWatchlistLimit } = useSubscription();
+  const { currentTier, setTier, isOwnerOrDev, isOwnerAccount, restoreOwnerGodMode, openPricingModal, aiUsageToday, getWatchlistLimit } = useSubscription();
+  const { user } = useClientAuth();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isLocalEnv, setIsLocalEnv] = useState<boolean>(false);
 
@@ -20,7 +23,17 @@ export function LocalRoleSwitcher() {
     }
   }, []);
 
-  if (!isLocalEnv && !isOwnerOrDev) return null;
+  const isAuthorized =
+    isLocalEnv ||
+    isOwnerOrDev ||
+    isOwnerAccount ||
+    Boolean(
+      user &&
+        (OWNER_DEV_IDENTIFIERS.emails.includes(user.email?.toLowerCase().trim() ?? '') ||
+          OWNER_DEV_IDENTIFIERS.firebaseUids.includes(user.uid))
+    );
+
+  if (!isAuthorized) return null;
 
   const tiers: { id: SubscriptionTier; name: string; icon: any; color: string; bg: string }[] = [
     { id: 'free', name: 'Free (สายฟรี)', icon: ShieldCheck, color: 'var(--accent-bullish)', bg: 'rgba(34, 197, 94, 0.15)' },
@@ -141,6 +154,56 @@ export function LocalRoleSwitcher() {
             >
               <div>• โควตา AI วันนี้: <b>{aiUsageToday} ครั้ง</b></div>
               <div>• ขีดจำกัด Watchlist: <b>{getWatchlistLimit()} ตัว</b></div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <button
+                onClick={() => {
+                  restoreOwnerGodMode();
+                }}
+                style={{
+                  width: '100%',
+                  padding: '9px 12px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(236, 72, 153, 0.45)',
+                  background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.25) 0%, rgba(168, 85, 247, 0.25) 100%)',
+                  color: '#f472b6',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 10px rgba(236, 72, 153, 0.2)',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <Crown size={14} color="#f472b6" /> คืนสิทธิ์ Dev + Owner (99.9M Coins)
+              </button>
+
+              <Link
+                href="/admin"
+                onClick={() => setIsOpen(false)}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  padding: '8px 12px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  color: '#34d399',
+                  fontSize: '11.5px',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  textDecoration: 'none',
+                }}
+              >
+                <Settings size={13} color="#10b981" /> ไปที่หน้า Admin Portal (/admin)
+              </Link>
             </div>
 
             <button

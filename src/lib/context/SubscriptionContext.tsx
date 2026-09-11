@@ -46,6 +46,8 @@ interface SubscriptionContextType {
   isProOrAbove: boolean;
   isVip: boolean;
   isOwnerOrDev: boolean;
+  isOwnerAccount: boolean;
+  restoreOwnerGodMode: () => void;
 
   // GemCoin Economy
   dailyGemCoins: number;
@@ -106,41 +108,67 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     GEMCOIN_SUBSCRIPTION_TIERS[0];
   const dailyGemCoins = currentTierInfo.dailyGemCoins;
 
-  // Auto-detect and grant Dev + Owner (God Mode) for Owner accounts
+  const [isSupabaseOwner, setIsSupabaseOwner] = useState<boolean>(false);
+
+  // Check Supabase Auth session for owner credentials
   useEffect(() => {
-    const applyOwnerDev = () => {
-      setCurrentTierState('dev');
-      try {
-        localStorage.setItem(STORAGE_KEY, 'dev');
-        localStorage.setItem(GEMCOIN_TOPUP_KEY, '99999999');
-        localStorage.setItem(GEMCOIN_DAILY_KEY, '10000000');
-      } catch {}
-      setTopupGemCoins(99999999);
-      setDailyGemCoinsRemaining(10000000);
-    };
-
-    // 1. Check Firebase Auth user
-    if (
-      user &&
-      (OWNER_DEV_IDENTIFIERS.emails.includes(user.email ?? '') ||
-        OWNER_DEV_IDENTIFIERS.firebaseUids.includes(user.uid))
-    ) {
-      applyOwnerDev();
-      return;
-    }
-
-    // 2. Check Supabase Auth session
     supabase.auth.getSession().then(({ data }) => {
       const sbUser = data?.session?.user;
       if (
         sbUser &&
-        (OWNER_DEV_IDENTIFIERS.emails.includes(sbUser.email ?? '') ||
+        (OWNER_DEV_IDENTIFIERS.emails.includes(sbUser.email?.toLowerCase().trim() ?? '') ||
           OWNER_DEV_IDENTIFIERS.supabaseUids.includes(sbUser.id))
       ) {
-        applyOwnerDev();
+        setIsSupabaseOwner(true);
       }
     }).catch(() => {});
-  }, [user]);
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      const sbUser = session?.user;
+      if (
+        sbUser &&
+        (OWNER_DEV_IDENTIFIERS.emails.includes(sbUser.email?.toLowerCase().trim() ?? '') ||
+          OWNER_DEV_IDENTIFIERS.supabaseUids.includes(sbUser.id))
+      ) {
+        setIsSupabaseOwner(true);
+      }
+    });
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
+
+  const isFirebaseOwner = Boolean(
+    user &&
+      (OWNER_DEV_IDENTIFIERS.emails.includes(user.email?.toLowerCase().trim() ?? '') ||
+        OWNER_DEV_IDENTIFIERS.firebaseUids.includes(user.uid))
+  );
+
+  const isOwnerAccount = isFirebaseOwner || isSupabaseOwner;
+
+  const restoreOwnerGodMode = useCallback(() => {
+    setCurrentTierState('dev');
+    setTopupGemCoins(99999999);
+    setDailyGemCoinsRemaining(10000000);
+    try {
+      localStorage.setItem(STORAGE_KEY, 'dev');
+      localStorage.setItem(GEMCOIN_TOPUP_KEY, '99999999');
+      localStorage.setItem(GEMCOIN_DAILY_KEY, '10000000');
+    } catch {}
+  }, []);
+
+  // Initial grant Dev + Owner (God Mode) for Owner accounts if no tier set yet
+  useEffect(() => {
+    if (isOwnerAccount) {
+      try {
+        const savedTier = localStorage.getItem(STORAGE_KEY);
+        if (!savedTier) {
+          restoreOwnerGodMode();
+        }
+      } catch {}
+    }
+  }, [isOwnerAccount, restoreOwnerGodMode]);
 
   // Initialize state on client mount
   useEffect(() => {
@@ -405,12 +433,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const isProOrAbove =
     currentTier === 'pro' || currentTier === 'vip' || currentTier === 'whale' || currentTier === 'dev';
   const isVip = currentTier === 'vip' || currentTier === 'whale' || currentTier === 'dev';
-  const isOwnerOrDev = currentTier === 'dev';
+  const isOwnerOrDev = currentTier === 'dev' || isOwnerAccount;
 
   const canUseAiOnDemand = useCallback(() => {
-    if (currentTier === 'dev') return true;
+    if (currentTier === 'dev' || isOwnerAccount) return true;
     return dailyGemCoinsRemaining + topupGemCoins > 0;
-  }, [dailyGemCoinsRemaining, topupGemCoins, currentTier]);
+  }, [dailyGemCoinsRemaining, topupGemCoins, currentTier, isOwnerAccount]);
 
   const canSetLineAlerts = useCallback(() => {
     return currentPlan.limits.lineAlerts;
@@ -466,6 +494,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         isProOrAbove,
         isVip,
         isOwnerOrDev,
+        isOwnerAccount,
+        restoreOwnerGodMode,
 
 
         // GemCoin Economy
