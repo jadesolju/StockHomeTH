@@ -386,8 +386,9 @@ export default function PaymentsClient() {
                 ชำระเงินปลอดภัยมาตรฐานสากลผ่าน Stripe
               </p>
               <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                รองรับบัตรเครดิต/เดบิต ทุกธนาคาร (VISA, Mastercard, JCB) เข้ารหัส 256-bit SSL
+                รองรับสแกน QR พร้อมเพย์ (PromptPay) และบัตรเครดิต/เดบิต ทุกธนาคาร (VISA, Mastercard, JCB) เข้ารหัส 256-bit SSL
               </p>
+
             </div>
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--accent-blue)', fontWeight: 600 }}>
