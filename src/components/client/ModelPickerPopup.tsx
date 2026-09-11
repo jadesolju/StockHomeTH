@@ -120,7 +120,7 @@ export const ModelPickerPopup: React.FC<ModelPickerPopupProps> = ({
               เลือกโมเดล AI
             </div>
             <div style={{ fontSize: '0.72rem', color: '#475569' }}>
-              คัดสรร {CURATED_MODELS.length} โมเดลยอดนิยมแต่ละตระกูล · powered by OpenRouter
+              คัดสรร {CURATED_MODELS.length} โมเดลยอดนิยมแต่ละตระกูล
             </div>
           </div>
           <button

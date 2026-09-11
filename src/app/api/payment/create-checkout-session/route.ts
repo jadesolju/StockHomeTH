@@ -43,19 +43,27 @@ export async function POST(req: NextRequest) {
   rateLimitMap.set(ip, now);
 
   // --- Parse body ---
-  let body: { priceId?: string; quantity?: number; mode?: 'payment' | 'subscription' };
+  let body: { priceId?: string; packageId?: string; quantity?: number; mode?: 'payment' | 'subscription' };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { priceId, quantity = 1, mode = 'payment' } = body;
+  const { priceId, packageId, quantity = 1, mode = 'payment' } = body;
   if (!priceId) {
     return NextResponse.json({ error: 'priceId is required' }, { status: 400 });
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const host = req.headers.get('host');
+  const protocol = req.headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+  const derivedBaseUrl = host ? `${protocol}://${host}` : null;
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+    derivedBaseUrl ||
+    'http://localhost:3000';
 
   try {
     // If a Product ID (prod_...) is provided instead of a Price ID (price_...),
@@ -80,7 +88,11 @@ export async function POST(req: NextRequest) {
       success_url: `${baseUrl}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/payments/cancel`,
       allow_promotion_codes: false, // GemCoin coupon only (not Stripe discount codes)
-      metadata: { source: 'gemcoin_topup' },
+      metadata: {
+        source: 'gemcoin_topup',
+        ...(packageId ? { packageId } : {}),
+        mode,
+      },
     });
 
     return NextResponse.json({ sessionId: session.id, url: session.url });

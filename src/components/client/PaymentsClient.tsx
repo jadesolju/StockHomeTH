@@ -71,7 +71,7 @@ export default function PaymentsClient() {
         const res = await fetch('/api/payment/create-checkout-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ priceId, mode }),
+          body: JSON.stringify({ priceId, packageId, mode }),
         });
         const data = await res.json();
 

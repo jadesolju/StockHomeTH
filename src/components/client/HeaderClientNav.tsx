@@ -21,7 +21,8 @@ import {
   LogOut,
   Key,
   Shield,
-  Check
+  Check,
+  CreditCard
 } from 'lucide-react';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { useTheme } from '../../lib/context/ThemeContext';
@@ -200,6 +201,13 @@ export function HeaderClientNav({
           >
             <Sparkles size={15} color="#06b6d4" /> AI Helper
           </Link>
+          <Link
+            href="/payments"
+            className={`ios-segment-btn ${pathname === '/payments' ? 'active' : ''}`}
+            style={{ textDecoration: 'none', padding: '6px 14px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            <CreditCard size={15} color="#10b981" /> {language === 'th' ? 'แพ็กเกจ' : 'Pricing'}
+          </Link>
         </nav>
 
         {/* Header Action Controls: Language Switcher, Theme, Refresh & Member Auth */}
@@ -272,31 +280,29 @@ export function HeaderClientNav({
             )}
           </button>
 
-          {/* Membership / Pricing Button (Local Sandbox Only) */}
-          {isLocalEnv && (
-            <button
-              onClick={openPricingModal}
-              className="ios-glass-btn"
-              title="ดูแพ็กเกจสมาชิก StockHomeTH (Local Sandbox)"
-              style={{
-                background: currentTier === 'vip' ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)' : currentTier === 'pro' ? 'linear-gradient(135deg, rgba(0, 122, 255, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)' : 'rgba(255, 255, 255, 0.06)',
-                border: `1px solid ${currentTier === 'vip' ? 'rgba(168, 85, 247, 0.4)' : currentTier === 'pro' ? 'rgba(0, 122, 255, 0.4)' : 'var(--glass-border)'}`,
-                borderRadius: '100px',
-                padding: '5px 12px',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                color: currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : 'var(--text-secondary)',
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <Sparkles size={13} color={currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : '#fbbf24'} />
-              <span>{currentTier === 'vip' ? 'VIP Trader' : currentTier === 'pro' ? 'Pro Member' : 'แพ็กเกจสมาชิก'}</span>
-            </button>
-          )}
+          {/* Membership / Pricing Button */}
+          <button
+            onClick={openPricingModal}
+            className="ios-glass-btn"
+            title="ดูแพ็กเกจสมาชิกและเติม GemCoin"
+            style={{
+              background: currentTier === 'vip' ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)' : currentTier === 'pro' ? 'linear-gradient(135deg, rgba(0, 122, 255, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)' : 'rgba(255, 255, 255, 0.06)',
+              border: `1px solid ${currentTier === 'vip' ? 'rgba(168, 85, 247, 0.4)' : currentTier === 'pro' ? 'rgba(0, 122, 255, 0.4)' : 'var(--glass-border)'}`,
+              borderRadius: '100px',
+              padding: '5px 12px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : '#10b981',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <Sparkles size={13} color={currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : '#10b981'} />
+            <span>{currentTier === 'vip' ? 'VIP Trader' : currentTier === 'pro' ? 'Pro Member' : 'แพ็กเกจสมาชิก'}</span>
+          </button>
 
           {/* Member Auth Button / Profile Dropdown (Desktop view) */}
           <div className="desktop-nav-bar" style={{ position: 'relative' }} ref={userMenuRef}>

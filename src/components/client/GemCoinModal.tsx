@@ -21,7 +21,8 @@ import {
   PromoClockSvg,
   TicketVoucherSvg,
 } from '@/components/ui/TierSvgIcons';
-import { FileText } from 'lucide-react';
+import { FileText, CreditCard } from 'lucide-react';
+import Link from 'next/link';
 
 export const GemCoinModal: React.FC = () => {
   const {
@@ -223,6 +224,30 @@ export const GemCoinModal: React.FC = () => {
                 </div>
               </div>
 
+              {/* Stripe Checkout Direct Link */}
+              <Link
+                href="/payments"
+                onClick={closeGemCoinModal}
+                className="flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-cyan-950/60 border border-emerald-500/40 hover:border-emerald-400 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
+                      💳 ชำระเงินจริงผ่าน Stripe Checkout (บัตรเครดิต/เดบิต)
+                    </h4>
+                    <p className="text-[11px] text-slate-400">
+                      ไปที่หน้าร้านหลัก เลือกระหว่างเติมเหรียญ One-time หรือสมัครสมาชิกรายปีลดเพิ่ม 2 เดือน
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform shrink-0">
+                  ไปหน้าชำระเงิน →
+                </span>
+              </Link>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {GEMCOIN_TOPUP_PACKAGES.map((pkg) => (
                   <div
@@ -301,6 +326,30 @@ export const GemCoinModal: React.FC = () => {
                   สมัครวันนี้ได้รับเหรียญสะสมถาวรเข้ากระเป๋าทันที พร้อมปลดล็อก AI เรือธง GPT-5 และ Claude Sonnet 5
                 </p>
               </div>
+
+              {/* Stripe Checkout Direct Link */}
+              <Link
+                href="/payments"
+                onClick={closeGemCoinModal}
+                className="flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-cyan-950/60 border border-emerald-500/40 hover:border-emerald-400 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
+                      💳 สมัครสมาชิกผ่านบัตรเครดิต/เดบิต (Stripe Checkout)
+                    </h4>
+                    <p className="text-[11px] text-slate-400">
+                      ไปที่หน้าร้านหลัก เลือกระหว่างรายเดือน หรือรายปี (ประหยัดเพิ่ม 2 เดือน)
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform shrink-0">
+                  ไปหน้าชำระเงิน →
+                </span>
+              </Link>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {GEMCOIN_SUBSCRIPTION_TIERS.filter((t) => t.tier !== 'free').map((tierInfo) => {

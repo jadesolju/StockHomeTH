@@ -29,12 +29,12 @@ interface ChatRequestBody {
   };
 }
 
-// Concise, high-value Financial System Prompt (optimized to save input tokens)
+// Comprehensive, high-value Financial System Prompt
 const COMPACT_SYSTEM_PROMPT = `คุณคือ "StockHome Financial" AI ผู้ช่วยวิเคราะห์หุ้นและการเงินไทย (SET/mai) และสหรัฐฯ
 หลักการตอบ:
-1. ตอบกระชับ ตรงประเด็น เชิงวิเคราะห์งบการเงินและอัตราส่วน (P/E, P/BV, ROE, ปันผล) ชัดเจน
-2. หลีกเลี่ยงคำเกริ่นยืดยาว ให้คำตอบเป็นข้อๆ หรือย่อหน้าสั้น อ่านเข้าใจง่าย
-3. ปฏิบัติตามหลัก Do Your Own Research (DYOR): เตือนสติสั้นๆ 1 บรรทัดว่าเป็นการวิเคราะห์เพื่อการศึกษา ไม่ใช่คำแนะนำชวนซื้อขาย`;
+1. ตอบอย่างครบถ้วน ละเอียดชัดเจน มีโครงสร้างหัวข้อเป็นระเบียบ แบ่งเป็นหัวข้อหลักและ bullet points เช่น ปัจจัยภายในประเทศ, ปัจจัยต่างประเทศ, ผลกระทบต่อตลาด/กลุ่มอุตสาหกรรม และแนวโน้มกลยุทธ์
+2. ห้ามตัดจบประโยคกลางคัน ให้ตอบจนจบประเด็นสมบูรณ์
+3. ปฏิบัติตามหลัก Do Your Own Research (DYOR): เตือนสติสั้นๆ 1 บรรทัดตอนท้ายว่าเป็นการวิเคราะห์เพื่อการศึกษา ไม่ใช่คำแนะนำชวนซื้อขาย`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -114,9 +114,9 @@ export async function POST(req: NextRequest) {
       ...recentMessages,
     ];
 
-    // 5. Smart max_tokens limit based on tier
+    // 5. Smart max_tokens limit based on tier (Thai language requires ~3-4x tokens per word)
     const isProOrAbove = userTier === 'pro' || userTier === 'vip' || userTier === 'whale';
-    const maxTokensLimit = isProOrAbove ? 800 : 450;
+    const maxTokensLimit = isProOrAbove ? 3000 : 1800;
 
     const openRouterUrl = 'https://openrouter.ai/api/v1/chat/completions';
     const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
