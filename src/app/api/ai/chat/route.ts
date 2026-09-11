@@ -53,12 +53,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey =
+      process.env.OPENROUTER_API_KEY ||
+      process.env.OPENROUTER_MANAGEMENT_KEY ||
+      process.env.OPENROUTER_ADMIN_KEY;
+
     if (!apiKey) {
       return NextResponse.json(
         {
           success: false,
-          error: 'OPENROUTER_API_KEY is not configured in .env.local',
+          error:
+            'OPENROUTER_API_KEY is not configured on this server. หากเพิ่งเพิ่มใน Vercel Environment Variables กรุณากดปุ่ม Redeploy 1 ครั้งเพื่อให้ค่ามีผล',
         },
         { status: 500 }
       );
