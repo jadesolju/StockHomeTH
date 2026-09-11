@@ -74,13 +74,19 @@ export default function PaymentsClient() {
         const res = await fetch('/api/payment/create-checkout-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ priceId, packageId, mode }),
+          body: JSON.stringify({
+            priceId,
+            packageId,
+            mode,
+            userId: user?.uid || undefined,
+            userEmail: user?.email || undefined,
+          }),
         });
         const data = await res.json();
 
         if (!res.ok) {
           setErrorMsg(data.error ?? 'ไม่สามารถสร้าง Checkout ได้ กรุณาลองใหม่');
-          setTimeout(() => setLoadingId(null), res.status === 429 ? 30_000 : 3_000);
+          setTimeout(() => setLoadingId(null), 1_500);
           return;
         }
 
@@ -96,7 +102,7 @@ export default function PaymentsClient() {
         setLoadingId(null);
       }
     },
-    [loadingId, billingCycle]
+    [loadingId, billingCycle, user]
   );
 
   return (

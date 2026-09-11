@@ -5,10 +5,10 @@ import { stripe } from '@/lib/stripe';
 export const dynamic = 'force-dynamic';
 
 // ---------------------------------------------------------------------------
-// In-memory rate limiter: 1 session create per IP per 30 seconds
+// In-memory rate limiter: lightweight anti-spam debounce (1s per IP)
 // ---------------------------------------------------------------------------
 const rateLimitMap = new Map<string, number>();
-const RATE_LIMIT_MS = 30_000;
+const RATE_LIMIT_MS = 1_000;
 
 function getClientIp(req: NextRequest): string {
   return (
@@ -26,7 +26,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-
   // --- Rate limit check ---
   const ip = getClientIp(req);
   const now = Date.now();
@@ -34,7 +33,7 @@ export async function POST(req: NextRequest) {
   if (now - lastRequest < RATE_LIMIT_MS) {
     const retryAfter = Math.ceil((RATE_LIMIT_MS - (now - lastRequest)) / 1000);
     return NextResponse.json(
-      { error: `กรุณารอ ${retryAfter} วินาที ก่อนลองใหม่อีกครั้ง` },
+      { error: `กรุณารอสักครู่ (${retryAfter} วินาที) ก่อนลองใหม่อีกครั้ง` },
       {
         status: 429,
         headers: { 'Retry-After': String(retryAfter) },
@@ -44,14 +43,21 @@ export async function POST(req: NextRequest) {
   rateLimitMap.set(ip, now);
 
   // --- Parse body ---
-  let body: { priceId?: string; packageId?: string; quantity?: number; mode?: 'payment' | 'subscription' };
+  let body: {
+    priceId?: string;
+    packageId?: string;
+    quantity?: number;
+    mode?: 'payment' | 'subscription';
+    userId?: string;
+    userEmail?: string;
+  };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { priceId, packageId, quantity = 1, mode = 'payment' } = body;
+  const { priceId, packageId, quantity = 1, mode = 'payment', userId, userEmail } = body;
   if (!priceId) {
     return NextResponse.json({ error: 'priceId is required' }, { status: 400 });
   }
@@ -85,8 +91,9 @@ export async function POST(req: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: mode === 'payment' ? ['card', 'promptpay'] : ['card'],
       line_items: [{ price: resolvedPriceId, quantity }],
-
       mode,
+      customer_email: userEmail || undefined,
+      client_reference_id: userId || undefined,
       success_url: `${baseUrl}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/payments/cancel`,
       allow_promotion_codes: false, // GemCoin coupon only (not Stripe discount codes)
@@ -94,6 +101,8 @@ export async function POST(req: NextRequest) {
         source: 'gemcoin_topup',
         ...(packageId ? { packageId } : {}),
         mode,
+        ...(userId ? { userId } : {}),
+        ...(userEmail ? { userEmail } : {}),
       },
     });
 
