@@ -197,8 +197,9 @@ export function PricingModal() {
             alignItems: 'stretch',
           }}
         >
-          {PRICING_PLANS.map((plan) => {
+          {PRICING_PLANS.filter((p) => p.id !== 'dev').map((plan) => {
             const isCurrent = currentTier === plan.id;
+
             const displayPrice = billingCycle === 'yearly' ? Math.round(plan.priceYearly / 12) : plan.priceMonthly;
 
             return (

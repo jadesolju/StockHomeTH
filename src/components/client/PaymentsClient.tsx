@@ -14,7 +14,9 @@ import {
   WhaleSvg,
 } from '@/components/ui/TierSvgIcons';
 import type { GemCoinTopupPackage } from '@/config/gemCoinPackages';
-import { Loader2, Zap, Crown, AlertCircle, ShieldCheck, ArrowRight, Check } from 'lucide-react';
+import { Loader2, Zap, Crown, AlertCircle, ShieldCheck, ArrowRight, Check, Sparkles } from 'lucide-react';
+import { useClientAuth } from '@/lib/context/ClientAuthContext';
+import { OWNER_DEV_IDENTIFIERS } from '@/lib/context/SubscriptionContext';
 
 function TierIcon({ iconType, className }: { iconType: GemCoinTopupPackage['iconType']; className?: string }) {
   const props = { className: className ?? 'w-7 h-7' };
@@ -34,10 +36,19 @@ function TierIcon({ iconType, className }: { iconType: GemCoinTopupPackage['icon
 type Tab = 'topup' | 'subscription';
 
 export default function PaymentsClient() {
+  const { user } = useClientAuth();
   const [activeTab, setActiveTab] = useState<Tab>('topup');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const isOwnerUser = Boolean(
+    user &&
+    (OWNER_DEV_IDENTIFIERS.emails.includes(user.email ?? '') ||
+      OWNER_DEV_IDENTIFIERS.firebaseUids.includes(user.uid) ||
+      OWNER_DEV_IDENTIFIERS.supabaseUids.includes(user.uid))
+  );
+
 
   const handleCheckout = useCallback(
     async (packageId: string, mode: 'payment' | 'subscription') => {
@@ -104,8 +115,60 @@ export default function PaymentsClient() {
       </div>
 
       <div className="payment-page-container">
+        {/* ──── Exclusive Owner Status Banner (Visible ONLY to afillly002@gmail.com) ──── */}
+        {isOwnerUser && (
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(236, 72, 153, 0.12) 100%)',
+              border: '1px solid rgba(168, 85, 247, 0.45)',
+              borderRadius: '18px',
+              padding: '16px 20px',
+              marginBottom: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+              boxShadow: '0 8px 32px rgba(168, 85, 247, 0.15)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
+                  background: 'rgba(168, 85, 247, 0.25)',
+                  border: '1px solid rgba(168, 85, 247, 0.5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Crown size={22} color="#c084fc" />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f3e8ff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>👑 ยินดีต้อนรับผู้พัฒนา & เจ้าของระบบ (Owner)</span>
+                  <span style={{ fontSize: '0.7rem', padding: '1px 8px', borderRadius: '100px', background: '#a855f7', color: '#fff', fontWeight: 700 }}>
+                    God Mode
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#d8b4fe', marginTop: '2px' }}>
+                  บัญชี <strong>afillly002@gmail.com</strong> ได้รับสิทธิ์เข้าถึงทุกฟังก์ชัน AI และ GemCoins 99,999,999 ถาวรโดยไม่ต้องชำระเงิน
+                </div>
+              </div>
+            </div>
+            <div style={{ fontSize: '0.74rem', color: 'rgba(216, 180, 254, 0.8)', fontWeight: 600 }}>
+              (สถานะนี้เห็นเฉพาะบัญชีของคุณคนเดียว บุคคลภายนอกจะไม่เห็นแถบนี้)
+            </div>
+          </div>
+        )}
+
         {/* ──── Tab Switcher ──── */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '28px' }}>
+
           <div className="ios-segmented-control" style={{ padding: '4px', maxWidth: '420px', width: '100%' }}>
             <button
               onClick={() => setActiveTab('topup')}
@@ -234,8 +297,9 @@ export default function PaymentsClient() {
             </div>
 
             <div className="payment-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
-              {GEMCOIN_SUBSCRIPTION_TIERS.filter((t) => t.tier !== 'free').map((tier) => {
+              {GEMCOIN_SUBSCRIPTION_TIERS.filter((t) => t.tier !== 'free' && t.tier !== 'dev').map((tier) => {
                 const isLoading = loadingId === tier.tier;
+
                 const isDisabled = loadingId !== null;
                 const isPro = tier.tier === 'pro';
                 const isVip = tier.tier === 'vip';

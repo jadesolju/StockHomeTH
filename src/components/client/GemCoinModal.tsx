@@ -352,8 +352,9 @@ export const GemCoinModal: React.FC = () => {
               </Link>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {GEMCOIN_SUBSCRIPTION_TIERS.filter((t) => t.tier !== 'free').map((tierInfo) => {
+                {GEMCOIN_SUBSCRIPTION_TIERS.filter((t) => t.tier !== 'free' && t.tier !== 'dev').map((tierInfo) => {
                   const isCurrent = currentTier === tierInfo.tier;
+
                   return (
                     <div
                       key={tierInfo.tier}
