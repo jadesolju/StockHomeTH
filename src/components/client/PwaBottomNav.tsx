@@ -13,7 +13,7 @@ export function PwaBottomNav() {
   const { t } = useLanguage();
   const { user, openAuthModal, openProfileModal } = useClientAuth();
 
-  // On AI Helper page, hide bottom nav to provide 100% full-screen immersive chat
+  // On AI Helper page, hide bottom nav to give 100% full screen to chat
   if (pathname === '/ai-helper') {
     return null;
   }
@@ -34,17 +34,18 @@ export function PwaBottomNav() {
         display: 'none', // Controlled via CSS media query
         justifyContent: 'space-around',
         alignItems: 'center',
-        padding: '6px 8px calc(8px + env(safe-area-inset-bottom, 0px)) 8px',
+        padding: '0 12px calc(4px + env(safe-area-inset-bottom, 0px)) 12px',
+        height: 'calc(54px + env(safe-area-inset-bottom, 0px))',
         background: 'var(--glass-bg)',
         backdropFilter: 'blur(30px) saturate(200%)',
         WebkitBackdropFilter: 'blur(30px) saturate(200%)',
         borderTop: '1px solid var(--glass-border)',
         borderRadius: '24px 24px 0 0',
-        boxShadow: '0 -6px 28px rgba(0, 0, 0, 0.5)',
+        boxShadow: '0 -6px 28px rgba(0, 0, 0, 0.45)',
       }}
       aria-label="Mobile Navigation"
     >
-      {/* 1. News Digest Tab */}
+      {/* 1. News Digest Tab - Pure Minimal Icon */}
       <Link
         href="/"
         title={t('newsDigest')}
@@ -52,29 +53,24 @@ export function PwaBottomNav() {
         className="ios-tappable"
         style={{
           flex: 1,
-          height: '50px',
+          height: '44px',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '3px',
           textDecoration: 'none',
           color: isNewsActive ? '#007AFF' : 'var(--text-tertiary)',
-          borderRadius: '12px',
+          borderRadius: '16px',
           background: isNewsActive ? 'rgba(0, 122, 255, 0.12)' : 'transparent',
           transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
           position: 'relative',
         }}
       >
-        <Newspaper size={20} strokeWidth={isNewsActive ? 2.4 : 1.8} />
-        <span style={{ fontSize: '10.5px', fontWeight: isNewsActive ? 700 : 500, letterSpacing: '-0.2px' }}>
-          {t('newsDigest')}
-        </span>
+        <Newspaper size={22} strokeWidth={isNewsActive ? 2.3 : 1.7} />
         {isNewsActive && (
           <span
             style={{
               position: 'absolute',
-              bottom: '2px',
+              bottom: '5px',
               width: '4px',
               height: '4px',
               borderRadius: '50%',
@@ -85,7 +81,7 @@ export function PwaBottomNav() {
         )}
       </Link>
 
-      {/* 2. All Markets Tab (Consolidated SET & US) */}
+      {/* 2. All Markets Tab - Pure Minimal Icon */}
       <Link
         href="/stocks"
         title={t('marketAndCharts')}
@@ -93,29 +89,24 @@ export function PwaBottomNav() {
         className="ios-tappable"
         style={{
           flex: 1,
-          height: '50px',
+          height: '44px',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '3px',
           textDecoration: 'none',
           color: isStocksActive ? '#007AFF' : 'var(--text-tertiary)',
-          borderRadius: '12px',
+          borderRadius: '16px',
           background: isStocksActive ? 'rgba(0, 122, 255, 0.12)' : 'transparent',
           transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
           position: 'relative',
         }}
       >
-        <TrendingUp size={20} strokeWidth={isStocksActive ? 2.4 : 1.8} />
-        <span style={{ fontSize: '10.5px', fontWeight: isStocksActive ? 700 : 500, letterSpacing: '-0.2px' }}>
-          ตลาดหุ้น
-        </span>
+        <TrendingUp size={22} strokeWidth={isStocksActive ? 2.3 : 1.7} />
         {isStocksActive && (
           <span
             style={{
               position: 'absolute',
-              bottom: '2px',
+              bottom: '5px',
               width: '4px',
               height: '4px',
               borderRadius: '50%',
@@ -126,57 +117,43 @@ export function PwaBottomNav() {
         )}
       </Link>
 
-      {/* 3. AI Agent Hero Tab (เด่น ๆ - Elevated Glowing Center Highlight) */}
+      {/* 3. AI Agent Hero Tab - Floating Elevated Glowing Circle (Zero Clutter Text) */}
       <Link
         href="/ai-helper"
         title="AI Financial Agent"
         aria-label="AI Financial Agent"
         className="ios-tappable"
         style={{
-          flex: 1.1,
-          height: '54px',
+          flex: 1,
+          height: '48px',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           textDecoration: 'none',
           position: 'relative',
-          marginTop: '-12px', // Elevated above nav bar
+          marginTop: '-16px', // Elevated above the bar
         }}
       >
         <div
           style={{
-            width: '46px',
-            height: '46px',
+            width: '48px',
+            height: '48px',
             borderRadius: '50%',
             background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#ffffff',
-            boxShadow: '0 6px 20px rgba(6, 182, 212, 0.45), 0 0 12px rgba(59, 130, 246, 0.3)',
-            border: '2px solid rgba(255, 255, 255, 0.4)',
+            boxShadow: '0 6px 20px rgba(6, 182, 212, 0.5), 0 0 10px rgba(59, 130, 246, 0.35)',
+            border: '2px solid rgba(255, 255, 255, 0.35)',
             transition: 'all 0.2s ease',
           }}
         >
-          <Sparkles size={22} strokeWidth={2.4} />
+          <Sparkles size={23} strokeWidth={2.4} />
         </div>
-        <span
-          style={{
-            fontSize: '10px',
-            fontWeight: 800,
-            marginTop: '2px',
-            letterSpacing: '0.2px',
-            background: 'linear-gradient(90deg, #06b6d4, #3b82f6)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          AI Agent
-        </span>
       </Link>
 
-      {/* 4. Store / GemCoins Tab */}
+      {/* 4. Store / GemCoins Tab - Pure Minimal Icon */}
       <Link
         href="/payments"
         title="ร้านค้า & GemCoins"
@@ -184,29 +161,24 @@ export function PwaBottomNav() {
         className="ios-tappable"
         style={{
           flex: 1,
-          height: '50px',
+          height: '44px',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '3px',
           textDecoration: 'none',
           color: isPaymentsActive ? '#f59e0b' : 'var(--text-tertiary)',
-          borderRadius: '12px',
+          borderRadius: '16px',
           background: isPaymentsActive ? 'rgba(245, 158, 11, 0.12)' : 'transparent',
           transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
           position: 'relative',
         }}
       >
-        <CreditCard size={20} strokeWidth={isPaymentsActive ? 2.4 : 1.8} />
-        <span style={{ fontSize: '10.5px', fontWeight: isPaymentsActive ? 700 : 500, letterSpacing: '-0.2px' }}>
-          ร้านค้า
-        </span>
+        <CreditCard size={22} strokeWidth={isPaymentsActive ? 2.3 : 1.7} />
         {isPaymentsActive && (
           <span
             style={{
               position: 'absolute',
-              bottom: '2px',
+              bottom: '5px',
               width: '4px',
               height: '4px',
               borderRadius: '50%',
@@ -217,7 +189,7 @@ export function PwaBottomNav() {
         )}
       </Link>
 
-      {/* 5. User Profile / Auth Tab */}
+      {/* 5. User Profile / Auth Tab - Pure Minimal Icon */}
       <button
         onClick={() => {
           if (user) {
@@ -231,15 +203,13 @@ export function PwaBottomNav() {
         className="ios-tappable"
         style={{
           flex: 1,
-          height: '50px',
+          height: '44px',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '3px',
           background: 'none',
           border: 'none',
-          borderRadius: '12px',
+          borderRadius: '16px',
           cursor: 'pointer',
           color: 'var(--text-tertiary)',
           transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -250,15 +220,12 @@ export function PwaBottomNav() {
             photoURL={user.photoURL}
             displayName={user.displayName}
             email={user.email}
-            size={22}
+            size={24}
             border="1.5px solid rgba(0, 122, 255, 0.45)"
           />
         ) : (
-          <User size={20} strokeWidth={1.8} />
+          <User size={22} strokeWidth={1.8} />
         )}
-        <span style={{ fontSize: '10.5px', fontWeight: 500, letterSpacing: '-0.2px' }}>
-          {user ? 'โปรไฟล์' : 'เข้าสู่ระบบ'}
-        </span>
       </button>
     </nav>
   );

@@ -493,6 +493,7 @@ export const AiHelperChatClient: React.FC = () => {
                     {selectedModel.name}
                   </span>
                   <span
+                    className="ai-model-tag-badge"
                     style={{
                       fontSize: '0.65rem',
                       padding: '1px 6px',
@@ -568,7 +569,7 @@ export const AiHelperChatClient: React.FC = () => {
                 /* Welcome / Empty State */
                 <div className="ai-hero-welcome">
                   <div className="ai-hero-badge-icon">
-                    <GemCoinIcon size={38} glow />
+                    <GemCoinIcon size={26} glow />
                   </div>
                   <h1 className="ai-hero-title">StockHome AI</h1>
                   <p className="ai-hero-subtitle">

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { useSubscription, SubscriptionTier, OWNER_DEV_IDENTIFIERS } from '../../lib/context/SubscriptionContext';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
 import { ShieldCheck, Zap, Crown, Sparkles, ChevronUp, ChevronDown, Check, Settings } from 'lucide-react';
@@ -8,6 +9,7 @@ import Link from 'next/link';
 import { ADMIN_PORTAL_PATH } from '../../config/adminConfig';
 
 export function LocalRoleSwitcher() {
+  const pathname = usePathname();
   const {
     currentTier,
     setTier,
@@ -57,13 +59,7 @@ export function LocalRoleSwitcher() {
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        zIndex: 9000,
-        fontFamily: 'inherit',
-      }}
+      className={`local-role-floating-wrapper ${pathname === '/ai-helper' ? 'hide-on-mobile-ai-chat' : ''}`}
     >
       {/* Floating Pill / Launcher */}
       <div className="local-role-container">
