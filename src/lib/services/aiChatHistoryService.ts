@@ -24,6 +24,7 @@ export interface ChatMessage {
   content: string;
   gemCoinsUsed?: number;
   modelUsed?: string;
+  isTruncated?: boolean;
   timestamp: string;
 }
 
@@ -32,6 +33,8 @@ export interface ChatSession {
   title: string;
   modelId: string;
   messages: ChatMessage[];
+  contextSummary?: string; // Rolling Context Summary
+  summarizedUpToIndex?: number; // How many older messages were compressed into summary
   createdAt: number;
   updatedAt: number;
 }
@@ -94,6 +97,8 @@ export async function saveSessionToCloud(userUid: string, session: ChatSession):
         title: session.title,
         modelId: session.modelId,
         messages: session.messages,
+        contextSummary: session.contextSummary || null,
+        summarizedUpToIndex: session.summarizedUpToIndex || 0,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
       },
@@ -145,6 +150,8 @@ export function subscribeToUserCloudSessions(
               title: data.title || 'การสนทนา',
               modelId: data.modelId || 'default',
               messages: Array.isArray(data.messages) ? data.messages : [],
+              contextSummary: data.contextSummary || undefined,
+              summarizedUpToIndex: Number(data.summarizedUpToIndex) || 0,
               createdAt: Number(data.createdAt) || Date.now(),
               updatedAt: Number(data.updatedAt) || Date.now(),
             });
@@ -194,7 +201,9 @@ export function createSession(
   userUid: string | null | undefined,
   firstPrompt: string,
   modelId: string,
-  initialMessages: ChatMessage[] = []
+  initialMessages: ChatMessage[] = [],
+  contextSummary?: string,
+  summarizedUpToIndex?: number
 ): ChatSession {
   const cleanTitle = firstPrompt.trim().replace(/\n+/g, ' ').slice(0, 36) || 'การสนทนาใหม่';
   const newSession: ChatSession = {
@@ -202,6 +211,8 @@ export function createSession(
     title: cleanTitle,
     modelId,
     messages: initialMessages,
+    contextSummary,
+    summarizedUpToIndex: summarizedUpToIndex || 0,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
@@ -225,7 +236,9 @@ export function updateSession(
   sessionId: string,
   messages: ChatMessage[],
   modelId?: string,
-  customTitle?: string
+  customTitle?: string,
+  contextSummary?: string,
+  summarizedUpToIndex?: number
 ): ChatSession[] {
   const sessions = loadUserSessions(userUid);
   const index = sessions.findIndex((s) => s.id === sessionId);
@@ -239,6 +252,8 @@ export function updateSession(
       title,
       modelId: modelId || 'default',
       messages,
+      contextSummary,
+      summarizedUpToIndex: summarizedUpToIndex || 0,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -250,6 +265,8 @@ export function updateSession(
       messages,
       modelId: modelId || existing.modelId,
       title: customTitle || existing.title,
+      contextSummary: contextSummary !== undefined ? contextSummary : existing.contextSummary,
+      summarizedUpToIndex: summarizedUpToIndex !== undefined ? summarizedUpToIndex : existing.summarizedUpToIndex,
       updatedAt: Date.now(),
     };
     sessions[index] = updatedSession;

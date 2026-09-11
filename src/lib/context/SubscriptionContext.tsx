@@ -8,6 +8,12 @@ import {
 } from '../../config/gemCoinPackages';
 import { useClientAuth } from './ClientAuthContext';
 import { supabase } from '../supabase/client';
+import {
+  subscribeToCloudWallet,
+  deductCloudCoins,
+  creditCloudTopupCoins,
+  updateCloudTier,
+} from '../services/userWalletService';
 
 export type SubscriptionTier = 'free' | 'lite' | 'pro' | 'vip' | 'whale' | 'dev';
 export type BillingCycle = 'monthly' | 'yearly';
@@ -60,6 +66,7 @@ interface SubscriptionContextType {
   openGemCoinModal: (initialTab?: 'topup' | 'plans' | 'redeem' | 'logs') => void;
   closeGemCoinModal: () => void;
   deductGemCoins: (amount: number, model: string, summary?: string) => boolean;
+  refundGemCoins: (amount: number, reason?: string) => void;
   topupGemCoinsDirect: (amount: number, packageName: string) => void;
   redeemPromoCode: (
     code: string
@@ -214,6 +221,19 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     checkAirdrops();
   }, [user?.email, user?.uid]);
 
+  // Real-time Cloud Wallet synchronization across devices (PC ↔ Mobile)
+  useEffect(() => {
+    if (!user?.uid) return;
+    const unsubscribe = subscribeToCloudWallet(user.uid, (cloudWallet) => {
+      if (cloudWallet.tier && !isOwnerAccount) {
+        setCurrentTierState(cloudWallet.tier);
+      }
+      setDailyGemCoinsRemaining(cloudWallet.dailyGemCoinsRemaining);
+      setTopupGemCoins(cloudWallet.topupGemCoins);
+    });
+    return () => unsubscribe();
+  }, [user?.uid, isOwnerAccount]);
+
   // Initialize state on client mount
   useEffect(() => {
     try {
@@ -316,6 +336,9 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const setTier = useCallback(
     (tier: SubscriptionTier) => {
       setCurrentTierState(tier);
+      if (user?.uid) {
+        updateCloudTier(user.uid, tier).catch(() => {});
+      }
       try {
         localStorage.setItem(STORAGE_KEY, tier);
         const tierInfo =
@@ -346,7 +369,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         }
       } catch {}
     },
-    []
+    [user?.uid]
   );
 
   const openPricingModal = useCallback(() => setIsPricingModalOpen(true), []);
@@ -399,6 +422,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setDailyGemCoinsRemaining(newDaily);
       setTopupGemCoins(newTopup);
 
+      if (user?.uid) {
+        deductCloudCoins(user.uid, amount, model, summary).catch(() => {});
+      }
+
       const logEntry: GemCoinLogEntry = {
         id: 'log_' + Date.now(),
         timestamp: new Date().toISOString(),
@@ -420,9 +447,44 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
       return true;
     },
-    [dailyGemCoinsRemaining, topupGemCoins, currentTier]
+    [dailyGemCoinsRemaining, topupGemCoins, currentTier, user?.uid]
   );
 
+  // Refund GemCoins (e.g. Aborted request or connection error)
+  const refundGemCoins = useCallback(
+    (amount: number, reason: string = 'ยกเลิกคำขอ') => {
+      if (amount <= 0) return;
+      setTopupGemCoins((prev) => {
+        const updated = prev + amount;
+        try {
+          localStorage.setItem(GEMCOIN_TOPUP_KEY, updated.toString());
+        } catch {}
+        return updated;
+      });
+
+      if (user?.uid) {
+        creditCloudTopupCoins(user.uid, amount).catch(() => {});
+      }
+
+      const logEntry: GemCoinLogEntry = {
+        id: 'refund_' + Date.now(),
+        timestamp: new Date().toISOString(),
+        model: 'Refund',
+        gemCoinsUsed: 0,
+        source: 'topup',
+        summary: `🔄 คืนเหรียญ (${reason}) +${amount.toLocaleString()} GemCoins`,
+      };
+
+      setGemCoinLogs((prev) => {
+        const updated = [logEntry, ...prev.slice(0, 49)];
+        try {
+          localStorage.setItem(GEMCOIN_LOGS_KEY, JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+    },
+    [user?.uid]
+  );
 
   // Top up GemCoins directly (from store package)
   const topupGemCoinsDirect = useCallback(
@@ -434,6 +496,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         } catch {}
         return updated;
       });
+
+      if (user?.uid) {
+        creditCloudTopupCoins(user.uid, amount).catch(() => {});
+      }
 
       const logEntry: GemCoinLogEntry = {
         id: 'topup_' + Date.now(),
@@ -452,7 +518,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         return updated;
       });
     },
-    []
+    [user?.uid]
   );
 
   // Redeem Promo Code via Backend API
@@ -593,6 +659,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         openGemCoinModal,
         closeGemCoinModal,
         deductGemCoins,
+        refundGemCoins,
         topupGemCoinsDirect,
         redeemPromoCode,
         currentTierInfo,

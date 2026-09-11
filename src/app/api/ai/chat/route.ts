@@ -7,6 +7,16 @@ import {
   setCachedChatResponse,
 } from '@/lib/services/openRouterGuardService';
 import { getModelGemCoinsEst } from '@/config/curated-models';
+import {
+  SubscriptionTier,
+  getTierLimits,
+  getModelFallbackArray,
+} from '@/config/tierModelLimits';
+import { executeWithPriorityQueue } from '@/lib/services/aiQueueService';
+import {
+  manageContextWindow,
+  ChatMessageLike,
+} from '@/lib/services/contextSummaryService';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,8 +28,14 @@ interface ChatMessage {
 interface ChatRequestBody {
   messages: ChatMessage[];
   model?: string;
-  userTier?: 'free' | 'lite' | 'pro' | 'vip' | 'whale' | 'dev';
+  userTier?: SubscriptionTier;
   enableMemory?: boolean;
+  contextSummary?: string;
+  summarizedUpToIndex?: number;
+  stream?: boolean;
+  images?: string[];
+  documentText?: string;
+  documentName?: string;
   stockContext?: {
     ticker: string;
     name?: string;
@@ -49,7 +65,13 @@ export async function POST(req: NextRequest) {
       messages,
       model = 'google/gemini-3.8-flash',
       userTier = 'free',
-      enableMemory = false,
+      enableMemory = true,
+      contextSummary,
+      summarizedUpToIndex = 0,
+      stream = false,
+      images = [],
+      documentText,
+      documentName,
       stockContext,
     } = body;
 
@@ -58,6 +80,23 @@ export async function POST(req: NextRequest) {
         { success: false, error: 'Messages array is required' },
         { status: 400 }
       );
+    }
+
+    const tierLimits = getTierLimits(userTier);
+
+    // 0. Multimodal Document Security Check according to Tier limits
+    if (documentText && tierLimits.maxDocTokens !== Infinity) {
+      const estimatedDocTokens = Math.ceil(documentText.length / 3.5);
+      if (estimatedDocTokens > tierLimits.maxDocTokens) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `[SYSTEM NOTICE] ไฟล์เอกสารของคุณ (${estimatedDocTokens.toLocaleString()} Tokens) เกินโควตาของแพลน ${tierLimits.label} (สูงสุด ${tierLimits.maxDocTokens.toLocaleString()} Tokens) โปรดเลือกเฉพาะหน้าสรุปงบการเงิน หรืออัปเกรดแพลนเพื่อวิเคราะห์ไฟล์ไม่จำกัดขนาด`,
+            isOversizedDoc: true,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const apiKey =
@@ -76,23 +115,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. Check identical response cache to save tokens
+    // 1. Check identical response cache to save tokens (bypass if images, docs, or streaming requested)
+    const hasAttachments = (images && images.length > 0) || Boolean(documentText);
     const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
     const cacheKey = getChatCacheKey(model, lastUserMsg);
-    const cachedResponse = getCachedChatResponse(cacheKey);
-    if (cachedResponse) {
-      return NextResponse.json({
-        success: true,
-        message: cachedResponse,
-        model,
-        gemCoinsUsed: 1, // minimal fee for instant cache hit
-        fromCache: true,
-        timestamp: new Date().toISOString(),
-      });
+
+    if (!hasAttachments && !stream) {
+      const cachedResponse = getCachedChatResponse(cacheKey);
+      if (cachedResponse) {
+        return NextResponse.json({
+          success: true,
+          message: cachedResponse,
+          model,
+          gemCoinsUsed: 1, // minimal fee for instant cache hit
+          fromCache: true,
+          timestamp: new Date().toISOString(),
+        });
+      }
     }
 
     // 2. Idle Protection & 1-call-per-day enforcement
-    // If no real user is chatting or it's an automated ping, cap at 1 request per day
     const isDev = userTier === 'dev';
     const isBackgroundHeader = Boolean(req.headers.get('x-background-job') || req.headers.get('x-cron'));
     const isRealUser = isDev || (!isBackgroundHeader && lastUserMsg.length > 0);
@@ -108,120 +150,261 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Sliding Window / Memory Retention Control
-    // When enableMemory is FALSE (Default / Budget Mode):
-    // Only send the latest user message. Zero previous conversation context sent.
-    // When enableMemory is TRUE:
-    // Retain up to 20 recent messages (capped at ~100K token budget).
-    let outboundMessages: ChatMessage[];
-    if (!enableMemory) {
-      // Single-shot budget mode: only the latest user message
-      const lastMsg = messages[messages.length - 1];
-      outboundMessages = lastMsg ? [lastMsg] : [];
-    } else {
-      // Memory enabled: include conversation history up to 20 messages (~10 turns)
-      outboundMessages = messages.slice(-20);
-    }
+    // 3. Rolling Summarization & Context Window Management
+    const contextResult = await manageContextWindow({
+      messages: messages as ChatMessageLike[],
+      userTier,
+      enableMemory,
+      existingSummary: contextSummary,
+      summarizedUpToIndex,
+      apiKey,
+    });
 
-    // 4. Micro Context for Stock / Market (compact payload)
+    const outboundMessages = contextResult.outboundMessages;
+
+    // 4. Build System Prompt with Financial Context & Rolling Summary
     let systemPromptWithContext = COMPACT_SYSTEM_PROMPT;
+
     if (stockContext && stockContext.ticker) {
       systemPromptWithContext += `\n[บริบทหุ้น]: ${stockContext.ticker} (${stockContext.market || 'SET'}) ราคา: ${stockContext.price ?? '—'} (${stockContext.change != null ? (stockContext.change >= 0 ? '+' : '') + stockContext.change + '%' : '—'}) PE: ${stockContext.peRatio ?? '—'}x มาร์เก็ตแคป: ${stockContext.marketCap ?? '—'}`;
     }
 
-    // Differentiate reasoning depth based on model capability tier
+    // Differentiate reasoning depth based on tier capabilities
     const baseCoins = getModelGemCoinsEst(model);
     const isHighTierModel = baseCoins >= 300 || /opus|sonnet|pro|gpt-4|gpt-5|gpt-6|r1|max/i.test(model);
-    if (isHighTierModel) {
-      systemPromptWithContext += `\n[ระดับการวิเคราะห์]: คุณกำลังทำงานในฐานะโมเดลวิเคราะห์ระดับสถาบัน (High-Tier Intelligence) จงวิเคราะห์เชิงลึก (Deep-Dive Analysis) อย่างแท้จริง: เจาะลึกโครงสร้างธุรกิจ, ตัวเลขงบการเงิน, Valuation (P/E, P/BV), Catalysts สำคัญ และประเมินความเสี่ยงรอบด้าน โดยยังคงความกระชับ ตรงไปตรงมา ไม่พรรณนา`;
+    if (tierLimits.deepReasoningAllowed || isHighTierModel) {
+      systemPromptWithContext += `\n[ระดับการวิเคราะห์]: คุณกำลังทำงานในฐานะโมเดลวิเคราะห์ระดับสถาบัน (High-Tier Intelligence) จงวิเคราะห์เชิงลึก (Deep-Dive Analysis) อย่างแท้จริง: เจาะลึกโครงสร้างธุรกิจ, ตัวเลขงบการเงิน, Valuation (P/E, P/BV), Catalysts สำคัญ และประเมินความเสี่ยงรอบด้าน โดยยังคงความกระชับ ตรงไปตรงมา ไม่พรรณนา และต้องตอบประเด็นให้จบสมบูรณ์ทุกข้อ ห้ามตัดจบกลางประโยค`;
     } else {
       systemPromptWithContext += `\n[ระดับการวิเคราะห์]: ตอบแบบกระชับ รวดเร็ว สรุป Bullet Points สาระสำคัญตรงประเด็น`;
     }
 
-    const fullMessages = [
+    // Inject rolling summary into system prompt if exists
+    if (contextResult.contextSummary && contextResult.contextSummary.trim().length > 0) {
+      systemPromptWithContext += `\n\n[สรุปบริบทบทสนทนาก่อนหน้า (Rolling Context Summary)]:\n${contextResult.contextSummary}\n(กรุณาใช้บริบทนี้ในการทำความเข้าใจคำถามต่อเนื่อง โดยอ้างอิงข้อมูลเดิมได้อย่างเป็นธรรมชาติ ไม่ลืมสิ่งที่คุยกันไว้)`;
+    }
+
+    // 5. Build full messages payload with Multimodal support
+    const formattedMessages: any[] = [
       { role: 'system', content: systemPromptWithContext },
-      ...outboundMessages,
     ];
 
-    // 5. Smart max_tokens limit based on tier (Thai language requires ~3-4x tokens per word)
-    const isProOrAbove = userTier === 'pro' || userTier === 'vip' || userTier === 'whale';
-    const maxTokensLimit = isProOrAbove ? 3000 : 1800;
+    for (let i = 0; i < outboundMessages.length; i++) {
+      const msg = outboundMessages[i];
+      const isLatestUser = i === outboundMessages.length - 1 && msg.role === 'user';
+
+      if (isLatestUser && hasAttachments) {
+        let textContent = msg.content;
+        if (documentText) {
+          textContent += `\n\n[ข้อมูลเอกสารแนบ${documentName ? ' ' + documentName : ''}]:\n${documentText}`;
+        }
+
+        if (images && images.length > 0) {
+          const contentParts: any[] = [{ type: 'text', text: textContent }];
+          for (const imgUrl of images) {
+            contentParts.push({
+              type: 'image_url',
+              image_url: { url: imgUrl },
+            });
+          }
+          formattedMessages.push({ role: 'user', content: contentParts });
+        } else {
+          formattedMessages.push({ role: 'user', content: textContent });
+        }
+      } else {
+        formattedMessages.push({ role: msg.role, content: msg.content });
+      }
+    }
+
+    // 6. Token limit & Fallback Array
+    const maxTokensLimit = tierLimits.maxOutputTokens;
+    const fallbackArray = getModelFallbackArray(model);
 
     const openRouterUrl = 'https://openrouter.ai/api/v1/chat/completions';
     const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-    // 6. Send with transforms compression and provider price sorting
-    const response = await fetch(openRouterUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'HTTP-Referer': siteUrl,
-        'X-OpenRouter-Title': 'StockHomeTH AI Helper',
-        'Content-Type': 'application/json',
+    const requestPayload = {
+      model,
+      models: fallbackArray,
+      route: 'fallback',
+      messages: formattedMessages,
+      temperature: 0.7,
+      max_tokens: maxTokensLimit,
+      stream: Boolean(stream),
+      provider: {
+        sort: 'price',
       },
-      body: JSON.stringify({
-        model,
-        messages: fullMessages,
-        temperature: 0.7,
-        max_tokens: maxTokensLimit,
-        transforms: ['compression'], // OpenRouter native context compression
-        provider: {
-          sort: 'price', // Auto-route to the most cost-effective reliable provider
+    };
+
+    // 7. Execute Request with Priority Queue (Whale/VIP/Dev bypass queue)
+    const openRouterResponse = await executeWithPriorityQueue(userTier, async () => {
+      return await fetch(openRouterUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'HTTP-Referer': siteUrl,
+          'X-OpenRouter-Title': 'StockHomeTH AI Helper',
+          'Content-Type': 'application/json',
         },
-      }),
+        body: JSON.stringify(requestPayload),
+      });
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[OpenRouter API Error]:', response.status, errorText);
+    if (!openRouterResponse.ok) {
+      const errorText = await openRouterResponse.text();
+      console.error('[OpenRouter API Error]:', openRouterResponse.status, errorText);
 
       try {
         const errorJson = JSON.parse(errorText);
         return NextResponse.json(
           {
             success: false,
-            error: errorJson.error?.message || `OpenRouter returned status ${response.status}`,
+            error: errorJson.error?.message || `OpenRouter returned status ${openRouterResponse.status}`,
           },
-          { status: response.status }
+          { status: openRouterResponse.status }
         );
       } catch {
         return NextResponse.json(
-          { success: false, error: `OpenRouter error (${response.status})` },
-          { status: response.status }
+          { success: false, error: `OpenRouter error (${openRouterResponse.status})` },
+          { status: openRouterResponse.status }
         );
       }
     }
 
-    const data = await response.json();
-    const replyContent =
-      data.choices?.[0]?.message?.content?.trim() ||
-      'ขออภัย ระบบไม่สามารถประมวลผลคำตอบได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง';
+    // ── Handle SSE Streaming Response ──
+    if (stream && openRouterResponse.body) {
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+      let actualModelUsed = model;
+      let accumulatedText = '';
+      let isTruncated = false;
+      let finishReason = 'stop';
 
-    const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
-    const totalTokens = usage.total_tokens || 120;
+      const streamTransform = new ReadableStream({
+        async start(controller) {
+          const reader = openRouterResponse.body!.getReader();
+          let buffer = '';
 
-    // 6. Calculate GemCoins consumed
-    // Baseline model price (baseCoins is already computed above)
-    let gemCoinsUsed = baseCoins;
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
 
-    // If memory is enabled and messages exceed 8 messages (4 turns),
-    // calculate a modest context retention fee proportional to the additional tokens/turns
-    if (enableMemory && messages.length > 8) {
-      const extraBlocks = Math.ceil((messages.length - 8) / 8);
-      // Each block of 8 messages adds 20% of base model price (capped at 2x base price)
-      const contextSurcharge = Math.min(Math.round(baseCoins * 0.2 * extraBlocks), baseCoins);
-      gemCoinsUsed = baseCoins + contextSurcharge;
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || !trimmed.startsWith('data:')) continue;
+                const jsonStr = trimmed.slice(5).trim();
+
+                if (jsonStr === '[DONE]') {
+                  // Calculate final coins
+                  let gemCoinsUsed = getModelGemCoinsEst(actualModelUsed);
+                  if (images && images.length > 0) {
+                    gemCoinsUsed += images.length * 25;
+                  }
+                  gemCoinsUsed += contextResult.memoryCost;
+
+                  const metaPayload = {
+                    type: 'meta',
+                    model: actualModelUsed,
+                    gemCoinsUsed,
+                    finishReason,
+                    isTruncated,
+                    contextSummary: contextResult.contextSummary,
+                    summarizedUpToIndex: contextResult.summarizedUpToIndex,
+                  };
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(metaPayload)}\n\n`));
+                  controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+                  continue;
+                }
+
+                try {
+                  const parsed = JSON.parse(jsonStr);
+                  if (parsed.model) {
+                    actualModelUsed = parsed.model;
+                  }
+                  const choice = parsed.choices?.[0];
+                  const delta = choice?.delta?.content;
+                  if (choice?.finish_reason) {
+                    finishReason = choice.finish_reason;
+                    isTruncated = finishReason === 'length';
+                  }
+
+                  if (delta) {
+                    accumulatedText += delta;
+                    controller.enqueue(
+                      encoder.encode(
+                        `data: ${JSON.stringify({ type: 'chunk', delta })}\n\n`
+                      )
+                    );
+                  }
+                } catch {
+                  // ignore incomplete JSON chunks
+                }
+              }
+            }
+
+            // Cache response if eligible
+            if (!hasAttachments && accumulatedText) {
+              recordOpenRouterRequest(isRealUser);
+              setCachedChatResponse(cacheKey, accumulatedText, actualModelUsed);
+            }
+          } catch (err) {
+            controller.error(err);
+          } finally {
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(streamTransform, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache, no-transform',
+          Connection: 'keep-alive',
+        },
+      });
     }
 
-    // Record request in usage tracker and cache response
-    recordOpenRouterRequest(isRealUser);
-    setCachedChatResponse(cacheKey, replyContent, data.model || model);
+    // ── Handle Standard JSON Response ──
+    const data = await openRouterResponse.json();
+    const choice = data.choices?.[0];
+    const replyContent =
+      choice?.message?.content?.trim() ||
+      'ขออภัย ระบบไม่สามารถประมวลผลคำตอบได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง';
+
+    const finishReason = choice?.finish_reason || 'stop';
+    const isTruncated = finishReason === 'length';
+    const actualModel = data.model || model;
+
+    // 8. Calculate GemCoins consumed
+    let gemCoinsUsed = getModelGemCoinsEst(actualModel);
+
+    // Multimodal Vision fee: +25 GemCoins per image
+    if (images && images.length > 0) {
+      gemCoinsUsed += images.length * 25;
+    }
+
+    // Rolling memory fee (0 for Pro/VIP/Whale/Dev, 2 for Lite, 5 for Free only when summary was updated)
+    gemCoinsUsed += contextResult.memoryCost;
+
+    // Cache response if no media attached
+    if (!hasAttachments) {
+      recordOpenRouterRequest(isRealUser);
+      setCachedChatResponse(cacheKey, replyContent, actualModel);
+    }
 
     return NextResponse.json({
       success: true,
       message: replyContent,
-      model: data.model || model,
+      model: actualModel,
       gemCoinsUsed,
+      finishReason,
+      isTruncated,
+      contextSummary: contextResult.contextSummary,
+      summarizedUpToIndex: contextResult.summarizedUpToIndex,
       timestamp: new Date().toISOString(),
     });
   } catch (err: any) {

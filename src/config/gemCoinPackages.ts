@@ -166,12 +166,12 @@ export const GEMCOIN_SUBSCRIPTION_TIERS: GemCoinSubscriptionTierInfo[] = [
     dailyGemCoins: 50000,
     permanentTopupBonus: 180000,
     unlockedModels: [
-      { id: 'google/gemini-3.8-flash', name: 'Gemini 3.8 Flash', tag: 'Fast' },
+      { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1', tag: 'Reasoning Master' },
       { id: 'google/gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', tag: 'Deep Reasoning' },
+      { id: 'anthropic/claude-3.5-opus', name: 'Claude 3.5 Opus', tag: 'Top Tier' },
       { id: 'openai/gpt-5.6-luna-pro', name: 'GPT-5 (Luna Pro)', tag: 'OpenAI Flagship' },
-      { id: 'anthropic/claude-sonnet-5', name: 'Claude Sonnet 5', tag: 'Anthropic Flagship' },
     ],
-    highlight: 'แถม 180,000 GemCoins ถาวร + 50,000 ต่อวัน + Priority Speed',
+    highlight: 'แถม 180,000 GemCoins ถาวร + 50,000 ต่อวัน + Fast-Track Priority Speed',
   },
   {
     tier: 'whale',
@@ -183,12 +183,12 @@ export const GEMCOIN_SUBSCRIPTION_TIERS: GemCoinSubscriptionTierInfo[] = [
     dailyGemCoins: 150000,
     permanentTopupBonus: 500000,
     unlockedModels: [
-      { id: 'google/gemini-3.8-flash', name: 'Gemini 3.8 Flash', tag: 'Fast' },
-      { id: 'google/gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', tag: 'Deep Reasoning' },
-      { id: 'openai/gpt-5.6-luna-pro', name: 'GPT-5 (Luna Pro)', tag: 'OpenAI Flagship' },
-      { id: 'anthropic/claude-sonnet-5', name: 'Claude Sonnet 5', tag: 'Anthropic Flagship' },
+      { id: 'x-ai/grok-3', name: 'xAI Grok 3', tag: 'Institutional Super' },
+      { id: 'anthropic/claude-3.5-opus', name: 'Claude 3.5 Opus', tag: 'Top Frontier' },
+      { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1', tag: 'Quantitative Alpha' },
+      { id: 'google/gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', tag: 'Institutional Reasoning' },
     ],
-    highlight: 'แถม 500,000 GemCoins ถาวร + 150,000 ต่อวัน + Institutional Full Access',
+    highlight: 'แถม 500,000 GemCoins ถาวร + 150,000 ต่อวัน + Institutional Full Access ทุกโมเดลในโลก',
   },
   {
     tier: 'dev',
