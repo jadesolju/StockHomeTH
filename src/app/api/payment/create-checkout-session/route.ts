@@ -19,12 +19,13 @@ function getClientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
-  if (!process.env.STRIPE_SECRET_KEY) {
+  if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
     return NextResponse.json(
-      { error: 'STRIPE_SECRET_KEY is not configured on this environment' },
+      { error: 'ยังไม่ได้ตั้งค่า STRIPE_SECRET_KEY บน Vercel (กรุณาไปที่ Vercel Dashboard → Settings → Environment Variables แล้วใส่ sk_live_...)' },
       { status: 500 }
     );
   }
+
 
   // --- Rate limit check ---
   const ip = getClientIp(req);
@@ -96,8 +97,12 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ sessionId: session.id, url: session.url });
-  } catch (err) {
+  } catch (err: any) {
     console.error('[Stripe] checkout.sessions.create error:', err);
-    return NextResponse.json({ error: 'Stripe session creation failed' }, { status: 500 });
+    const errorMessage = err?.message
+      ? `Stripe Error: ${err.message}`
+      : 'Stripe session creation failed';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
+

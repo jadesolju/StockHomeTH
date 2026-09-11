@@ -6,9 +6,17 @@ import {
   GEMCOIN_SUBSCRIPTION_TIERS,
   GemCoinSubscriptionTierInfo,
 } from '../../config/gemCoinPackages';
+import { useClientAuth } from './ClientAuthContext';
+import { supabase } from '../supabase/client';
 
-export type SubscriptionTier = 'free' | 'lite' | 'pro' | 'vip' | 'whale';
+export type SubscriptionTier = 'free' | 'lite' | 'pro' | 'vip' | 'whale' | 'dev';
 export type BillingCycle = 'monthly' | 'yearly';
+
+export const OWNER_DEV_IDENTIFIERS = {
+  emails: ['afillly002@gmail.com'],
+  firebaseUids: ['EJCisrn5JzWcsgYUgG6k6DtYWhw2'],
+  supabaseUids: ['addf5ae4-db55-4a32-8f67-b622ee02cc98'],
+};
 
 export interface GemCoinLogEntry {
   id: string;
@@ -37,6 +45,7 @@ interface SubscriptionContextType {
   resetAiUsage: () => void;
   isProOrAbove: boolean;
   isVip: boolean;
+  isOwnerOrDev: boolean;
 
   // GemCoin Economy
   dailyGemCoins: number;
@@ -74,6 +83,7 @@ const GEMCOIN_LOGS_KEY = 'stockhome_gemcoin_logs';
 const GEMCOIN_USER_ID_KEY = 'stockhome_device_user_id';
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useClientAuth();
   const [currentTier, setCurrentTierState] = useState<SubscriptionTier>('free');
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
   const [isPricingModalOpen, setIsPricingModalOpen] = useState<boolean>(false);
@@ -96,6 +106,42 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     GEMCOIN_SUBSCRIPTION_TIERS[0];
   const dailyGemCoins = currentTierInfo.dailyGemCoins;
 
+  // Auto-detect and grant Dev + Owner (God Mode) for Owner accounts
+  useEffect(() => {
+    const applyOwnerDev = () => {
+      setCurrentTierState('dev');
+      try {
+        localStorage.setItem(STORAGE_KEY, 'dev');
+        localStorage.setItem(GEMCOIN_TOPUP_KEY, '99999999');
+        localStorage.setItem(GEMCOIN_DAILY_KEY, '10000000');
+      } catch {}
+      setTopupGemCoins(99999999);
+      setDailyGemCoinsRemaining(10000000);
+    };
+
+    // 1. Check Firebase Auth user
+    if (
+      user &&
+      (OWNER_DEV_IDENTIFIERS.emails.includes(user.email ?? '') ||
+        OWNER_DEV_IDENTIFIERS.firebaseUids.includes(user.uid))
+    ) {
+      applyOwnerDev();
+      return;
+    }
+
+    // 2. Check Supabase Auth session
+    supabase.auth.getSession().then(({ data }) => {
+      const sbUser = data?.session?.user;
+      if (
+        sbUser &&
+        (OWNER_DEV_IDENTIFIERS.emails.includes(sbUser.email ?? '') ||
+          OWNER_DEV_IDENTIFIERS.supabaseUids.includes(sbUser.id))
+      ) {
+        applyOwnerDev();
+      }
+    }).catch(() => {});
+  }, [user]);
+
   // Initialize state on client mount
   useEffect(() => {
     try {
@@ -110,10 +156,11 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       // 2. Subscription Tier
       const savedTier = localStorage.getItem(STORAGE_KEY) as SubscriptionTier;
       let effectiveTier: SubscriptionTier = 'free';
-      if (savedTier && ['free', 'lite', 'pro', 'vip', 'whale'].includes(savedTier)) {
+      if (savedTier && ['free', 'lite', 'pro', 'vip', 'whale', 'dev'].includes(savedTier)) {
         setCurrentTierState(savedTier);
         effectiveTier = savedTier;
       }
+
 
       const effectiveTierInfo =
         GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === effectiveTier) ||
@@ -208,6 +255,19 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   // Deduct GemCoins (Deducts from Daily Free first, then from Top-up)
   const deductGemCoins = useCallback(
     (amount: number, model: string, summary?: string): boolean => {
+      if (currentTier === 'dev') {
+        const logEntry: GemCoinLogEntry = {
+          id: 'log_' + Date.now(),
+          timestamp: new Date().toISOString(),
+          model,
+          gemCoinsUsed: amount,
+          source: 'topup',
+          summary: summary || '👑 Dev & Owner Unlimited Prompt',
+        };
+        setGemCoinLogs((prev) => [logEntry, ...prev.slice(0, 49)]);
+        return true;
+      }
+
       const totalAvailable = dailyGemCoinsRemaining + topupGemCoins;
       if (totalAvailable < amount) {
         return false;
@@ -251,8 +311,9 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
       return true;
     },
-    [dailyGemCoinsRemaining, topupGemCoins]
+    [dailyGemCoinsRemaining, topupGemCoins, currentTier]
   );
+
 
   // Top up GemCoins directly (from store package)
   const topupGemCoinsDirect = useCallback(
@@ -342,12 +403,14 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   };
 
   const isProOrAbove =
-    currentTier === 'pro' || currentTier === 'vip' || currentTier === 'whale';
-  const isVip = currentTier === 'vip' || currentTier === 'whale';
+    currentTier === 'pro' || currentTier === 'vip' || currentTier === 'whale' || currentTier === 'dev';
+  const isVip = currentTier === 'vip' || currentTier === 'whale' || currentTier === 'dev';
+  const isOwnerOrDev = currentTier === 'dev';
 
   const canUseAiOnDemand = useCallback(() => {
+    if (currentTier === 'dev') return true;
     return dailyGemCoinsRemaining + topupGemCoins > 0;
-  }, [dailyGemCoinsRemaining, topupGemCoins]);
+  }, [dailyGemCoinsRemaining, topupGemCoins, currentTier]);
 
   const canSetLineAlerts = useCallback(() => {
     return currentPlan.limits.lineAlerts;
@@ -402,6 +465,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         resetAiUsage,
         isProOrAbove,
         isVip,
+        isOwnerOrDev,
+
 
         // GemCoin Economy
         dailyGemCoins,

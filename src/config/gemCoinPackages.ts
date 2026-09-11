@@ -95,7 +95,7 @@ export const GEMCOIN_TOPUP_PACKAGES: GemCoinTopupPackage[] = [
 ];
 
 export interface GemCoinSubscriptionTierInfo {
-  tier: 'free' | 'lite' | 'pro' | 'vip' | 'whale';
+  tier: 'free' | 'lite' | 'pro' | 'vip' | 'whale' | 'dev';
   name: string;
   promoPriceMonthly: number;
   regularPriceMonthly: number;
@@ -190,4 +190,23 @@ export const GEMCOIN_SUBSCRIPTION_TIERS: GemCoinSubscriptionTierInfo[] = [
     ],
     highlight: 'แถม 500,000 GemCoins ถาวร + 150,000 ต่อวัน + Institutional Full Access',
   },
+  {
+    tier: 'dev',
+    name: '👑 Dev + Owner (God Mode)',
+    promoPriceMonthly: 0,
+    regularPriceMonthly: 0,
+    promoPriceYearly: 0,
+    regularPriceYearly: 0,
+    dailyGemCoins: 10000000,
+    permanentTopupBonus: 99999999,
+    unlockedModels: [
+      { id: 'google/gemini-3.8-flash', name: 'Gemini 3.8 Flash', tag: 'Fast' },
+      { id: 'google/gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', tag: 'Deep Reasoning' },
+      { id: 'openai/gpt-5.6-luna-pro', name: 'GPT-5 (Luna Pro)', tag: 'OpenAI Flagship' },
+      { id: 'anthropic/claude-sonnet-5', name: 'Claude Sonnet 5', tag: 'Anthropic Flagship' },
+      { id: 'deepseek/deepseek-chat', name: 'DeepSeek V3', tag: 'Finance' },
+    ],
+    highlight: '👑 แผนผู้พัฒนาและเจ้าของระบบ (สิทธิ์สูงสุด ปลดล็อก AI ทุกตัว + GemCoins ไม่อั้น ฟรีตลอดชีพ)',
+  },
 ];
+

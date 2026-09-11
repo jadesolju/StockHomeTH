@@ -6,7 +6,7 @@ export interface PricingFeature {
 }
 
 export interface PricingPlan {
-  id: 'free' | 'lite' | 'pro' | 'vip';
+  id: 'free' | 'lite' | 'pro' | 'vip' | 'whale' | 'dev';
   name: string;
   tagline: string;
   badge?: string;
@@ -150,4 +150,34 @@ export const PRICING_PLANS: PricingPlan[] = [
       { text: 'ตราสัญลักษณ์ VIP Badge + ช่องทาง Support พิเศษ', included: true },
     ],
   },
+  {
+    id: 'dev',
+    name: '👑 Dev + Owner',
+    tagline: 'สิทธิ์ผู้พัฒนาและเจ้าของแพลตฟอร์ม สูงสุดทุกฟังก์ชัน',
+    badge: 'God Mode',
+    priceMonthly: 0,
+    priceYearly: 0,
+    currency: '฿',
+    periodText: 'ฟรีถาวรสำหรับ Owner',
+    color: '#a855f7',
+    accentBg: 'rgba(168, 85, 247, 0.15)',
+    borderColor: 'rgba(168, 85, 247, 0.5)',
+    limits: {
+      watchlistLimit: 99999,
+      aiOnDemandDailyLimit: 999999,
+      realtimeStreaming: true,
+      lineAlerts: true,
+      exportData: true,
+      adFree: true,
+    },
+    features: [
+      { text: '👑 สิทธิ์ระดับ Owner / Super Admin สูงสุด 100%', included: true, highlight: true },
+      { text: 'ปลดล็อก AI ทุกตระกูล (GPT-5, Claude, Gemini Pro, DeepSeek)', included: true, highlight: true },
+      { text: 'เหรียญ GemCoins ไม่อั้น 99,999,999 Coins', included: true, highlight: true },
+      { text: 'เข้าถึงหน้า Admin Backoffice และ Developer Portal ได้ทันที', included: true, highlight: true },
+      { text: 'Watchlist ติดตามหุ้นไม่จำกัดจำนวน', included: true },
+      { text: 'Export ข้อมูลและใช้งาน API แบบไร้ข้อจำกัด', included: true },
+    ],
+  },
 ];
+

@@ -5,11 +5,11 @@ import { useSubscription, SubscriptionTier } from '../../lib/context/Subscriptio
 import { ShieldCheck, Zap, Crown, Sparkles, ChevronUp, ChevronDown, Check } from 'lucide-react';
 
 export function LocalRoleSwitcher() {
-  const { currentTier, setTier, openPricingModal, aiUsageToday, getWatchlistLimit } = useSubscription();
+  const { currentTier, setTier, isOwnerOrDev, openPricingModal, aiUsageToday, getWatchlistLimit } = useSubscription();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isLocalEnv, setIsLocalEnv] = useState<boolean>(false);
 
-  // Only show this switcher in local development environment
+  // Show in local development or if user is owner/dev
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const isLocal =
@@ -20,14 +20,16 @@ export function LocalRoleSwitcher() {
     }
   }, []);
 
-  if (!isLocalEnv) return null;
+  if (!isLocalEnv && !isOwnerOrDev) return null;
 
   const tiers: { id: SubscriptionTier; name: string; icon: any; color: string; bg: string }[] = [
     { id: 'free', name: 'Free (สายฟรี)', icon: ShieldCheck, color: 'var(--accent-bullish)', bg: 'rgba(34, 197, 94, 0.15)' },
-    { id: 'lite', name: 'Lite Supporter (250 บ./ปี)', icon: Sparkles, color: '#eab308', bg: 'rgba(234, 179, 8, 0.15)' },
+    { id: 'lite', name: 'Lite Supporter', icon: Sparkles, color: '#eab308', bg: 'rgba(234, 179, 8, 0.15)' },
     { id: 'pro', name: 'Pro Investor', icon: Zap, color: 'var(--accent-blue)', bg: 'rgba(59, 130, 246, 0.15)' },
     { id: 'vip', name: 'VIP Trader', icon: Crown, color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)' },
+    { id: 'dev', name: '👑 Dev + Owner (God Mode)', icon: Crown, color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)' },
   ];
+
 
   return (
     <div
