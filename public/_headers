@@ -1,0 +1,59 @@
+# Cloudflare Pages / Edge Origin Headers Configuration
+# Automatically ingested by Cloudflare on build and deploy
+
+# 1. Static Next.js Bundles & Chunks (Immutable 1-Year Cache)
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+  Cloudflare-CDN-Cache-Control: max-age=31536000
+
+# 2. Static Media & Icons (30 Days Edge Cache)
+/*.svg
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+  Cloudflare-CDN-Cache-Control: max-age=2592000
+/*.png
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+  Cloudflare-CDN-Cache-Control: max-age=2592000
+/*.webp
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+  Cloudflare-CDN-Cache-Control: max-age=2592000
+/*.ico
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+  Cloudflare-CDN-Cache-Control: max-age=2592000
+
+# 3. Financial, Payments, Stripe Checkout & PromptPay (STRICT NO-CACHE)
+/api/payment/*
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0
+  CDN-Cache-Control: no-store
+  Cloudflare-CDN-Cache-Control: no-store
+
+/payments
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0
+  CDN-Cache-Control: no-store
+  Cloudflare-CDN-Cache-Control: no-store
+
+/payments/*
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0
+  CDN-Cache-Control: no-store
+  Cloudflare-CDN-Cache-Control: no-store
+
+# 4. AI Helper & OpenRouter Chat (STRICT NO-CACHE)
+/api/ai/*
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0
+  CDN-Cache-Control: no-store
+  Cloudflare-CDN-Cache-Control: no-store
+
+# 5. Admin Portal & Dev Backoffice (STRICT NO-CACHE)
+/admin
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0
+  CDN-Cache-Control: no-store
+  Cloudflare-CDN-Cache-Control: no-store
+
+/admin/*
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0
+  CDN-Cache-Control: no-store
+  Cloudflare-CDN-Cache-Control: no-store
+
+/api/dev/*
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0
+  CDN-Cache-Control: no-store
+  Cloudflare-CDN-Cache-Control: no-store

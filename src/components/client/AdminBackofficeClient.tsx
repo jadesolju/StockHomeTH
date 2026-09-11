@@ -715,6 +715,63 @@ export const AdminBackofficeClient: React.FC = () => {
             </div>
           </div>
 
+          {/* Cloudflare & Edge Cache Status Card */}
+          <div className="admin-glass-panel" style={{ padding: '20px', borderRadius: '18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Globe size={18} color="#06b6d4" />
+                <h4 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                  Cloudflare & CDN Origin Cache Directives (จัดการแคชอัตโนมัติจากโค้ด)
+                </h4>
+              </div>
+              <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <CheckCircle2 size={14} /> ฝังคำสั่งใน Next.js เรียบร้อย (ไม่ต้องกดใน Cloudflare)
+              </span>
+            </div>
+
+            <p style={{ margin: '0 0 14px 0', fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              ระบบได้ฝังคำสั่ง <code style={{ color: '#38bdf8' }}>Cache-Control</code> และ <code style={{ color: '#38bdf8' }}>Cloudflare-CDN-Cache-Control</code> ลงในระดับเซิร์ฟเวอร์ Next.js โดยตรง ทำให้ Cloudflare บายพาส API การเงินและแคชไฟล์สถิตได้อัตโนมัติ 100% โดยไม่ต้องกดตั้งค่าเองใน Cloudflare Dashboard
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
+              <div style={{ padding: '12px', borderRadius: '12px', background: 'var(--card-sub-bg)', border: '1px solid var(--card-sub-border)' }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#10b981', marginBottom: '4px' }}>
+                  ✓ แคชไฟล์ Static & รูปภาพ (30 วัน - 1 ปี)
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  /_next/static/*, *.svg, *.png, *.webp (โหลดทันทีจาก Cloudflare Edge)
+                </div>
+              </div>
+
+              <div style={{ padding: '12px', borderRadius: '12px', background: 'var(--card-sub-bg)', border: '1px solid var(--card-sub-border)' }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#ef4444', marginBottom: '4px' }}>
+                  ✕ ห้ามแคช: Stripe, Payments & PromptPay
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  /api/payment/*, /payments (no-store, วิ่งตรงเข้า Origin เสมอ)
+                </div>
+              </div>
+
+              <div style={{ padding: '12px', borderRadius: '12px', background: 'var(--card-sub-bg)', border: '1px solid var(--card-sub-border)' }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#ef4444', marginBottom: '4px' }}>
+                  ✕ ห้ามแคช: AI Chat & Admin Backoffice
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  /api/ai/*, /api/dev/*, /admin (no-store, Real-time เสมอ)
+                </div>
+              </div>
+
+              <div style={{ padding: '12px', borderRadius: '12px', background: 'var(--card-sub-bg)', border: '1px solid var(--card-sub-border)' }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#a855f7', marginBottom: '4px' }}>
+                  ⚡ แคชสถิติ Universe หุ้น (5 นาที)
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  /api/stocks/universe (s-maxage=300, ลดโหลดเซิร์ฟเวอร์)
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* AI Model Unlock Status Table */}
           <div className="admin-glass-panel" style={{ padding: '20px', borderRadius: '18px' }}>
             <h4 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 14px 0', color: 'var(--text-primary)' }}>
