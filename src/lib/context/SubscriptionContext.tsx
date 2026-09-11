@@ -170,6 +170,50 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     }
   }, [isOwnerAccount, restoreOwnerGodMode]);
 
+  // Auto-claim any pending GemCoin airdrops sent to user's email by Admin
+  useEffect(() => {
+    if (!user?.email) return;
+    const checkAirdrops = async () => {
+      try {
+        const res = await fetch('/api/gemcoin/airdrop/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: user.email, userId: user.uid }),
+        });
+        const data = await res.json();
+        if (data.success && data.totalGemCoins > 0) {
+          const added = Number(data.totalGemCoins);
+          setTopupGemCoins((prev) => {
+            const updated = prev + added;
+            try {
+              localStorage.setItem(GEMCOIN_TOPUP_KEY, updated.toString());
+            } catch {}
+            return updated;
+          });
+
+          const logEntry: GemCoinLogEntry = {
+            id: 'airdrop_' + Date.now(),
+            timestamp: new Date().toISOString(),
+            model: 'Admin Gift',
+            gemCoinsUsed: 0,
+            source: 'topup',
+            summary: `🎁 ได้รับของขวัญ GemCoins จาก Admin (+${added.toLocaleString()} GemCoins)`,
+          };
+
+          setGemCoinLogs((prev) => {
+            const updated = [logEntry, ...prev.slice(0, 49)];
+            try {
+              localStorage.setItem(GEMCOIN_LOGS_KEY, JSON.stringify(updated));
+            } catch {}
+            return updated;
+          });
+        }
+      } catch {}
+    };
+
+    checkAirdrops();
+  }, [user?.email, user?.uid]);
+
   // Initialize state on client mount
   useEffect(() => {
     try {

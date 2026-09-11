@@ -1,11 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Shield, AlertTriangle, ExternalLink, UserCheck, FileText, Lock } from 'lucide-react';
-import { TermsDisclaimerModal } from './TermsDisclaimerModal';
+import { ShieldCheck, AlertTriangle, ExternalLink, Scale, FileText, Lock, CreditCard, ChevronRight } from 'lucide-react';
+import { TermsDisclaimerModal, PolicyCategory } from './TermsDisclaimerModal';
 
 export function LegalFooter() {
   const [isDisclaimerOpen, setIsDisclaimerOpen] = useState(false);
+  const [modalTab, setModalTab] = useState<PolicyCategory>('all');
+
+  const openPolicyTab = (tab: PolicyCategory) => {
+    setModalTab(tab);
+    setIsDisclaimerOpen(true);
+  };
 
   return (
     <>
@@ -31,15 +37,15 @@ export function LegalFooter() {
             gap: '24px',
           }}
         >
-          {/* Top Notice Grid */}
+          {/* Top Notice Grid - 4 Categorized Policy Pillars */}
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
               gap: '16px',
             }}
           >
-            {/* Disclaimer Highlight */}
+            {/* 1. Risk Disclaimer Highlight */}
             <div
               className="glass-card"
               style={{
@@ -47,18 +53,44 @@ export function LegalFooter() {
                 borderRadius: '16px',
                 border: '1px solid var(--accent-neutral-border)',
                 background: 'var(--accent-neutral-bg)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-neutral)', fontWeight: 700, marginBottom: '6px' }}>
-                <AlertTriangle size={16} />
-                <span>คำเตือนความเสี่ยงการลงทุน (DYOR)</span>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-neutral)', fontWeight: 700, marginBottom: '6px' }}>
+                  <AlertTriangle size={16} />
+                  <span>คำเตือนความเสี่ยงการลงทุน (DYOR)</span>
+                </div>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                  ข้อมูลราคา ดัชนี สถิติ และบทวิเคราะห์ AI จัดทำขึ้นเพื่อการศึกษาและวิจัยส่วนบุคคลเท่านั้น <strong>มิใช่คำแนะนำการลงทุน (Not Financial Advice)</strong> การตัดสินใจลงทุนเป็นดุลยพินิจและความรับผิดชอบของผู้ใช้งานแต่เพียงผู้เดียว
+                </p>
               </div>
-              <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                ข้อมูลทั้งหมดบนระบบ รวมถึงข้อมูลราคา ดัชนี สถิติ และบทวิเคราะห์ AI จัดทำขึ้นเพื่อประโยชน์ในการศึกษาและวิจัยส่วนบุคคลเท่านั้น <strong>มิใช่คำแนะนำการลงทุน (Not Financial Advice)</strong> การลงทุนมีความเสี่ยง ผู้ใช้บริการต้องตัดสินใจด้วยวิจารณญาณของตนเอง
-              </p>
+              <button
+                type="button"
+                onClick={() => openPolicyTab('disclaimer')}
+                style={{
+                  marginTop: '10px',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.74rem',
+                  fontWeight: 600,
+                  color: 'var(--accent-neutral)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                <span>อ่านคำเตือนฉบับเต็ม</span>
+                <ChevronRight size={12} />
+              </button>
             </div>
 
-            {/* Developer Identity Highlight */}
+            {/* 2. Developer Identity Highlight */}
             <div
               className="glass-card"
               style={{
@@ -66,18 +98,89 @@ export function LegalFooter() {
                 borderRadius: '16px',
                 border: '1px solid var(--accent-blue-border)',
                 background: 'var(--accent-blue-bg)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue)', fontWeight: 700, marginBottom: '6px' }}>
-                <UserCheck size={16} />
-                <span>สถานะผู้พัฒนา (บุคคลธรรมดา)</span>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue)', fontWeight: 700, marginBottom: '6px' }}>
+                  <Scale size={16} />
+                  <span>สถานะการให้บริการทางเทคโนโลยี</span>
+                </div>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                  ระบบพัฒนาและดูแลโดย<strong>บุคคลธรรมดาในฐานะนักพัฒนาอิสระ (Independent Developer)</strong> มิได้เป็นสถาบันการเงิน หรือบริษัทหลักทรัพย์ที่ได้รับอนุญาตจากสำนักงาน ก.ล.ต. บริการทั้งหมดจัดให้แบบ &ldquo;ตามสภาพจริง&rdquo; (As-Is Basis)
+                </p>
               </div>
-              <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                ระบบพัฒนาและดูแลโดย<strong>บุคคลธรรมดาในฐานะนักพัฒนาอิสระ (Independent Developer)</strong> มิได้เป็นนิติบุคคล สถาบันการเงิน หรือบริษัทหลักทรัพย์ที่ได้รับอนุญาตหรือขึ้นทะเบียนกับสำนักงาน ก.ล.ต. บริการทั้งหมดจัดให้แบบ &ldquo;ตามสภาพ&rdquo; (As-Is Basis)
-              </p>
+              <button
+                type="button"
+                onClick={() => openPolicyTab('terms')}
+                style={{
+                  marginTop: '10px',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.74rem',
+                  fontWeight: 600,
+                  color: 'var(--accent-blue)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                <span>อ่านข้อกำหนดการใช้บริการ</span>
+                <ChevronRight size={12} />
+              </button>
             </div>
 
-            {/* Bitcoiner Cyber Security Standard */}
+            {/* 3. Payment & Billing Security Policy */}
+            <div
+              className="glass-card"
+              style={{
+                padding: '16px 18px',
+                borderRadius: '16px',
+                border: '1px solid rgba(168, 85, 247, 0.25)',
+                background: 'rgba(168, 85, 247, 0.05)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#c084fc', fontWeight: 700, marginBottom: '6px' }}>
+                  <CreditCard size={16} />
+                  <span>การชำระเงินและนโยบายคืนเงิน</span>
+                </div>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                  ธุรกรรมสมาชิกและ GemCoins ประมวลผลผ่าน <strong>Stripe Payments</strong> มาตรฐาน <strong>PCI-DSS Level 1</strong> รองรับบัตรเครดิต/เดบิต และ <strong>QR PromptPay</strong> สมาชิกยกเลิกต่ออายุได้ตลอดเวลา บริการดิจิทัลไม่สามารถขอคืนเงินเมื่อเริ่มประมวลผลแล้ว
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => openPolicyTab('payment')}
+                style={{
+                  marginTop: '10px',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.74rem',
+                  fontWeight: 600,
+                  color: '#c084fc',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                <span>อ่านนโยบายการชำระเงินและคืนเงิน</span>
+                <ChevronRight size={12} />
+              </button>
+            </div>
+
+            {/* 4. Information Security & Privacy Standard */}
             <div
               className="glass-card"
               style={{
@@ -85,15 +188,41 @@ export function LegalFooter() {
                 borderRadius: '16px',
                 border: '1px solid var(--accent-bullish-border)',
                 background: 'var(--accent-bullish-bg)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-bullish)', fontWeight: 700, marginBottom: '6px' }}>
-                <Lock size={16} />
-                <span>ความปลอดภัยแบบ Bitcoiner</span>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-bullish)', fontWeight: 700, marginBottom: '6px' }}>
+                  <ShieldCheck size={16} />
+                  <span>ความปลอดภัยและการปกป้องข้อมูล</span>
+                </div>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                  ระบบปกป้องข้อมูลด้วยการเข้ารหัสความปลอดภัยสูง <strong>TLS 1.3</strong> คีย์ AI ส่วนตัวจะถูกจัดเก็บบนหน่วยความจำอุปกรณ์ของผู้ใช้งานโดยตรง (Client-Side Storage) ตามมาตรฐานสากล โดยไม่มีการส่งไปจัดเก็บบนเซิร์ฟเวอร์ส่วนกลาง
+                </p>
               </div>
-              <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                ยึดหลักการ <strong>&ldquo;Not your keys, not your data&rdquo;</strong> และ <strong>&ldquo;Don&apos;t Trust, Verify&rdquo;</strong> คีย์ AI ส่วนตัวจะถูกบันทึกในอุปกรณ์ของผู้ใช้เท่านั้น และข้อมูลตัวเลขทุกจุดสามารถกดตรวจสอบเทียบกับตลาดทางการได้เสมอ
-              </p>
+              <button
+                type="button"
+                onClick={() => openPolicyTab('privacy')}
+                style={{
+                  marginTop: '10px',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.74rem',
+                  fontWeight: 600,
+                  color: 'var(--accent-bullish)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                <span>อ่านนโยบายความเป็นส่วนตัว</span>
+                <ChevronRight size={12} />
+              </button>
             </div>
           </div>
 
@@ -111,14 +240,14 @@ export function LegalFooter() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
-              <span>© {new Date().getFullYear()} StockHomeTH — พัฒนาเพื่อการศึกษาโดยนักพัฒนาอิสระ</span>
+              <span>© {new Date().getFullYear()} StockHomeTH — แพลตฟอร์มวิเคราะห์ข้อมูลตลาดทุนเพื่อการศึกษา</span>
             </div>
 
             {/* Quick Policy Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
               <button
                 type="button"
-                onClick={() => setIsDisclaimerOpen(true)}
+                onClick={() => openPolicyTab('all')}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -133,7 +262,43 @@ export function LegalFooter() {
                 }}
               >
                 <FileText size={14} />
-                <span>ข้อกำหนดและคำเตือนความเสี่ยงฉบับเต็ม</span>
+                <span>ข้อกำหนดและนโยบายฉบับเต็ม</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => openPolicyTab('payment')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.78rem',
+                  padding: 0,
+                }}
+              >
+                <span>นโยบายการชำระเงิน</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => openPolicyTab('privacy')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.78rem',
+                  padding: 0,
+                }}
+              >
+                <span>ความปลอดภัย & ข้อมูล</span>
               </button>
 
               <a
@@ -166,6 +331,7 @@ export function LegalFooter() {
           isOpen={isDisclaimerOpen}
           onClose={() => setIsDisclaimerOpen(false)}
           forceOpen={true}
+          initialTab={modalTab}
         />
       )}
     </>

@@ -30,6 +30,8 @@ import { useClientAuth } from '../../lib/context/ClientAuthContext';
 import { useSubscription, OWNER_DEV_IDENTIFIERS } from '../../lib/context/SubscriptionContext';
 import { UserAvatar } from '../ui/UserAvatar';
 
+import { ADMIN_PORTAL_PATH } from '../../config/adminConfig';
+
 interface HeaderClientNavProps {
   onRefresh?: () => void;
   isRefreshing?: boolean;
@@ -367,7 +369,7 @@ export function HeaderClientNav({
                     {/* Admin Backoffice Portal shortcut (Strictly Owner/Dev Only) */}
                     {isOwnerUser && (
                       <Link
-                        href="/admin"
+                        href={ADMIN_PORTAL_PATH}
                         onClick={() => setIsUserMenuOpen(false)}
                         style={{
                           background: 'rgba(236, 72, 153, 0.12)',

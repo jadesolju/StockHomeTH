@@ -1,17 +1,37 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, CheckCircle2, Lock, FileText, UserCheck, AlertTriangle, X } from 'lucide-react';
+import {
+  ShieldCheck,
+  CheckCircle2,
+  Lock,
+  FileText,
+  AlertTriangle,
+  CreditCard,
+  X,
+  Scale,
+  Shield,
+  HelpCircle,
+} from 'lucide-react';
 
 interface TermsDisclaimerModalProps {
   isOpen?: boolean;
   onClose?: () => void;
   forceOpen?: boolean;
+  initialTab?: PolicyCategory;
 }
 
-export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose, forceOpen = false }: TermsDisclaimerModalProps) {
+export type PolicyCategory = 'all' | 'terms' | 'payment' | 'privacy' | 'disclaimer';
+
+export function TermsDisclaimerModal({
+  isOpen: propIsOpen,
+  onClose: propOnClose,
+  forceOpen = false,
+  initialTab = 'all',
+}: TermsDisclaimerModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasAcknowledged, setHasAcknowledged] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<PolicyCategory>(initialTab);
 
   useEffect(() => {
     if (forceOpen) {
@@ -28,9 +48,15 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
         setIsOpen(true);
       }
     } catch {
-      // LocalStorage access issue
+      // LocalStorage fallback
     }
   }, [forceOpen, propIsOpen]);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveCategory(initialTab);
+    }
+  }, [initialTab, isOpen]);
 
   const handleAccept = () => {
     try {
@@ -55,8 +81,9 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
         position: 'fixed',
         inset: 0,
         zIndex: 99999,
-        background: 'rgba(0, 0, 0, 0.75)',
-        backdropFilter: 'blur(12px)',
+        background: 'rgba(0, 0, 0, 0.78)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -67,181 +94,289 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
       <div
         style={{
           width: '100%',
-          maxWidth: '700px',
+          maxWidth: '820px',
           maxHeight: '92vh',
           display: 'flex',
           flexDirection: 'column',
-          background: 'var(--bg-primary)',
-          border: '1px solid var(--card-border)',
-          borderRadius: '20px',
-          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.4)',
+          background: 'var(--bg-primary, #0c1118)',
+          border: '1px solid var(--card-border, rgba(255, 255, 255, 0.12))',
+          borderRadius: '24px',
+          boxShadow: '0 30px 80px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 122, 255, 0.1)',
           overflow: 'hidden',
-          animation: 'fadeInScale 0.25s ease-out',
+          animation: 'fadeInScale 0.22s ease-out',
         }}
       >
-        {/* Header */}
+        {/* ── Header ── */}
         <div
           style={{
-            padding: '20px 24px',
-            borderBottom: '1px solid var(--card-border)',
+            padding: '20px 26px',
+            borderBottom: '1px solid var(--card-border, rgba(255, 255, 255, 0.08))',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'var(--bg-secondary)',
+            background: 'var(--bg-secondary, #080d14)',
             flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div
               style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '12px',
-                background: 'rgba(255, 159, 10, 0.15)',
-                color: 'var(--accent-warning, #FF9F0A)',
+                width: '44px',
+                height: '44px',
+                borderRadius: '14px',
+                background: 'rgba(0, 122, 255, 0.15)',
+                color: 'var(--accent-blue, #38bdf8)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '1px solid rgba(255, 159, 10, 0.35)',
+                border: '1px solid rgba(0, 122, 255, 0.3)',
                 flexShrink: 0,
               }}
             >
-              <ShieldAlert size={22} />
+              <ShieldCheck size={24} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
-                ข้อกำหนด นโยบาย และคำเตือนความเสี่ยงการลงทุน
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary, #ffffff)', margin: 0, lineHeight: 1.3 }}>
+                ข้อกำหนด นโยบาย และเงื่อนไขการให้บริการอย่างเป็นทางการ
               </h2>
-              <p style={{ fontSize: '0.76rem', color: 'var(--text-tertiary)', margin: '3px 0 0 0', lineHeight: 1.4 }}>
-                โปรดอ่านและทำความเข้าใจข้อตกลงก่อนเข้าใช้งานแพลตฟอร์ม
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary, #94a3b8)', margin: '3px 0 0 0', lineHeight: 1.4 }}>
+                StockHomeTH Financial Intelligence Platform • ฉบับปรับปรุงมาตรฐานสากล พ.ศ. ๒๕๖๙
               </p>
             </div>
           </div>
+
           {(propIsOpen || forceOpen) && (
             <button
               type="button"
               onClick={handleCloseManual}
-              title="ปิด"
+              title="ปิดหน้าต่าง"
               style={{
-                background: 'var(--card-sub-bg)',
-                border: '1px solid var(--card-border)',
+                background: 'var(--card-sub-bg, rgba(255, 255, 255, 0.06))',
+                border: '1px solid var(--card-border, rgba(255, 255, 255, 0.1))',
                 borderRadius: '50%',
                 width: '34px',
                 height: '34px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'var(--text-secondary)',
+                color: 'var(--text-secondary, #94a3b8)',
                 cursor: 'pointer',
                 flexShrink: 0,
+                transition: 'all 0.15s ease',
               }}
             >
-              <X size={17} />
+              <X size={18} />
             </button>
           )}
         </div>
 
-        {/* Scrollable Content */}
+        {/* ── Category Filter Tabs ── */}
         <div
           style={{
-            padding: '22px 24px',
-            overflowY: 'auto',
-            fontSize: '0.86rem',
-            lineHeight: 1.75,
-            color: 'var(--text-secondary)',
             display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
+            gap: '8px',
+            padding: '10px 20px',
+            background: 'var(--bg-secondary, #080d14)',
+            borderBottom: '1px solid var(--card-border, rgba(255, 255, 255, 0.08))',
+            overflowX: 'auto',
+            flexShrink: 0,
           }}
         >
-          {/* Section 1: Developer Identity */}
-          <div
-            style={{
-              background: 'rgba(0, 122, 255, 0.06)',
-              border: '1px solid rgba(0, 122, 255, 0.25)',
-              borderRadius: '14px',
-              padding: '16px 18px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue, #007AFF)', fontWeight: 700, marginBottom: '8px', fontSize: '0.88rem' }}>
-              <UserCheck size={17} strokeWidth={2.5} />
-              <span>๑. คำแถลงสถานะผู้พัฒนา (Developer Identity &amp; Legal Status)</span>
-            </div>
-            <p style={{ margin: 0, color: 'var(--text-primary)' }}>
-              แพลตฟอร์ม <strong>StockHomeTH</strong> ได้รับการพัฒนาโดย{' '}
-              <strong>บุคคลธรรมดาในฐานะนักพัฒนาอิสระ (Independent Developer)</strong>{' '}
-              เพื่อการค้นคว้าและแลกเปลี่ยนองค์ความรู้ทางเทคโนโลยีทางการเงิน{' '}
-              <strong>มิได้ดำเนินงานในรูปแบบนิติบุคคล</strong> และมิได้เป็นผู้ให้บริการด้านหลักทรัพย์ที่ได้รับใบอนุญาตจากสำนักงาน ก.ล.ต. หรือหน่วยงานกำกับดูแลใดๆ
-            </p>
-          </div>
-
-          {/* Section 2: Non-Advice Disclaimer */}
-          <div
-            style={{
-              background: 'rgba(255, 159, 10, 0.06)',
-              border: '1px solid rgba(255, 159, 10, 0.3)',
-              borderRadius: '14px',
-              padding: '16px 18px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#D97706', fontWeight: 700, marginBottom: '8px', fontSize: '0.88rem' }}>
-              <AlertTriangle size={17} strokeWidth={2.5} />
-              <span>๒. คำเตือนความเสี่ยงและข้อสงวนสิทธิ์ทางการเงิน (Non-Advice / DYOR)</span>
-            </div>
-            <p style={{ margin: 0, color: 'var(--text-primary)' }}>
-              ข้อมูลทั้งหมดที่ปรากฏบนระบบ รวมถึงบทสรุปข่าวและข้อมูลเชิงลึกที่ประมวลผลด้วย AI{' '}
-              <strong>จัดทำขึ้นเพื่อวัตถุประสงค์ในการศึกษาเท่านั้น</strong>{' '}
-              ไม่ถือเป็นคำแนะนำทางการเงิน (Financial Advice) และมิใช่การชักชวนให้ซื้อ ขาย หรือถือครองหลักทรัพย์ใดๆ
-            </p>
-          </div>
-
-          {/* Section 3: Limitation of Liability */}
-          <div
-            style={{
-              background: 'var(--card-sub-bg)',
-              border: '1px solid var(--card-border)',
-              borderRadius: '14px',
-              padding: '16px 18px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', fontWeight: 700, marginBottom: '8px', fontSize: '0.88rem' }}>
-              <FileText size={17} strokeWidth={2.5} />
-              <span>๓. ข้อจำกัดความรับผิดและการยอมรับความเสี่ยง (Limitation of Liability)</span>
-            </div>
-            <p style={{ margin: 0, color: 'var(--text-primary)' }}>
-              การลงทุนในตลาดหลักทรัพย์มีความเสี่ยงสูง ราคาอาจมีความผันผวนรุนแรง{' '}
-              <strong>ผู้ใช้บริการพึงตระหนักว่าการตัดสินใจลงทุนใดๆ ต้องกระทำด้วยวิจารณญาณและการศึกษาค้นคว้าด้วยตนเอง (DYOR)</strong>{' '}
-              ผู้พัฒนาไม่รับประกันความถูกต้องสมบูรณ์ และไม่ต้องรับผิดชอบต่อความสูญเสียใดๆ จากการนำข้อมูลบนแพลตฟอร์มนี้ไปใช้
-            </p>
-          </div>
-
-          {/* Section 4: Privacy & Data Sovereignty */}
-          <div
-            style={{
-              background: 'rgba(34, 197, 94, 0.06)',
-              border: '1px solid rgba(34, 197, 94, 0.25)',
-              borderRadius: '14px',
-              padding: '16px 18px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#16A34A', fontWeight: 700, marginBottom: '8px', fontSize: '0.88rem' }}>
-              <Lock size={17} strokeWidth={2.5} />
-              <span>๔. มาตรฐานความเป็นส่วนตัวและสิทธิเสรีภาพข้อมูล (Privacy &amp; Self-Custody)</span>
-            </div>
-            <p style={{ margin: 0, color: 'var(--text-primary)' }}>
-              ระบบยึดมั่นในปรัชญาความโปร่งใสแบบ{' '}
-              <strong>&ldquo;Don&apos;t Trust, Verify&rdquo;</strong>{' '}
-              กุญแจ API ส่วนตัว (Self-Custody AI API Key) จะถูกจัดเก็บไว้เฉพาะใน Browser ของผู้ใช้เอง ไม่มีการส่งไปเก็บไว้ในฐานข้อมูลเซิร์ฟเวอร์ และระบบไม่มีนโยบายส่งต่อข้อมูลส่วนบุคคลให้แก่บุคคลภายนอกโดยเด็ดขาด
-            </p>
-          </div>
+          {[
+            { id: 'all' as PolicyCategory, label: 'ภาพรวมทั้งหมด', icon: FileText },
+            { id: 'terms' as PolicyCategory, label: 'ข้อกำหนดการใช้บริการ', icon: Scale },
+            { id: 'payment' as PolicyCategory, label: 'การชำระเงินและคืนเงิน', icon: CreditCard, highlight: true },
+            { id: 'privacy' as PolicyCategory, label: 'ความเป็นส่วนตัวและความปลอดภัย', icon: Lock },
+            { id: 'disclaimer' as PolicyCategory, label: 'คำเตือนความเสี่ยง (DYOR)', icon: AlertTriangle },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeCategory === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveCategory(tab.id)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 14px',
+                  borderRadius: '10px',
+                  border: isActive
+                    ? '1px solid var(--accent-blue, #38bdf8)'
+                    : '1px solid rgba(255, 255, 255, 0.08)',
+                  background: isActive
+                    ? 'rgba(0, 122, 255, 0.18)'
+                    : 'rgba(255, 255, 255, 0.03)',
+                  color: isActive ? '#ffffff' : 'var(--text-secondary, #94a3b8)',
+                  fontSize: '0.78rem',
+                  fontWeight: isActive ? 700 : 500,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Icon size={14} color={isActive ? 'var(--accent-blue, #38bdf8)' : '#94a3b8'} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Footer: Consent */}
+        {/* ── Scrollable Content Area ── */}
         <div
           style={{
-            padding: '18px 24px',
-            borderTop: '1px solid var(--card-border)',
-            background: 'var(--bg-secondary)',
+            padding: '24px 28px',
+            overflowY: 'auto',
+            fontSize: '0.85rem',
+            lineHeight: 1.75,
+            color: 'var(--text-secondary, #cbd5e1)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px',
+          }}
+        >
+          {/* ══════════════════════════════════════════════════════════════
+              หมวดที่ ๑: ข้อกำหนดและเงื่อนไขการใช้บริการ (Terms of Service)
+              ══════════════════════════════════════════════════════════════ */}
+          {(activeCategory === 'all' || activeCategory === 'terms') && (
+            <section
+              style={{
+                background: 'rgba(56, 189, 248, 0.04)',
+                border: '1px solid rgba(56, 189, 248, 0.2)',
+                borderRadius: '16px',
+                padding: '18px 22px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#38bdf8', fontWeight: 800, marginBottom: '10px', fontSize: '0.92rem' }}>
+                <Scale size={18} strokeWidth={2.2} />
+                <span>หมวดที่ ๑: ข้อกำหนดและเงื่อนไขการใช้บริการ (Terms of Service)</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', color: 'var(--text-primary, #f1f5f9)' }}>
+                <p style={{ margin: 0 }}>
+                  <strong>๑.๑ วัตถุประสงค์และขอบเขตการให้บริการ:</strong> แพลตฟอร์ม <strong>StockHomeTH</strong> พัฒนาขึ้นเพื่อเป็นเครื่องมือซอฟต์แวร์สนับสนุนการวิเคราะห์ข้อมูลตลาดทุน (Financial Data Analytics & AI Research Assistant) เพื่อการศึกษา ค้นคว้า และวิจัยส่วนบุคคลของผู้ใช้งานเท่านั้น
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong>๑.๒ สถานะทางกฎหมายของผู้พัฒนา:</strong> ระบบได้รับการพัฒนาและดูแลโดย <strong>บุคคลธรรมดาในฐานะนักพัฒนาอิสระ (Independent Software Developer)</strong> มิได้ดำเนินงานในฐานะนิติบุคคล สถาบันการเงิน หรือบริษัทหลักทรัพย์ที่ได้รับใบอนุญาตจัดการกองทุนหรือให้คำปรึกษาการลงทุนจากสำนักงานคณะกรรมการกำกับหลักทรัพย์และตลาดหลักทรัพย์ (ก.ล.ต.)
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong>๑.๓ สิทธิ์ในทรัพย์สินทางปัญญา:</strong> โครงสร้างรหัสซอฟต์แวร์ อัลกอริทึม รูปแบบการจัดวางข้อมูล และอินเทอร์เฟซเป็นทรัพย์สินทางปัญญาของผู้พัฒนา ห้ามมิให้ผู้ใดคัดลอก ดัดแปลง วิศวกรรมย้อนกลับ (Reverse Engineer) หรือแสวงหาประโยชน์เชิงพาณิชย์โดยไม่ได้รับความยินยอมเป็นลายลักษณ์อักษร
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong>๑.๔ การให้บริการตามสภาพจริง (As-Is Basis):</strong> บริการทั้งหมดจัดให้บนหลักการ &ldquo;ตามสภาพที่เป็นอยู่&rdquo; (As-Is) และ &ldquo;ตามความพร้อมให้บริการ&rdquo; (As-Available) ผู้ให้บริการขอสงวนสิทธิ์ในการปรับปรุง บำรุงรักษา หรือระงับการทำงานบางส่วนเพื่อความปลอดภัยของระบบโดยไม่ต้องแจ้งล่วงหน้า
+                </p>
+              </div>
+            </section>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════════
+              หมวดที่ ๒: นโยบายการชำระเงิน การต่ออายุ และการขอคืนเงิน (Payment & Refund Policy)
+              ══════════════════════════════════════════════════════════════ */}
+          {(activeCategory === 'all' || activeCategory === 'payment') && (
+            <section
+              style={{
+                background: 'rgba(168, 85, 247, 0.05)',
+                border: '1px solid rgba(168, 85, 247, 0.25)',
+                borderRadius: '16px',
+                padding: '18px 22px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#c084fc', fontWeight: 800, marginBottom: '10px', fontSize: '0.92rem' }}>
+                <CreditCard size={18} strokeWidth={2.2} />
+                <span>หมวดที่ ๒: ข้อกำหนดการชำระเงิน สมาชิกภาพ และนโยบายการขอคืนเงิน (Payment & Refund Policy)</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', color: 'var(--text-primary, #f1f5f9)' }}>
+                <p style={{ margin: 0 }}>
+                  <strong>๒.๑ ช่องทางและการประมวลผลธุรกรรมทางการเงิน:</strong> การชำระเงินสำหรับแพ็กเกจสมาชิก (Lite, Pro, VIP, Whale) และแพ็กเกจเหรียญ GemCoins ประมวลผลผ่านเกตเวย์ชำระเงินมาตรฐานสากล <strong>Stripe Payments</strong> รองรับบัตรเครดิต/เดบิต (Visa, Mastercard, JCB, UnionPay) และ <strong>QR PromptPay (พร้อมเพย์)</strong> ภายใต้มาตรฐานการเข้ารหัสข้อมูลสูงสุด <strong>PCI-DSS Level 1</strong> โดยไม่มีการจัดเก็บข้อมูลหมายเลขบัตรเครดิตหรือข้อมูลการเงินส่วนบุคคลไว้บนเซิร์ฟเวอร์ของระบบ
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong>๒.๒ ลักษณะของสินค้าและบริการดิจิทัล:</strong> ค่าบริการสมาชิกและเหรียญ GemCoins จัดเป็น <strong>สินค้าและบริการประมวลผลข้อมูลดิจิทัล (Digital Content & Computational Cloud Service)</strong> ซึ่งจะได้รับการปลดล็อกโควตาและสิทธิประโยชน์เข้าสู่บัญชีของผู้ใช้งานในทันทีที่ธุรกรรมเสร็จสมบูรณ์
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong>๒.๓ รอบการเรียกเก็บเงินและการยกเลิกการต่ออายุ (Subscription Renewal & Cancellation):</strong>
+                </p>
+                <ul style={{ margin: '0 0 0 20px', padding: 0, fontSize: '0.82rem', lineHeight: 1.6 }}>
+                  <li>การสมัครสมาชิกแบบรายเดือน (Monthly) และรายปี (Yearly) มีระบบต่ออายุอัตโนมัติเมื่อสิ้นสุดรอบบิล เพื่อความต่อเนื่องในการใช้งาน</li>
+                  <li>ผู้ใช้งานสามารถกดยกเลิกการต่ออายุอัตโนมัติ (Cancel Subscription) ได้ตลอดเวลาผ่านหน้า Stripe Customer Portal หรือหน้าการตั้งค่าโปรไฟล์</li>
+                  <li>เมื่อทำการยกเลิก สิทธิประโยชน์ของสมาชิกระดับนั้นๆ จะยังคงมีผลใช้งานได้ตามปกติจนกระทั่งสิ้นสุดรอบบิลปัจจุบัน</li>
+                </ul>
+                <p style={{ margin: 0 }}>
+                  <strong>๒.๔ นโยบายการขอคืนเงิน (Refund Policy):</strong> เนื่องจากระบบมีต้นทุนการจัดสรรทรัพยากรประมวลผลปัญญาประดิษฐ์ (AI GPU/LLM Inference Ingestion) แบบเรียลไทม์ <strong>รายการคำสั่งซื้อที่ได้รับการประมวลผล หรือมีการบริโภค GemCoins ไปแล้ว จะไม่สามารถขอคืนเงินได้ (Non-Refundable)</strong> ยกเว้นในกรณีข้อผิดพลาดทางเทคนิค เช่น ระบบตัดเงินซ้ำซ้อน ซึ่งผู้ใช้สามารถแจ้งหลักฐานเพื่อขอรับเงินคืนได้ภายใน ๗ วันทำการ
+                </p>
+              </div>
+            </section>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════════
+              หมวดที่ ๓: ความมั่นคงปลอดภัยสารสนเทศและการปกป้องข้อมูล (Information Security & Privacy)
+              ══════════════════════════════════════════════════════════════ */}
+          {(activeCategory === 'all' || activeCategory === 'privacy') && (
+            <section
+              style={{
+                background: 'rgba(16, 185, 129, 0.05)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                borderRadius: '16px',
+                padding: '18px 22px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399', fontWeight: 800, marginBottom: '10px', fontSize: '0.92rem' }}>
+                <Lock size={18} strokeWidth={2.2} />
+                <span>หมวดที่ ๓: นโยบายความมั่นคงปลอดภัยสารสนเทศและการปกป้องข้อมูล (Information Security & Privacy Policy)</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', color: 'var(--text-primary, #f1f5f9)' }}>
+                <p style={{ margin: 0 }}>
+                  <strong>๓.๑ การคุ้มครองข้อมูลส่วนบุคคล (PDPA Compliance):</strong> ข้อมูลที่ระบบจัดเก็บมีเพียงอีเมลและชื่อแสดงผลพื้นฐานที่จำเป็นต่อการยืนยันสิทธิ์เข้าใช้งานผ่านบริการ Firebase Auth และ Supabase Auth โดยไม่มีการเก็บรวบรวมข้อมูลส่วนบุคคลที่มีความอ่อนไหว
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong>๓.๒ สถาปัตยกรรมการจัดเก็บข้อมูลระดับอุปกรณ์ (Client-Side Storage Architecture):</strong> คีย์ส่วนตัวสำหรับการเชื่อมต่อ AI (Personal API Key) พอร์ตการลงทุนจำลอง และรายชื่อหุ้นที่ติดตาม (Watchlist) จะถูกบันทึกและเข้ารหัสไว้บนหน่วยความจำของอุปกรณ์ผู้ใช้โดยตรง (Browser LocalStorage) โดยไม่มีการส่งไปจัดเก็บหรือดักจับบนเซิร์ฟเวอร์ส่วนกลาง
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong>๓.๓ การเข้ารหัสการรับส่งข้อมูล (End-to-End Transport Security):</strong> ข้อมูลการเรียกใช้งานทั้งหมดเชื่อมต่อผ่านช่องทางเครือข่ายความปลอดภัยสูงด้วยโปรโตคอล <strong>TLS 1.3 / HTTPS</strong> และเสริมความปลอดภัยระดับ Edge ด้วยโครงข่าย Cloudflare Web Application Firewall (WAF)
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong>๓.๔ นโยบายการไม่เปิดเผยข้อมูล (Non-Disclosure & Anti-Monetization):</strong> ผู้พัฒนายึดมั่นในจริยธรรมข้อมูลอย่างเคร่งครัด โดยไม่มีนโยบายการจำหน่าย แลกเปลี่ยน หรือส่งต่อประวัติการใช้งานและข้อมูลของสมาชิกให้แก่บริษัทโฆษณาหรือบุคคลภายนอกโดยเด็ดขาด
+                </p>
+              </div>
+            </section>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════════
+              หมวดที่ ๔: คำเตือนความเสี่ยงและข้อจำกัดความรับผิด (Risk Disclosure & Disclaimer)
+              ══════════════════════════════════════════════════════════════ */}
+          {(activeCategory === 'all' || activeCategory === 'disclaimer') && (
+            <section
+              style={{
+                background: 'rgba(245, 158, 11, 0.05)',
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                borderRadius: '16px',
+                padding: '18px 22px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fbbf24', fontWeight: 800, marginBottom: '10px', fontSize: '0.92rem' }}>
+                <AlertTriangle size={18} strokeWidth={2.2} />
+                <span>หมวดที่ ๔: คำเตือนความเสี่ยงและข้อจำกัดความรับผิดชอบทางการเงิน (Risk Disclosure & Financial Disclaimer)</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', color: 'var(--text-primary, #f1f5f9)' }}>
+                <p style={{ margin: 0 }}>
+                  <strong>๔.๑ มิใช่คำแนะนำทางการเงิน (Not Financial Advice):</strong> ข้อมูลราคา อัตราส่วนทางการเงิน กราฟสถิติ ดัชนีตลาด ข่าวสาร และบทวิเคราะห์เชิงสังเคราะห์ที่สร้างด้วยปัญญาประดิษฐ์ (AI-Generated Analytics) บนแพลตฟอร์มนี้ <strong>มิใช่คำแนะนำการลงทุน (Investment Advice)</strong> และมิใช่การชี้แนะหรือชักชวนให้เข้าซื้อ ขาย หรือถือครองหลักทรัพย์ สินทรัพย์ดิจิทัล หรือตราสารทางการเงินใดๆ
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong>๔.๒ ขีดจำกัดของแบบจำลองปัญญาประดิษฐ์ (AI Model Limitations):</strong> ข้อมูลที่ประมวลผลจาก AI อาจมีข้อจำกัดด้านความถูกต้อง ความครบถ้วนสมบูรณ์ หรือความคลาดเคลื่อนทางบริบท (AI Hallucination) ผู้ใช้งานพึงตระหนักและต้องทำการตรวจสอบเทียบเคียงกับแหล่งข้อมูลที่เป็นทางการของตลาดหลักทรัพย์แห่งประเทศไทย (SET) และตลาดหลักทรัพย์ต่างประเทศก่อนการดำเนินการใดๆ
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong>๔.๓ หลักการตัดสินใจด้วยตนเอง (Do Your Own Research - DYOR):</strong> การลงทุนในตราสารทุนและหลักทรัพย์มีความเสี่ยงสูง ราคาอาจมีความผันผวนรุนแรงตามสภาวะเศรษฐกิจและการลงทุน ผู้ใช้บริการตกลงและยอมรับว่าการตัดสินใจลงทุนใดๆ เป็นการตัดสินใจโดยอิสระของผู้ใช้เอง ผู้พัฒนาซอฟต์แวร์ไม่ต้องรับผิดชอบต่อความสูญเสีย ความเสียหาย หรือผลขาดทุนใดๆ ทั้งสิ้น
+                </p>
+              </div>
+            </section>
+          )}
+        </div>
+
+        {/* ── Consent Footer ── */}
+        <div
+          style={{
+            padding: '18px 26px',
+            borderTop: '1px solid var(--card-border, rgba(255, 255, 255, 0.08))',
+            background: 'var(--bg-secondary, #080d14)',
             display: 'flex',
             flexDirection: 'column',
             gap: '14px',
@@ -255,7 +390,7 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
               gap: '10px',
               cursor: 'pointer',
               fontSize: '0.84rem',
-              color: 'var(--text-primary)',
+              color: 'var(--text-primary, #ffffff)',
               userSelect: 'none',
               lineHeight: 1.5,
             }}
@@ -267,18 +402,22 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
               style={{
                 width: '18px',
                 height: '18px',
-                accentColor: 'var(--accent-blue)',
+                accentColor: 'var(--accent-blue, #007AFF)',
                 cursor: 'pointer',
                 marginTop: '2px',
                 flexShrink: 0,
               }}
             />
             <span>
-              ข้าพเจ้าได้อ่าน เข้าใจ และยอมรับว่าข้อมูลทั้งหมดมีไว้เพื่อการศึกษาเท่านั้น และผู้พัฒนาเป็นบุคคลธรรมดามิใช่ที่ปรึกษาการลงทุน
+              ข้าพเจ้าได้อ่าน ทำความเข้าใจ และยอมรับข้อกำหนดการให้บริการ นโยบายการชำระเงิน การปกป้องข้อมูล และคำเตือนความเสี่ยงทั้งหมดข้างต้นอย่างสมบูรณ์
             </span>
           </label>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-tertiary, #64748b)' }}>
+              🔒 มาตรฐานความปลอดภัยระดับสากล • เข้ารหัส TLS 1.3 • Stripe PCI-DSS Level 1
+            </span>
+
             <button
               type="button"
               disabled={!hasAcknowledged}
@@ -286,19 +425,19 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
               style={{
                 background: hasAcknowledged
                   ? 'linear-gradient(135deg, #007AFF 0%, #0051B3 100%)'
-                  : 'var(--card-sub-bg)',
-                color: hasAcknowledged ? '#ffffff' : 'var(--text-tertiary)',
-                border: hasAcknowledged ? 'none' : '1px solid var(--card-border)',
+                  : 'var(--card-sub-bg, rgba(255, 255, 255, 0.05))',
+                color: hasAcknowledged ? '#ffffff' : 'var(--text-tertiary, #64748b)',
+                border: hasAcknowledged ? 'none' : '1px solid var(--card-border, rgba(255, 255, 255, 0.1))',
                 borderRadius: '12px',
                 padding: '11px 28px',
-                fontSize: '0.9rem',
+                fontSize: '0.88rem',
                 fontWeight: 700,
                 cursor: hasAcknowledged ? 'pointer' : 'not-allowed',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
                 transition: 'all 0.2s ease',
-                boxShadow: hasAcknowledged ? '0 4px 16px rgba(0, 122, 255, 0.35)' : 'none',
+                boxShadow: hasAcknowledged ? '0 4px 18px rgba(0, 122, 255, 0.4)' : 'none',
               }}
             >
               <CheckCircle2 size={18} />
@@ -310,3 +449,5 @@ export function TermsDisclaimerModal({ isOpen: propIsOpen, onClose: propOnClose,
     </div>
   );
 }
+
+export default TermsDisclaimerModal;

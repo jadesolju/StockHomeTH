@@ -5,6 +5,7 @@ import { useSubscription, SubscriptionTier, OWNER_DEV_IDENTIFIERS } from '../../
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
 import { ShieldCheck, Zap, Crown, Sparkles, ChevronUp, ChevronDown, Check, Settings } from 'lucide-react';
 import Link from 'next/link';
+import { ADMIN_PORTAL_PATH } from '../../config/adminConfig';
 
 export function LocalRoleSwitcher() {
   const { currentTier, setTier, isOwnerOrDev, isOwnerAccount, restoreOwnerGodMode, openPricingModal, aiUsageToday, getWatchlistLimit } = useSubscription();
@@ -183,7 +184,7 @@ export function LocalRoleSwitcher() {
               </button>
 
               <Link
-                href="/admin"
+                href={ADMIN_PORTAL_PATH}
                 onClick={() => setIsOpen(false)}
                 style={{
                   width: '100%',

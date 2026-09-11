@@ -98,9 +98,22 @@ const nextConfig = {
           },
         ],
       },
-      // 6. Admin Portal UI Pages (STRICT NO-CACHE)
+      // 6. Admin Portal UI Pages & Secure Portal (STRICT NO-CACHE)
       {
         source: '/admin/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0',
+          },
+          {
+            key: 'Cloudflare-CDN-Cache-Control',
+            value: 'no-store',
+          },
+        ],
+      },
+      {
+        source: '/hq-master-88/:path*',
         headers: [
           {
             key: 'Cache-Control',

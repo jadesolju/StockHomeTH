@@ -15,9 +15,10 @@ import {
   Loader2,
   Upload,
   Crown,
-  Settings
+  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
+import { ADMIN_PORTAL_PATH } from '../../config/adminConfig';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
 import { useSubscription, SubscriptionTier, OWNER_DEV_IDENTIFIERS } from '../../lib/context/SubscriptionContext';
 import { UserAvatar } from '../ui/UserAvatar';
@@ -452,7 +453,7 @@ export function UserProfileModal() {
               </button>
 
               <Link
-                href="/admin"
+                href={ADMIN_PORTAL_PATH}
                 onClick={() => closeProfileModal()}
                 style={{
                   width: '100%',

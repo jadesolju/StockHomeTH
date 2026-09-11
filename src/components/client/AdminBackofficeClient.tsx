@@ -35,7 +35,12 @@ import {
   Lock,
   Boxes,
   Workflow,
-  Crown
+  Crown,
+  Gift,
+  Ticket,
+  Sparkle,
+  Tag,
+  UserPlus
 } from 'lucide-react';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useSubscription, SubscriptionTier } from '../../lib/context/SubscriptionContext';
@@ -93,7 +98,7 @@ export const AdminBackofficeClient: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [runningAction, setRunningAction] = useState<string | null>(null);
   const [logsOutput, setLogsOutput] = useState<string>('Ready. Click any action or switch to Engine Terminal & Logs.');
-  const [activeTab, setActiveTab] = useState<'control' | 'roles' | 'logs' | 'architecture' | 'database' | 'endpoints' | 'quotas'>('control');
+  const [activeTab, setActiveTab] = useState<'control' | 'roles' | 'rewards' | 'logs' | 'architecture' | 'database' | 'endpoints' | 'quotas'>('control');
   const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
 
   // Quotas State
@@ -130,6 +135,154 @@ export const AdminBackofficeClient: React.FC = () => {
   const [testEndpoint, setTestEndpoint] = useState<string>('/api/stocks/parallel?symbols=AAPL,NVDA,PTT');
   const [endpointLoading, setEndpointLoading] = useState<boolean>(false);
   const [endpointResult, setEndpointResult] = useState<string | null>(null);
+
+  // ─── Rewards (Airdrops & Promo Codes) State ───
+  const [airdropsList, setAirdropsList] = useState<any[]>([]);
+  const [airdropsLoading, setAirdropsLoading] = useState<boolean>(false);
+  const [airdropEmail, setAirdropEmail] = useState<string>('');
+  const [airdropAmount, setAirdropAmount] = useState<number>(10000);
+  const [airdropReason, setAirdropReason] = useState<string>('โบนัสพิเศษจาก Admin & Dev');
+  const [airdropSubmitting, setAirdropSubmitting] = useState<boolean>(false);
+  const [airdropFeedback, setAirdropFeedback] = useState<{ success: boolean; message: string } | null>(null);
+
+  const [promoCodesList, setPromoCodesList] = useState<any[]>([]);
+  const [promoCodesLoading, setPromoCodesLoading] = useState<boolean>(false);
+  const [promoCodeInput, setPromoCodeInput] = useState<string>('');
+  const [promoGemAmount, setPromoGemAmount] = useState<number>(5000);
+  const [promoMaxUses, setPromoMaxUses] = useState<number>(50);
+  const [promoExpiryDays, setPromoExpiryDays] = useState<number>(30);
+  const [promoDesc, setPromoDesc] = useState<string>('รหัสของขวัญโปรโมชั่น');
+  const [promoSubmitting, setPromoSubmitting] = useState<boolean>(false);
+  const [promoFeedback, setPromoFeedback] = useState<{ success: boolean; message: string } | null>(null);
+  const [copiedCodeStr, setCopiedCodeStr] = useState<string | null>(null);
+
+  const fetchAirdrops = async () => {
+    try {
+      setAirdropsLoading(true);
+      const res = await fetch('/api/gemcoin/airdrop');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.airdrops)) {
+          setAirdropsList(data.airdrops);
+        }
+      }
+    } catch (err) {
+      console.warn('Airdrop fetch error:', err);
+    } finally {
+      setAirdropsLoading(false);
+    }
+  };
+
+  const handleSendAirdrop = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!airdropEmail.trim() || !airdropAmount) return;
+    try {
+      setAirdropSubmitting(true);
+      setAirdropFeedback(null);
+      const res = await fetch('/api/gemcoin/airdrop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetEmail: airdropEmail.trim(),
+          amount: airdropAmount,
+          reason: airdropReason.trim(),
+          createdBy: 'afillly002@gmail.com',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAirdropFeedback({ success: true, message: `✓ ส่งมอบ ${airdropAmount.toLocaleString()} GemCoins ไปยัง ${airdropEmail} สำเร็จ!` });
+        setAirdropEmail('');
+        fetchAirdrops();
+      } else {
+        setAirdropFeedback({ success: false, message: data.message || 'ส่ง Gem ไม่สำเร็จ' });
+      }
+    } catch (err: any) {
+      setAirdropFeedback({ success: false, message: err.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ' });
+    } finally {
+      setAirdropSubmitting(false);
+    }
+  };
+
+  const fetchPromoCodes = async () => {
+    try {
+      setPromoCodesLoading(true);
+      const res = await fetch('/api/gemcoin/admin-codes');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.codes)) {
+          setPromoCodesList(data.codes);
+        }
+      }
+    } catch (err) {
+      console.warn('Promo codes fetch error:', err);
+    } finally {
+      setPromoCodesLoading(false);
+    }
+  };
+
+  const generateRandomPromoCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = 'GEM-';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setPromoCodeInput(code);
+  };
+
+  const handleCreatePromoCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!promoCodeInput.trim() || !promoGemAmount) return;
+    try {
+      setPromoSubmitting(true);
+      setPromoFeedback(null);
+      const expiresAt = promoExpiryDays > 0 ? new Date(Date.now() + promoExpiryDays * 86400000).toISOString() : null;
+      const res = await fetch('/api/gemcoin/admin-codes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: promoCodeInput.trim().toUpperCase(),
+          gemCoins: promoGemAmount,
+          maxRedemptions: promoMaxUses,
+          expiresAt,
+          description: promoDesc.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPromoFeedback({ success: true, message: `✓ สร้างโค้ด "${promoCodeInput.toUpperCase()}" (${promoGemAmount.toLocaleString()} GemCoins) สำเร็จ!` });
+        setPromoCodeInput('');
+        fetchPromoCodes();
+      } else {
+        setPromoFeedback({ success: false, message: data.message || 'สร้างโค้ดไม่สำเร็จ' });
+      }
+    } catch (err: any) {
+      setPromoFeedback({ success: false, message: err.message || 'เกิดข้อผิดพลาด' });
+    } finally {
+      setPromoSubmitting(false);
+    }
+  };
+
+  const handleDeletePromoCode = async (code: string) => {
+    if (!confirm(`ยืนยันการลบรหัสโปรโมชั่น "${code}" หรือไม่?`)) return;
+    try {
+      const res = await fetch(`/api/gemcoin/admin-codes?code=${encodeURIComponent(code)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchPromoCodes();
+      }
+    } catch (err) {
+      console.warn('Delete promo code error:', err);
+    }
+  };
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCodeStr(code);
+    setTimeout(() => setCopiedCodeStr(null), 2000);
+  };
 
   // Fetch System Status & Quotas
   const fetchStatus = async () => {
@@ -352,6 +505,9 @@ export const AdminBackofficeClient: React.FC = () => {
       fetchDatabaseItems(dbTarget, dbSearch);
     } else if (activeTab === 'quotas') {
       fetchQuotas();
+    } else if (activeTab === 'rewards') {
+      fetchAirdrops();
+      fetchPromoCodes();
     }
   }, [activeTab, logType, logLinesLimit, dbTarget]);
 
@@ -575,6 +731,7 @@ export const AdminBackofficeClient: React.FC = () => {
         {[
           { id: 'control', label: 'Action Control Center', icon: Zap },
           { id: 'roles', label: '👑 สลับสิทธิ์ & Dev Mode', icon: Crown, highlight: true },
+          { id: 'rewards', label: '🎁 แจก Gem & สร้างโค้ด', icon: Gift, highlight: true },
           { id: 'quotas', label: 'ตรวจโควตา API (Quotas & Health)', icon: ShieldCheck, highlight: true },
           { id: 'logs', label: `Engine Terminal & Logs (${syncLogs.length})`, icon: Terminal, highlight: true },
           { id: 'architecture', label: 'ผังข้อมูล & Pipeline Map', icon: Network, highlight: true },
@@ -605,7 +762,531 @@ export const AdminBackofficeClient: React.FC = () => {
       </div>
 
       {/* ══════════════════════════════════════════════════════════════
-          TAB: สลับสิทธิ์ & DEV MODE (ROLE & ACCOUNT SIMULATOR)
+          TAB: 🎁 แจก GEM & สร้างโค้ดโปรโมชั่น (GEM REWARDS & PROMO CODES)
+          ══════════════════════════════════════════════════════════════ */}
+      {activeTab === 'rewards' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px' }}>
+          {/* Header Banner */}
+          <div className="admin-glass-panel" style={{ padding: '24px', borderRadius: '18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Gift size={20} color="#f59e0b" /> ศูนย์กลางการแจก GemCoins และสร้างรหัสโปรโมชั่น
+                </h3>
+                <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)', fontSize: '13px' }}>
+                  ส่งมอบ GemCoins ตรงเข้าบัญชีสมาชิกผ่าน Email หรือสร้างโค้ด Voucher แจกสำหรับแคมเปญการตลาด
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    fetchAirdrops();
+                    fetchPromoCodes();
+                  }}
+                  disabled={airdropsLoading || promoCodesLoading}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    padding: '8px 16px',
+                    borderRadius: '10px',
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <RefreshCw size={14} className={airdropsLoading || promoCodesLoading ? 'spin' : ''} />
+                  <span>รีเฟรชข้อมูล</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 2-Column Grid: Left = Email Airdrop, Right = Promo Codes */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '20px' }}>
+            {/* ── Column 1: Direct Email Airdrop ── */}
+            <div className="admin-glass-panel" style={{ padding: '22px', borderRadius: '18px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '12px' }}>
+                <UserPlus size={18} color="var(--accent-blue)" />
+                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  แจก GemCoins ให้คนอื่นด้วย Email (Direct Airdrop)
+                </h4>
+              </div>
+
+              <form onSubmit={handleSendAirdrop} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* Email Input */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                    อีเมลผู้รับ (Recipient Email)
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={airdropEmail}
+                    onChange={(e) => setAirdropEmail(e.target.value)}
+                    placeholder="เช่น user@example.com หรือ vip@trader.com"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      color: '#ffffff',
+                      fontSize: '13px',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                {/* Amount with Preset Chips */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      จำนวน GemCoins ที่ต้องการมอบ
+                    </label>
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#f59e0b' }}>
+                      💎 {Number(airdropAmount || 0).toLocaleString()} Gems
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    min={1}
+                    required
+                    value={airdropAmount}
+                    onChange={(e) => setAirdropAmount(Number(e.target.value))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      color: '#ffffff',
+                      fontSize: '13px',
+                      outline: 'none',
+                      marginBottom: '8px',
+                    }}
+                  />
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {[1000, 5000, 10000, 50000, 100000].map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setAirdropAmount(amt)}
+                        style={{
+                          background: airdropAmount === amt ? 'rgba(245, 158, 11, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                          border: airdropAmount === amt ? '1px solid #f59e0b' : '1px solid rgba(255, 255, 255, 0.08)',
+                          color: airdropAmount === amt ? '#f59e0b' : 'var(--text-secondary)',
+                          borderRadius: '8px',
+                          padding: '4px 10px',
+                          fontSize: '11.5px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        +{amt >= 1000 ? `${amt / 1000}k` : amt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Reason */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                    เหตุผล / บันทึกช่วยจำ (Reason / Campaign Note)
+                  </label>
+                  <input
+                    type="text"
+                    value={airdropReason}
+                    onChange={(e) => setAirdropReason(e.target.value)}
+                    placeholder="เช่น โบนัสพิเศษต้อนรับสมาชิก, ชดเชยระบบ"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      color: '#ffffff',
+                      fontSize: '13px',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                {/* Feedback */}
+                {airdropFeedback && (
+                  <div
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      fontSize: '12.5px',
+                      fontWeight: 600,
+                      background: airdropFeedback.success ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      border: airdropFeedback.success ? '1px solid #10b981' : '1px solid #ef4444',
+                      color: airdropFeedback.success ? '#34d399' : '#f87171',
+                    }}
+                  >
+                    {airdropFeedback.message}
+                  </div>
+                )}
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={airdropSubmitting}
+                  style={{
+                    background: 'linear-gradient(135deg, #007AFF 0%, #0051B3 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '11px',
+                    fontSize: '13.5px',
+                    fontWeight: 700,
+                    cursor: airdropSubmitting ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 15px rgba(0, 122, 255, 0.3)',
+                  }}
+                >
+                  <Send size={15} />
+                  <span>{airdropSubmitting ? 'กำลังส่งข้อมูล...' : 'ส่ง GemCoins เข้าบัญชีทันที'}</span>
+                </button>
+              </form>
+
+              {/* Airdrop Delivery History */}
+              <div style={{ marginTop: '10px' }}>
+                <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                  ประวัติการแจก Gem ล่าสุด ({airdropsList.length})
+                </div>
+                <div style={{ maxHeight: '240px', overflowY: 'auto', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(255, 255, 255, 0.04)', color: 'var(--text-tertiary)', textAlign: 'left' }}>
+                        <th style={{ padding: '8px 10px' }}>อีเมล</th>
+                        <th style={{ padding: '8px 10px' }}>จำนวน</th>
+                        <th style={{ padding: '8px 10px' }}>สถานะ</th>
+                        <th style={{ padding: '8px 10px' }}>วันที่</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {airdropsList.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                            ยังไม่มีรายการแจก Gem
+                          </td>
+                        </tr>
+                      ) : (
+                        airdropsList.map((item) => (
+                          <tr key={item.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                            <td style={{ padding: '8px 10px', color: 'var(--text-primary)', fontWeight: 600 }}>{item.targetEmail}</td>
+                            <td style={{ padding: '8px 10px', color: '#f59e0b', fontWeight: 700 }}>+{item.amount.toLocaleString()}</td>
+                            <td style={{ padding: '8px 10px' }}>
+                              <span
+                                style={{
+                                  padding: '2px 6px',
+                                  borderRadius: '6px',
+                                  fontSize: '10.5px',
+                                  fontWeight: 700,
+                                  background: item.claimed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                  color: item.claimed ? '#34d399' : '#fbbf24',
+                                }}
+                              >
+                                {item.claimed ? '✓ รับแล้ว' : '● รอกดรับ'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '8px 10px', color: 'var(--text-tertiary)' }}>
+                              {new Date(item.createdAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Column 2: Promo Code Generator ── */}
+            <div className="admin-glass-panel" style={{ padding: '22px', borderRadius: '18px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '12px' }}>
+                <Ticket size={18} color="#c084fc" />
+                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  สร้างโค้ดโปรโมชั่นแจก GemCoins (Voucher Generator)
+                </h4>
+              </div>
+
+              <form onSubmit={handleCreatePromoCode} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* Code String with Randomizer */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      รหัสโปรโมชั่น (Promo Code)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={generateRandomPromoCode}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--accent-blue)',
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        padding: 0,
+                      }}
+                    >
+                      🎲 สุ่มโค้ดอัตโนมัติ
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={promoCodeInput}
+                    onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                    placeholder="เช่น GEM-SPECIAL-2026 หรือ VIP-INVESTOR"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      color: '#ffffff',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      letterSpacing: '1px',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                {/* Gem Amount & Max Uses in 2 columns */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                      Gem ต่อคน
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      required
+                      value={promoGemAmount}
+                      onChange={(e) => setPromoGemAmount(Number(e.target.value))}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        color: '#ffffff',
+                        fontSize: '13px',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                      จำนวนสิทธิ์ (ครั้ง)
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      required
+                      value={promoMaxUses}
+                      onChange={(e) => setPromoMaxUses(Number(e.target.value))}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        color: '#ffffff',
+                        fontSize: '13px',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Expiry Days & Description */}
+                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                      อายุการใช้งาน
+                    </label>
+                    <select
+                      value={promoExpiryDays}
+                      onChange={(e) => setPromoExpiryDays(Number(e.target.value))}
+                      style={{
+                        width: '100%',
+                        padding: '10px 10px',
+                        borderRadius: '10px',
+                        background: '#0d131f',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        color: '#ffffff',
+                        fontSize: '12.5px',
+                        outline: 'none',
+                      }}
+                    >
+                      <option value={7}>7 วัน</option>
+                      <option value={30}>30 วัน</option>
+                      <option value={90}>90 วัน</option>
+                      <option value={0}>ตลอดไป</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                      คำอธิบาย / แคมเปญ
+                    </label>
+                    <input
+                      type="text"
+                      value={promoDesc}
+                      onChange={(e) => setPromoDesc(e.target.value)}
+                      placeholder="เช่น แจกสัมมนา, แคมเปญเปิดตัว"
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        color: '#ffffff',
+                        fontSize: '13px',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Feedback */}
+                {promoFeedback && (
+                  <div
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      fontSize: '12.5px',
+                      fontWeight: 600,
+                      background: promoFeedback.success ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      border: promoFeedback.success ? '1px solid #10b981' : '1px solid #ef4444',
+                      color: promoFeedback.success ? '#34d399' : '#f87171',
+                    }}
+                  >
+                    {promoFeedback.message}
+                  </div>
+                )}
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={promoSubmitting}
+                  style={{
+                    background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '11px',
+                    fontSize: '13.5px',
+                    fontWeight: 700,
+                    cursor: promoSubmitting ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
+                  }}
+                >
+                  <Sparkles size={15} />
+                  <span>{promoSubmitting ? 'กำลังสร้างโค้ด...' : 'สร้างและเปิดใช้งานโค้ดทันที'}</span>
+                </button>
+              </form>
+
+              {/* Active Promo Codes List */}
+              <div style={{ marginTop: '10px' }}>
+                <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                  โค้ดโปรโมชั่นที่เปิดใช้งานอยู่ ({promoCodesList.length})
+                </div>
+                <div style={{ maxHeight: '240px', overflowY: 'auto', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(255, 255, 255, 0.04)', color: 'var(--text-tertiary)', textAlign: 'left' }}>
+                        <th style={{ padding: '8px 10px' }}>รหัส (Code)</th>
+                        <th style={{ padding: '8px 10px' }}>มูลค่า</th>
+                        <th style={{ padding: '8px 10px' }}>ใช้แล้ว/จำกัด</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'right' }}>จัดการ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {promoCodesList.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                            ยังไม่มีโค้ดโปรโมชั่น
+                          </td>
+                        </tr>
+                      ) : (
+                        promoCodesList.map((item) => (
+                          <tr key={item.code} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                            <td style={{ padding: '8px 10px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#c084fc', fontSize: '12px' }}>
+                                  {item.code}
+                                </span>
+                                <button
+                                  type="button"
+                                  title="คัดลอกโค้ด"
+                                  onClick={() => handleCopyCode(item.code)}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: copiedCodeStr === item.code ? '#34d399' : 'var(--text-tertiary)',
+                                    padding: '2px',
+                                  }}
+                                >
+                                  {copiedCodeStr === item.code ? <Check size={13} /> : <Copy size={13} />}
+                                </button>
+                              </div>
+                            </td>
+                            <td style={{ padding: '8px 10px', color: '#f59e0b', fontWeight: 700 }}>
+                              💎 {item.gemCoins.toLocaleString()}
+                            </td>
+                            <td style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>
+                              {(item.redemptionsCount || 0)} / {item.maxRedemptions}
+                            </td>
+                            <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                              <button
+                                type="button"
+                                title="ลบโค้ดนี้"
+                                onClick={() => handleDeletePromoCode(item.code)}
+                                style={{
+                                  background: 'rgba(239, 68, 68, 0.1)',
+                                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                                  borderRadius: '6px',
+                                  color: '#f87171',
+                                  cursor: 'pointer',
+                                  padding: '4px 6px',
+                                }}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
+          TAB: 👑 สลับสิทธิ์ & DEV MODE (ROLE & ACCOUNT SIMULATOR)
           ══════════════════════════════════════════════════════════════ */}
       {activeTab === 'roles' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px' }}>
