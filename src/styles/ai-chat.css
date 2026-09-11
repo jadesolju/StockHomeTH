@@ -1727,7 +1727,130 @@
   position: relative;
 }
 
+/* ==========================================================================
+   Mobile Fullscreen AI Agent Experience (Native App Layout)
+   ========================================================================== */
+.ai-back-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  color: var(--text-primary, #ffffff);
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.ai-back-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+[data-theme='light'] .ai-back-nav-btn {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #000000;
+}
+
+.ai-history-log-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  border-radius: 12px;
+  color: #06b6d4;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ai-history-log-btn:hover {
+  background: rgba(6, 182, 212, 0.18);
+  border-color: rgba(6, 182, 212, 0.5);
+}
+
+@media (max-width: 580px) {
+  .ai-history-btn-text {
+    display: none;
+  }
+}
+
+.ai-coins-used-tag {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ai-coins-used-tag:hover {
+  opacity: 0.85;
+  transform: scale(1.02);
+}
+
 @media (max-width: 768px) {
+  /* Fullscreen Edge-to-Edge AI Workspace for Mobile */
+  .ai-workspace-page {
+    min-height: 100dvh !important;
+    height: 100dvh !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border-radius: 0 !important;
+  }
+
+  .ai-chat-card {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    min-height: 100dvh !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .ai-header-bar {
+    padding: calc(env(safe-area-inset-top, 0px) + 8px) 10px 10px 10px !important;
+    gap: 6px !important;
+  }
+
+  .ai-model-select-box {
+    gap: 6px !important;
+  }
+
+  .ai-header-new-chat-btn span {
+    display: none;
+  }
+
+  .ai-header-new-chat-btn {
+    padding: 6px 8px !important;
+  }
+
+  .ai-model-picker-btn {
+    padding: 6px 10px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .ai-gemcoin-wallet-pill {
+    padding: 5px 8px !important;
+    font-size: 0.76rem !important;
+  }
+
+  .ai-input-wrapper {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px) !important;
+  }
+
   .ai-history-sidebar.sidebar-hidden {
     display: none;
   }
@@ -1737,7 +1860,7 @@
     top: 0;
     left: 0;
     bottom: 0;
-    width: 270px;
+    width: 280px;
     z-index: 100;
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
   }

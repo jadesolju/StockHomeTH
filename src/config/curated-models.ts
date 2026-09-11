@@ -449,16 +449,16 @@ export const CURATED_MODELS: ModelSpec[] = [
 /** Default model to use when none is selected */
 export const DEFAULT_MODEL_ID = 'google/gemini-3.8-flash';
 
-/**
- * Calculates estimated GemCoins consumed per user query
- * Clean abstraction so users only see GemCoins and never raw dollar token prices
- */
-export function getModelGemCoinsEst(model: ModelSpec): number {
-  if (model.gemCoinsEstimate) return model.gemCoinsEstimate;
-  if (model.id.includes('claude-3-7-sonnet') || model.id.includes('gpt-5')) return 35;
-  if (model.minTier === 'whale' || model.minTier === 'vip' || model.id.includes('claude') || model.id.includes('gpt-4o')) return 25;
-  if (model.minTier === 'pro' || model.id.includes('gemini-3.1-pro') || model.id.includes('gemini-2.5-pro') || model.id.includes('deepseek-r1')) return 15;
-  if (model.minTier === 'lite') return 10;
-  if (model.isFree || model.id.includes('flash-lite')) return 4;
+export function getModelGemCoinsEst(modelOrId: ModelSpec | string): number {
+  if (!modelOrId) return 6;
+  const modelId = typeof modelOrId === 'string' ? modelOrId : modelOrId.id;
+  const spec = typeof modelOrId === 'object' ? modelOrId : CURATED_MODELS.find((m) => m.id === modelId);
+
+  if (spec?.gemCoinsEstimate) return spec.gemCoinsEstimate;
+  if (modelId.includes('claude-3-7-sonnet') || modelId.includes('gpt-5') || modelId.includes('grok-3')) return 35;
+  if (spec?.minTier === 'whale' || spec?.minTier === 'vip' || modelId.includes('claude') || modelId.includes('gpt-4o')) return 25;
+  if (spec?.minTier === 'pro' || modelId.includes('gemini-3.1-pro') || modelId.includes('gemini-2.5-pro') || modelId.includes('deepseek-r1')) return 15;
+  if (spec?.minTier === 'lite') return 10;
+  if (spec?.isFree || modelId.includes('flash-lite')) return 4;
   return 6;
 }

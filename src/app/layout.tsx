@@ -41,10 +41,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#007AFF',
+  themeColor: '#000000',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -58,7 +60,7 @@ export default function RootLayout({
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="apple-touch-icon" href="/favicon.svg" />
       </head>
-      <body style={{ minHeight: '100vh', margin: 0, paddingBottom: '100px' }}>
+      <body style={{ minHeight: '100vh', margin: 0, padding: 0 }}>
         <ThemeProvider>
           <LanguageProvider>
             <ClientAuthProvider>
@@ -66,9 +68,9 @@ export default function RootLayout({
                 <MarketSyncProvider>
                   <PwaRegisterClient />
                   <HeaderClientNav />
-                  <main style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 20px' }}>
+                  <div className="app-content-wrapper">
                     {children}
-                  </main>
+                  </div>
                   <LegalFooter />
                   <TermsDisclaimerModal />
                   <AuthModal />

@@ -17,7 +17,7 @@ import {
   deleteSession,
   clearAllSessions,
 } from '@/lib/services/aiChatHistoryService';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, History, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 // Pure SVG icons with currentColor (no emoji)
@@ -432,11 +432,28 @@ export const AiHelperChatClient: React.FC = () => {
           <div className="ai-chat-main-area">
             {/* Header Bar */}
             <header className="ai-header-bar">
-              {/* Left: Sidebar toggle + New Chat + Model Picker */}
+              {/* Left: Back button + Sidebar toggle + New Chat + Model Picker */}
               <div className="ai-model-select-box">
+                {/* iOS & Desktop Back Button */}
+                <button
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && window.history.length > 1) {
+                      window.history.back();
+                    } else {
+                      window.location.href = '/';
+                    }
+                  }}
+                  className="ai-back-nav-btn ios-tappable"
+                  title="ย้อนกลับ (Back)"
+                  aria-label="ย้อนกลับ"
+                >
+                  <ArrowLeft size={17} strokeWidth={2.4} />
+                  <span className="ai-back-text">กลับ</span>
+                </button>
+
                 <button
                   onClick={() => setIsSidebarOpen((prev) => !prev)}
-                  className="ai-sidebar-toggle-btn"
+                  className="ai-sidebar-toggle-btn ios-tappable"
                   title={isSidebarOpen ? 'ซ่อนแถบประวัติ' : 'ดูประวัติการสนทนา'}
                 >
                   <SidebarToggleSvg />
@@ -444,7 +461,7 @@ export const AiHelperChatClient: React.FC = () => {
 
                 <button
                   onClick={handleNewChat}
-                  className="ai-header-new-chat-btn"
+                  className="ai-header-new-chat-btn ios-tappable"
                   title="เริ่มแชทใหม่"
                 >
                   <PlusIconSvg />
@@ -455,7 +472,7 @@ export const AiHelperChatClient: React.FC = () => {
                 <button
                   id="model-picker-btn"
                   onClick={() => setIsModelPickerOpen(true)}
-                  className="ai-model-picker-btn"
+                  className="ai-model-picker-btn ios-tappable"
                   style={{
                     border: `1px solid ${familyInfo?.color || '#007aff'}44`,
                   }}
@@ -502,7 +519,7 @@ export const AiHelperChatClient: React.FC = () => {
                 {currentTier === 'free' && (
                   <Link
                     href="/payments"
-                    className="ai-model-tag-link"
+                    className="ai-model-tag-link ios-tappable"
                     style={{ border: 'none', textDecoration: 'none' }}
                   >
                     ปลดล็อก Claude & GPT-4o
@@ -510,25 +527,34 @@ export const AiHelperChatClient: React.FC = () => {
                 )}
               </div>
 
-              {/* Right side: wallet + clear current chat */}
+              {/* Right side: History button + wallet + clear current chat */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Link
-                  href="/payments"
-                  className="ai-gemcoin-wallet-pill"
-                  title="คลิกเพื่อไปที่หน้าร้านค้า เติม GemCoins และจัดการแพ็กเกจ (/payments)"
-                  style={{ textDecoration: 'none' }}
+                <button
+                  onClick={() => openGemCoinModal('logs')}
+                  className="ai-history-log-btn ios-tappable"
+                  title="ดูประวัติการใช้งาน GemCoins ทั้งหมดแบบโปร่งใส"
+                  aria-label="ประวัติการใช้ GemCoins"
+                >
+                  <History size={15} />
+                  <span className="ai-history-btn-text">ประวัติเหรียญ</span>
+                </button>
+
+                <button
+                  onClick={() => openGemCoinModal('topup')}
+                  className="ai-gemcoin-wallet-pill ios-tappable"
+                  title="คลิกเพื่อจัดการกระเป๋าเหรียญ เติม GemCoins และดูประวัติ"
                 >
                   <GemCoinIcon size={16} glow />
                   <span>{totalGemCoinsAvailable.toLocaleString()}</span>
                   <span className="ai-wallet-label">GemCoins</span>
                   <span className="pill-add">+เติม</span>
-                </Link>
+                </button>
 
                 {messages.length > 0 && (
                   <button
                     onClick={clearCurrentChat}
                     title="ล้างข้อความในหน้านี้"
-                    className="ai-clear-chat-btn"
+                    className="ai-clear-chat-btn ios-tappable"
                   >
                     <TrashIconSvg />
                   </button>
@@ -596,10 +622,16 @@ export const AiHelperChatClient: React.FC = () => {
                         {/* Footer: coins used + copy */}
                         {msg.role === 'assistant' && msg.gemCoinsUsed !== undefined && (
                           <div className="ai-bubble-footer">
-                            <span className="ai-coins-used-tag">
+                            <button
+                              onClick={() => openGemCoinModal('logs')}
+                              className="ai-coins-used-tag ios-tappable"
+                              title="คลิกเพื่อดูประวัติการใช้งาน GemCoins ทั้งหมดแบบโปร่งใส"
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                            >
                               <GemCoinIcon size={12} glow={false} />
-                              ใช้ไป {msg.gemCoinsUsed} GemCoins
-                            </span>
+                              <span>ใช้ไป {msg.gemCoinsUsed} GemCoins</span>
+                              <span style={{ fontSize: '0.65rem', opacity: 0.7, marginLeft: '3px' }}>↗</span>
+                            </button>
                             <button
                               onClick={() => copyToClipboard(msg.id, msg.content)}
                               className="ai-copy-btn"

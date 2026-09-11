@@ -272,12 +272,42 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         setTopupGemCoins(parseInt(savedTopup, 10) || 0);
       }
 
-      // 5. Logs
+      // 5. Logs & Transparent Auto-Refund for past token overcharge
       const savedLogs = localStorage.getItem(GEMCOIN_LOGS_KEY);
       if (savedLogs) {
         try {
-          setGemCoinLogs(JSON.parse(savedLogs));
-        } catch {}
+          const parsedLogs: GemCoinLogEntry[] = JSON.parse(savedLogs);
+          const reconciledKey = 'gemcoin_reconciled_token_refund_v1';
+          if (!localStorage.getItem(reconciledKey)) {
+            const hasOvercharge = parsedLogs.some((l) => l.gemCoinsUsed >= 30 && (l.model?.includes('flash') || l.model?.includes('gemini')));
+            if (hasOvercharge) {
+              const refundAmount = 100;
+              setDailyGemCoinsRemaining((prev) => {
+                const updated = prev + refundAmount;
+                localStorage.setItem(GEMCOIN_DAILY_KEY, updated.toString());
+                return updated;
+              });
+              const refundEntry: GemCoinLogEntry = {
+                id: 'refund_' + Date.now(),
+                timestamp: new Date().toISOString(),
+                model: 'System Reconciliation',
+                gemCoinsUsed: -refundAmount,
+                source: 'daily',
+                summary: '🎁 ชดเชยคืนเหรียญ GemCoins กรณีระบบก่อนหน้าคำนวณเหรียญเกิน (+100 GemCoins)',
+              };
+              const updatedLogs = [refundEntry, ...parsedLogs];
+              setGemCoinLogs(updatedLogs);
+              localStorage.setItem(GEMCOIN_LOGS_KEY, JSON.stringify(updatedLogs));
+              localStorage.setItem(reconciledKey, 'true');
+            } else {
+              setGemCoinLogs(parsedLogs);
+            }
+          } else {
+            setGemCoinLogs(parsedLogs);
+          }
+        } catch {
+          setGemCoinLogs([]);
+        }
       }
     } catch {}
   }, []);

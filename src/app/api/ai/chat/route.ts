@@ -6,6 +6,7 @@ import {
   getCachedChatResponse,
   setCachedChatResponse,
 } from '@/lib/services/openRouterGuardService';
+import { getModelGemCoinsEst } from '@/config/curated-models';
 
 export const dynamic = 'force-dynamic';
 
@@ -172,19 +173,10 @@ export async function POST(req: NextRequest) {
     const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
     const totalTokens = usage.total_tokens || 120;
 
-    // 5. Calculate GemCoins consumed with dynamic weighting (keeps 80-90% gross margin)
-    // Free daily unit = 500 GemCoins.
-    // Efficient models (Gemini 3.8 Flash, DeepSeek): ~6 to 14 GemCoins / answer (allowing 35-50 queries/day)
-    // Pro/Whale models (GPT-5, Claude Sonnet 5): ~25 to 55 GemCoins / answer
-    let gemCoinsUsed: number;
-    if (model.includes('claude') || model.includes('gpt-5')) {
-      gemCoinsUsed = Math.max(25, Math.round(totalTokens / 8));
-    } else if (model.includes('gemini-3.1-pro') || model.includes('pro')) {
-      gemCoinsUsed = Math.max(15, Math.round(totalTokens / 12));
-    } else {
-      // Gemini 3.8 Flash & DeepSeek
-      gemCoinsUsed = Math.max(6, Math.round(totalTokens / 20));
-    }
+    // 5. Calculate GemCoins consumed (Fixed Transparent Pricing per model)
+    // Users are charged a fixed predictable rate based on the model tier (e.g. Gemini 3.8 Flash = 6 GemCoins)
+    // Never penalize users or multiply uncontrollably for long/thorough answers!
+    const gemCoinsUsed = getModelGemCoinsEst(model);
 
     // Record request in usage tracker and cache response
     recordOpenRouterRequest(isRealUser);

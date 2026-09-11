@@ -1,12 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { ShieldCheck, AlertTriangle, ExternalLink, Scale, FileText, Lock, CreditCard, ChevronRight } from 'lucide-react';
 import { TermsDisclaimerModal, PolicyCategory } from './TermsDisclaimerModal';
 
 export function LegalFooter() {
+  const pathname = usePathname();
   const [isDisclaimerOpen, setIsDisclaimerOpen] = useState(false);
   const [modalTab, setModalTab] = useState<PolicyCategory>('all');
+
+  // Hide footer on AI Helper page so chat has 100% viewport height
+  if (pathname === '/ai-helper') {
+    return null;
+  }
 
   const openPolicyTab = (tab: PolicyCategory) => {
     setModalTab(tab);

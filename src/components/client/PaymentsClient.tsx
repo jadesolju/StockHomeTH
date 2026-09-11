@@ -14,9 +14,9 @@ import {
   WhaleSvg,
 } from '@/components/ui/TierSvgIcons';
 import type { GemCoinTopupPackage } from '@/config/gemCoinPackages';
-import { Loader2, Zap, Crown, AlertCircle, ShieldCheck, ArrowRight, Check, Sparkles, CreditCard, Smartphone, QrCode } from 'lucide-react';
+import { Loader2, Zap, Crown, AlertCircle, ShieldCheck, ArrowRight, Check, Sparkles, CreditCard, QrCode, History } from 'lucide-react';
 import { useClientAuth } from '@/lib/context/ClientAuthContext';
-import { OWNER_DEV_IDENTIFIERS } from '@/lib/context/SubscriptionContext';
+import { useSubscription, OWNER_DEV_IDENTIFIERS } from '@/lib/context/SubscriptionContext';
 
 function TierIcon({ iconType, className }: { iconType: GemCoinTopupPackage['iconType']; className?: string }) {
   const props = { className: className ?? 'w-7 h-7' };
@@ -37,6 +37,7 @@ type Tab = 'topup' | 'subscription';
 
 export default function PaymentsClient() {
   const { user } = useClientAuth();
+  const { totalGemCoinsAvailable, openGemCoinModal } = useSubscription();
   const [activeTab, setActiveTab] = useState<Tab>('topup');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -139,6 +140,54 @@ export default function PaymentsClient() {
             </div>
           </div>
         )}
+
+        {/* ──── Wallet Balance & History Action Card ──── */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            padding: '14px 20px',
+            borderRadius: '16px',
+            background: 'var(--card-sub-bg, rgba(255, 255, 255, 0.04))',
+            border: '1px solid var(--glass-border, rgba(255, 255, 255, 0.1))',
+            marginBottom: '24px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Sparkles size={22} color="#06b6d4" />
+            <div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>ยอดเหรียญคงเหลือในกระเป๋าของคุณ</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                {totalGemCoinsAvailable.toLocaleString()}{' '}
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>GemCoins</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => openGemCoinModal('logs')}
+            className="ios-tappable"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 16px',
+              borderRadius: '12px',
+              background: 'rgba(6, 182, 212, 0.12)',
+              border: '1px solid rgba(6, 182, 212, 0.3)',
+              color: '#06b6d4',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            <History size={16} />
+            <span>ดูประวัติการใช้งาน GemCoins (History)</span>
+          </button>
+        </div>
 
         {/* ──── Tab Switcher ──── */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '28px' }}>
@@ -347,70 +396,50 @@ export default function PaymentsClient() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                <Smartphone size={18} color="var(--accent-blue)" />
+                <CreditCard size={18} color="var(--accent-blue)" />
                 <h4 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  ช่องทางชำระเงินสำหรับคนไทย & ทางเลือกยอดนิยม
+                  ช่องทางชำระเงินที่รองรับ
                 </h4>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '12px' }}>
-                {/* 1. Debit Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
+                {/* 1. Credit & Debit Cards */}
                 <div
                   style={{
-                    padding: '12px 14px',
+                    padding: '14px 16px',
                     borderRadius: '12px',
                     background: 'var(--card-bg, rgba(255, 255, 255, 0.02))',
                     border: '1px solid var(--glass-border, rgba(255, 255, 255, 0.06))',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <CreditCard size={15} color="#3b82f6" />
-                    <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      บัตรเดบิตไทยทุกธนาคาร
+                    <CreditCard size={16} color="#3b82f6" />
+                    <span style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      บัตรเครดิต & เดบิตทุกธนาคาร
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    ใช้บัตร ATM/เดบิต (กสิกร KBank, SCB, กรุงเทพ, กรุงไทย, TTB ฯลฯ) ที่เปิดใช้งานช้อปปิ้งออนไลน์ในแอปธนาคาร กรอกเลขบัตร 16 หลักสมัครได้ทันที
+                  <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    รองรับบัตรเครดิตและบัตร ATM เดบิต (VISA, Mastercard, JCB) ทุกธนาคารในไทย เพียงเปิดใช้งานช้อปปิ้งออนไลน์ในแอปธนาคาร กรอกเลขบัตร 16 หลักสมัครได้ทันที
                   </p>
                 </div>
 
-                {/* 2. Google Pay & Apple Pay */}
+                {/* 2. PromptPay QR Alternative */}
                 <div
                   style={{
-                    padding: '12px 14px',
+                    padding: '14px 16px',
                     borderRadius: '12px',
                     background: 'var(--card-bg, rgba(255, 255, 255, 0.02))',
                     border: '1px solid var(--glass-border, rgba(255, 255, 255, 0.06))',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <Smartphone size={15} color="#10b981" />
-                    <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      Google Pay & Apple Pay
+                    <QrCode size={16} color="#10b981" />
+                    <span style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      สแกน QR พร้อมเพย์ (PromptPay)
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    บนมือถือ Android (Chrome) หรือ iPhone (Safari) จะมีปุ่ม <strong>Google Pay</strong> หรือ <strong>Apple Pay</strong> ให้แตะสแกนนิ้ว/หน้าจ่ายได้ทันที
-                  </p>
-                </div>
-
-                {/* 3. TrueMoney & Virtual Card */}
-                <div
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: '12px',
-                    background: 'var(--card-bg, rgba(255, 255, 255, 0.02))',
-                    border: '1px solid var(--glass-border, rgba(255, 255, 255, 0.06))',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <Sparkles size={15} color="#f59e0b" />
-                    <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      TrueMoney Wallet & YouTrip
-                    </span>
-                  </div>
-                  <p style={{ margin: 0, fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    ใช้ Virtual Mastercard ในแอป TrueMoney หรือบัตร YouTrip กรอกเลขบัตร 16 หลักเพื่อสมัครสมาชิกได้สะดวก ปลอดภัย
+                  <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    หากสะดวกสแกนจ่ายด้วย QR Code ผ่านแอปธนาคาร สามารถสลับไปที่แท็บ <strong>เติม GemCoins</strong> ได้ทันที เหรียญคงอยู่ถาวรไม่มีวันหมดอายุ
                   </p>
                 </div>
               </div>

@@ -111,7 +111,7 @@ export function HeaderClientNav({
 
   return (
     <header
-      className="mobile-pwa-header glass-card"
+      className={`mobile-pwa-header glass-card ${pathname === '/ai-helper' ? 'hide-on-mobile-ai-helper' : ''}`}
       style={{
         borderRadius: '0 0 20px 20px',
         padding: '12px 24px',

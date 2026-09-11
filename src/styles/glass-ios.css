@@ -56,6 +56,10 @@
   --ios-radius-sm: 10px;
   --ios-radius-lg: 24px;
 
+  --safe-area-top: env(safe-area-inset-top, 20px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 34px);
+  --ios-tap-highlight: rgba(255, 255, 255, 0.06);
+
   --bg-primary: #000000;
   --card-border: rgba(255, 255, 255, 0.1);
   --footer-bg: linear-gradient(180deg, rgba(13, 15, 20, 0.6) 0%, rgba(8, 9, 12, 0.95) 100%);
@@ -119,6 +123,7 @@
   --footer-bg: #ffffff;
   --footer-border: rgba(0, 0, 0, 0.08);
   --footer-divider: rgba(0, 0, 0, 0.06);
+  --ios-tap-highlight: rgba(0, 0, 0, 0.05);
 }
 
 .solid-dropdown {
@@ -574,10 +579,14 @@ body {
     display: flex !important;
   }
   .main-content-container,
-  main {
+  main:not(.ai-helper-main-container) {
     padding-left: 12px !important;
     padding-right: 12px !important;
     padding-bottom: 80px !important;
+  }
+  main.ai-helper-main-container {
+    padding: 0 !important;
+    margin: 0 !important;
   }
   .admin-header-card {
     padding: 16px !important;
@@ -1318,6 +1327,61 @@ body {
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25) !important;
 }
+
+/* ==========================================================================
+   Mobile Auto-Responsive & iOS Native Interactions (SKILL.MD Spec)
+   ========================================================================== */
+.app-content-wrapper {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 20px 80px 20px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .app-content-wrapper {
+    padding: 0 12px 76px 12px;
+  }
+
+  .hide-on-mobile-ai-helper {
+    display: none !important;
+  }
+}
+
+/* Precision App Viewport Locking */
+.app-viewport {
+  width: 100%;
+  max-width: 402px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding-top: var(--safe-area-top);
+  padding-bottom: var(--safe-area-bottom);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Auto-Responsive Grid Override for Mobile Sizes */
+@media (max-width: 480px) {
+  .metrics-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+}
+
+/* Dynamic Active Touch State (Clean & Snappy Animation) */
+.ios-tappable {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.1s ease;
+}
+
+.ios-tappable:active {
+  transform: scale(0.97);
+  background-color: var(--ios-tap-highlight);
+}
+
 
 
 

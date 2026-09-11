@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function AiHelperPage() {
   return (
-    <main style={{ minHeight: 'calc(100vh - 56px)', padding: 0, display: 'flex', flexDirection: 'column' }}>
+    <main className="ai-helper-main-container" style={{ minHeight: '100dvh', padding: 0, margin: 0, display: 'flex', flexDirection: 'column' }}>
       <AiHelperChatClient />
     </main>
   );
