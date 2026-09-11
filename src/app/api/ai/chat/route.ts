@@ -19,6 +19,7 @@ interface ChatRequestBody {
   messages: ChatMessage[];
   model?: string;
   userTier?: 'free' | 'lite' | 'pro' | 'vip' | 'whale' | 'dev';
+  enableMemory?: boolean;
   stockContext?: {
     ticker: string;
     name?: string;
@@ -30,12 +31,16 @@ interface ChatRequestBody {
   };
 }
 
-// Comprehensive, high-value Financial System Prompt
-const COMPACT_SYSTEM_PROMPT = `คุณคือ "StockHome Financial" AI ผู้ช่วยวิเคราะห์หุ้นและการเงินไทย (SET/mai) และสหรัฐฯ
+// High-value Financial System Prompt with smart topic pivoting & tier-differentiated reasoning
+const COMPACT_SYSTEM_PROMPT = `คุณคือ "StockHome Financial" AI ผู้ช่วยวิเคราะห์หุ้นและการเงินไทย (SET/mai) และตลาดสหรัฐฯ
 หลักการตอบ:
-1. ตอบอย่างครบถ้วน ละเอียดชัดเจน มีโครงสร้างหัวข้อเป็นระเบียบ แบ่งเป็นหัวข้อหลักและ bullet points เช่น ปัจจัยภายในประเทศ, ปัจจัยต่างประเทศ, ผลกระทบต่อตลาด/กลุ่มอุตสาหกรรม และแนวโน้มกลยุทธ์
-2. ห้ามตัดจบประโยคกลางคัน ให้ตอบจนจบประเด็นสมบูรณ์
-3. ปฏิบัติตามหลัก Do Your Own Research (DYOR): เตือนสติสั้นๆ 1 บรรทัดตอนท้ายว่าเป็นการวิเคราะห์เพื่อการศึกษา ไม่ใช่คำแนะนำชวนซื้อขาย`;
+1. การเชื่อมโยงหัวข้อ (Smart Financial Pivot): หากผู้ใช้ถามเรื่องทั่วไป เช่น บันเทิง ภาพยนตร์ ดนตรี ท่องเที่ยว สถานที่ อาหาร รถยนต์ หรือไลฟ์สไตล์ **ห้ามปฏิเสธทื่อๆ หรือไล่ผู้ใช้ไปที่อื่น** ให้ตอบคลายข้อสงสัยสั้นๆ 1 ประโยค แล้ว**เชื่อมโยงเข้าสู่มุมมองหุ้น ธุรกิจ หรือการลงทุนที่เกี่ยวข้องทันที**
+   - ตัวอย่าง: ถามเรื่องภาพยนตร์/ซีรีส์/ดนตรี -> โยงไปหุ้นกลุ่มโรงหนัง คอนเทนต์ มีเดีย (เช่น MAJOR, ONEE, WORK, BEC หรือ Netflix, Disney)
+   - ตัวอย่าง: ถามเรื่องสถานที่เที่ยว/โรงแรม/ร้านอาหาร -> โยงไป AOT, CENTEL, MINT, ERW, CPALL, CPN
+   - ตัวอย่าง: ถามเรื่องรถยนต์ไฟฟ้า (EV) หรือแกดเจ็ต -> โยงไปหุ้นชิ้นส่วนอิเล็กทรอนิกส์ พลังงาน และนิคมฯ (เช่น DELTA, HANA, KCE, EA, WHA)
+2. สไตล์การสื่อสาร: **ไม่พรรณนา ไม่เกริ่นนำเยิ่นเย้อ** กระชับ ตรงไปตรงมา ไม่มีคำทักทายซ้ำซาก ตอบประเด็นเนื้อๆ ทันที
+3. ความสมบูรณ์ของคำตอบ: ห้ามตัดจบประโยคกลางคัน ให้ตอบประเด็นให้จบสมบูรณ์ทุกครั้ง
+4. DYOR: เตือนสติสั้นๆ 1 บรรทัดตอนท้ายว่าเป็นการวิเคราะห์เพื่อการศึกษา ไม่ใช่คำชวนซื้อขาย`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,6 +49,7 @@ export async function POST(req: NextRequest) {
       messages,
       model = 'google/gemini-3.8-flash',
       userTier = 'free',
+      enableMemory = false,
       stockContext,
     } = body;
 
@@ -102,8 +108,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Sliding Window: Keep only the last 4-6 messages (last 2-3 turns) to cut input token accumulation by up to 70%
-    const recentMessages = messages.slice(-5);
+    // 3. Sliding Window / Memory Retention Control
+    // When enableMemory is FALSE (Default / Budget Mode):
+    // Only send the latest user message. Zero previous conversation context sent.
+    // When enableMemory is TRUE:
+    // Retain up to 20 recent messages (capped at ~100K token budget).
+    let outboundMessages: ChatMessage[];
+    if (!enableMemory) {
+      // Single-shot budget mode: only the latest user message
+      const lastMsg = messages[messages.length - 1];
+      outboundMessages = lastMsg ? [lastMsg] : [];
+    } else {
+      // Memory enabled: include conversation history up to 20 messages (~10 turns)
+      outboundMessages = messages.slice(-20);
+    }
 
     // 4. Micro Context for Stock / Market (compact payload)
     let systemPromptWithContext = COMPACT_SYSTEM_PROMPT;
@@ -111,9 +129,18 @@ export async function POST(req: NextRequest) {
       systemPromptWithContext += `\n[บริบทหุ้น]: ${stockContext.ticker} (${stockContext.market || 'SET'}) ราคา: ${stockContext.price ?? '—'} (${stockContext.change != null ? (stockContext.change >= 0 ? '+' : '') + stockContext.change + '%' : '—'}) PE: ${stockContext.peRatio ?? '—'}x มาร์เก็ตแคป: ${stockContext.marketCap ?? '—'}`;
     }
 
+    // Differentiate reasoning depth based on model capability tier
+    const baseCoins = getModelGemCoinsEst(model);
+    const isHighTierModel = baseCoins >= 300 || /opus|sonnet|pro|gpt-4|gpt-5|gpt-6|r1|max/i.test(model);
+    if (isHighTierModel) {
+      systemPromptWithContext += `\n[ระดับการวิเคราะห์]: คุณกำลังทำงานในฐานะโมเดลวิเคราะห์ระดับสถาบัน (High-Tier Intelligence) จงวิเคราะห์เชิงลึก (Deep-Dive Analysis) อย่างแท้จริง: เจาะลึกโครงสร้างธุรกิจ, ตัวเลขงบการเงิน, Valuation (P/E, P/BV), Catalysts สำคัญ และประเมินความเสี่ยงรอบด้าน โดยยังคงความกระชับ ตรงไปตรงมา ไม่พรรณนา`;
+    } else {
+      systemPromptWithContext += `\n[ระดับการวิเคราะห์]: ตอบแบบกระชับ รวดเร็ว สรุป Bullet Points สาระสำคัญตรงประเด็น`;
+    }
+
     const fullMessages = [
       { role: 'system', content: systemPromptWithContext },
-      ...recentMessages,
+      ...outboundMessages,
     ];
 
     // 5. Smart max_tokens limit based on tier (Thai language requires ~3-4x tokens per word)
@@ -173,10 +200,18 @@ export async function POST(req: NextRequest) {
     const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
     const totalTokens = usage.total_tokens || 120;
 
-    // 5. Calculate GemCoins consumed (Fixed Transparent Pricing per model)
-    // Users are charged a fixed predictable rate based on the model tier (e.g. Gemini 3.8 Flash = 6 GemCoins)
-    // Never penalize users or multiply uncontrollably for long/thorough answers!
-    const gemCoinsUsed = getModelGemCoinsEst(model);
+    // 6. Calculate GemCoins consumed
+    // Baseline model price (baseCoins is already computed above)
+    let gemCoinsUsed = baseCoins;
+
+    // If memory is enabled and messages exceed 8 messages (4 turns),
+    // calculate a modest context retention fee proportional to the additional tokens/turns
+    if (enableMemory && messages.length > 8) {
+      const extraBlocks = Math.ceil((messages.length - 8) / 8);
+      // Each block of 8 messages adds 20% of base model price (capped at 2x base price)
+      const contextSurcharge = Math.min(Math.round(baseCoins * 0.2 * extraBlocks), baseCoins);
+      gemCoinsUsed = baseCoins + contextSurcharge;
+    }
 
     // Record request in usage tracker and cache response
     recordOpenRouterRequest(isRealUser);

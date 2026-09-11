@@ -25,6 +25,7 @@ export function LocalRoleSwitcher() {
   const { user } = useClientAuth();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isLocalEnv, setIsLocalEnv] = useState<boolean>(false);
+  const [isDismissed, setIsDismissed] = useState<boolean>(false);
 
   // Show in local development or if user is owner/dev
   useEffect(() => {
@@ -57,6 +58,23 @@ export function LocalRoleSwitcher() {
     { id: 'dev', name: 'Dev + Owner (God Mode)', icon: Crown, color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)' },
   ];
 
+  if (isDismissed) {
+    return (
+      <div
+        className={`local-role-floating-wrapper ${pathname === '/ai-helper' ? 'hide-on-mobile-ai-chat' : ''}`}
+      >
+        <button
+          onClick={() => setIsDismissed(false)}
+          className="local-role-restore-chip ios-tappable"
+          title="แตะเพื่อเปิดแถบสลับสิทธิ์ทดสอบ (Dev Tier Switcher)"
+          aria-label="เปิดแถบสลับสิทธิ์"
+        >
+          <Zap size={14} />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`local-role-floating-wrapper ${pathname === '/ai-helper' ? 'hide-on-mobile-ai-chat' : ''}`}
@@ -75,12 +93,25 @@ export function LocalRoleSwitcher() {
               borderRadius: '50%',
               background: currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : 'var(--accent-bullish)',
               boxShadow: `0 0 8px ${currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : 'var(--accent-bullish)'}`,
+              flexShrink: 0,
             }}
           />
           <span className="local-role-tier-label">
-            LOCAL TIER: <span style={{ textTransform: 'uppercase', color: currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : 'var(--accent-bullish)' }}>{currentTier}</span>
+            <span className="local-role-tier-label-prefix">LOCAL TIER: </span>
+            <span style={{ textTransform: 'uppercase', color: currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : 'var(--accent-bullish)' }}>{currentTier}</span>
           </span>
           {isOpen ? <ChevronDown size={14} color="var(--text-secondary)" /> : <ChevronUp size={14} color="var(--text-secondary)" />}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsDismissed(true);
+            }}
+            className="local-role-dismiss-btn ios-tappable"
+            title="ซ่อนปุ่มสลับระดับสิทธิ์"
+            aria-label="ซ่อนปุ่มสลับระดับสิทธิ์"
+          >
+            ✕
+          </button>
         </div>
 
         {/* Expanded Panel */}

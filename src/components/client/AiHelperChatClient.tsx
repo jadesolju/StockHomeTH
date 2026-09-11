@@ -17,7 +17,7 @@ import {
   deleteSession,
   clearAllSessions,
 } from '@/lib/services/aiChatHistoryService';
-import { Copy, Check, History, ArrowLeft } from 'lucide-react';
+import { Copy, Check, History, ArrowLeft, Menu, X, Brain, Plus, Trash2, Zap } from 'lucide-react';
 import Link from 'next/link';
 
 // Pure SVG icons with currentColor (no emoji)
@@ -133,6 +133,8 @@ export const AiHelperChatClient: React.FC = () => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
+  const [enableMemory, setEnableMemory] = useState(false); // Default OFF for budget-friendly mode
 
   // Chat State
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -260,6 +262,7 @@ export const AiHelperChatClient: React.FC = () => {
             messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
             model: selectedModel.id,
             userTier: currentTier,
+            enableMemory,
           }),
         });
 
@@ -376,6 +379,31 @@ export const AiHelperChatClient: React.FC = () => {
                 <span>+ แชทใหม่ (New Chat)</span>
               </button>
 
+              {/* AI Memory Context Control in Sidebar */}
+              <div className="ai-sidebar-memory-widget">
+                <div className="ai-sidebar-memory-header">
+                  <div className="ai-sidebar-memory-title">
+                    <Brain size={14} color="#38bdf8" />
+                    <span>ความจำ (Memory)</span>
+                  </div>
+                  <button
+                    onClick={() => setEnableMemory((prev) => !prev)}
+                    className={`ios-toggle-switch small ${enableMemory ? 'on' : 'off'} ios-tappable`}
+                    title={enableMemory ? 'คลิกเพื่อปิดโหมดความจำ (ประหยัดเหรียญ)' : 'คลิกเพื่อเปิดโหมดความจำ (จดจำบทสนทนา)'}
+                    aria-label="เปิดปิดความจำบอท"
+                  >
+                    <div className="ios-toggle-knob" />
+                  </button>
+                </div>
+                <div className="ai-sidebar-memory-status">
+                  {enableMemory ? (
+                    <span style={{ color: '#34d399' }}>● เปิดอยู่ (จำได้ถึง 100K Context)</span>
+                  ) : (
+                    <span style={{ color: '#94a3b8' }}>○ ปิดอยู่ (โหมดประหยัดเหรียญ)</span>
+                  )}
+                </div>
+              </div>
+
               {/* Sessions List */}
               <div className="ai-sessions-list">
                 {sessions.length === 0 ? (
@@ -430,11 +458,10 @@ export const AiHelperChatClient: React.FC = () => {
 
           {/* ── Main Chat Area ── */}
           <div className="ai-chat-main-area">
-            {/* Header Bar */}
+            {/* Header Bar - Clean 3-Column Mobile & Desktop Architecture */}
             <header className="ai-header-bar">
-              {/* Left: Back button + Sidebar toggle + New Chat + Model Picker */}
-              <div className="ai-model-select-box">
-                {/* iOS & Desktop Back Button */}
+              {/* Left Column: iOS Back Navigation */}
+              <div className="ai-header-left">
                 <button
                   onClick={() => {
                     if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -447,28 +474,13 @@ export const AiHelperChatClient: React.FC = () => {
                   title="ย้อนกลับ (Back)"
                   aria-label="ย้อนกลับ"
                 >
-                  <ArrowLeft size={17} strokeWidth={2.4} />
+                  <ArrowLeft size={18} strokeWidth={2.4} />
                   <span className="ai-back-text">กลับ</span>
                 </button>
+              </div>
 
-                <button
-                  onClick={() => setIsSidebarOpen((prev) => !prev)}
-                  className="ai-sidebar-toggle-btn ios-tappable"
-                  title={isSidebarOpen ? 'ซ่อนแถบประวัติ' : 'ดูประวัติการสนทนา'}
-                >
-                  <SidebarToggleSvg />
-                </button>
-
-                <button
-                  onClick={handleNewChat}
-                  className="ai-header-new-chat-btn ios-tappable"
-                  title="เริ่มแชทใหม่"
-                >
-                  <PlusIconSvg />
-                  <span>แชทใหม่</span>
-                </button>
-
-                {/* Model Selector Button with High Contrast Light/Dark font */}
+              {/* Center Column: Model Selector Pill */}
+              <div className="ai-header-center">
                 <button
                   id="model-picker-btn"
                   onClick={() => setIsModelPickerOpen(true)}
@@ -481,29 +493,12 @@ export const AiHelperChatClient: React.FC = () => {
                   {/* SVG family icon */}
                   {(() => {
                     const FIcon = familyInfo ? FAMILY_ICON_MAP[familyInfo.key] : null;
-                    return FIcon ? <FIcon style={{ width: '18px', height: '18px', flexShrink: 0 }} /> : null;
+                    return FIcon ? <FIcon style={{ width: '16px', height: '16px', flexShrink: 0 }} /> : null;
                   })()}
-                  <span
-                    className="ai-model-name-text"
-                    style={{
-                      color: 'var(--text-primary, #000000)',
-                      fontWeight: 700,
-                    }}
-                  >
+                  <span className="ai-model-name-text">
                     {selectedModel.name}
                   </span>
-                  <span
-                    className="ai-model-tag-badge"
-                    style={{
-                      fontSize: '0.65rem',
-                      padding: '1px 6px',
-                      borderRadius: '100px',
-                      background: `${familyInfo?.color || '#007aff'}22`,
-                      color: familyInfo?.color || '#007aff',
-                      border: `1px solid ${familyInfo?.color || '#007aff'}30`,
-                      fontWeight: 700,
-                    }}
-                  >
+                  <span className="ai-model-tag-badge">
                     {selectedModel.tag}
                   </span>
                   <svg
@@ -516,52 +511,215 @@ export const AiHelperChatClient: React.FC = () => {
                     <path d="M1 3L5 7L9 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                   </svg>
                 </button>
-
-                {currentTier === 'free' && (
-                  <Link
-                    href="/payments"
-                    className="ai-model-tag-link ios-tappable"
-                    style={{ border: 'none', textDecoration: 'none' }}
-                  >
-                    ปลดล็อก Claude & GPT-4o
-                  </Link>
-                )}
               </div>
 
-              {/* Right side: History button + wallet + clear current chat */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  onClick={() => openGemCoinModal('logs')}
-                  className="ai-history-log-btn ios-tappable"
-                  title="ดูประวัติการใช้งาน GemCoins ทั้งหมดแบบโปร่งใส"
-                  aria-label="ประวัติการใช้ GemCoins"
-                >
-                  <History size={15} />
-                  <span className="ai-history-btn-text">ประวัติเหรียญ</span>
-                </button>
-
-                <button
-                  onClick={() => openGemCoinModal('topup')}
-                  className="ai-gemcoin-wallet-pill ios-tappable"
-                  title="คลิกเพื่อจัดการกระเป๋าเหรียญ เติม GemCoins และดูประวัติ"
-                >
-                  <GemCoinIcon size={16} glow />
-                  <span>{totalGemCoinsAvailable.toLocaleString()}</span>
-                  <span className="ai-wallet-label">GemCoins</span>
-                  <span className="pill-add">+เติม</span>
-                </button>
-
-                {messages.length > 0 && (
+              {/* Right Column: Desktop Action Controls & Mobile Hamburger Button */}
+              <div className="ai-header-right">
+                {/* Desktop-only Action Bar (Hidden on Mobile) */}
+                <div className="ai-desktop-actions">
                   <button
-                    onClick={clearCurrentChat}
-                    title="ล้างข้อความในหน้านี้"
-                    className="ai-clear-chat-btn ios-tappable"
+                    onClick={() => setEnableMemory((prev) => !prev)}
+                    className={`ai-memory-pill-btn ios-tappable ${enableMemory ? 'active' : ''}`}
+                    title={enableMemory ? 'ความจำบอท: เปิด (จำบทสนทนาต่อเนื่อง)' : 'ความจำบอท: ปิด (โหมดประหยัดเหรียญ)'}
                   >
-                    <TrashIconSvg />
+                    <Brain size={14} />
+                    <span>{enableMemory ? 'ความจำ: เปิด' : 'ความจำ: ปิด'}</span>
                   </button>
-                )}
+
+                  <button
+                    onClick={() => openGemCoinModal('logs')}
+                    className="ai-history-log-btn ios-tappable"
+                    title="ดูประวัติการใช้งาน GemCoins ทั้งหมดแบบโปร่งใส"
+                  >
+                    <History size={14} />
+                    <span className="ai-history-btn-text">ประวัติเหรียญ</span>
+                  </button>
+
+                  <button
+                    onClick={() => openGemCoinModal('topup')}
+                    className="ai-gemcoin-wallet-pill ios-tappable"
+                    title="คลิกเพื่อจัดการกระเป๋าเหรียญ เติม GemCoins และดูประวัติ"
+                  >
+                    <GemCoinIcon size={16} glow />
+                    <span>{totalGemCoinsAvailable.toLocaleString()}</span>
+                    <span className="ai-wallet-label">GemCoins</span>
+                    <span className="pill-add">+เติม</span>
+                  </button>
+
+                  <button
+                    onClick={handleNewChat}
+                    className="ai-header-new-chat-btn ios-tappable"
+                    title="เริ่มแชทใหม่"
+                  >
+                    <PlusIconSvg />
+                  </button>
+                </div>
+
+                {/* Mobile Hamburger Menu Button (Takes zero space, stops header overlap!) */}
+                <button
+                  onClick={() => setIsHamburgerOpen((prev) => !prev)}
+                  className="ai-hamburger-btn ios-tappable"
+                  aria-label="เปิดเมนูการจัดการ AI"
+                  title="เมนูตั้งค่าและกระเป๋าเหรียญ"
+                >
+                  <Menu size={20} strokeWidth={2.2} />
+                </button>
               </div>
             </header>
+
+            {/* ── Mobile Hamburger Drawer / Action Sheet ── */}
+            {isHamburgerOpen && (
+              <div
+                className="ai-hamburger-overlay"
+                onClick={() => setIsHamburgerOpen(false)}
+              >
+                <div
+                  className="ai-hamburger-sheet"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Sheet Header */}
+                  <div className="ai-sheet-header">
+                    <div className="ai-sheet-title">
+                      <span>เมนู AI Agent</span>
+                    </div>
+                    <button
+                      onClick={() => setIsHamburgerOpen(false)}
+                      className="ai-sheet-close-btn ios-tappable"
+                      aria-label="ปิดเมนู"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+
+                  {/* Sheet Content */}
+                  <div className="ai-sheet-body">
+                    {/* 1. Wallet & GemCoins Card */}
+                    <div className="ai-sheet-wallet-card">
+                      <div className="ai-sheet-wallet-top">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <GemCoinIcon size={22} glow />
+                          <div>
+                            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>ยอด GemCoins ของคุณ</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fbbf24' }}>
+                              {totalGemCoinsAvailable.toLocaleString()}{' '}
+                              <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Coins</span>
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setIsHamburgerOpen(false);
+                            openGemCoinModal('topup');
+                          }}
+                          className="ai-sheet-topup-btn ios-tappable"
+                        >
+                          + เติมเหรียญ
+                        </button>
+                      </div>
+
+                      <div className="ai-sheet-wallet-breakdown">
+                        <div>
+                          <span>โควตาฟรีวันนี้: </span>
+                          <strong style={{ color: '#34d399' }}>{dailyGemCoinsRemaining.toLocaleString()}</strong> / {dailyGemCoins.toLocaleString()}
+                        </div>
+                        <div>
+                          <span>Top-up ถาวร: </span>
+                          <strong style={{ color: '#fbbf24' }}>{topupGemCoins.toLocaleString()}</strong>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setIsHamburgerOpen(false);
+                          openGemCoinModal('logs');
+                        }}
+                        className="ai-sheet-log-btn ios-tappable"
+                      >
+                        <History size={14} />
+                        <span>ดูประวัติการใช้งาน GemCoins ทั้งหมด</span>
+                      </button>
+                    </div>
+
+                    {/* 2. AI Memory & Context Toggle Switch */}
+                    <div className="ai-sheet-setting-row">
+                      <div className="ai-setting-info">
+                        <div className="ai-setting-label">
+                          <Brain size={16} color="#38bdf8" />
+                          <span>ความจำบทสนทนา (Memory)</span>
+                        </div>
+                        <div className="ai-setting-desc">
+                          {enableMemory
+                            ? 'เปิดใช้งาน: บอทจดจำประวัติการคุยต่อเนื่องได้สูงสุด 100K Context (เกิน 8 ข้อความคิดตามโทเคนจริง)'
+                            : 'ปิดอยู่ (ประหยัดเหรียญ): ตอบทีละคำถาม ไม่คิด GemCoins เพิ่มเติม (Default)'}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setEnableMemory((prev) => !prev)}
+                        className={`ios-toggle-switch ${enableMemory ? 'on' : 'off'} ios-tappable`}
+                        aria-label="สลับความจำบอท"
+                      >
+                        <div className="ios-toggle-knob" />
+                      </button>
+                    </div>
+
+                    {/* 3. Chat Actions */}
+                    <div className="ai-sheet-actions-group">
+                      <button
+                        onClick={() => {
+                          setIsHamburgerOpen(false);
+                          handleNewChat();
+                        }}
+                        className="ai-sheet-action-item ios-tappable"
+                      >
+                        <Plus size={16} color="#38bdf8" />
+                        <span>เริ่มการสนทนาใหม่ (New Chat)</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setIsHamburgerOpen(false);
+                          setIsSidebarOpen(true);
+                        }}
+                        className="ai-sheet-action-item ios-tappable"
+                      >
+                        <History size={16} color="#818cf8" />
+                        <span>ประวัติการสนทนาย้อนหลัง ({sessions.length} แชท)</span>
+                      </button>
+
+                      {messages.length > 0 && (
+                        <button
+                          onClick={() => {
+                            setIsHamburgerOpen(false);
+                            clearCurrentChat();
+                          }}
+                          className="ai-sheet-action-item danger ios-tappable"
+                        >
+                          <Trash2 size={16} color="#ef4444" />
+                          <span>ล้างข้อความในหน้านี้ (Clear Chat)</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* 4. Tier Info & Upgrade */}
+                    <div className="ai-sheet-tier-footer">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#94a3b8' }}>
+                        <Zap size={14} color="#f59e0b" />
+                        <span>สถานะสิทธิ์ปัจจุบัน: <strong style={{ color: '#ffffff', textTransform: 'uppercase' }}>{currentTier}</strong></span>
+                      </div>
+                      {currentTier === 'free' && (
+                        <Link
+                          href="/payments"
+                          onClick={() => setIsHamburgerOpen(false)}
+                          className="ai-sheet-upgrade-link ios-tappable"
+                        >
+                          อัปเกรดเพื่อปลดล็อกโมเดลทั้งหมด →
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Chat Body */}
             <div className="ai-chat-body">

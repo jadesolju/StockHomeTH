@@ -273,7 +273,7 @@ export default function PaymentsClient() {
                     <div className="payment-price-row">
                       <span className="payment-price-promo">฿{pkg.promoPrice}</span>
                       <span className="payment-price-regular">฿{pkg.regularPrice}</span>
-                      <span className="payment-price-promo-subtext" style={{ marginLeft: 'auto' }}>
+                      <span className="payment-price-promo-subtext">
                         1 ด. แรก
                       </span>
                     </div>
@@ -319,7 +319,7 @@ export default function PaymentsClient() {
               </div>
             </div>
 
-            <div className="payment-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
+            <div className="payment-grid payment-subscription-grid">
               {GEMCOIN_SUBSCRIPTION_TIERS.filter((t) => t.tier !== 'free' && t.tier !== 'dev').map((tier) => {
                 const isLoading = loadingId === tier.tier;
 

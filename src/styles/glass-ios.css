@@ -665,7 +665,10 @@ body {
 .payment-page-container {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 0 16px 64px 16px;
+  padding: 0 16px calc(110px + env(safe-area-inset-bottom, 20px)) 16px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 .payment-hero {
@@ -723,18 +726,26 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-@media (max-width: 540px) {
+@media (max-width: 640px) {
   .payment-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(8px, 2.5vw, 12px);
+    width: 100%;
+    box-sizing: border-box;
   }
 }
 
-@media (max-width: 380px) {
-  .payment-grid {
-    grid-template-columns: 1fr;
+.payment-subscription-grid {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+@media (max-width: 640px) {
+  .payment-subscription-grid {
+    grid-template-columns: 1fr !important;
   }
 }
 
@@ -864,6 +875,13 @@ body {
   color: var(--text-tertiary);
 }
 
+.payment-price-promo-subtext {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
 .payment-btn-checkout {
   width: 100%;
   padding: 10px 14px;
@@ -936,6 +954,95 @@ body {
   border-radius: 14px;
   color: #fca5a5;
   font-size: 0.85rem;
+}
+
+/* Mobile Payment Grid & Card Optimization (Prevents horizontal overflow on phones) */
+@media (max-width: 640px) {
+  .payment-card {
+    padding: clamp(10px, 2.8vw, 14px) !important;
+    border-radius: 16px !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden;
+  }
+
+  .payment-icon-box {
+    width: 34px !important;
+    height: 34px !important;
+    margin-bottom: 6px !important;
+    border-radius: 10px !important;
+  }
+
+  .payment-card-title {
+    font-size: clamp(0.82rem, 3.2vw, 0.92rem) !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .payment-coins-row {
+    margin-top: 2px !important;
+    gap: 3px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .payment-coins-val {
+    font-size: clamp(1.05rem, 4vw, 1.25rem) !important;
+  }
+
+  .payment-coins-label {
+    font-size: clamp(0.65rem, 2.2vw, 0.72rem) !important;
+  }
+
+  .payment-bonus-badge {
+    font-size: clamp(0.62rem, 2vw, 0.68rem) !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .payment-price-box {
+    margin-top: 8px !important;
+    padding-top: 8px !important;
+  }
+
+  .payment-price-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: baseline !important;
+    gap: 4px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .payment-price-promo {
+    font-size: clamp(1.1rem, 4.2vw, 1.3rem) !important;
+  }
+
+  .payment-price-regular {
+    font-size: clamp(0.7rem, 2.4vw, 0.76rem) !important;
+  }
+
+  .payment-price-promo-subtext {
+    font-size: clamp(0.62rem, 2vw, 0.68rem) !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    display: block !important;
+    color: var(--text-tertiary) !important;
+    white-space: nowrap;
+  }
+
+  .payment-btn-checkout {
+    padding: 7px 8px !important;
+    font-size: clamp(0.7rem, 2.4vw, 0.78rem) !important;
+    border-radius: 10px !important;
+    gap: 4px !important;
+  }
+
+  .payment-tag {
+    top: -8px !important;
+    font-size: 0.58rem !important;
+    padding: 1px 7px !important;
+  }
 }
 
 /* ==========================================================================
@@ -1163,6 +1270,53 @@ body {
   font-size: 12px;
   font-weight: 800;
   color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+}
+
+.local-role-dismiss-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #94a3b8;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-left: 6px;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.local-role-dismiss-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+}
+
+.local-role-restore-chip {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(20, 20, 22, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(236, 72, 153, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 10px rgba(236, 72, 153, 0.25);
+  color: #f472b6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.local-role-restore-chip:hover,
+.local-role-restore-chip:active {
+  opacity: 1;
+  transform: scale(1.1);
+  box-shadow: 0 0 16px rgba(236, 72, 153, 0.5);
 }
 
 .local-role-panel {
@@ -1376,8 +1530,20 @@ body {
 
 @media (max-width: 768px) {
   .local-role-floating-wrapper {
-    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
-    right: 12px;
+    bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+    right: 8px;
+    z-index: 9990;
+  }
+
+  .local-role-tier-label-prefix {
+    display: none !important;
+  }
+
+  .local-role-toggle-bar {
+    padding: 5px 8px !important;
+    gap: 5px !important;
+    border-radius: 12px !important;
+    font-size: 11px !important;
   }
 
   .local-role-floating-wrapper.hide-on-mobile-ai-chat {
