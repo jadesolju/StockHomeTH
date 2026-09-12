@@ -18,6 +18,8 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 
+import { ClarificationPayload } from '@/types/asset';
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -26,6 +28,7 @@ export interface ChatMessage {
   modelUsed?: string;
   isTruncated?: boolean;
   timestamp: string;
+  clarificationPayload?: ClarificationPayload;
 }
 
 export interface ChatSession {

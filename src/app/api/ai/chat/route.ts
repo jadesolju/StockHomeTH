@@ -19,6 +19,7 @@ import {
 } from '@/lib/services/contextSummaryService';
 import { fetchSingleStockYFinance } from '@/lib/services/yfinanceBridge';
 import { SET100_TICKERS, THAI_7_GIANTS, MAGNIFICENT_7 } from '@/lib/utils/stockTagHelper';
+import { resolveAssetAmbiguity } from '@/lib/services/assetAmbiguityEngine';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,17 +52,26 @@ interface ChatRequestBody {
   };
 }
 
-// Core System Prompt for StockHome AI Agent based on accurate grounding
-const COMPACT_SYSTEM_PROMPT = `คุณคือ AI Agent ผู้ช่วยอัจฉริยะประจำเว็บไซต์ StockHomeTH แพลตฟอร์มศูนย์รวมข้อมูลหุ้นไทยและตลาดสากล
+// Core System Prompt for StockHome AI Agent based on accurate grounding & Universal Financial Asset Router v2.0
+const COMPACT_SYSTEM_PROMPT = `คุณคือ "Core Gatekeeper & Analytical Engine" และ AI ผู้ช่วยอัจฉริยะประจำเว็บไซต์ StockHomeTH แพลตฟอร์มศูนย์รวมข้อมูลหุ้นไทยและตลาดสากล
 
-[กฎเกณฑ์และแนวทางการตอบ]:
-1. ข้อเท็จจริงของระบบและราคาหุ้นล่าสุด: สำหรับราคาหุ้นปัจจุบัน, วันที่/เวลา, สถานะตลาด และข้อมูลแพ็กเกจ/ฟีเจอร์ของเว็บไซต์ StockHomeTH ให้อ้างอิงจากส่วน [ข้อมูลปัจจุบันจากเว็บไซต์] เป็นหลักเสมอ ห้ามกุราคาหุ้นหรือเดาตัวเลขทางการเงินเอง
-2. ความรู้และการวิเคราะห์การลงทุน: สำหรับคำถามเชิงความรู้ (เช่น ความหมายของ P/E, P/BV, กลยุทธ์ DCA, การวิเคราะห์งบการเงิน, หุ้นปันผล, เศรษฐกิจมหภาค) หรือคำถามแนะนำการใช้งานเว็บไซต์ คุณสามารถอธิบาย แนะนำ และให้ความรู้ได้อย่างละเอียด ชัดเจน เข้าใจง่าย และถูกต้องตามหลักการเงิน
-3. หากไม่พบราคาหุ้นแบบเรียลไทม์: หากผู้ใช้ถามราคาหุ้นที่ไม่พบใน [ข้อมูลปัจจุบันจากเว็บไซต์] ให้แจ้งอย่างสุภาพว่าระบบยังไม่มีข้อมูลราคาล่าสุดของหุ้นตัวนั้น พร้อมแนะนำให้ระบุชื่อย่อภาษาอังกฤษ (Ticker) เพื่อการค้นหาที่แม่นยำ
-4. รักษาโทนเสียงที่เป็นมิตร กระชับ และสุภาพ ให้สมกับเป็น AI ผู้เชี่ยวชาญการลงทุนประจำ StockHomeTH
-5. การเชื่อมโยงหัวข้อ (Smart Financial Pivot): หากผู้ใช้ถามเรื่องทั่วไป เช่น บันเทิง ภาพยนตร์ กีฬา ท่องเที่ยว อาหาร หรือไลฟ์สไตล์ ให้ตอบคลายข้อสงสัยสั้นๆ 1 ประโยค แล้วเชื่อมโยงเข้าสู่มุมมองหุ้น ธุรกิจ หรือการลงทุนที่เกี่ยวข้อง โดยต้องยกตัวอย่างเฉพาะหุ้นที่มีการจดทะเบียนซื้อขายจริงในตลาดหลักทรัพย์ SET/mai หรือตลาดสหรัฐฯ เท่านั้น **ห้ามกุหรือคิดชื่อบริษัทขึ้นมาเอง และห้ามแต่งตั้งบริษัทเอกชนหรือร้านค้าทั่วไปให้เป็น "บมจ." เด็ดขาด** (เช่น ร้านทองฮั่วเซ่งเฮงไม่ใช่ บมจ. ในตลาดหลักทรัพย์ หากพูดถึงทองคำให้โยงไปหุ้นโรงรับจำนำที่มีจริง เช่น MTC, SAWAD หรือร้านทองจดทะเบียน AURA เป็นต้น)
-6. ความสมบูรณ์ของคำตอบ: ไม่พรรณนาเยิ่นเย้อ กระชับ ตรงไปตรงมา ไม่มีคำทักทายซ้ำซาก ตอบประเด็นให้จบสมบูรณ์ทุกครั้ง ห้ามตัดจบประโยคกลางคัน
-7. DYOR: ปิดท้ายสั้นๆ 1 บรรทัดเสมอว่า "การลงทุนมีความเสี่ยง ข้อมูลนี้จัดทำขึ้นเพื่อการศึกษาและการวิเคราะห์ ไม่ใช่คำชี้ชวนในการซื้อขายหลักทรัพย์"`;
+[CRITICAL DIRECTIVE: ZERO-ASSUMPTION POLICY & 3-PILLAR VALIDATION]
+คุณต้องยึดมั่นในนโยบายห้ามสุ่มเดา (Zero-Assumption Policy) โดยเด็ดขาด
+1. การตรวจสอบ 3 มิติ (3-Pillar Validation):
+   - Asset Identity: ตัวตนสินทรัพย์ (ชื่อบริษัท, Ticker เช่น Apple, Gold, Bitcoin)
+   - Trading Venue / Exchange: ตลาดซื้อขาย (เช่น NASDAQ, SET, สมาคมค้าทองคำแห่งประเทศไทย, Bitkub)
+   - Denomination Currency: สกุลเงินอ้างอิง (เช่น USD, THB)
+2. การจัดการความกำกวมและการชนกันของ Ticker (Collision Handling):
+   - หากผู้ใช้ถามถึง "ทองคำ" หรือ "ราคาทอง": **ห้ามทึกทักว่าเป็น SPDR Gold Shares (GLD) หรือ Spot Gold เองโดยเด็ดขาด** หากยังไม่ระบุตลาด/ประเภท ให้สอบถามเพื่อขอความชัดเจนทันทีก่อนวิเคราะห์
+   - หากชื่อสินทรัพย์มีในหลายตลาด (เช่น Apple บน NASDAQ vs Apple DRx บน SET) ห้ามเดาเอง ให้ชี้แจงความแตกต่างและสอบถามให้แน่ใจ
+3. เมื่อข้อมูลทุกมิติเคลียร์และสมบูรณ์แล้ว จึงนำข้อมูลตลาดจริงมาวิเคราะห์และสรุปผลเชิงลึก
+
+[กฎเกณฑ์การสื่อสารทางวิทยาศาสตร์และวิศวกรรมการเงิน (Sci-Com & Eng-Com Principles)]:
+1. ความโปร่งใสของข้อมูล: ระบุแหล่งที่มา วันที่ และเวลาของข้อมูลอย่างชัดเจนเสมอ
+2. การระบุหน่วยอย่างชัดแจ้ง (Explicit Denomination): ห้ามแสดงตัวเลขลอยๆ ให้กำกับหน่วยเสมอ เช่น บาทต่อบาททองคำ, ดอลลาร์สหรัฐ/ทรอยออนซ์, บาท, USD
+3. ปราศจากการปรุงแต่ง (No Hallucination): หากระบบไม่มีข้อมูลราคาล่าสุด ให้แจ้งอย่างตรงไปตรงมาว่ายังไม่พบข้อมูลในขณะนี้ ห้ามเดาตัวเลขราคาเอง
+4. การคำนวณทางคณิตศาสตร์: อาศัยตัวเลขจริงจากการประมวลผล ห้ามประเมินตัวเลขทบต้นหรือตัวเลขงบการเงินคลาดเคลื่อน
+5. สรุปกระชับ ตรงประเด็น ปิดท้ายด้วยเตือนความเสี่ยง DYOR สั้นๆ 1 บรรทัดเสมอ: "การลงทุนมีความเสี่ยง ข้อมูลนี้จัดทำขึ้นเพื่อการศึกษาและการวิเคราะห์ ไม่ใช่คำชี้ชวนในการซื้อขายหลักทรัพย์"`;
 
 // Strict Anchoring System Lore for Real-Time Stock RAG
 const STRICT_ANCHORING_LORE = `[โหมดวิเคราะห์หุ้น Real-Time (Strict Grounding & Anchoring)]
@@ -211,9 +221,10 @@ const THAI_STOCK_MAP: Record<string, string> = {
   'เฟสบุ๊ก': 'META',
   'เน็ตฟลิกซ์': 'NFLX',
 
-  // Commodities & Crypto
-  'ทองคำ': 'GLD',
-  'ทอง': 'GLD',
+  // Commodities & Crypto (Specific unambiguous terms only)
+  'เอสพีดีอาร์': 'GLD',
+  'spdr gold': 'GLD',
+  'spdr': 'GLD',
   'บิทคอยน์': 'BTC-USD',
   'บิตคอยน์': 'BTC-USD',
   'อีเธอเรียม': 'ETH-USD',
@@ -357,6 +368,22 @@ export async function POST(req: NextRequest) {
     // 1. Pre-extract tickers to determine if this is a live stock question
     const hasAttachments = (images && images.length > 0) || Boolean(documentText);
     const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
+
+    // 1.1 Universal Asset Ambiguity Gatekeeper (Zero-Assumption Policy)
+    // Enforces 3-Pillar Validation (Asset Identity, Trading Venue/Exchange, Denomination Currency)
+    const ambiguityResult = resolveAssetAmbiguity(lastUserMsg);
+    if (ambiguityResult.status === 'NEED_CLARIFICATION') {
+      return NextResponse.json({
+        success: true,
+        status: 'NEED_CLARIFICATION',
+        needClarification: true,
+        message: ambiguityResult.payload.prompt_text,
+        payload: ambiguityResult.payload,
+        gemCoinsUsed: 0,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     const candidateTickers = extractCandidateTickers(lastUserMsg);
     const activeTicker = stockContext?.ticker || (candidateTickers.length > 0 ? candidateTickers[0] : null);
 
@@ -414,7 +441,7 @@ export async function POST(req: NextRequest) {
 
     if (activeTicker) {
       try {
-        const liveStock = await fetchSingleStockYFinance(activeTicker, stockContext?.market, true);
+        const liveStock = await fetchSingleStockYFinance(activeTicker, stockContext?.market, false);
         if (liveStock) {
           isLiveStockRAG = true;
           const currencySymbol = liveStock.currency === 'THB' ? '฿' : '$';

@@ -508,18 +508,23 @@ export const AiHelperChatClient: React.FC = () => {
           );
           setSessions(updated);
         } else {
-          // Standard JSON fallback
+          // Standard JSON fallback or Ambiguity Clarification Response
           const data = await res.json();
-          const coinsUsed = data.gemCoinsUsed || estCoins;
-          deductGemCoins(coinsUsed, data.model || selectedModel.id, text.slice(0, 40));
+          const isNeedClarification = Boolean(data.needClarification || data.status === 'NEED_CLARIFICATION');
+          const coinsUsed = isNeedClarification ? 0 : (data.gemCoinsUsed || estCoins);
+
+          if (coinsUsed > 0) {
+            deductGemCoins(coinsUsed, data.model || selectedModel.id, text.slice(0, 40));
+          }
 
           const aiMsg: ChatMessage = {
             id: 'msg_ai_' + Date.now(),
             role: 'assistant',
-            content: data.message,
+            content: data.message || 'ระบบตรวจพบความกำกวมของคำถาม กรุณาระบุรายละเอียดเพิ่มเติม',
             gemCoinsUsed: coinsUsed,
             modelUsed: data.model || selectedModel.id,
             isTruncated: Boolean(data.isTruncated),
+            clarificationPayload: data.payload || undefined,
             timestamp: new Date().toISOString(),
           };
 
@@ -1235,6 +1240,52 @@ export const AiHelperChatClient: React.FC = () => {
                         ) : (
                           <div className="ai-assistant-content">
                             <IosMarkdownRenderer content={msg.content} />
+                            
+                            {/* Interactive Clarification Matrix (Sci-Com & Eng-Com Actionable Buttons) */}
+                            {msg.clarificationPayload?.suggested_options && msg.clarificationPayload.suggested_options.length > 0 && (
+                              <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <div style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <span>🎯 เลือกตัวเลือกเพื่อวิเคราะห์อย่างแม่นยำ (Quick Select):</span>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px' }}>
+                                  {msg.clarificationPayload.suggested_options.map((option, optIdx) => (
+                                    <button
+                                      key={optIdx}
+                                      type="button"
+                                      disabled={isLoading}
+                                      onClick={() => {
+                                        const queryText = `วิเคราะห์ ${msg.clarificationPayload?.detected_identity || ''} ในตลาด ${option.exchange} (${option.currency})${option.ticker ? ` [Ticker: ${option.ticker}]` : ''}`;
+                                        handleSend(queryText);
+                                      }}
+                                      style={{
+                                        textAlign: 'left',
+                                        padding: '10px 14px',
+                                        borderRadius: '10px',
+                                        border: '1px solid rgba(56, 189, 248, 0.25)',
+                                        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%)',
+                                        color: '#ffffff',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                      }}
+                                      className="ai-clarification-btn ios-tappable"
+                                    >
+                                      <div style={{ fontWeight: 600, fontSize: '0.86rem', color: '#38bdf8' }}>
+                                        {option.label}
+                                      </div>
+                                      {option.description && (
+                                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '2px', lineHeight: 1.3 }}>
+                                          {option.description}
+                                        </div>
+                                      )}
+                                      <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '4px' }}>
+                                        ตลาด: <span style={{ color: '#a5b4fc' }}>{option.exchange}</span> | สกุลเงิน: <span style={{ color: '#a5b4fc' }}>{option.currency}</span>
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
                             {msg.isTruncated && (
                               <div>
                                 <button

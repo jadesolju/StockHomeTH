@@ -311,6 +311,70 @@ async function loadSupabaseStocks(): Promise<StockFundamental[] | null> {
   return null;
 }
 
+export async function fetchStockFromSupabase(ticker: string): Promise<StockFundamental | null> {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'https://vxfyflltpdqkddnmpwdg.supabase.co';
+    const supabaseKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.SUPABASE_SECRET_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      process.env.SUPABASE_ANON_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.SUPABASE_PUBLISHABLE_KEY ||
+      'sb_publishable_4uyj29eoy8YuXHj4sCejPg_gEcfN1AM';
+
+    if (!supabaseUrl || !supabaseKey) return null;
+
+    const clean = ticker.toUpperCase().replace('.BK', '').trim();
+    const endpoint = `${supabaseUrl}/rest/v1/stocks?ticker=ilike.${encodeURIComponent(clean)}&select=*&limit=1`;
+    const res = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json'
+      },
+      next: { revalidate: 60 }
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      const item = data[0] as SupabaseRow;
+      const isSET = item.market === 'SET';
+      const currency = item.currency || (isSET ? 'THB' : 'USD');
+      const price = Number(item.price) || 0;
+      const change = Number(item.change) || 0;
+      const marketCap = item.market_cap || '—';
+
+      return {
+        ticker: item.ticker,
+        name: item.name || item.ticker,
+        market: isSET ? 'SET' : 'US',
+        sector: item.sector || 'General',
+        price,
+        currency,
+        change,
+        marketCap,
+        peRatio: item.pe_ratio != null ? Number(item.pe_ratio) : 0,
+        dividendYield: item.dividend_yield != null ? Number(item.dividend_yield) : 0,
+        high52w: item.high_52w != null ? Number(item.high_52w) : price,
+        low52w: item.low_52w != null ? Number(item.low_52w) : price,
+        volume: item.volume || '—',
+        aiInsight: item.ai_insight || `${item.ticker} trading at ${currency === 'THB' ? '฿' : '$'}${price.toLocaleString()} (${change >= 0 ? '+' : ''}${change}%)`,
+        description: item.description || `${item.name || item.ticker} จดทะเบียนในตลาด ${isSET ? 'SET' : 'US'}`,
+        sparkline7d: Array.isArray(item.sparkline_7d) && item.sparkline_7d.length >= 2 ? item.sparkline_7d : [price, price],
+        analystRating: item.analyst_rating || (change >= 0 ? 'Buy' : 'Hold'),
+        targetPrice: item.target_price != null ? Number(item.target_price) : Number((price * 1.08).toFixed(2)),
+        sentimentScore: item.sentiment_score != null ? Math.min(100, Math.max(0, Number(item.sentiment_score))) : 50
+      };
+    }
+  } catch (err) {
+    console.warn('[yfinanceBridge] fetchStockFromSupabase warning:', err);
+  }
+  return null;
+}
+
 export async function updateSupabaseStock(stock: StockFundamental): Promise<void> {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'https://vxfyflltpdqkddnmpwdg.supabase.co';
@@ -436,20 +500,38 @@ export async function fetchSingleStockYFinance(symbol: string, market?: string, 
   const primarySymbol = isSET ? `${cleanSym}.BK` : cleanSym;
   const fallbackSymbol = isSET ? cleanSym : `${cleanSym}.BK`;
 
-  // 1. Fast Cache Check (< 1ms): Return immediately if already in hot memory with complete, non-placeholder data
-  if (!forceLive) {
-    const cacheList = cachedStocks || loadMarketCacheFile() || loadBundledUniverseFiles();
-    if (cacheList && cacheList.length > 0) {
-      const match = cacheList.find(
-        (s) => s.ticker.toUpperCase() === cleanSym && (!market || market === 'ALL' || s.market.toUpperCase() === market.toUpperCase())
-      );
-      if (match && match.marketCap && match.marketCap !== '—' && match.volume && match.volume !== '—' && !(match.price === 50 && match.change === 0)) {
+  // 1. Tier 1: Fast Cache Check (< 1ms): Return immediately if already in hot memory or market_cache.json
+  const cacheList = cachedStocks || loadMarketCacheFile() || loadBundledUniverseFiles();
+  let localMatch: StockFundamental | null = null;
+  if (cacheList && cacheList.length > 0) {
+    const match = cacheList.find(
+      (s) => s.ticker.toUpperCase() === cleanSym && (!market || market === 'ALL' || s.market.toUpperCase() === market.toUpperCase())
+    );
+    if (match && match.price > 0 && !(match.price === 50 && match.change === 0)) {
+      localMatch = match;
+      if (!forceLive) {
         return match;
       }
     }
   }
 
-  // 2. Query Live Real-Time Quote from Yahoo Finance Node SDK (Zero Python, Vercel Ready)
+  // 2. Tier 2: Check Supabase DB (10,637 stocks catalog - fast, reliable on Preview/Production)
+  const supabaseStock = await fetchStockFromSupabase(cleanSym);
+  if (supabaseStock && supabaseStock.price > 0) {
+    if (cachedStocks) {
+      const existingIdx = cachedStocks.findIndex((s) => s.ticker.toUpperCase() === cleanSym);
+      if (existingIdx >= 0) {
+        cachedStocks[existingIdx] = supabaseStock;
+      } else {
+        cachedStocks.unshift(supabaseStock);
+      }
+    }
+    if (!forceLive) {
+      return supabaseStock;
+    }
+  }
+
+  // 3. Tier 3: Query Live Real-Time Quote from Yahoo Finance Node SDK (Zero Python, Vercel Ready)
   const symbolsToTry = [primarySymbol, fallbackSymbol];
   for (const sym of symbolsToTry) {
     try {
@@ -616,11 +698,11 @@ export async function fetchSingleStockYFinance(symbol: string, market?: string, 
   }
 
   // 4. Fallback search in memory cache or disk cache
-  const cacheList = cachedStocks || loadMarketCacheFile() || loadBundledUniverseFiles();
-  if (cacheList && cacheList.length > 0) {
-    const match = cacheList.find((s) => s.ticker.toUpperCase() === cleanSym);
+  const finalCacheList = cachedStocks || loadMarketCacheFile() || loadBundledUniverseFiles();
+  if (finalCacheList && finalCacheList.length > 0) {
+    const match = finalCacheList.find((s) => s.ticker.toUpperCase() === cleanSym);
     if (match) return match;
   }
 
-  return null;
+  return supabaseStock || localMatch || null;
 }
