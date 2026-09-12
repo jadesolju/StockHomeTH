@@ -27,6 +27,7 @@ import { useLanguage } from '../../lib/context/LanguageContext';
 import { useTheme } from '../../lib/context/ThemeContext';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
+import { useAdminAuth } from '../../lib/context/AdminAuthContext';
 import { useSubscription, OWNER_DEV_IDENTIFIERS } from '../../lib/context/SubscriptionContext';
 import { UserAvatar } from '../ui/UserAvatar';
 
@@ -60,6 +61,7 @@ export function HeaderClientNav({
   const { theme, resolvedTheme, cycleTheme } = useTheme();
   const { setSelectedMarket, refreshAll, isSyncing, cooldownRemaining } = useMarketSync();
   const { user, openAuthModal, openProfileModal, signOut } = useClientAuth();
+  const { signOut: adminSignOut } = useAdminAuth();
   const { isOwnerOrDev, isOwnerAccount } = useSubscription();
 
   const isOwnerUser =
@@ -452,6 +454,7 @@ export function HeaderClientNav({
                       onClick={() => {
                         setIsUserMenuOpen(false);
                         signOut();
+                        adminSignOut();
                       }}
                       style={{
                         background: 'rgba(239, 68, 68, 0.08)',
