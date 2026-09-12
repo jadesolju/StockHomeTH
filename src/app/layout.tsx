@@ -9,6 +9,7 @@ import { MarketSyncProvider } from '../lib/context/MarketSyncContext';
 import { LanguageProvider } from '../lib/context/LanguageContext';
 import { ThemeProvider } from '../lib/context/ThemeContext';
 import { ClientAuthProvider } from '../lib/context/ClientAuthContext';
+import { AdminAuthProvider } from '../lib/context/AdminAuthContext';
 import { SubscriptionProvider } from '../lib/context/SubscriptionContext';
 import { PricingModal } from '../components/client/PricingModal';
 import { LocalRoleSwitcher } from '../components/client/LocalRoleSwitcher';
@@ -71,6 +72,7 @@ export default function RootLayout({
         <ThemeProvider>
           <LanguageProvider>
             <ClientAuthProvider>
+              <AdminAuthProvider>
               <SubscriptionProvider>
                 <MarketSyncProvider>
                   <PwaRegisterClient />
@@ -90,7 +92,8 @@ export default function RootLayout({
                   <SyncLogModal />
                 </MarketSyncProvider>
               </SubscriptionProvider>
-            </ClientAuthProvider>
+                          </AdminAuthProvider>
+</ClientAuthProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

@@ -20,6 +20,7 @@ import {
 import Link from 'next/link';
 import { ADMIN_PORTAL_PATH } from '../../config/adminConfig';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
+import { useAdminAuth } from '../../lib/context/AdminAuthContext';
 import { useSubscription, SubscriptionTier, OWNER_DEV_IDENTIFIERS } from '../../lib/context/SubscriptionContext';
 import { UserAvatar } from '../ui/UserAvatar';
 
@@ -32,6 +33,7 @@ export function UserProfileModal() {
     signOut,
     openAuthModal,
   } = useClientAuth();
+  const { signOut: adminSignOut } = useAdminAuth();
 
   const {
     currentPlan,
@@ -609,7 +611,7 @@ export function UserProfileModal() {
 
         {/* ─── Logout Button (Prominent & Clear) ─── */}
         <button
-          onClick={() => signOut()}
+          onClick={() => { signOut(); adminSignOut(); }}
           className="ios-btn-secondary"
           style={{
             width: '100%',
