@@ -7,20 +7,13 @@ export function purgeDevStorage() {
   try {
     if (typeof window === 'undefined') return;
 
-    const currentTier = localStorage.getItem('stockhome_local_subscription_tier');
-    if (!currentTier || currentTier === 'dev') {
-      localStorage.setItem('stockhome_local_subscription_tier', 'free');
-    }
-
-    const daily = localStorage.getItem('stockhome_gemcoin_daily_remaining');
-    if (daily === '10000000' || !daily) {
-      localStorage.setItem('stockhome_gemcoin_daily_remaining', '500');
-    }
-
-    const topup = localStorage.getItem('stockhome_gemcoin_topup_balance');
-    if (topup === '99999999') {
-      localStorage.setItem('stockhome_gemcoin_topup_balance', '0');
-    }
+    // Purge legacy un-scoped keys that cause cross-account coin leakage
+    localStorage.removeItem('stockhome_gemcoin_topup_balance');
+    localStorage.removeItem('stockhome_gemcoin_daily_remaining');
+    localStorage.removeItem('stockhome_gemcoin_logs');
+    localStorage.removeItem('stockhome_local_subscription_tier');
+    localStorage.removeItem('stockhome_local_ai_reset_date');
+    localStorage.removeItem('stockhome_local_ai_usage_count');
   } catch (err) {
     console.error('[AuthStorage] Failed to purge dev storage:', err);
   }

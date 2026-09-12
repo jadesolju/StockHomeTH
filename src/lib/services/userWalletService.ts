@@ -18,9 +18,46 @@ export interface UserCloudWallet {
   updatedAt: string;
 }
 
-function getTodayStr(): string {
+export function getTodayStr(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export async function fetchServerWallet(uid: string): Promise<UserCloudWallet | null> {
+  if (!uid) return null;
+  try {
+    const res = await fetch(`/api/user/wallet?uid=${encodeURIComponent(uid.trim())}`, {
+      cache: 'no-store',
+    });
+    const data = await res.json();
+    if (data.success && data.wallet) {
+      return data.wallet as UserCloudWallet;
+    }
+  } catch (err) {
+    console.warn('[UserWalletService] fetchServerWallet error:', err);
+  }
+  return null;
+}
+
+export async function syncServerWallet(
+  uid: string,
+  updates: { action: 'deduct' | 'credit' | 'setTier' | 'sync'; amount?: number; newDaily?: number; newTopup?: number; tier?: SubscriptionTier }
+): Promise<UserCloudWallet | null> {
+  if (!uid) return null;
+  try {
+    const res = await fetch('/api/user/wallet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: uid.trim(), ...updates }),
+    });
+    const data = await res.json();
+    if (data.success && data.wallet) {
+      return data.wallet as UserCloudWallet;
+    }
+  } catch (err) {
+    console.warn('[UserWalletService] syncServerWallet error:', err);
+  }
+  return null;
 }
 
 export function getDefaultWallet(uid: string, tier: SubscriptionTier = 'free'): UserCloudWallet {
