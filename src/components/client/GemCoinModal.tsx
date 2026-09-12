@@ -225,10 +225,10 @@ export const GemCoinModal: React.FC = () => {
               onChange={(e) => setActiveTab(e.target.value as any)}
               className="w-full appearance-none px-3.5 py-2.5 bg-slate-900 border border-cyan-500/40 rounded-xl text-xs font-bold text-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 shadow-inner cursor-pointer"
             >
-              <option value="topup" className="bg-[#0d1319] text-white">🟢 เติมเหรียญ (Top-up Packages)</option>
-              <option value="plans" className="bg-[#0d1319] text-white">👑 สมัคร Plan รายเดือน (Monthly Tiers)</option>
-              <option value="redeem" className="bg-[#0d1319] text-white">🎟️ แลกโค้ดฟรี (Redeem Voucher)</option>
-              <option value="logs" className="bg-[#0d1319] text-white">📄 ประวัติการใช้งาน (Usage Logs)</option>
+              <option value="topup" className="bg-[#0d1319] text-white">เติมเหรียญ (Top-up Packages)</option>
+              <option value="plans" className="bg-[#0d1319] text-white">สมัคร Plan รายเดือน (Monthly Tiers)</option>
+              <option value="redeem" className="bg-[#0d1319] text-white">แลกโค้ดฟรี (Redeem Voucher)</option>
+              <option value="logs" className="bg-[#0d1319] text-white">ประวัติการใช้งาน (Usage Logs)</option>
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-cyan-400">
               <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
@@ -242,44 +242,40 @@ export const GemCoinModal: React.FC = () => {
         <div className="gemcoin-tabs-nav hidden sm:flex border-b border-slate-800/80 bg-[#0a0e14] px-4 overflow-x-auto">
           <button
             onClick={() => setActiveTab('topup')}
-            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
-              activeTab === 'topup'
+            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 shrink-0 ${activeTab === 'topup'
                 ? 'active border-cyan-400 text-cyan-300 bg-cyan-950/20'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
+              }`}
           >
             <GemCoinIcon className="w-4 h-4" glow={false} />
             เติมเหรียญ (Top-up)
           </button>
           <button
             onClick={() => setActiveTab('plans')}
-            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
-              activeTab === 'plans'
+            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 shrink-0 ${activeTab === 'plans'
                 ? 'active border-cyan-400 text-cyan-300 bg-cyan-950/20'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
+              }`}
           >
             <CrownSvg className="w-4 h-4" />
             สมัคร Plan รายเดือน
           </button>
           <button
             onClick={() => setActiveTab('redeem')}
-            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
-              activeTab === 'redeem'
+            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 shrink-0 ${activeTab === 'redeem'
                 ? 'active border-cyan-400 text-cyan-300 bg-cyan-950/20'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
+              }`}
           >
             <TicketVoucherSvg className="w-4 h-4" />
             แลกโค้ดฟรี
           </button>
           <button
             onClick={() => setActiveTab('logs')}
-            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
-              activeTab === 'logs'
+            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 shrink-0 ${activeTab === 'logs'
                 ? 'active border-cyan-400 text-cyan-300 bg-cyan-950/20'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
+              }`}
           >
             <FileText size={15} />
             ประวัติการใช้งาน
@@ -367,13 +363,12 @@ export const GemCoinModal: React.FC = () => {
                   return (
                     <div
                       key={pkg.id}
-                      className={`relative p-4 rounded-xl border transition-all flex flex-col justify-between ${
-                        pkg.popular
+                      className={`relative p-4 rounded-xl border transition-all flex flex-col justify-between ${pkg.popular
                           ? 'bg-gradient-to-b from-cyan-950/40 to-slate-900/60 border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
                           : pkg.bestValue
-                          ? 'bg-gradient-to-b from-amber-950/30 to-slate-900/60 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
-                          : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
-                      }`}
+                            ? 'bg-gradient-to-b from-amber-950/30 to-slate-900/60 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
+                            : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
+                        }`}
                     >
                       {pkg.tag && (
                         <span className="absolute top-2.5 right-2.5 px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
@@ -416,13 +411,12 @@ export const GemCoinModal: React.FC = () => {
                         <button
                           disabled={Boolean(loadingPkgId)}
                           onClick={() => handleCheckout(pkg.id, 'payment')}
-                          className={`w-full py-2.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                            isLoadingThis
+                          className={`w-full py-2.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${isLoadingThis
                               ? 'bg-slate-700 text-cyan-300 cursor-wait'
                               : pkg.popular
-                              ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-400 hover:to-blue-500 shadow-md shadow-cyan-500/20'
-                              : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
-                          }`}
+                                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-400 hover:to-blue-500 shadow-md shadow-cyan-500/20'
+                                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                            }`}
                         >
                           {isLoadingThis ? (
                             <>
@@ -499,11 +493,10 @@ export const GemCoinModal: React.FC = () => {
                   return (
                     <div
                       key={tierInfo.tier}
-                      className={`p-4 rounded-xl border flex flex-col justify-between transition-all ${
-                        isCurrent
+                      className={`p-4 rounded-xl border flex flex-col justify-between transition-all ${isCurrent
                           ? 'border-emerald-500 bg-emerald-950/20 shadow-[0_0_20px_rgba(16,185,129,0.15)]'
                           : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
-                      }`}
+                        }`}
                     >
                       <div>
                         <div className="flex items-center justify-between mb-2">
@@ -572,13 +565,12 @@ export const GemCoinModal: React.FC = () => {
                         <button
                           disabled={isCurrent || Boolean(loadingPkgId)}
                           onClick={() => handleCheckout(tierInfo.tier, 'subscription')}
-                          className={`w-full py-2.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                            isCurrent
+                          className={`w-full py-2.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${isCurrent
                               ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
                               : isLoadingThis
-                              ? 'bg-slate-700 text-cyan-300 cursor-wait'
-                              : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-md'
-                          }`}
+                                ? 'bg-slate-700 text-cyan-300 cursor-wait'
+                                : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-md'
+                            }`}
                         >
                           {isLoadingThis ? (
                             <>
@@ -641,11 +633,10 @@ export const GemCoinModal: React.FC = () => {
 
               {redeemResult && (
                 <div
-                  className={`p-4 rounded-xl text-xs border ${
-                    redeemResult.success
+                  className={`p-4 rounded-xl text-xs border ${redeemResult.success
                       ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
                       : 'bg-rose-950/40 border-rose-500/50 text-rose-300'
-                  }`}
+                    }`}
                 >
                   <p className="font-semibold">{redeemResult.message}</p>
                 </div>
@@ -715,11 +706,10 @@ export const GemCoinModal: React.FC = () => {
                         <div className="font-semibold text-white flex items-center gap-2">
                           <span>{log.model}</span>
                           <span
-                            className={`px-1.5 py-0.5 rounded text-[10px] ${
-                              log.source === 'daily'
+                            className={`px-1.5 py-0.5 rounded text-[10px] ${log.source === 'daily'
                                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                                 : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            }`}
+                              }`}
                           >
                             {log.source === 'daily' ? 'Daily Free' : 'Top-up Balance'}
                           </span>

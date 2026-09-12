@@ -18,6 +18,7 @@ import {
   ChatMessageLike,
 } from '@/lib/services/contextSummaryService';
 import { fetchSingleStockYFinance } from '@/lib/services/yfinanceBridge';
+import { SET100_TICKERS, THAI_7_GIANTS, MAGNIFICENT_7 } from '@/lib/utils/stockTagHelper';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,24 +51,24 @@ interface ChatRequestBody {
   };
 }
 
-// Core System Prompt for StockHome AI Agent based on strict grounding rules
-const COMPACT_SYSTEM_PROMPT = `คุณคือ AI Agent ผู้ช่วยอัจฉริยะประจำเว็บไซต์ StockHomeTH
+// Core System Prompt for StockHome AI Agent based on accurate grounding
+const COMPACT_SYSTEM_PROMPT = `คุณคือ AI Agent ผู้ช่วยอัจฉริยะประจำเว็บไซต์ StockHomeTH แพลตฟอร์มศูนย์รวมข้อมูลหุ้นไทยและตลาดสากล
 
-[กฎเหล็กและข้อบังคับ]:
-1. ต้องตอบคำถามโดยอ้างอิงจากข้อมูลในส่วน [ข้อมูลปัจจุบันจากเว็บไซต์] เป็นหลักเท่านั้น
-2. ห้ามใช้ข้อมูลเก่าจากฐานข้อมูลเดิมมาคาดเดาหรือตอบ หากข้อมูลในส่วนที่แนบมาไม่มีคำตอบ ให้แจ้งผู้ใช้อย่างสุภาพว่า "ไม่พบข้อมูลดังกล่าว"
-3. ข้อมูลในส่วน [ข้อมูลปัจจุบันจากเว็บไซต์] คือข้อเท็จจริงล่าสุดและถูกต้องที่สุดเสมอ แม้จะขัดแย้งกับความรู้ทั่วไปของคุณก็ตาม
-4. รักษาโทนเสียงที่เป็นมิตร กระชับ และสุภาพ
-5. การเชื่อมโยงหัวข้อ (Smart Financial Pivot): หากผู้ใช้ถามเรื่องทั่วไป เช่น บันเทิง ภาพยนตร์ ดนตรี ท่องเที่ยว สถานที่ อาหาร รถยนต์ หรือไลฟ์สไตล์ ให้ตอบคลายข้อสงสัยสั้นๆ 1 ประโยค แล้วเชื่อมโยงเข้าสู่มุมมองหุ้น ธุรกิจ หรือการลงทุนที่เกี่ยวข้อง โดยต้องยกตัวอย่างเฉพาะหุ้นที่มีการจดทะเบียนซื้อขายจริงในตลาดหลักทรัพย์ SET/mai หรือตลาดสหรัฐฯ เท่านั้น **ห้ามกุหรือคิดชื่อบริษัทขึ้นมาเอง และห้ามแต่งตั้งบริษัทเอกชนหรือร้านค้าทั่วไปให้เป็น "บมจ." เด็ดขาด** (เช่น ร้านทองฮั่วเซ่งเฮงไม่ใช่ บมจ. ในตลาดหลักทรัพย์ หากพูดถึงทองคำให้โยงไปหุ้นโรงรับจำนำที่มีจริง เช่น MTC, SAWAD หรือร้านทองจดทะเบียน AURA เป็นต้น)
+[กฎเกณฑ์และแนวทางการตอบ]:
+1. ข้อเท็จจริงของระบบและราคาหุ้นล่าสุด: สำหรับราคาหุ้นปัจจุบัน, วันที่/เวลา, สถานะตลาด และข้อมูลแพ็กเกจ/ฟีเจอร์ของเว็บไซต์ StockHomeTH ให้อ้างอิงจากส่วน [ข้อมูลปัจจุบันจากเว็บไซต์] เป็นหลักเสมอ ห้ามกุราคาหุ้นหรือเดาตัวเลขทางการเงินเอง
+2. ความรู้และการวิเคราะห์การลงทุน: สำหรับคำถามเชิงความรู้ (เช่น ความหมายของ P/E, P/BV, กลยุทธ์ DCA, การวิเคราะห์งบการเงิน, หุ้นปันผล, เศรษฐกิจมหภาค) หรือคำถามแนะนำการใช้งานเว็บไซต์ คุณสามารถอธิบาย แนะนำ และให้ความรู้ได้อย่างละเอียด ชัดเจน เข้าใจง่าย และถูกต้องตามหลักการเงิน
+3. หากไม่พบราคาหุ้นแบบเรียลไทม์: หากผู้ใช้ถามราคาหุ้นที่ไม่พบใน [ข้อมูลปัจจุบันจากเว็บไซต์] ให้แจ้งอย่างสุภาพว่าระบบยังไม่มีข้อมูลราคาล่าสุดของหุ้นตัวนั้น พร้อมแนะนำให้ระบุชื่อย่อภาษาอังกฤษ (Ticker) เพื่อการค้นหาที่แม่นยำ
+4. รักษาโทนเสียงที่เป็นมิตร กระชับ และสุภาพ ให้สมกับเป็น AI ผู้เชี่ยวชาญการลงทุนประจำ StockHomeTH
+5. การเชื่อมโยงหัวข้อ (Smart Financial Pivot): หากผู้ใช้ถามเรื่องทั่วไป เช่น บันเทิง ภาพยนตร์ กีฬา ท่องเที่ยว อาหาร หรือไลฟ์สไตล์ ให้ตอบคลายข้อสงสัยสั้นๆ 1 ประโยค แล้วเชื่อมโยงเข้าสู่มุมมองหุ้น ธุรกิจ หรือการลงทุนที่เกี่ยวข้อง โดยต้องยกตัวอย่างเฉพาะหุ้นที่มีการจดทะเบียนซื้อขายจริงในตลาดหลักทรัพย์ SET/mai หรือตลาดสหรัฐฯ เท่านั้น **ห้ามกุหรือคิดชื่อบริษัทขึ้นมาเอง และห้ามแต่งตั้งบริษัทเอกชนหรือร้านค้าทั่วไปให้เป็น "บมจ." เด็ดขาด** (เช่น ร้านทองฮั่วเซ่งเฮงไม่ใช่ บมจ. ในตลาดหลักทรัพย์ หากพูดถึงทองคำให้โยงไปหุ้นโรงรับจำนำที่มีจริง เช่น MTC, SAWAD หรือร้านทองจดทะเบียน AURA เป็นต้น)
 6. ความสมบูรณ์ของคำตอบ: ไม่พรรณนาเยิ่นเย้อ กระชับ ตรงไปตรงมา ไม่มีคำทักทายซ้ำซาก ตอบประเด็นให้จบสมบูรณ์ทุกครั้ง ห้ามตัดจบประโยคกลางคัน
-7. DYOR: เตือนสติสั้นๆ 1 บรรทัดตอนท้ายว่าเป็นการวิเคราะห์เพื่อการศึกษา ไม่ใช่คำชวนซื้อขาย`;
+7. DYOR: ปิดท้ายสั้นๆ 1 บรรทัดเสมอว่า "การลงทุนมีความเสี่ยง ข้อมูลนี้จัดทำขึ้นเพื่อการศึกษาและการวิเคราะห์ ไม่ใช่คำชี้ชวนในการซื้อขายหลักทรัพย์"`;
 
 // Strict Anchoring System Lore for Real-Time Stock RAG
 const STRICT_ANCHORING_LORE = `[โหมดวิเคราะห์หุ้น Real-Time (Strict Grounding & Anchoring)]
 คุณคือ "ผู้เชี่ยวชาญด้านการวิเคราะห์หุ้น" ประจำเว็บไซต์ StockHomeTH ที่ทำหน้าที่วิเคราะห์ปัจจัยพื้นฐานจากข้อมูลปัจจุบันที่ส่งให้เท่านั้น
 
 [กฎเหล็ก]
-1. ต้องตอบราคาและรายละเอียดของหุ้นจากข้อมูลในส่วน [ข้อมูลปัจจุบันจากเว็บไซต์] เสมอ
+1. ต้องตอบราคาและรายละเอียดของหุ้นจากข้อมูลในส่วน [ข้อมูลราคาหุ้นปัจจุบันจากตลาดหลักทรัพย์] เสมอ
 2. ห้ามใช้ความรู้เดิมเรื่องราคา หรือเดาราคาเอง หากไม่มีข้อมูลราคาให้แจ้งว่า "ไม่พบข้อมูลดังกล่าวในขณะนี้"
 3. อ้างอิงวันที่และเวลาที่ระบุในข้อมูลดิบเสมอ เพื่อชี้แจงให้ผู้ใช้ทราบว่าเป็นข้อมูล ณ เวลาใด
 4. ห้ามแต่งตั้งหรือกุชื่อบริษัทขึ้นมาเองโดยเด็ดขาด
@@ -91,35 +92,189 @@ const COMMON_IGNORE_WORDS = new Set([
   'LITE', 'TRUE', 'REAL', 'TIME', 'GOOD', 'BAD', 'HOLD', 'INFO', 'DOC'
 ]);
 
+// Mapping Thai names, brand names, and vernacular terms to official stock tickers
+const THAI_STOCK_MAP: Record<string, string> = {
+  // SET Energy & Utilities
+  'ปตท.': 'PTT',
+  'ปตท': 'PTT',
+  'ปตทสผ': 'PTTEP',
+  'ปตท.สผ': 'PTTEP',
+  'สผ': 'PTTEP',
+  'ไทยออยล์': 'TOP',
+  'ท็อป': 'TOP',
+  'บางจาก': 'BCP',
+  'บีซีพี': 'BCP',
+  'พีทีทีจีซี': 'PTTGC',
+  'ไออาร์พีซี': 'IRPC',
+  'กัลฟ์': 'GULF',
+  'กัลฟ์เอ็นเนอร์จี': 'GULF',
+  'บีกริม': 'BGRIM',
+  'ราชบุรี': 'RATCH',
+  'ผลิตไฟฟ้า': 'EGCO',
+  'บ้านปู': 'BANPU',
+  'ดับบลิวเอชเอ': 'WHA',
+  'โออาร์': 'OR',
+  'ปตทโออาร์': 'OR',
+  'อีเอ': 'EA',
+
+  // SET Banking & Finance
+  'กสิกรไทย': 'KBANK',
+  'กสิกร': 'KBANK',
+  'เคแบงก์': 'KBANK',
+  'ไทยพาณิชย์': 'SCB',
+  'เอสซีบี': 'SCB',
+  'กรุงเทพ': 'BBL',
+  'แบงก์กรุงเทพ': 'BBL',
+  'กรุงไทย': 'KTB',
+  'กรุงศรี': 'BAY',
+  'ทีทีบี': 'TTB',
+  'ทหารไทยธนชาต': 'TTB',
+  'ทิสโก้': 'TISCO',
+  'เกียรตินาคิน': 'KKP',
+  'สวัสดิ์': 'SAWAD',
+  'ศรีสวัสดิ์': 'SAWAD',
+  'เมืองไทยแคป': 'MTC',
+  'เมืองไทยแคปปิตอล': 'MTC',
+  'เงินติดล้อ': 'TIDLOR',
+  'ติดล้อ': 'TIDLOR',
+  'เจเอ็มที': 'JMT',
+  'แบม': 'BAM',
+
+  // SET Commerce & Retail
+  'ซีพีออลล์': 'CPALL',
+  'ซีพีออล': 'CPALL',
+  'เซเว่น': 'CPALL',
+  'เซเว่นอีเลฟเว่น': 'CPALL',
+  'ซีพีแอ็กซ์ตร้า': 'CPAXT',
+  'แม็คโคร': 'CPAXT',
+  'โลตัส': 'CPAXT',
+  'เซ็นทรัลรีเทล': 'CRC',
+  'โฮมโปร': 'HMPRO',
+  'บิ๊กซี': 'BJC',
+  'เบอร์ลี่ยุคเกอร์': 'BJC',
+  'คอมเซเว่น': 'COM7',
+  'เจมาร์ท': 'JMART',
+  'สยามโกลบอล': 'GLOBAL',
+  'ดูโฮม': 'DOHOME',
+
+  // SET ICT & Tech
+  'แอดวานซ์': 'ADVANC',
+  'เอไอเอส': 'ADVANC',
+  'ทรู': 'TRUE',
+  'เดลต้า': 'DELTA',
+  'ฮานา': 'HANA',
+  'เคซีอี': 'KCE',
+  'ซีซีอีที': 'CCET',
+
+  // SET Healthcare & Tourism & Transport
+  'การท่า': 'AOT',
+  'สนามบิน': 'AOT',
+  'การท่าอากาศยาน': 'AOT',
+  'กรุงเทพดุสิต': 'BDMS',
+  'บีดีเอ็มเอส': 'BDMS',
+  'บำรุงราษฎร์': 'BH',
+  'โรงพยาบาลจุฬารัตน์': 'CHG',
+  'บางกอกเชน': 'BCH',
+  'บีทีเอส': 'BTS',
+  'รถไฟฟ้า': 'BEM',
+  'บีอีเอ็ม': 'BEM',
+  'ไมเนอร์': 'MINT',
+  'ดิเอราวัณ': 'ERW',
+  'เซ็นทรัลพัฒนา': 'CPN',
+  'ออโรร่า': 'AURA',
+  'ร้านทองออโรร่า': 'AURA',
+
+  // SET Food & Industrial
+  'ซีพีเอฟ': 'CPF',
+  'เจริญโภคภัณฑ์อาหาร': 'CPF',
+  'ไทยยูเนี่ยน': 'TU',
+  'คาราบาว': 'CBG',
+  'โอสถสภา': 'OSP',
+  'อิชิตัน': 'ICHI',
+  'เซ็ปเป้': 'SAPPE',
+  'ปูนใหญ่': 'SCC',
+  'เอสซีจี': 'SCC',
+  'เอสซีจีแพคเกจจิ้ง': 'SCGP',
+
+  // US Giants
+  'เทสล่า': 'TSLA',
+  'เทสลา': 'TSLA',
+  'แอปเปิ้ล': 'AAPL',
+  'แอปเปิล': 'AAPL',
+  'ไมโครซอฟท์': 'MSFT',
+  'กูเกิล': 'GOOGL',
+  'อัลฟาเบท': 'GOOGL',
+  'อินวิเดีย': 'NVDA',
+  'เอ็นวิเดีย': 'NVDA',
+  'อเมซอน': 'AMZN',
+  'เมต้า': 'META',
+  'เฟสบุ๊ก': 'META',
+  'เน็ตฟลิกซ์': 'NFLX',
+
+  // Commodities & Crypto
+  'ทองคำ': 'GLD',
+  'ทอง': 'GLD',
+  'บิทคอยน์': 'BTC-USD',
+  'บิตคอยน์': 'BTC-USD',
+  'อีเธอเรียม': 'ETH-USD',
+  'อีเทอเรียม': 'ETH-USD',
+};
+
 function extractCandidateTickers(text: string): string[] {
   if (!text) return [];
   const candidates: string[] = [];
+  const lowerText = text.toLowerCase();
 
-  // 1. Pattern: $TICKER (e.g. $NVDA, $DELTA)
+  // 1. Check Thai stock map (sorted by descending length to match longest word first e.g. "ปตทสผ" before "ปตท")
+  const sortedThaiKeys = Object.keys(THAI_STOCK_MAP).sort((a, b) => b.length - a.length);
+  for (const key of sortedThaiKeys) {
+    if (text.includes(key) || lowerText.includes(key.toLowerCase())) {
+      const mapped = THAI_STOCK_MAP[key];
+      if (!candidates.includes(mapped)) {
+        candidates.push(mapped);
+      }
+    }
+  }
+
+  // 2. Pattern: $TICKER (e.g. $NVDA, $DELTA, $PTT)
   const dollarMatches = text.match(/\$([A-Za-z]{1,6})\b/g);
   if (dollarMatches) {
     for (const m of dollarMatches) {
       const sym = m.replace('$', '').toUpperCase().trim();
-      if (!COMMON_IGNORE_WORDS.has(sym)) candidates.push(sym);
+      if (!COMMON_IGNORE_WORDS.has(sym) && !candidates.includes(sym)) candidates.push(sym);
     }
   }
 
-  // 2. Pattern: หุ้น [TICKER] or หุ้นไทย [TICKER]
+  // 3. Pattern: หุ้น [TICKER] or หุ้นไทย [TICKER]
   const thaiMatches = text.match(/(?:หุ้น|ราคาหุ้น|วิเคราะห์หุ้น|หุ้นไทย)\s*([A-Za-z]{1,6})\b/gi);
   if (thaiMatches) {
     for (const m of thaiMatches) {
       const sym = m.replace(/(?:หุ้น|ราคาหุ้น|วิเคราะห์หุ้น|หุ้นไทย)\s*/i, '').toUpperCase().trim();
-      if (!COMMON_IGNORE_WORDS.has(sym)) candidates.push(sym);
+      if (!COMMON_IGNORE_WORDS.has(sym) && !candidates.includes(sym)) candidates.push(sym);
     }
   }
 
-  // 3. Pattern: Standalone uppercase English tokens 2-6 chars (e.g. NVDA, PTT, CPALL, DELTA, TSLA, AAPL, MSFT)
-  const standaloneMatches = text.match(/\b([A-Z]{2,6})\b/g);
+  // 4. Standalone English tokens (e.g. NVDA, PTT, CPALL, DELTA, TSLA, AAPL, MSFT, ptt, delta)
+  const standaloneMatches = text.match(/\b([A-Za-z]{2,6})\b/g);
   if (standaloneMatches) {
     for (const sym of standaloneMatches) {
       const clean = sym.toUpperCase().trim();
       if (!COMMON_IGNORE_WORDS.has(clean) && !candidates.includes(clean)) {
-        candidates.push(clean);
+        const isUpper = sym === clean;
+        const isRecognizedStock =
+          SET100_TICKERS.has(clean) ||
+          THAI_7_GIANTS.has(clean) ||
+          MAGNIFICENT_7.has(clean) ||
+          clean === 'BTC' ||
+          clean === 'ETH' ||
+          clean === 'GLD';
+
+        if (isUpper || isRecognizedStock) {
+          const mapped = clean === 'BTC' ? 'BTC-USD' : clean === 'ETH' ? 'ETH-USD' : clean;
+          if (!candidates.includes(mapped)) {
+            candidates.push(mapped);
+          }
+        }
       }
     }
   }
@@ -199,12 +354,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. Check identical response cache to save tokens (bypass if images, docs, or streaming requested)
+    // 1. Pre-extract tickers to determine if this is a live stock question
     const hasAttachments = (images && images.length > 0) || Boolean(documentText);
     const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
+    const candidateTickers = extractCandidateTickers(lastUserMsg);
+    const activeTicker = stockContext?.ticker || (candidateTickers.length > 0 ? candidateTickers[0] : null);
+
     const cacheKey = getChatCacheKey(model, lastUserMsg);
 
-    if (!hasAttachments && !stream) {
+    // Only serve from cache if not an active stock quote query and not streaming/multimodal
+    if (!hasAttachments && !stream && !activeTicker) {
       const cachedResponse = getCachedChatResponse(cacheKey);
       if (cachedResponse) {
         return NextResponse.json({
@@ -245,10 +404,7 @@ export async function POST(req: NextRequest) {
 
     const outboundMessages = contextResult.outboundMessages;
 
-    // 3.5 Real-Time Stock RAG & Strict Anchoring Data Retrieval
-    const candidateTickers = extractCandidateTickers(lastUserMsg);
-    const activeTicker = stockContext?.ticker || (candidateTickers.length > 0 ? candidateTickers[0] : null);
-
+    // 3.5 Real-Time Stock RAG & Grounding Data Retrieval
     let isLiveStockRAG = false;
     let liveMarketDataBlock = '';
 
@@ -263,7 +419,7 @@ export async function POST(req: NextRequest) {
           isLiveStockRAG = true;
           const currencySymbol = liveStock.currency === 'THB' ? '฿' : '$';
 
-          liveMarketDataBlock = `[ข้อมูลปัจจุบันจากเว็บไซต์]
+          liveMarketDataBlock = `[ข้อมูลราคาหุ้นปัจจุบันจากตลาดหลักทรัพย์]:
 <current_market_data>
 ข้อมูล ณ วันที่: ${formattedNowDate} เวลา: ${formattedNowTime}
 Ticker: ${liveStock.ticker}
@@ -281,10 +437,10 @@ Risks_To_Watch: ความผันผวนของตลาดสากล 
 </current_market_data>`;
         } else if (candidateTickers.length > 0) {
           isLiveStockRAG = true;
-          liveMarketDataBlock = `[ข้อมูลปัจจุบันจากเว็บไซต์]
+          liveMarketDataBlock = `[ข้อมูลราคาหุ้นปัจจุบันจากตลาดหลักทรัพย์]:
 <current_market_data>
 Ticker: ${activeTicker}
-Status: ระบบไม่พบข้อมูลราคาหุ้นที่เป็นปัจจุบันของ ${activeTicker} ในขณะนี้
+Status: ระบบไม่พบข้อมูลราคาหุ้นแบบ Real-time ของ ${activeTicker} ในขณะนี้ (สามารถวิเคราะห์ภาพรวมธุรกิจและปัจจัยพื้นฐานทั่วไปได้)
 </current_market_data>`;
         }
       } catch (err) {
@@ -292,14 +448,42 @@ Status: ระบบไม่พบข้อมูลราคาหุ้นท
       }
     }
 
+    // 3.6 Always-Present Platform Knowledge Context
+    const PLATFORM_KNOWLEDGE_BLOCK = `[ข้อมูลปัจจุบันจากเว็บไซต์ - StockHomeTH Platform Facts]:
+- บริบทระบบ: StockHomeTH เว็บไซต์พอร์ทัลวิเคราะห์หุ้นไทย (SET / mai) และหุ้นสหรัฐฯ (NASDAQ / NYSE) ครบวงจร
+- วันที่และเวลาปัจจุบัน: ${formattedNowDate} เวลา ${formattedNowTime} (อิงตามเวลาประเทศไทย Asia/Bangkok)
+- การใช้เหรียญ GemCoins:
+  * สมาชิกที่ล็อกอินจะได้รับฟรี 500 GemCoins ทุกวัน (ระบบรีเซ็ตเวลาเที่ยงคืน 00:00 น. ของทุกวัน)
+  * ผู้ใช้ทั่วไปที่เป็น Guest (ยังไม่เข้าสู่ระบบ) จะไม่สามารถส่งข้อความหา AI ได้ ต้องล็อกอินก่อน
+  * การส่งข้อความแต่ละครั้งจะตัด GemCoins ตามโมเดลที่เลือก (เช่น Fast Models ใช้ ~15-25 เหรียญ, High-Tier Intelligence ใช้ตามความซับซ้อน)
+- แพ็กเกจเติมเหรียญ GemCoins (Top-Up Packages):
+  1. งบน้อย: ราคา 19 บาท (ปกติ 39 บาท) ได้รับ 1,500 GemCoins
+  2. พอมีเงิน: ราคา 39 บาท (ปกติ 69 บาท) ได้รับ 3,500 + โบนัส 500 = 4,000 GemCoins
+  3. มีตังค์เหลือๆ (ยอดนิยม): ราคา 89 บาท (ปกติ 149 บาท) ได้รับ 9,000 + โบนัส 1,500 = 10,500 GemCoins
+  4. พร้อมบวก: ราคา 199 บาท (ปกติ 349 บาท) ได้รับ 25,000 + โบนัส 5,000 = 30,000 GemCoins
+  5. เสี่ยสั่งลุย: ราคา 499 บาท (ปกติ 890 บาท) ได้รับ 70,000 + โบนัส 15,000 = 85,000 GemCoins
+  6. เจ้าสัวพอร์ตโต: ราคา 999 บาท (ปกติ 1,790 บาท) ได้รับ 150,000 + โบนัส 40,000 = 190,000 GemCoins
+  7. ป๋าบุญทุ่ม: ราคา 1,999 บาท (ปกติ 3,590 บาท) ได้รับ 350,000 + โบนัส 100,000 = 450,000 GemCoins
+  8. วาฬสถาบัน (Whale God - คุ้มค่าสูงสุด): ราคา 3,999 บาท (ปกติ 6,990 บาท) ได้รับ 800,000 + โบนัส 250,000 = 1,050,000 GemCoins
+- แพลนสมาชิกรายเดือน (Subscription Tiers):
+  * Free Plan: 0 บาท ได้รับ 500 GemCoins/วัน ทุกเที่ยงคืน ตลอดชีพ
+  * Lite Plan: 89 บาท/เดือน (หรือรายปี 890 บาท) ได้รับ 2,500 GemCoins/วัน + แถมเหรียญถาวร 12,000 GemCoins
+  * Pro Plan: 299 บาท/เดือน (หรือรายปี 2,990 บาท) ได้รับ 10,000 GemCoins/วัน + แถมเหรียญถาวร 45,000 GemCoins + Real-time Stock Context
+  * VIP Investor: 999 บาท/เดือน (หรือรายปี 9,990 บาท) ได้รับ 50,000 GemCoins/วัน + แถมเหรียญถาวร 180,000 GemCoins + Deep Reasoning Analysis
+- ฟังก์ชันหลักบนเว็บไซต์:
+  * หน้าหลัก / ตลาด: ดัชนี SET, SET50, หุ้นยอดนิยม, หุ้น Top Gainers / Losers
+  * คัดกรองหุ้น (Stock Screener): กรองหุ้นตามตัวชี้วัด P/E, P/BV, เงินปันผล, Market Cap, ภาคธุรกิจ
+  * กราฟเทคนิคและข้อมูลงบการเงินย้อนหลัง
+  * AI Helper: แชตบอตวิเคราะห์หุ้น เจาะลึกงบ และตอบคำถามการลงทุน`;
+
     // 4. Build System Prompt with Financial Context & Rolling Summary
     let systemPromptWithContext = COMPACT_SYSTEM_PROMPT;
-    systemPromptWithContext += `\n\n[บริบทเวลาจริงในปัจจุบัน]:\nวันนี้คือ: ${formattedNowDate} เวลา: ${formattedNowTime}\n(ห้ามตอบวันที่หรือปี พ.ศ./ค.ศ. อื่นที่ขัดแย้งกับเวลาจริงนี้โดยเด็ดขาด)`;
+    systemPromptWithContext += `\n\n${PLATFORM_KNOWLEDGE_BLOCK}`;
 
     if (isLiveStockRAG) {
       systemPromptWithContext += `\n\n${STRICT_ANCHORING_LORE}`;
     } else if (stockContext && stockContext.ticker) {
-      systemPromptWithContext += `\n\n[ข้อมูลปัจจุบันจากเว็บไซต์]:\n[บริบทหุ้น]: ${stockContext.ticker} (${stockContext.market || 'SET'}) ราคา: ${stockContext.price ?? '—'} (${stockContext.change != null ? (stockContext.change >= 0 ? '+' : '') + stockContext.change + '%' : '—'}) PE: ${stockContext.peRatio ?? '—'}x มาร์เก็ตแคป: ${stockContext.marketCap ?? '—'}`;
+      systemPromptWithContext += `\n\n[ข้อมูลหุ้นปัจจุบันจากเว็บไซต์]:\n[บริบทหุ้น]: ${stockContext.ticker} (${stockContext.market || 'SET'}) ราคา: ${stockContext.price ?? '—'} (${stockContext.change != null ? (stockContext.change >= 0 ? '+' : '') + stockContext.change + '%' : '—'}) PE: ${stockContext.peRatio ?? '—'}x มาร์เก็ตแคป: ${stockContext.marketCap ?? '—'}`;
     }
 
     // Differentiate reasoning depth based on tier capabilities
@@ -485,8 +669,8 @@ Status: ระบบไม่พบข้อมูลราคาหุ้นท
               }
             }
 
-            // Cache response if eligible
-            if (!hasAttachments && accumulatedText) {
+            // Cache response if eligible (not real-time stock RAG and not refusal)
+            if (!hasAttachments && !isLiveStockRAG && accumulatedText && !accumulatedText.includes('ไม่พบข้อมูล')) {
               recordOpenRouterRequest(isRealUser);
               setCachedChatResponse(cacheKey, accumulatedText, actualModelUsed);
             }
@@ -529,8 +713,8 @@ Status: ระบบไม่พบข้อมูลราคาหุ้นท
     // Rolling memory fee (0 for Pro/VIP/Whale/Dev, 2 for Lite, 5 for Free only when summary was updated)
     gemCoinsUsed += contextResult.memoryCost;
 
-    // Cache response if no media attached
-    if (!hasAttachments) {
+    // Cache response if eligible (not real-time stock RAG and not refusal)
+    if (!hasAttachments && !isLiveStockRAG && !replyContent.includes('ไม่พบข้อมูล')) {
       recordOpenRouterRequest(isRealUser);
       setCachedChatResponse(cacheKey, replyContent, actualModel);
     }
