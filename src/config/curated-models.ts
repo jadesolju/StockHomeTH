@@ -88,7 +88,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     id: 'google/gemini-3.8-flash',
     name: 'Gemini 3.8 Flash',
     family: 'gemini',
-    tag: 'Flash Pro',
+    tag: 'Recommended',
     context: '1M',
     gemCoinsEstimate: 100,
     priceInput: '$0.20',

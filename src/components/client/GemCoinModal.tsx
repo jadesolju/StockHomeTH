@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useSubscription } from '@/lib/context/SubscriptionContext';
+import { useSubscription, OWNER_DEV_IDENTIFIERS } from '@/lib/context/SubscriptionContext';
+import { useClientAuth } from '@/lib/context/ClientAuthContext';
 import { GemCoinIcon } from '@/components/ui/GemCoinIcon';
 import {
   GEMCOIN_TOPUP_PACKAGES,
@@ -9,6 +10,10 @@ import {
   PROMO_CAMPAIGN_TEXT,
   GemCoinTopupPackage,
 } from '@/config/gemCoinPackages';
+import {
+  GEMCOIN_STRIPE_PRICE_IDS,
+  SUBSCRIPTION_STRIPE_PRICE_IDS,
+} from '@/config/stripePriceIds';
 import {
   PiggyBankSvg,
   WalletSvg,
@@ -21,10 +26,11 @@ import {
   PromoClockSvg,
   TicketVoucherSvg,
 } from '@/components/ui/TierSvgIcons';
-import { FileText, CreditCard } from 'lucide-react';
+import { FileText, CreditCard, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
 export const GemCoinModal: React.FC = () => {
+  const { user } = useClientAuth();
   const {
     isGemCoinModalOpen,
     gemCoinModalInitialTab,
@@ -35,7 +41,6 @@ export const GemCoinModal: React.FC = () => {
     totalGemCoinsAvailable,
     gemCoinLogs,
     currentTier,
-    setTier,
     topupGemCoinsDirect,
     redeemPromoCode,
   } = useSubscription();
@@ -50,6 +55,15 @@ export const GemCoinModal: React.FC = () => {
     message: string;
   } | null>(null);
   const [purchaseNotice, setPurchaseNotice] = useState<string | null>(null);
+  const [loadingPkgId, setLoadingPkgId] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  const isOwnerUser = Boolean(
+    user &&
+    (OWNER_DEV_IDENTIFIERS.emails.includes(user.email ?? '') ||
+      OWNER_DEV_IDENTIFIERS.firebaseUids.includes(user.uid) ||
+      OWNER_DEV_IDENTIFIERS.supabaseUids.includes(user.uid))
+  );
 
   if (!isGemCoinModalOpen) return null;
 
@@ -76,11 +90,55 @@ export const GemCoinModal: React.FC = () => {
     }
   };
 
-  const handleSimulateTopup = (pkg: GemCoinTopupPackage) => {
+  const handleCheckout = async (packageOrTierId: string, mode: 'payment' | 'subscription') => {
+    if (loadingPkgId) return;
+    setLoadingPkgId(packageOrTierId);
+    setCheckoutError(null);
+
+    const priceId =
+      mode === 'payment'
+        ? GEMCOIN_STRIPE_PRICE_IDS[packageOrTierId]
+        : SUBSCRIPTION_STRIPE_PRICE_IDS[packageOrTierId];
+
+    if (!priceId || priceId.startsWith('price_REPLACE')) {
+      setCheckoutError('Stripe Price ID ยังไม่ได้ตั้งค่า กรุณาติดต่อผู้พัฒนา');
+      setLoadingPkgId(null);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/payment/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceId,
+          packageId: packageOrTierId,
+          mode,
+          userId: user?.uid || undefined,
+          userEmail: user?.email || undefined,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.url) {
+        setCheckoutError(data.error || 'ไม่สามารถสร้างรายการชำระเงินได้ กรุณาลองใหม่อีกครั้ง');
+        setTimeout(() => setLoadingPkgId(null), 2000);
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch (err: any) {
+      console.error('Checkout error:', err);
+      setCheckoutError('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
+      setLoadingPkgId(null);
+    }
+  };
+
+  const handleSimulateTopupOwner = (pkg: GemCoinTopupPackage) => {
     const totalAdded = pkg.gemCoins + pkg.bonusCoins;
-    topupGemCoinsDirect(totalAdded, pkg.name);
+    topupGemCoinsDirect(totalAdded, `[Dev Test] ${pkg.name}`);
     setPurchaseNotice(
-      `เติมเหรียญสำเร็จ! ได้รับ +${totalAdded.toLocaleString()} GemCoins เข้ากระเป๋า Top-up เรียบร้อยแล้ว`
+      `[Dev Test] เติมเหรียญทดสอบสำเร็จ! +${totalAdded.toLocaleString()} GemCoins เข้ากระเป๋าแล้ว`
     );
     setTimeout(() => setPurchaseNotice(null), 5000);
   };
@@ -107,7 +165,7 @@ export const GemCoinModal: React.FC = () => {
         className="gemcoin-modal-box relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-[#0d1319] border border-cyan-500/30 rounded-2xl shadow-[0_0_40px_rgba(6,182,212,0.15)] overflow-hidden text-slate-100"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header with Balance Summary */}
+        {/* Header with Balance Summary & Main Store Direct Link */}
         <div className="gemcoin-modal-header flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#090d12]">
           <div className="flex items-center gap-3">
             <GemCoinIcon className="w-8 h-8" glow={true} />
@@ -123,13 +181,25 @@ export const GemCoinModal: React.FC = () => {
               </p>
             </div>
           </div>
-          <button
-            onClick={closeGemCoinModal}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
-            title="ปิดหน้าต่าง"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/payments"
+              onClick={closeGemCoinModal}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-500/30 rounded-lg transition-colors"
+              title="เปิดหน้าร้านค้าหลัก"
+            >
+              <CreditCard size={14} />
+              <span>หน้าร้านหลัก</span>
+              <ExternalLink size={12} />
+            </Link>
+            <button
+              onClick={closeGemCoinModal}
+              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors text-sm font-bold"
+              title="ปิดหน้าต่าง"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* 1-Month Launch Promo Alert Banner */}
@@ -144,10 +214,10 @@ export const GemCoinModal: React.FC = () => {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="gemcoin-tabs-nav flex border-b border-slate-800/80 bg-[#0a0e14] px-4">
+        <div className="gemcoin-tabs-nav flex border-b border-slate-800/80 bg-[#0a0e14] px-4 overflow-x-auto">
           <button
             onClick={() => setActiveTab('topup')}
-            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
+            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
               activeTab === 'topup'
                 ? 'active border-cyan-400 text-cyan-300 bg-cyan-950/20'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -158,7 +228,7 @@ export const GemCoinModal: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('plans')}
-            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
+            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
               activeTab === 'plans'
                 ? 'active border-cyan-400 text-cyan-300 bg-cyan-950/20'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -169,7 +239,7 @@ export const GemCoinModal: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('redeem')}
-            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
+            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
               activeTab === 'redeem'
                 ? 'active border-cyan-400 text-cyan-300 bg-cyan-950/20'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -180,7 +250,7 @@ export const GemCoinModal: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('logs')}
-            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
+            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
               activeTab === 'logs'
                 ? 'active border-cyan-400 text-cyan-300 bg-cyan-950/20'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -205,7 +275,22 @@ export const GemCoinModal: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 1: TOP-UP PACKAGES (Micro to Whale Tiers) */}
+          {checkoutError && (
+            <div className="p-3 bg-rose-500/20 border border-rose-500/40 rounded-xl text-rose-300 text-xs font-medium animate-fadeIn flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={16} className="shrink-0" />
+                <span>{checkoutError}</span>
+              </div>
+              <button
+                onClick={() => setCheckoutError(null)}
+                className="text-rose-400 hover:text-white font-bold"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* TAB 1: TOP-UP PACKAGES (Real Stripe Checkout) */}
           {activeTab === 'topup' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -224,98 +309,123 @@ export const GemCoinModal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Stripe Checkout Direct Link */}
+              {/* Stripe Checkout Direct Link (Clean Responsive Flexbox Layout, No Text Collision) */}
               <Link
                 href="/payments"
                 onClick={closeGemCoinModal}
                 className="flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-cyan-950/60 border border-emerald-500/40 hover:border-emerald-400 transition-all group"
               >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300 shrink-0">
                     <CreditCard className="w-5 h-5" />
                   </div>
-                  <div>
-                    <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
-                      💳 ชำระเงินจริงผ่าน Stripe Checkout (บัตรเครดิต/เดบิต)
+                  <div className="flex flex-col text-left overflow-hidden">
+                    <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-emerald-300 transition-colors leading-snug">
+                      💳 ไปที่หน้าร้านค้าหลัก (StockHome Official Store)
                     </h4>
-                    <p className="text-[11px] text-slate-400">
-                      ไปที่หน้าร้านหลัก เลือกระหว่างเติมเหรียญ One-time หรือสมัครสมาชิกรายปีลดเพิ่ม 2 เดือน
+                    <p className="text-[11px] text-slate-400 mt-0.5 leading-normal">
+                      เปิดหน้า /payments สำหรับแพ็กเกจรายปีลด 20% และดูข้อมูลความปลอดภัย
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform shrink-0">
-                  ไปหน้าชำระเงิน →
+                <span className="text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform shrink-0 ml-2 whitespace-nowrap">
+                  ไปหน้าร้านหลัก →
                 </span>
               </Link>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {GEMCOIN_TOPUP_PACKAGES.map((pkg) => (
-                  <div
-                    key={pkg.id}
-                    className={`relative p-4 rounded-xl border transition-all flex flex-col justify-between ${
-                      pkg.popular
-                        ? 'bg-gradient-to-b from-cyan-950/40 to-slate-900/60 border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
-                        : pkg.bestValue
-                        ? 'bg-gradient-to-b from-amber-950/30 to-slate-900/60 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
-                        : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
-                    }`}
-                  >
-                    {pkg.tag && (
-                      <span className="absolute top-2.5 right-2.5 px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                        {pkg.tag}
-                      </span>
-                    )}
+                {GEMCOIN_TOPUP_PACKAGES.map((pkg) => {
+                  const isLoadingThis = loadingPkgId === pkg.id;
 
-                    <div>
-                      <div className="mb-2 p-2 rounded-lg bg-slate-800/60 w-fit">
-                        {renderTierSvg(pkg.iconType)}
-                      </div>
-                      <h4 className="font-bold text-white text-sm">{pkg.name}</h4>
-                      <div className="mt-1 flex items-baseline gap-1.5">
-                        <span className="text-base font-extrabold text-cyan-300">
-                          {pkg.gemCoins.toLocaleString()}
+                  return (
+                    <div
+                      key={pkg.id}
+                      className={`relative p-4 rounded-xl border transition-all flex flex-col justify-between ${
+                        pkg.popular
+                          ? 'bg-gradient-to-b from-cyan-950/40 to-slate-900/60 border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
+                          : pkg.bestValue
+                          ? 'bg-gradient-to-b from-amber-950/30 to-slate-900/60 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
+                          : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      {pkg.tag && (
+                        <span className="absolute top-2.5 right-2.5 px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                          {pkg.tag}
                         </span>
-                        <span className="text-[11px] text-slate-400">GemCoins</span>
-                      </div>
-                      {pkg.bonusCoins > 0 && (
-                        <div className="mt-0.5 text-[11px] text-amber-400 font-semibold">
-                          +แถมโบนัส {pkg.bonusCoins.toLocaleString()}
-                        </div>
                       )}
-                    </div>
 
-                    <div className="mt-4 pt-3 border-t border-slate-800/80">
-                      <div className="flex items-baseline gap-2 mb-2">
-                        <span className="text-lg font-extrabold text-emerald-400">
-                          ฿{pkg.promoPrice}
-                        </span>
-                        <span className="text-xs line-through text-slate-500">
-                          ฿{pkg.regularPrice}
-                        </span>
-                        <span className="text-[10px] text-amber-300/80 font-medium">
-                          (1 ด. แรก)
-                        </span>
+                      <div>
+                        <div className="mb-2 p-2 rounded-lg bg-slate-800/60 w-fit">
+                          {renderTierSvg(pkg.iconType)}
+                        </div>
+                        <h4 className="font-bold text-white text-sm">{pkg.name}</h4>
+                        <div className="mt-1 flex items-baseline gap-1.5">
+                          <span className="text-base font-extrabold text-cyan-300">
+                            {pkg.gemCoins.toLocaleString()}
+                          </span>
+                          <span className="text-[11px] text-slate-400">GemCoins</span>
+                        </div>
+                        {pkg.bonusCoins > 0 && (
+                          <div className="mt-0.5 text-[11px] text-amber-400 font-semibold">
+                            +แถมโบนัส {pkg.bonusCoins.toLocaleString()}
+                          </div>
+                        )}
                       </div>
-                      <button
-                        onClick={() => handleSimulateTopup(pkg)}
-                        className={`w-full py-2 px-3 rounded-lg text-xs font-bold transition-all ${
-                          pkg.popular
-                            ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-md shadow-cyan-500/20'
-                            : pkg.bestValue
-                            ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20'
-                            : 'bg-slate-800 hover:bg-slate-700 text-white'
-                        }`}
-                      >
-                        เติมแพ็กเกจนี้
-                      </button>
+
+                      <div className="mt-4 pt-3 border-t border-slate-800/80 space-y-2">
+                        <div className="flex items-baseline gap-2 mb-2">
+                          <span className="text-lg font-extrabold text-emerald-400">
+                            ฿{pkg.promoPrice}
+                          </span>
+                          <span className="text-xs line-through text-slate-500">
+                            ฿{pkg.regularPrice}
+                          </span>
+                          <span className="text-[10px] text-amber-300/80 font-medium">
+                            (1 ด. แรก)
+                          </span>
+                        </div>
+
+                        {/* Real Stripe Checkout Button */}
+                        <button
+                          disabled={Boolean(loadingPkgId)}
+                          onClick={() => handleCheckout(pkg.id, 'payment')}
+                          className={`w-full py-2.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                            isLoadingThis
+                              ? 'bg-slate-700 text-cyan-300 cursor-wait'
+                              : pkg.popular
+                              ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-400 hover:to-blue-500 shadow-md shadow-cyan-500/20'
+                              : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                          }`}
+                        >
+                          {isLoadingThis ? (
+                            <>
+                              <Loader2 size={13} className="animate-spin" />
+                              <span>เปิด Stripe...</span>
+                            </>
+                          ) : (
+                            <span>เติมแพ็กเกจนี้ (Stripe)</span>
+                          )}
+                        </button>
+
+                        {/* Owner Dev Quick Test Bypass (Only for owner) */}
+                        {isOwnerUser && (
+                          <button
+                            type="button"
+                            onClick={() => handleSimulateTopupOwner(pkg)}
+                            className="w-full py-1 text-[10px] text-slate-400 hover:text-amber-300 underline text-center"
+                          >
+                            [Owner Sandbox Bypass]
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* TAB 2: SUBSCRIPTION PLANS (Recurring + Permanent Top-up Rollover) */}
+          {/* TAB 2: SUBSCRIPTION PLANS (Real Stripe Checkout) */}
           {activeTab === 'plans' && (
             <div className="space-y-4">
               <div>
@@ -333,27 +443,28 @@ export const GemCoinModal: React.FC = () => {
                 onClick={closeGemCoinModal}
                 className="flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-cyan-950/60 border border-emerald-500/40 hover:border-emerald-400 transition-all group"
               >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300 shrink-0">
                     <CreditCard className="w-5 h-5" />
                   </div>
-                  <div>
-                    <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
-                      💳 สมัครสมาชิกผ่านบัตรเครดิต/เดบิต (Stripe Checkout)
+                  <div className="flex flex-col text-left overflow-hidden">
+                    <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-emerald-300 transition-colors leading-snug">
+                      💳 สมัครสมาชิกผ่านหน้าร้านหลัก (Stripe Official Checkout)
                     </h4>
-                    <p className="text-[11px] text-slate-400">
-                      ไปที่หน้าร้านหลัก เลือกระหว่างรายเดือน หรือรายปี (ประหยัดเพิ่ม 2 เดือน)
+                    <p className="text-[11px] text-slate-400 mt-0.5 leading-normal">
+                      เลือกดูแผนรายเดือน หรือสมัครแบบรายปี (ประหยัดเพิ่ม 2 เดือน) ได้ที่หน้า /payments
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform shrink-0">
-                  ไปหน้าชำระเงิน →
+                <span className="text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform shrink-0 ml-2 whitespace-nowrap">
+                  ไปหน้าร้านหลัก →
                 </span>
               </Link>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {GEMCOIN_SUBSCRIPTION_TIERS.filter((t) => t.tier !== 'free' && t.tier !== 'dev').map((tierInfo) => {
                   const isCurrent = currentTier === tierInfo.tier;
+                  const isLoadingThis = loadingPkgId === tierInfo.tier;
 
                   return (
                     <div
@@ -429,21 +540,26 @@ export const GemCoinModal: React.FC = () => {
 
                       <div className="mt-4 pt-3 border-t border-slate-800">
                         <button
-                          disabled={isCurrent}
-                          onClick={() => {
-                            setTier(tierInfo.tier);
-                            setPurchaseNotice(
-                              `อัปเกรดเป็น ${tierInfo.name} สำเร็จ! ได้รับ +${tierInfo.permanentTopupBonus.toLocaleString()} GemCoins ถาวร`
-                            );
-                            setTimeout(() => setPurchaseNotice(null), 5000);
-                          }}
-                          className={`w-full py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+                          disabled={isCurrent || Boolean(loadingPkgId)}
+                          onClick={() => handleCheckout(tierInfo.tier, 'subscription')}
+                          className={`w-full py-2.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                             isCurrent
                               ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                              : isLoadingThis
+                              ? 'bg-slate-700 text-cyan-300 cursor-wait'
                               : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-md'
                           }`}
                         >
-                          {isCurrent ? 'ใช้งานแผนนี้อยู่' : 'เลือกแผนนี้ (รับโบนัสถาวร)'}
+                          {isLoadingThis ? (
+                            <>
+                              <Loader2 size={13} className="animate-spin" />
+                              <span>เปิด Stripe...</span>
+                            </>
+                          ) : isCurrent ? (
+                            'ใช้งานแผนนี้อยู่'
+                          ) : (
+                            `สมัครแผน ${tierInfo.name} (Stripe)`
+                          )}
                         </button>
                       </div>
                     </div>
@@ -453,16 +569,16 @@ export const GemCoinModal: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 3: REDEEM PROMO CODE (Created by Dev/Admin) */}
+          {/* TAB 3: REDEEM PROMO CODE */}
           {activeTab === 'redeem' && (
             <div className="max-w-md mx-auto py-6 space-y-6">
               <div className="text-center space-y-1">
                 <div className="w-12 h-12 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center justify-center mx-auto mb-2">
                   <TicketVoucherSvg className="w-6 h-6" />
                 </div>
-                <h3 className="text-base font-bold text-white">แลกรับรหัสของขวัญ GemCoins</h3>
+                <h3 className="text-base font-bold text-white">กรอกโค้ดรับเหรียญ GemCoins ฟรี</h3>
                 <p className="text-xs text-slate-400">
-                  กรอกรหัสโปรโมชั่นที่ได้รับจากผู้พัฒนา (Dev/Admin) เพื่อรับ GemCoins เข้ากระเป๋า Top-up ฟรีทันที
+                  นำ Voucher Code จากแคมเปญ กิจกรรม หรือจากแอดมินมาแลกเป็น GemCoin ถาวรได้ทันที
                 </p>
               </div>
 
@@ -471,30 +587,24 @@ export const GemCoinModal: React.FC = () => {
                   <input
                     type="text"
                     value={promoInput}
-                    onChange={(e) => setPromoInput(e.target.value)}
-                    placeholder="เช่น DEV-5000, STOCKHOME-1000"
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl text-sm text-white placeholder-slate-500 outline-none uppercase font-mono tracking-wider transition-all"
+                    onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                    placeholder="พิมพ์โค้ด เช่น STOCKHOME-1000"
+                    disabled={redeemLoading}
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono tracking-wider text-center text-sm uppercase"
                   />
-                  {promoInput && (
-                    <button
-                      type="button"
-                      onClick={() => setPromoInput('')}
-                      className="absolute right-3 top-3 text-slate-400 hover:text-white text-xs"
-                    >
-                      ✕
-                    </button>
-                  )}
                 </div>
-
                 <button
                   type="submit"
                   disabled={redeemLoading || !promoInput.trim()}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-slate-950 font-bold text-sm transition-all shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2"
                 >
                   {redeemLoading ? (
-                    <span className="inline-block animate-spin">⌛</span>
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>กำลังตรวจสอบโค้ด...</span>
+                    </>
                   ) : (
-                    <span>แลกรับสิทธิ์ (Redeem)</span>
+                    <span>ยืนยันการแลกโค้ด</span>
                   )}
                 </button>
               </form>
