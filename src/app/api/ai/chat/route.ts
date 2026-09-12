@@ -17,6 +17,7 @@ import {
   manageContextWindow,
   ChatMessageLike,
 } from '@/lib/services/contextSummaryService';
+import { fetchSingleStockYFinance } from '@/lib/services/yfinanceBridge';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,72 @@ const COMPACT_SYSTEM_PROMPT = `คุณคือ "StockHome Financial" AI ผ�
 2. สไตล์การสื่อสาร: **ไม่พรรณนา ไม่เกริ่นนำเยิ่นเย้อ** กระชับ ตรงไปตรงมา ไม่มีคำทักทายซ้ำซาก ตอบประเด็นเนื้อๆ ทันที
 3. ความสมบูรณ์ของคำตอบ: ห้ามตัดจบประโยคกลางคัน ให้ตอบประเด็นให้จบสมบูรณ์ทุกครั้ง
 4. DYOR: เตือนสติสั้นๆ 1 บรรทัดตอนท้ายว่าเป็นการวิเคราะห์เพื่อการศึกษา ไม่ใช่คำชวนซื้อขาย`;
+
+// Strict Anchoring System Lore for Real-Time Stock RAG
+const STRICT_ANCHORING_LORE = `[โหมดวิเคราะห์หุ้น Real-Time (Strict Grounding & Anchoring)]
+คุณคือ "ผู้เชี่ยวชาญด้านการวิเคราะห์หุ้น" ที่ทำหน้าที่สรุปสถานการณ์การลงทุน
+และวิเคราะห์ปัจจัยพื้นฐานจากข้อมูลปัจจุบันที่ส่งให้เท่านั้น
+
+[กฎเหล็กและข้อห้ามที่ต้องปฏิบัติตามอย่างเคร่งครัด]
+1. ใช้ข้อมูลเฉพาะที่ระบุอยู่ในช่อง <current_market_data> ด้านล่างนี้ในการตอบคำถามเท่านั้น
+2. ห้ามใช้ความรู้เดิม ข้อมูลราคาหุ้นในอดีต หรือการคาดเดาจากฐานข้อมูลเก่าของคุณ (Knowledge Base) ของคุณโดยเด็ดขาด 
+3. หากข้อมูลในช่อง <current_market_data> ไม่ระบุ หรือเป็นค่าว่าง ให้ตอบกลับผู้ใช้ไปตรง ๆ ว่า "ระบบไม่สามารถดึงข้อมูลราคาหุ้นที่เป็นปัจจุบันได้ในขณะนี้" ห้ามเดาราคาขึ้นมาเอง
+4. อ้างอิงวันที่และเวลาที่ระบุในข้อมูลดิบเสมอ เพื่อชี้แจงให้ผู้ใช้ทราบว่าเป็นข้อมูล ณ เวลาใด
+
+[โครงสร้างรูปแบบการจัดรูปแบบผลลัพธ์ (Output Format)]
+ให้ตอบกลับตามหัวข้อดังนี้อย่างชัดเจน เป็นระเบียบ:
+- [ข้อมูลราคาหุ้น {TICKER}]
+- ราคาหุ้น {COMPANY_NAME} ({TICKER}) - ตลาด {EXCHANGE}
+- ราคาปัจจุบัน: ประมวลจากตัวเลขล่าสุด พร้อมระบุความเคลื่อนไหว (%)
+- สถานะปัจจุบัน: สรุปกลุ่มอุตสาหกรรมและกระแสหลัก
+- ปัจจัยสนับสนุน: ระบุความต้องการสินค้าหรือข่าวสารหลักจากข้อมูลที่ให้
+- ประเด็นต้องติดตาม: สรุปความเสี่ยงและเรื่องที่ต้องจับตาดูถัดไป`;
+
+// Common stop words to prevent false positives when searching uppercase tickers
+const COMMON_IGNORE_WORDS = new Set([
+  'AI', 'THE', 'AND', 'FOR', 'NOT', 'BUT', 'BUY', 'SELL', 'CAN', 'MAY', 'NEW',
+  'NOW', 'TOP', 'ALL', 'SEE', 'DAY', 'GET', 'HAS', 'HAD', 'ARE', 'WAS', 'PER',
+  'NET', 'LOW', 'RUN', 'SET', 'THB', 'USD', 'CEO', 'CFO', 'EPS', 'GDP', 'FED',
+  'BOT', 'SEC', 'IPO', 'FREE', 'PRO', 'VIP', 'CHAT', 'HELP', 'WHAT', 'HOW',
+  'WHEN', 'WHERE', 'WHY', 'WHO', 'WILL', 'WITH', 'FROM', 'HAVE', 'THIS', 'THAT',
+  'LITE', 'TRUE', 'REAL', 'TIME', 'GOOD', 'BAD', 'HOLD', 'INFO', 'DOC'
+]);
+
+function extractCandidateTickers(text: string): string[] {
+  if (!text) return [];
+  const candidates: string[] = [];
+
+  // 1. Pattern: $TICKER (e.g. $NVDA, $DELTA)
+  const dollarMatches = text.match(/\$([A-Za-z]{1,6})\b/g);
+  if (dollarMatches) {
+    for (const m of dollarMatches) {
+      const sym = m.replace('$', '').toUpperCase().trim();
+      if (!COMMON_IGNORE_WORDS.has(sym)) candidates.push(sym);
+    }
+  }
+
+  // 2. Pattern: หุ้น [TICKER] or หุ้นไทย [TICKER]
+  const thaiMatches = text.match(/(?:หุ้น|ราคาหุ้น|วิเคราะห์หุ้น|หุ้นไทย)\s*([A-Za-z]{1,6})\b/gi);
+  if (thaiMatches) {
+    for (const m of thaiMatches) {
+      const sym = m.replace(/(?:หุ้น|ราคาหุ้น|วิเคราะห์หุ้น|หุ้นไทย)\s*/i, '').toUpperCase().trim();
+      if (!COMMON_IGNORE_WORDS.has(sym)) candidates.push(sym);
+    }
+  }
+
+  // 3. Pattern: Standalone uppercase English tokens 2-6 chars (e.g. NVDA, PTT, CPALL, DELTA, TSLA, AAPL, MSFT)
+  const standaloneMatches = text.match(/\b([A-Z]{2,6})\b/g);
+  if (standaloneMatches) {
+    for (const sym of standaloneMatches) {
+      const clean = sym.toUpperCase().trim();
+      if (!COMMON_IGNORE_WORDS.has(clean) && !candidates.includes(clean)) {
+        candidates.push(clean);
+      }
+    }
+  }
+
+  return Array.from(new Set(candidates));
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -162,10 +229,55 @@ export async function POST(req: NextRequest) {
 
     const outboundMessages = contextResult.outboundMessages;
 
+    // 3.5 Real-Time Stock RAG & Strict Anchoring Data Retrieval
+    const candidateTickers = extractCandidateTickers(lastUserMsg);
+    const activeTicker = stockContext?.ticker || (candidateTickers.length > 0 ? candidateTickers[0] : null);
+
+    let isLiveStockRAG = false;
+    let liveMarketDataBlock = '';
+
+    if (activeTicker) {
+      try {
+        const liveStock = await fetchSingleStockYFinance(activeTicker, stockContext?.market, true);
+        if (liveStock) {
+          isLiveStockRAG = true;
+          const formattedTime = new Date().toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok' }) + ' น.';
+          const formattedDate = new Date().toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', year: 'numeric' });
+          const currencySymbol = liveStock.currency === 'THB' ? '฿' : '$';
+
+          liveMarketDataBlock = `<current_market_data>
+Timestamp: ${new Date().toISOString()} (เวลาประเทศไทย: ${formattedDate} ${formattedTime})
+Ticker: ${liveStock.ticker}
+Company: ${liveStock.name}
+Exchange: ${liveStock.market === 'SET' ? 'Stock Exchange of Thailand (SET)' : 'US Stock Market (NASDAQ/NYSE)'}
+Current_Price: ${currencySymbol}${liveStock.price.toLocaleString()} (${liveStock.change >= 0 ? '+' : ''}${liveStock.change}%)
+Day_Range: 52w Low ${currencySymbol}${liveStock.low52w} - 52w High ${currencySymbol}${liveStock.high52w}
+Market_Cap: ${liveStock.marketCap}
+P/E_Ratio: ${liveStock.peRatio ? liveStock.peRatio + 'x' : '—'}
+Dividend_Yield: ${liveStock.dividendYield ? liveStock.dividendYield + '%' : '—'}
+Volume: ${liveStock.volume || '—'}
+Industry_Status: ${liveStock.sector || 'บริษัทจดทะเบียนในตลาดหลักทรัพย์'}
+Catalysts: ${liveStock.aiInsight || 'ความต้องการผลิตภัณฑ์และผลประกอบการรอบล่าสุด'}
+Risks_To_Watch: ความผันผวนของตลาดสากล ปัจจัยมหภาค และอัตราดอกเบี้ย/อัตราแลกเปลี่ยน
+</current_market_data>`;
+        } else if (candidateTickers.length > 0) {
+          isLiveStockRAG = true;
+          liveMarketDataBlock = `<current_market_data>
+Ticker: ${activeTicker}
+Status: ระบบไม่สามารถดึงข้อมูลราคาหุ้นที่เป็นปัจจุบันได้ในขณะนี้
+</current_market_data>`;
+        }
+      } catch (err) {
+        console.warn('[RAG Stock Fetch Error]:', err);
+      }
+    }
+
     // 4. Build System Prompt with Financial Context & Rolling Summary
     let systemPromptWithContext = COMPACT_SYSTEM_PROMPT;
 
-    if (stockContext && stockContext.ticker) {
+    if (isLiveStockRAG) {
+      systemPromptWithContext += `\n\n${STRICT_ANCHORING_LORE}`;
+    } else if (stockContext && stockContext.ticker) {
       systemPromptWithContext += `\n[บริบทหุ้น]: ${stockContext.ticker} (${stockContext.market || 'SET'}) ราคา: ${stockContext.price ?? '—'} (${stockContext.change != null ? (stockContext.change >= 0 ? '+' : '') + stockContext.change + '%' : '—'}) PE: ${stockContext.peRatio ?? '—'}x มาร์เก็ตแคป: ${stockContext.marketCap ?? '—'}`;
     }
 
@@ -192,8 +304,14 @@ export async function POST(req: NextRequest) {
       const msg = outboundMessages[i];
       const isLatestUser = i === outboundMessages.length - 1 && msg.role === 'user';
 
-      if (isLatestUser && hasAttachments) {
+      if (isLatestUser) {
         let textContent = msg.content;
+
+        // Inject live market data delimiter block if RAG is active
+        if (isLiveStockRAG && liveMarketDataBlock) {
+          textContent = `${liveMarketDataBlock}\n\nคำถามจากผู้ใช้: "${msg.content}"`;
+        }
+
         if (documentText) {
           textContent += `\n\n[ข้อมูลเอกสารแนบ${documentName ? ' ' + documentName : ''}]:\n${documentText}`;
         }
@@ -227,7 +345,7 @@ export async function POST(req: NextRequest) {
       models: fallbackArray,
       route: 'fallback',
       messages: formattedMessages,
-      temperature: 0.7,
+      temperature: isLiveStockRAG ? 0.1 : 0.7,
       max_tokens: maxTokensLimit,
       stream: Boolean(stream),
       provider: {

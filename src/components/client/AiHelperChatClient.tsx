@@ -35,6 +35,7 @@ import {
   Square,
   Paperclip,
   AlertTriangle,
+  ChevronDown,
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -791,6 +792,21 @@ export const AiHelperChatClient: React.FC = () => {
 
               {/* Center Column: Model Selector Pill & Context Summary Badge */}
               <div className="ai-header-center" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* Mobile Title with Subtle Model Hint (Mobile Only) */}
+                <div className="ai-mobile-header-center-box">
+                  <span className="ai-mobile-header-title">StockHome AI</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsModelPickerOpen(true)}
+                    className="ai-mobile-model-hint ios-tappable"
+                    title="แตะเพื่อดูหรือเปลี่ยนโมเดล AI"
+                  >
+                    <span>⚡ {selectedModel.name}</span>
+                    <ChevronDown size={10} />
+                  </button>
+                </div>
+
+                {/* Desktop Model Selector Pill (Name Only, No Duplicate Tag) */}
                 <button
                   id="model-picker-btn"
                   onClick={() => setIsModelPickerOpen(true)}
@@ -807,9 +823,6 @@ export const AiHelperChatClient: React.FC = () => {
                   })()}
                   <span className="ai-model-name-text">
                     {selectedModel.name}
-                  </span>
-                  <span className="ai-model-tag-badge">
-                    {selectedModel.tag}
                   </span>
                   <svg
                     width="10"
@@ -958,6 +971,36 @@ export const AiHelperChatClient: React.FC = () => {
 
                   {/* Sheet Content */}
                   <div className="ai-sheet-body">
+                    {/* 0. Active AI Model Card */}
+                    <div className="ai-sheet-model-card">
+                      <div className="ai-sheet-model-top">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {(() => {
+                            const FIcon = familyInfo ? FAMILY_ICON_MAP[familyInfo.key] : null;
+                            return FIcon ? <FIcon style={{ width: '22px', height: '22px', flexShrink: 0 }} /> : <Zap size={20} color="#38bdf8" />;
+                          })()}
+                          <div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary, #94a3b8)' }}>โมเดล AI ที่ใช้งานอยู่</div>
+                            <div style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--text-primary, #ffffff)' }}>
+                              {selectedModel.name}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setIsHamburgerOpen(false);
+                            setIsModelPickerOpen(true);
+                          }}
+                          className="ai-sheet-change-model-btn ios-tappable"
+                        >
+                          เปลี่ยนโมเดล →
+                        </button>
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #94a3b8)', marginTop: '4px', lineHeight: 1.4 }}>
+                        {selectedModel.highlight}
+                      </div>
+                    </div>
+
                     {/* 1. Wallet & GemCoins Card */}
                     <div className="ai-sheet-wallet-card">
                       <div className="ai-sheet-wallet-top">

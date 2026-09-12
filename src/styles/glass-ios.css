@@ -578,6 +578,12 @@ body {
   }
   .mobile-pwa-bottom-nav {
     display: flex !important;
+    overflow: visible !important;
+  }
+  [data-theme='light'] .mobile-pwa-bottom-nav {
+    background: rgba(255, 255, 255, 0.94) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.09) !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
   }
   .main-content-container,
   main:not(.ai-helper-main-container) {

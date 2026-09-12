@@ -104,11 +104,11 @@ export const GemCoinModal: React.FC = () => {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
       <div
-        className="relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-[#0d1319] border border-cyan-500/30 rounded-2xl shadow-[0_0_40px_rgba(6,182,212,0.15)] overflow-hidden text-slate-100"
+        className="gemcoin-modal-box relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-[#0d1319] border border-cyan-500/30 rounded-2xl shadow-[0_0_40px_rgba(6,182,212,0.15)] overflow-hidden text-slate-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with Balance Summary */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#090d12]">
+        <div className="gemcoin-modal-header flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#090d12]">
           <div className="flex items-center gap-3">
             <GemCoinIcon className="w-8 h-8" glow={true} />
             <div>
@@ -144,12 +144,12 @@ export const GemCoinModal: React.FC = () => {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-slate-800/80 bg-[#0a0e14] px-4">
+        <div className="gemcoin-tabs-nav flex border-b border-slate-800/80 bg-[#0a0e14] px-4">
           <button
             onClick={() => setActiveTab('topup')}
-            className={`px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
+            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
               activeTab === 'topup'
-                ? 'border-cyan-400 text-cyan-300 bg-cyan-950/20'
+                ? 'active border-cyan-400 text-cyan-300 bg-cyan-950/20'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -158,9 +158,9 @@ export const GemCoinModal: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('plans')}
-            className={`px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
+            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
               activeTab === 'plans'
-                ? 'border-cyan-400 text-cyan-300 bg-cyan-950/20'
+                ? 'active border-cyan-400 text-cyan-300 bg-cyan-950/20'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -169,9 +169,9 @@ export const GemCoinModal: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('redeem')}
-            className={`px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
+            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
               activeTab === 'redeem'
-                ? 'border-cyan-400 text-cyan-300 bg-cyan-950/20'
+                ? 'active border-cyan-400 text-cyan-300 bg-cyan-950/20'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -180,9 +180,9 @@ export const GemCoinModal: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('logs')}
-            className={`px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
+            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
               activeTab === 'logs'
-                ? 'border-cyan-400 text-cyan-300 bg-cyan-950/20'
+                ? 'active border-cyan-400 text-cyan-300 bg-cyan-950/20'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >

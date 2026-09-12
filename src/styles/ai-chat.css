@@ -90,8 +90,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 14px;
-  border-radius: 12px;
+  padding: 6px 16px;
+  border-radius: 9999px !important;
   background: var(--input-bg, rgba(255, 255, 255, 0.06));
   border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
   color: var(--text-primary, #f1f5f9);
@@ -654,6 +654,111 @@
   color: #38bdf8;
   border-bottom-color: #38bdf8;
   background: rgba(56, 189, 248, 0.06);
+}
+
+/* ==========================================================================
+   GemCoin Modal Theme-Adaptive Styling (Dark & Light)
+   ========================================================================== */
+.gemcoin-modal-box {
+  background: #0d1319;
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  color: #f1f5f9;
+}
+
+.gemcoin-modal-header {
+  background: #090d12;
+}
+
+.gemcoin-tabs-nav {
+  background: #0a0e14;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gemcoin-tab-item {
+  color: #94a3b8;
+  transition: all 0.15s ease;
+}
+
+.gemcoin-tab-item:hover {
+  color: #f8fafc;
+}
+
+.gemcoin-tab-item.active {
+  color: #22d3ee !important;
+  border-bottom-color: #06b6d4 !important;
+  background: rgba(6, 182, 212, 0.12) !important;
+}
+
+/* Light Mode Overrides for GemCoin Modal (WCAG AAA Contrast) */
+[data-theme='light'] .gemcoin-modal-box {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #0f172a !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.16) !important;
+}
+
+[data-theme='light'] .gemcoin-modal-header {
+  background: #f8fafc !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme='light'] .gemcoin-modal-header h2 {
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .gemcoin-tabs-nav {
+  background: #f1f5f9 !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme='light'] .gemcoin-tab-item {
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+
+[data-theme='light'] .gemcoin-tab-item:hover {
+  color: #0f172a !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme='light'] .gemcoin-tab-item.active {
+  color: #0284c7 !important;
+  border-bottom-color: #0284c7 !important;
+  background: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme='light'] .gemcoin-modal-box h2,
+[data-theme='light'] .gemcoin-modal-box h3,
+[data-theme='light'] .gemcoin-modal-box h4 {
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .gemcoin-modal-box p,
+[data-theme='light'] .gemcoin-modal-box span.text-slate-400 {
+  color: #475569 !important;
+}
+
+[data-theme='light'] .gemcoin-modal-box div.border-slate-800 {
+  border-color: rgba(0, 0, 0, 0.09) !important;
+}
+
+[data-theme='light'] .gemcoin-modal-box div.bg-slate-900\/50,
+[data-theme='light'] .gemcoin-modal-box div.bg-slate-900 {
+  background: #f8fafc !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme='light'] .gemcoin-modal-box div.bg-slate-800\/60,
+[data-theme='light'] .gemcoin-modal-box div.bg-slate-800 {
+  background: #f1f5f9 !important;
+}
+
+[data-theme='light'] .gemcoin-modal-box input {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  color: #0f172a !important;
 }
 
 .ai-modal-body {
@@ -1446,6 +1551,103 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 0 0 20px rgba(0, 113, 227, 0.2);
 }
 
+/* ── Sidebar Memory Widget Contrast (Light Mode - WCAG AAA) ── */
+[data-theme='light'] .ai-sidebar-memory-widget {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme='light'] .ai-sidebar-memory-title {
+  color: #0f172a !important; /* Bold, solid readable dark slate */
+}
+
+[data-theme='light'] .ai-sidebar-memory-status {
+  color: #047857 !important; /* Crisp dark emerald green */
+}
+
+/* ── Settings Drawer / Hamburger Sheet (Light Mode) ── */
+[data-theme='light'] .ai-hamburger-sheet {
+  background: #ffffff !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.15) !important;
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .ai-sheet-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme='light'] .ai-sheet-title {
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .ai-sheet-close-btn {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+}
+
+[data-theme='light'] .ai-sheet-close-btn:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .ai-sheet-model-card {
+  background: #f8fafc !important;
+  border: 1px solid rgba(0, 122, 255, 0.25) !important;
+}
+
+[data-theme='light'] .ai-sheet-change-model-btn {
+  background: #007aff !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+[data-theme='light'] .ai-sheet-wallet-card {
+  background: #f8fafc !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+[data-theme='light'] .ai-sheet-wallet-top span,
+[data-theme='light'] .ai-sheet-wallet-breakdown span {
+  color: #475569 !important;
+}
+
+[data-theme='light'] .ai-sheet-setting-row {
+  background: #f8fafc !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+}
+
+[data-theme='light'] .ai-setting-label {
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .ai-setting-desc {
+  color: #475569 !important;
+}
+
+[data-theme='light'] .ai-sheet-action-item {
+  background: #f8fafc !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .ai-sheet-action-item:hover {
+  background: #f1f5f9 !important;
+}
+
+[data-theme='light'] .ai-sheet-tier-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme='light'] .ai-sheet-tier-footer span {
+  color: #475569 !important;
+}
+
+[data-theme='light'] .ai-sheet-tier-footer strong {
+  color: #0f172a !important;
+}
+
 /* ==========================================================================
    AI Chat History Sidebar & Drawer (iOS Native Glassmorphism)
    ========================================================================== */
@@ -1874,20 +2076,22 @@
     padding: 5px 8px !important;
   }
 
+  /* Mobile Header Optimization: Hide bulky buttons from top bar to eliminate overcrowding */
   .ai-model-picker-btn {
-    padding: 4px 7px !important;
-    font-size: clamp(0.7rem, 1.7vw, 0.78rem) !important;
-    max-width: clamp(7.5rem, 28vw, 12rem) !important;
+    display: none !important;
   }
 
   .ai-gemcoin-wallet-pill {
-    padding: 3px 6px !important;
-    font-size: clamp(0.68rem, 1.5vw, 0.76rem) !important;
+    display: none !important;
+  }
+
+  .ai-mobile-header-center-box {
+    display: flex !important;
   }
 
   .ai-input-container {
-    padding: clamp(0.3rem, 0.7vh, 0.55rem) clamp(0.45rem, 1.6vw, 0.9rem) !important;
-    padding-bottom: calc(clamp(0.3rem, 0.7vh, 0.55rem) + env(safe-area-inset-bottom, 8px)) !important;
+    padding: clamp(0.35rem, 0.8vh, 0.6rem) clamp(0.55rem, 1.8vw, 1rem) !important;
+    padding-bottom: calc(clamp(0.45rem, 1vh, 0.75rem) + env(safe-area-inset-bottom, 12px)) !important;
   }
 
   .ai-history-sidebar.sidebar-hidden {
@@ -1943,6 +2147,98 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Mobile Center Header with Subtle Model Hint */
+.ai-mobile-header-center-box {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  text-align: center;
+}
+
+.ai-mobile-header-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary, #ffffff);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+[data-theme='light'] .ai-mobile-header-title {
+  color: #0f172a !important;
+}
+
+.ai-mobile-model-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--text-tertiary, #94a3b8);
+  cursor: pointer;
+  max-width: 175px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.ai-mobile-model-hint:hover {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+}
+
+[data-theme='light'] .ai-mobile-model-hint {
+  color: #64748b !important;
+}
+
+[data-theme='light'] .ai-mobile-model-hint:hover {
+  color: #0284c7 !important;
+  background: #f1f5f9 !important;
+}
+
+/* Active Model Card in Settings Drawer */
+.ai-sheet-model-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 16px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-sheet-model-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ai-sheet-change-model-btn {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.ai-sheet-change-model-btn:hover {
+  background: #38bdf8;
+  color: #0d131a;
 }
 
 .ai-header-right {

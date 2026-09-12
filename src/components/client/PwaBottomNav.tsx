@@ -42,6 +42,7 @@ export function PwaBottomNav() {
         borderTop: '1px solid var(--glass-border)',
         borderRadius: '24px 24px 0 0',
         boxShadow: '0 -6px 28px rgba(0, 0, 0, 0.45)',
+        overflow: 'visible',
       }}
       aria-label="Mobile Navigation"
     >
@@ -132,6 +133,8 @@ export function PwaBottomNav() {
           textDecoration: 'none',
           position: 'relative',
           marginTop: '-16px', // Elevated above the bar
+          overflow: 'visible',
+          zIndex: 20,
         }}
       >
         <div
@@ -147,6 +150,7 @@ export function PwaBottomNav() {
             boxShadow: '0 6px 20px rgba(6, 182, 212, 0.5), 0 0 10px rgba(59, 130, 246, 0.35)',
             border: '2px solid rgba(255, 255, 255, 0.35)',
             transition: 'all 0.2s ease',
+            flexShrink: 0,
           }}
         >
           <Sparkles size={23} strokeWidth={2.4} />
