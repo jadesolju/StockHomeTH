@@ -14,6 +14,7 @@ import {
   onAuthStateChanged,
 } from 'firebase/auth';
 import { auth } from '../firebase/firebaseClient';
+import { purgeDevStorage } from '../utils/authStorage';
 
 export type AuthModalTab = 'login' | 'register' | 'forgot' | 'changePassword';
 
@@ -116,11 +117,7 @@ export const ClientAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const signOut = async () => {
     try {
-      if (localStorage.getItem('stockhome_local_subscription_tier') === 'dev') {
-        localStorage.setItem('stockhome_local_subscription_tier', 'free');
-        localStorage.setItem('stockhome_gemcoin_daily_remaining', '500');
-        localStorage.setItem('stockhome_gemcoin_topup_balance', '0');
-      }
+      purgeDevStorage();
     } catch {}
     await firebaseSignOut(auth);
     setUser(null);

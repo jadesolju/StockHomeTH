@@ -29,6 +29,7 @@ import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
 import { useAdminAuth } from '../../lib/context/AdminAuthContext';
 import { useSubscription, OWNER_DEV_IDENTIFIERS } from '../../lib/context/SubscriptionContext';
+import { purgeDevStorage } from '../../lib/utils/authStorage';
 import { UserAvatar } from '../ui/UserAvatar';
 
 import { ADMIN_PORTAL_PATH } from '../../config/adminConfig';
@@ -453,6 +454,7 @@ export function HeaderClientNav({
                     <button
                       onClick={() => {
                         setIsUserMenuOpen(false);
+                        purgeDevStorage();
                         signOut();
                         adminSignOut();
                       }}

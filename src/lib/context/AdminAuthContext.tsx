@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../supabase/client';
+import { purgeDevStorage } from '../utils/authStorage';
 
 // Pre-authorized admin emails & UIDs (configurable)
 const AUTHORIZED_ADMIN_EMAILS = [
@@ -114,11 +115,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const signOut = async () => {
     try {
-      if (localStorage.getItem('stockhome_local_subscription_tier') === 'dev') {
-        localStorage.setItem('stockhome_local_subscription_tier', 'free');
-        localStorage.setItem('stockhome_gemcoin_daily_remaining', '500');
-        localStorage.setItem('stockhome_gemcoin_topup_balance', '0');
-      }
+      purgeDevStorage();
     } catch {}
     try {
       await supabase.auth.signOut();

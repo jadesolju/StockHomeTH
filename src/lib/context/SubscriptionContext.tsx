@@ -91,6 +91,9 @@ const GEMCOIN_TOPUP_KEY = 'stockhome_gemcoin_topup_balance';
 const GEMCOIN_LOGS_KEY = 'stockhome_gemcoin_logs';
 const GEMCOIN_USER_ID_KEY = 'stockhome_device_user_id';
 
+export { purgeDevStorage } from '../utils/authStorage';
+import { purgeDevStorage } from '../utils/authStorage';
+
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const { user } = useClientAuth();
   const [currentTier, setCurrentTierState] = useState<SubscriptionTier>('free');
@@ -164,38 +167,36 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     setCurrentTierState('dev');
     setTopupGemCoins(99999999);
     setDailyGemCoinsRemaining(10000000);
-    try {
-      localStorage.setItem(STORAGE_KEY, 'dev');
-      localStorage.setItem(GEMCOIN_TOPUP_KEY, '99999999');
-      localStorage.setItem(GEMCOIN_DAILY_KEY, '10000000');
-    } catch {}
+    // Keep God Mode strictly in React memory while authenticated as owner.
+    // Intentionally DO NOT write 'dev' or 99999999 to permanent localStorage
+    // so that when logged out, localStorage remains 100% clean and free of rogue dev tokens.
   }, []);
 
-  // Synchronize tier with ownership status & revoke dev privileges upon logout
+  // Synchronize tier with ownership status & immediately purge dev privileges upon logout
   useEffect(() => {
     if (isOwnerAccount) {
-      try {
-        const savedTier = localStorage.getItem(STORAGE_KEY);
-        if (!savedTier || savedTier !== 'dev') {
-          restoreOwnerGodMode();
-        }
-      } catch {}
+      restoreOwnerGodMode();
     } else {
       // User is NOT an owner account (either logged out as guest, or normal user)
-      // If current tier is 'dev' or localStorage has 'dev' -> Revoke to free!
+      // Immediately purge dev status from state AND from localStorage
+      setCurrentTierState((prev) => (prev === 'dev' ? 'free' : prev));
       try {
         const savedTier = localStorage.getItem(STORAGE_KEY);
-        if (currentTier === 'dev' || savedTier === 'dev') {
-          setCurrentTierState('free');
-          localStorage.setItem(STORAGE_KEY, 'free');
+        const savedDaily = localStorage.getItem(GEMCOIN_DAILY_KEY);
+        const savedTopup = localStorage.getItem(GEMCOIN_TOPUP_KEY);
+
+        if (
+          savedTier === 'dev' ||
+          savedDaily === '10000000' ||
+          savedTopup === '99999999'
+        ) {
+          purgeDevStorage();
           setDailyGemCoinsRemaining(500);
           setTopupGemCoins(0);
-          localStorage.setItem(GEMCOIN_DAILY_KEY, '500');
-          localStorage.setItem(GEMCOIN_TOPUP_KEY, '0');
         }
       } catch {}
     }
-  }, [isOwnerAccount, currentTier, restoreOwnerGodMode]);
+  }, [isOwnerAccount, restoreOwnerGodMode]);
 
   // Auto-claim any pending GemCoin airdrops sent to user's email by Admin
   useEffect(() => {
@@ -308,7 +309,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         if (savedAi) setAiUsageToday(parseInt(savedAi, 10) || 0);
 
         const savedDaily = localStorage.getItem(GEMCOIN_DAILY_KEY);
-        if (savedDaily !== null) {
+        if (savedDaily === '10000000' && !isOwnerAccount) {
+          localStorage.setItem(GEMCOIN_DAILY_KEY, '500');
+          setDailyGemCoinsRemaining(500);
+        } else if (savedDaily !== null) {
           setDailyGemCoinsRemaining(parseInt(savedDaily, 10) || 0);
         } else {
           setDailyGemCoinsRemaining(effectiveTierInfo.dailyGemCoins);
@@ -317,7 +321,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
       // 4. Permanent Top-up Balance (never expires)
       const savedTopup = localStorage.getItem(GEMCOIN_TOPUP_KEY);
-      if (savedTopup) {
+      if (savedTopup === '99999999' && !isOwnerAccount) {
+        localStorage.setItem(GEMCOIN_TOPUP_KEY, '0');
+        setTopupGemCoins(0);
+      } else if (savedTopup) {
         setTopupGemCoins(parseInt(savedTopup, 10) || 0);
       }
 
@@ -364,22 +371,26 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   // Save changes to Tier
   const setTier = useCallback(
     (tier: SubscriptionTier) => {
+      if (tier === 'dev' && !isOwnerAccount) {
+        console.warn('Unauthorized attempt to set dev tier');
+        return;
+      }
       setCurrentTierState(tier);
       if (user?.uid) {
         updateCloudTier(user.uid, tier).catch(() => {});
       }
       try {
-        localStorage.setItem(STORAGE_KEY, tier);
-        const tierInfo =
-          GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === tier) ||
-          GEMCOIN_SUBSCRIPTION_TIERS[0];
-
         if (tier === 'dev') {
+          // Keep dev in-memory only for owner, do not write dev tokens to localStorage!
           setTopupGemCoins(99999999);
           setDailyGemCoinsRemaining(10000000);
-          localStorage.setItem(GEMCOIN_TOPUP_KEY, '99999999');
-          localStorage.setItem(GEMCOIN_DAILY_KEY, '10000000');
+          localStorage.setItem(STORAGE_KEY, 'free');
         } else {
+          localStorage.setItem(STORAGE_KEY, tier);
+          const tierInfo =
+            GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === tier) ||
+            GEMCOIN_SUBSCRIPTION_TIERS[0];
+
           // If user upgrades, immediately grant permanent topup bonus!
           if (tierInfo.permanentTopupBonus > 0) {
             setTopupGemCoins((prev) => {
@@ -398,7 +409,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         }
       } catch {}
     },
-    [user?.uid]
+    [user?.uid, isOwnerAccount]
   );
 
   const openPricingModal = useCallback(() => setIsPricingModalOpen(true), []);

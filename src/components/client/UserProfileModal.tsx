@@ -22,6 +22,7 @@ import { ADMIN_PORTAL_PATH } from '../../config/adminConfig';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
 import { useAdminAuth } from '../../lib/context/AdminAuthContext';
 import { useSubscription, SubscriptionTier, OWNER_DEV_IDENTIFIERS } from '../../lib/context/SubscriptionContext';
+import { purgeDevStorage } from '../../lib/utils/authStorage';
 import { UserAvatar } from '../ui/UserAvatar';
 
 export function UserProfileModal() {
@@ -611,7 +612,7 @@ export function UserProfileModal() {
 
         {/* ─── Logout Button (Prominent & Clear) ─── */}
         <button
-          onClick={() => { signOut(); adminSignOut(); }}
+          onClick={() => { purgeDevStorage(); signOut(); adminSignOut(); }}
           className="ios-btn-secondary"
           style={{
             width: '100%',
