@@ -31,8 +31,9 @@ export interface ModelSpec {
   family: ModelFamily;
   tag: string;            // Short badge label (e.g. "Fast", "Reasoning")
   context: string;        // Context window (e.g. "1M", "200K")
-  priceInput: string;     // $/M input tokens (approx)
-  priceOutput: string;    // $/M output tokens (approx)
+  gemCoinsEstimate?: number; // Estimated GemCoins per query (e.g. 4, 6, 12, 25)
+  priceInput?: string;    // Deprecated for end-users, kept for internal reference
+  priceOutput?: string;   // Deprecated for end-users, kept for internal reference
   highlight: string;      // Thai one-liner description
   isNew?: boolean;        // Show NEW badge
   isPopular?: boolean;    // Show HOT badge
@@ -51,6 +52,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'gemini',
     tag: 'Lite',
     context: '1M',
+    gemCoinsEstimate: 35,
     priceInput: '$0.05',
     priceOutput: '$0.10',
     highlight: 'เบาสุด เร็วสุด ราคาถูกที่สุดในซีรีส์ Gemini',
@@ -62,6 +64,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'gemini',
     tag: 'Flash',
     context: '1M',
+    gemCoinsEstimate: 60,
     priceInput: '$0.10',
     priceOutput: '$0.30',
     highlight: 'Flash รุ่นใหม่ — เร็วดี สมดุล ราคาย่อมเยา',
@@ -74,6 +77,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'gemini',
     tag: 'Flash+',
     context: '1M',
+    gemCoinsEstimate: 95,
     priceInput: '$0.15',
     priceOutput: '$0.50',
     highlight: 'Flash อัปเกรด — ฉลาดขึ้น ยังเร็ว',
@@ -86,9 +90,10 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'gemini',
     tag: 'Flash Pro',
     context: '1M',
+    gemCoinsEstimate: 100,
     priceInput: '$0.20',
     priceOutput: '$0.60',
-    highlight: 'Flash รุ่นล่าสุด — ใกล้เคียง Pro แต่เร็วกว่า',
+    highlight: 'Flash รุ่นล่าสุด — Baseline มาตรฐาน สมดุลและฉลาด',
     isNew: true,
     isPopular: true,
     minTier: 'free',
@@ -99,6 +104,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'gemini',
     tag: 'Stable',
     context: '1M',
+    gemCoinsEstimate: 90,
     priceInput: '$0.15',
     priceOutput: '$0.60',
     highlight: 'Stable production — นิยมสูงสุด ใช้ทั่วไป',
@@ -111,6 +117,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'gemini',
     tag: 'Pro Preview',
     context: '2M',
+    gemCoinsEstimate: 650,
     priceInput: '$1.00',
     priceOutput: '$4.00',
     highlight: 'Pro รุ่น preview — Reasoning ลึก ทดสอบฟีเจอร์ใหม่',
@@ -123,6 +130,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'gemini',
     tag: 'Pro',
     context: '1M',
+    gemCoinsEstimate: 800,
     priceInput: '$1.25',
     priceOutput: '$5.00',
     highlight: 'Pro stable — วิเคราะห์หุ้น งบการเงิน กราฟ',
@@ -138,6 +146,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'gpt',
     tag: 'Mini',
     context: '128K',
+    gemCoinsEstimate: 55,
     priceInput: '$0.08',
     priceOutput: '$0.30',
     highlight: 'GPT-4 คุณภาพ ราคาต่ำสุด ตอบเร็ว',
@@ -150,6 +159,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'gpt',
     tag: 'Balanced',
     context: '128K',
+    gemCoinsEstimate: 1300,
     priceInput: '$2.00',
     priceOutput: '$8.00',
     highlight: 'GPT-5 รุ่นกลาง — คุณภาพดี ราคาพอสมควร',
@@ -161,6 +171,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'gpt',
     tag: 'Fast',
     context: '256K',
+    gemCoinsEstimate: 1000,
     priceInput: '$1.50',
     priceOutput: '$6.00',
     highlight: 'GPT-5.6 variant เร็ว — เหมาะ chat ทั่วไป',
@@ -173,6 +184,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'gpt',
     tag: 'Balanced',
     context: '256K',
+    gemCoinsEstimate: 2000,
     priceInput: '$3.00',
     priceOutput: '$12.00',
     highlight: 'GPT-5.6 variant สมดุล — flagship สำหรับงานหนัก',
@@ -186,6 +198,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'gpt',
     tag: 'Heavy',
     context: '256K',
+    gemCoinsEstimate: 3300,
     priceInput: '$5.00',
     priceOutput: '$20.00',
     highlight: 'GPT-5.6 variant ใหญ่ — งานซับซ้อน วิเคราะห์เชิงลึก',
@@ -198,9 +211,10 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'gpt',
     tag: 'Elite',
     context: '512K',
+    gemCoinsEstimate: 6500,
     priceInput: '$10.00',
     priceOutput: '$40.00',
-    highlight: 'GPT-6 รุ่นแรก — ฉลาดสุดในจักรวาล OpenAI',
+    highlight: 'GPT-6 รุ่นแรก — ฉลาดสุดในจักรวาล OpenAI (High Reasoning)',
     isNew: true,
     minTier: 'free',
   },
@@ -214,6 +228,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'claude',
     tag: 'Balanced',
     context: '200K',
+    gemCoinsEstimate: 2300,
     priceInput: '$3.00',
     priceOutput: '$15.00',
     highlight: 'Sonnet flagship — วิเคราะห์ข่าว ตลาด ยุทธศาสตร์',
@@ -226,6 +241,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'claude',
     tag: 'Balanced+',
     context: '200K',
+    gemCoinsEstimate: 3100,
     priceInput: '$4.00',
     priceOutput: '$20.00',
     highlight: 'Sonnet รุ่นใหม่ — ฉลาดขึ้น reasoning ดีขึ้น',
@@ -238,6 +254,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'claude',
     tag: 'Flagship Sonnet',
     context: '200K',
+    gemCoinsEstimate: 3800,
     priceInput: '$5.00',
     priceOutput: '$25.00',
     highlight: 'Sonnet 5 — สุดยอด balanced ทุกด้าน',
@@ -251,6 +268,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'claude',
     tag: 'Creative',
     context: '200K',
+    gemCoinsEstimate: 5500,
     priceInput: '$8.00',
     priceOutput: '$40.00',
     highlight: 'Claude variant ใหม่ — สร้างสรรค์ เชี่ยวชาญ narrative',
@@ -263,6 +281,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'claude',
     tag: 'Opus',
     context: '200K',
+    gemCoinsEstimate: 8500,
     priceInput: '$12.00',
     priceOutput: '$60.00',
     highlight: 'Opus รุ่นกลาง — วิเคราะห์ลึก กลยุทธ์ระยะยาว',
@@ -274,6 +293,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'claude',
     tag: 'Opus+',
     context: '200K',
+    gemCoinsEstimate: 9500,
     priceInput: '$13.00',
     priceOutput: '$65.00',
     highlight: 'Opus อัปเกรด — ข้อมูลซับซ้อน งานหนัก',
@@ -286,6 +306,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'claude',
     tag: 'Elite',
     context: '200K',
+    gemCoinsEstimate: 11500,
     priceInput: '$15.00',
     priceOutput: '$75.00',
     highlight: 'ระดับเทพสุดของ Claude — ข้อมูลซับซ้อนที่สุด',
@@ -302,6 +323,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'grok',
     tag: 'Fast',
     context: '131K',
+    gemCoinsEstimate: 120,
     priceInput: '$0.30',
     priceOutput: '$0.50',
     highlight: 'Grok เร็ว ราคาต่ำ เหมาะ realtime market chat',
@@ -314,6 +336,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'grok',
     tag: 'Balanced',
     context: '131K',
+    gemCoinsEstimate: 1500,
     priceInput: '$2.00',
     priceOutput: '$10.00',
     highlight: 'xAI balanced — ตอบตรงประเด็น ข้อมูลใหม่',
@@ -326,6 +349,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'grok',
     tag: 'Flagship',
     context: '131K',
+    gemCoinsEstimate: 2300,
     priceInput: '$3.00',
     priceOutput: '$15.00',
     highlight: 'xAI flagship รุ่นล่าสุด — ฉลาดสุด ข้อมูลสดกว่าใคร',
@@ -343,6 +367,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'qwen',
     tag: 'Flash',
     context: '128K',
+    gemCoinsEstimate: 35,
     priceInput: '$0.05',
     priceOutput: '$0.15',
     highlight: 'Qwen3 เร็วสุด ราคาถูก — เหมาะคำถามทั่วไป',
@@ -355,6 +380,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'qwen',
     tag: 'Flash+',
     context: '128K',
+    gemCoinsEstimate: 45,
     priceInput: '$0.10',
     priceOutput: '$0.20',
     highlight: 'Qwen3.8 Flash — อัปเกรดเล็ก ยังเร็วและถูก',
@@ -367,6 +393,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'qwen',
     tag: 'Plus',
     context: '128K',
+    gemCoinsEstimate: 95,
     priceInput: '$0.15',
     priceOutput: '$0.50',
     highlight: 'Qwen3 Plus — performance ระดับ GPT-4 ราคาถูกกว่า',
@@ -378,6 +405,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'qwen',
     tag: 'Powerhouse',
     context: '128K',
+    gemCoinsEstimate: 100,
     priceInput: '$0.20',
     priceOutput: '$0.60',
     highlight: 'Qwen3.8 ใหญ่ 27B — MoE คุณภาพสูง ราคาคุ้ม',
@@ -395,6 +423,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'deepseek',
     tag: 'Flash',
     context: '64K',
+    gemCoinsEstimate: 100,
     priceInput: '$0.20',
     priceOutput: '$0.60',
     highlight: 'DeepSeek V4 เร็ว — วิเคราะห์ตลาดสด real-time',
@@ -408,6 +437,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'deepseek',
     tag: 'Pro Reasoning',
     context: '64K',
+    gemCoinsEstimate: 500,
     priceInput: '$0.80',
     priceOutput: '$2.40',
     highlight: 'DeepSeek V4 Pro — Chain-of-thought ลึก วิเคราะห์การเงิน',
@@ -424,6 +454,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'gemma',
     tag: 'Open',
     context: '128K',
+    gemCoinsEstimate: 45,
     priceInput: '$0.10',
     priceOutput: '$0.20',
     highlight: 'Gemma 4 26B open source — ทดสอบได้ ไม่จ่ายแพง',
@@ -436,6 +467,7 @@ export const CURATED_MODELS: ModelSpec[] = [
     family: 'gemma',
     tag: 'Open+',
     context: '128K',
+    gemCoinsEstimate: 65,
     priceInput: '$0.15',
     priceOutput: '$0.30',
     highlight: 'Gemma 4 31B — ใหญ่กว่า ฉลาดกว่า ยังคุ้มราคา',
@@ -447,3 +479,17 @@ export const CURATED_MODELS: ModelSpec[] = [
 
 /** Default model to use when none is selected */
 export const DEFAULT_MODEL_ID = 'google/gemini-3.8-flash';
+
+export function getModelGemCoinsEst(modelOrId: ModelSpec | string): number {
+  if (!modelOrId) return 100;
+  const modelId = typeof modelOrId === 'string' ? modelOrId : modelOrId.id;
+  const spec = typeof modelOrId === 'object' ? modelOrId : CURATED_MODELS.find((m) => m.id === modelId);
+
+  if (spec?.gemCoinsEstimate) return spec.gemCoinsEstimate;
+  if (modelId.includes('opus')) return 8500;
+  if (modelId.includes('gpt-6')) return 6500;
+  if (modelId.includes('sonnet') || modelId.includes('gpt-5') || modelId.includes('grok-4.6')) return 2300;
+  if (modelId.includes('pro')) return 650;
+  if (modelId.includes('flash-lite') || modelId.includes('qwen3.7-flash')) return 35;
+  return 100;
+}

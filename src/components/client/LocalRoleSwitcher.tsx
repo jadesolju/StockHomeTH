@@ -1,15 +1,33 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useSubscription, SubscriptionTier } from '../../lib/context/SubscriptionContext';
-import { ShieldCheck, Zap, Crown, Sparkles, ChevronUp, ChevronDown, Check } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { useSubscription, SubscriptionTier, OWNER_DEV_IDENTIFIERS } from '../../lib/context/SubscriptionContext';
+import { useClientAuth } from '../../lib/context/ClientAuthContext';
+import { ShieldCheck, Zap, Crown, Sparkles, ChevronUp, ChevronDown, Check, Settings } from 'lucide-react';
+import Link from 'next/link';
+import { ADMIN_PORTAL_PATH } from '../../config/adminConfig';
 
 export function LocalRoleSwitcher() {
-  const { currentTier, setTier, openPricingModal, aiUsageToday, getWatchlistLimit } = useSubscription();
+  const pathname = usePathname();
+  const {
+    currentTier,
+    setTier,
+    isOwnerOrDev,
+    isOwnerAccount,
+    restoreOwnerGodMode,
+    openPricingModal,
+    aiUsageToday,
+    getWatchlistLimit,
+    currentPlan,
+    totalGemCoinsAvailable,
+  } = useSubscription();
+  const { user } = useClientAuth();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isLocalEnv, setIsLocalEnv] = useState<boolean>(false);
+  const [isDismissed, setIsDismissed] = useState<boolean>(false);
 
-  // Only show this switcher in local development environment
+  // Show in local development or if user is owner/dev
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const isLocal =
@@ -20,48 +38,53 @@ export function LocalRoleSwitcher() {
     }
   }, []);
 
-  if (!isLocalEnv) return null;
+  const isAuthorized =
+    isLocalEnv ||
+    isOwnerOrDev ||
+    isOwnerAccount ||
+    Boolean(
+      user &&
+        (OWNER_DEV_IDENTIFIERS.emails.includes(user.email?.toLowerCase().trim() ?? '') ||
+          OWNER_DEV_IDENTIFIERS.firebaseUids.includes(user.uid))
+    );
+
+  if (!isAuthorized) return null;
 
   const tiers: { id: SubscriptionTier; name: string; icon: any; color: string; bg: string }[] = [
     { id: 'free', name: 'Free (สายฟรี)', icon: ShieldCheck, color: 'var(--accent-bullish)', bg: 'rgba(34, 197, 94, 0.15)' },
-    { id: 'lite', name: 'Lite Supporter (250 บ./ปี)', icon: Sparkles, color: '#eab308', bg: 'rgba(234, 179, 8, 0.15)' },
+    { id: 'lite', name: 'Lite Supporter', icon: Sparkles, color: '#eab308', bg: 'rgba(234, 179, 8, 0.15)' },
     { id: 'pro', name: 'Pro Investor', icon: Zap, color: 'var(--accent-blue)', bg: 'rgba(59, 130, 246, 0.15)' },
     { id: 'vip', name: 'VIP Trader', icon: Crown, color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)' },
+    { id: 'dev', name: 'Dev + Owner (God Mode)', icon: Crown, color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)' },
   ];
+
+  if (isDismissed) {
+    return (
+      <div
+        className={`local-role-floating-wrapper ${pathname === '/ai-helper' ? 'hide-on-mobile-ai-chat' : ''}`}
+      >
+        <button
+          onClick={() => setIsDismissed(false)}
+          className="local-role-restore-chip ios-tappable"
+          title="แตะเพื่อเปิดแถบสลับสิทธิ์ทดสอบ (Dev Tier Switcher)"
+          aria-label="เปิดแถบสลับสิทธิ์"
+        >
+          <Zap size={14} />
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        zIndex: 9000,
-        fontFamily: 'inherit',
-      }}
+      className={`local-role-floating-wrapper ${pathname === '/ai-helper' ? 'hide-on-mobile-ai-chat' : ''}`}
     >
       {/* Floating Pill / Launcher */}
-      <div
-        style={{
-          background: 'rgba(20, 20, 22, 0.88)',
-          backdropFilter: 'blur(16px)',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          borderRadius: '16px',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-          overflow: 'hidden',
-          transition: 'all 0.25s ease',
-        }}
-      >
+      <div className="local-role-container">
         {/* Toggle Bar */}
         <div
+          className="local-role-toggle-bar"
           onClick={() => setIsOpen(!isOpen)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 14px',
-            cursor: 'pointer',
-            userSelect: 'none',
-          }}
         >
           <div
             style={{
@@ -70,27 +93,31 @@ export function LocalRoleSwitcher() {
               borderRadius: '50%',
               background: currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : 'var(--accent-bullish)',
               boxShadow: `0 0 8px ${currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : 'var(--accent-bullish)'}`,
+              flexShrink: 0,
             }}
           />
-          <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>
-            LOCAL TIER: <span style={{ textTransform: 'uppercase', color: currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : 'var(--accent-bullish)' }}>{currentTier}</span>
+          <span className="local-role-tier-label">
+            <span className="local-role-tier-label-prefix">LOCAL TIER: </span>
+            <span style={{ textTransform: 'uppercase', color: currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : 'var(--accent-bullish)' }}>{currentTier}</span>
           </span>
           {isOpen ? <ChevronDown size={14} color="var(--text-secondary)" /> : <ChevronUp size={14} color="var(--text-secondary)" />}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsDismissed(true);
+            }}
+            className="local-role-dismiss-btn ios-tappable"
+            title="ซ่อนปุ่มสลับระดับสิทธิ์"
+            aria-label="ซ่อนปุ่มสลับระดับสิทธิ์"
+          >
+            ✕
+          </button>
         </div>
 
         {/* Expanded Panel */}
         {isOpen && (
-          <div
-            style={{
-              padding: '14px',
-              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px',
-              minWidth: '220px',
-            }}
-          >
-            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
+          <div className="local-role-panel">
+            <div className="local-role-panel-header">
               สลับระดับสิทธิ์เพื่อทดสอบ
             </div>
 
@@ -102,24 +129,15 @@ export function LocalRoleSwitcher() {
                   <button
                     key={t.id}
                     onClick={() => setTier(t.id)}
+                    className={`local-role-btn ${active ? 'active' : ''}`}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '8px 10px',
-                      borderRadius: '10px',
-                      border: `1px solid ${active ? t.color : 'rgba(255, 255, 255, 0.06)'}`,
-                      background: active ? t.bg : 'rgba(255, 255, 255, 0.03)',
-                      color: active ? '#ffffff' : 'var(--text-secondary)',
-                      cursor: 'pointer',
-                      fontSize: '12.5px',
-                      fontWeight: active ? 800 : 600,
-                      transition: 'all 0.15s',
+                      borderColor: active ? t.color : undefined,
+                      background: active ? t.bg : undefined,
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Icon size={14} color={t.color} />
-                      <span>{t.name}</span>
+                      <Icon size={14} color={active ? (t.id === 'dev' ? '#ec4899' : t.color) : 'var(--text-secondary)'} />
+                      <span style={{ color: active ? (t.id === 'dev' ? '#ec4899' : t.color) : undefined }}>{t.name}</span>
                     </div>
                     {active && <Check size={14} color={t.color} />}
                   </button>
@@ -127,44 +145,48 @@ export function LocalRoleSwitcher() {
               })}
             </div>
 
-            <div
-              style={{
-                fontSize: '11.5px',
-                color: 'var(--text-secondary)',
-                background: 'rgba(255, 255, 255, 0.04)',
-                padding: '8px',
-                borderRadius: '8px',
-                lineHeight: 1.4,
-              }}
-            >
-              <div>• โควตา AI วันนี้: <b>{aiUsageToday} ครั้ง</b></div>
-              <div>• ขีดจำกัด Watchlist: <b>{getWatchlistLimit()} ตัว</b></div>
+            <div className="local-role-info-box">
+              {currentTier === 'dev' ? (
+                <>
+                  <div>• สิทธิ์ AI: <b style={{ color: '#10b981' }}>ใช้งานได้ไม่จำกัด (Unlimited God Mode)</b></div>
+                  <div>• เหรียญ GemCoins: <b>{totalGemCoinsAvailable.toLocaleString()} Coins</b></div>
+                  <div>• ขีดจำกัด Watchlist: <b>ไม่จำกัด (99,999 ตัว)</b></div>
+                </>
+              ) : (
+                <>
+                  <div>• เรียกใช้ AI วันนี้: <b>{aiUsageToday} ครั้ง</b> (โควตา {currentPlan.limits.aiOnDemandDailyLimit} ครั้ง/วัน)</div>
+                  <div>• เหรียญ GemCoins: <b>{totalGemCoinsAvailable.toLocaleString()} Coins</b></div>
+                  <div>• ขีดจำกัด Watchlist: <b>{getWatchlistLimit()} ตัว</b></div>
+                </>
+              )}
             </div>
 
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                openPricingModal();
-              }}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '10px',
-                border: 'none',
-                background: 'linear-gradient(135deg, var(--accent-blue) 0%, #a855f7 100%)',
-                color: '#ffffff',
-                fontSize: '12px',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-              }}
-            >
-              <Sparkles size={13} /> เปิดหน้าต่างตารางราคา
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <button
+                onClick={() => {
+                  restoreOwnerGodMode();
+                }}
+                className="local-role-restore-btn"
+              >
+                <Crown size={14} color="#f472b6" /> คืนสิทธิ์ Dev + Owner (99.9M Coins)
+              </button>
+
+              <Link
+                href={ADMIN_PORTAL_PATH}
+                onClick={() => setIsOpen(false)}
+                className="local-role-admin-link"
+              >
+                <Settings size={13} color="#10b981" /> ไปที่หน้า Admin Portal ({ADMIN_PORTAL_PATH})
+              </Link>
+
+              <Link
+                href="/payments"
+                onClick={() => setIsOpen(false)}
+                className="local-role-payment-link"
+              >
+                <Sparkles size={13} /> ไปที่หน้าร้านค้า & ชำระเงิน (/payments)
+              </Link>
+            </div>
           </div>
         )}
       </div>

@@ -79,7 +79,7 @@ export function ApiKeyModal({
           </button>
         </div>
 
-        {/* Bitcoiner Self-Custody Security Banner */}
+        {/* Enterprise Client-Side Storage & Data Privacy Banner */}
         <div
           style={{
             background: 'linear-gradient(135deg, rgba(0, 122, 255, 0.1) 0%, rgba(34, 197, 94, 0.08) 100%)',
@@ -94,10 +94,10 @@ export function ApiKeyModal({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-blue)', fontWeight: 700, marginBottom: '4px' }}>
             <Lock size={14} />
-            <span>มาตรฐานความปลอดภัยแบบ Self-Custody (Not Your Keys, Not Your Data)</span>
+            <span>มาตรฐานความปลอดภัยสารสนเทศระดับอุปกรณ์ (Client-Side Storage)</span>
           </div>
           <div>
-            API Key ของคุณจะถูกบันทึกไว้ใน <strong>Browser (LocalStorage) ของเครื่องคุณเท่านั้น</strong> ไม่มีการส่งไปจัดเก็บบน Database ของเซิร์ฟเวอร์ส่วนกลาง ให้คุณมีอำนาจควบคุมกุญแจ AI ของคุณเอง 100% สามารถใช้งานเพื่อวิเคราะห์หุ้นและสรุปข่าวได้อย่างเป็นส่วนตัวสูงสุด
+            API Key ส่วนบุคคลของคุณจะถูกจัดเก็บไว้เฉพาะใน <strong>หน่วยความจำเบราว์เซอร์ของอุปกรณ์คุณเท่านั้น (LocalStorage)</strong> โดยไม่มีการส่งไปจัดเก็บบนฐานข้อมูลเซิร์ฟเวอร์ส่วนกลาง เพื่อให้คุณมีอำนาจในการควบคุมสิทธิ์และการเข้าถึงข้อมูลอย่างเป็นอิสระและเป็นส่วนตัวสูงสุด
           </div>
         </div>
 

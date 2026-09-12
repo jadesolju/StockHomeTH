@@ -15,6 +15,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1127.0",
     "@google/genai": "^2.19.0",
+    "@stripe/stripe-js": "^9.15.0",
     "@supabase/server": "^1.4.1",
     "@supabase/ssr": "^0.12.6",
     "@supabase/supabase-js": "^2.109.0",
@@ -27,6 +28,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "rss-parser": "^3.13.0",
+    "stripe": "^22.6.1",
     "yahoo-finance2": "^3.15.4",
     "zod": "^3.24.2"
   },
@@ -36,7 +38,10 @@
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
+    "autoprefixer": "^10.5.6",
     "oxlint": "^1.79.0",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3"
   }
 }

@@ -32,21 +32,21 @@ export default async function ThaiStocksPage() {
       <MarketTickerBarServer indices={mockMarketIndices} />
 
       {/* Thai Market Hero Header */}
-      <div className="glass-card" style={{ padding: '24px 28px', borderRadius: '24px', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="glass-card p-6 md:px-7 rounded-3xl mb-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'rgba(0, 122, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0, 122, 255, 0.15)' }}>
                 <Landmark size={18} color="#007AFF" />
               </div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+              <h2 className="text-2xl font-extrabold m-0 text-[var(--text-primary)]">
                 หุ้นไทย (SET & mai)
               </h2>
-              <span style={{ fontSize: '0.75rem', background: 'rgba(0, 122, 255, 0.15)', color: '#007AFF', padding: '2px 10px', borderRadius: '100px', fontWeight: 700 }}>
+              <span className="text-xs py-0.5 px-2.5 rounded-full font-bold" style={{ background: 'rgba(0, 122, 255, 0.15)', color: '#007AFF' }}>
                 800+ บริษัทจดทะเบียน
               </span>
             </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
+            <p className="text-sm text-[var(--text-secondary)] m-0">
               ตลาดหลักทรัพย์แห่งประเทศไทย • เวลาทำการ ภาคเช้า 10:00 - 12:30 น. และ ภาคบ่าย 14:30 - 16:30 น.
             </p>
           </div>

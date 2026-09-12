@@ -361,9 +361,9 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
   };
 
   return (
-    <div className="glass-card" style={{ padding: '24px', marginBottom: '28px', borderLeft: '4px solid var(--accent-blue)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+    <div className="glass-card p-6 mb-7 border-l-4 border-l-[var(--accent-blue)]">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+        <div className="flex items-center gap-2 flex-wrap">
           <Zap size={18} color="var(--accent-blue)" />
           <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--accent-blue)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
             {isEn ? (summary.periodLabel_en || tDynamic(summary.periodLabel_th, summary.periodLabel_en)) : (summary.periodLabel_th || tDynamic(summary.periodLabel_th, summary.periodLabel_en))}

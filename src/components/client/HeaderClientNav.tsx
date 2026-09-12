@@ -14,21 +14,24 @@ import {
   BarChart3,
   RefreshCw,
   Globe,
-  Building,
-  Landmark,
   User,
   LogIn,
   LogOut,
   Key,
   Shield,
-  Check
+  Check,
+  CreditCard,
+  Crown,
 } from 'lucide-react';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { useTheme } from '../../lib/context/ThemeContext';
 import { useMarketSync } from '../../lib/context/MarketSyncContext';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
-import { useSubscription } from '../../lib/context/SubscriptionContext';
+import { useAdminAuth } from '../../lib/context/AdminAuthContext';
+import { useSubscription, OWNER_DEV_IDENTIFIERS } from '../../lib/context/SubscriptionContext';
 import { UserAvatar } from '../ui/UserAvatar';
+
+import { ADMIN_PORTAL_PATH } from '../../config/adminConfig';
 
 interface HeaderClientNavProps {
   onRefresh?: () => void;
@@ -49,14 +52,30 @@ export function HeaderClientNav({
 }: HeaderClientNavProps) {
   const pathname = usePathname();
   const router = useRouter();
+
+  // On AI Helper page, hide site header so chat has 100% full screen view
+  if (pathname === '/ai-helper') {
+    return null;
+  }
   const { language, setLanguage, toggleLanguage, t } = useLanguage();
   const { theme, resolvedTheme, cycleTheme } = useTheme();
   const { setSelectedMarket, refreshAll, isSyncing, cooldownRemaining } = useMarketSync();
   const { user, openAuthModal, openProfileModal, signOut } = useClientAuth();
-  const { openPricingModal, currentTier } = useSubscription();
+  const { signOut: adminSignOut } = useAdminAuth();
+  const { isOwnerOrDev, isOwnerAccount } = useSubscription();
+
+  const isOwnerUser =
+    isOwnerAccount ||
+    isOwnerOrDev ||
+    Boolean(
+      user &&
+        (OWNER_DEV_IDENTIFIERS.emails.includes(user.email?.toLowerCase().trim() ?? '') ||
+          OWNER_DEV_IDENTIFIERS.firebaseUids.includes(user.uid))
+    );
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLocalEnv, setIsLocalEnv] = useState(false);
+
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const [currentDate, setCurrentDate] = useState<string>(() => {
@@ -99,7 +118,7 @@ export function HeaderClientNav({
 
   return (
     <header
-      className="mobile-pwa-header glass-card"
+      className={`mobile-pwa-header glass-card ${pathname === '/ai-helper' ? 'hide-on-mobile-ai-helper' : ''}`}
       style={{
         borderRadius: '0 0 20px 20px',
         padding: '12px 24px',
@@ -174,24 +193,10 @@ export function HeaderClientNav({
           </Link>
           <Link
             href="/stocks"
-            className={`ios-segment-btn ${pathname === '/stocks' ? 'active' : ''}`}
+            className={`ios-segment-btn ${pathname.startsWith('/stocks') ? 'active' : ''}`}
             style={{ textDecoration: 'none', padding: '6px 14px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
             <Globe size={15} /> {t('marketAndCharts')}
-          </Link>
-          <Link
-            href="/stocks/thai"
-            className={`ios-segment-btn ${pathname === '/stocks/thai' ? 'active' : ''}`}
-            style={{ textDecoration: 'none', padding: '6px 14px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-          >
-            <Landmark size={15} /> {t('thaiStocks')}
-          </Link>
-          <Link
-            href="/stocks/us"
-            className={`ios-segment-btn ${pathname === '/stocks/us' ? 'active' : ''}`}
-            style={{ textDecoration: 'none', padding: '6px 14px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-          >
-            <Building size={15} /> {t('foreignStocks')}
           </Link>
           <Link
             href="/ai-helper"
@@ -199,6 +204,13 @@ export function HeaderClientNav({
             style={{ textDecoration: 'none', padding: '6px 14px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
             <Sparkles size={15} color="#06b6d4" /> AI Helper
+          </Link>
+          <Link
+            href="/payments"
+            className={`ios-segment-btn ${pathname === '/payments' ? 'active' : ''}`}
+            style={{ textDecoration: 'none', padding: '6px 14px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            <CreditCard size={15} color="#10b981" /> {language === 'th' ? 'แพ็กเกจ' : 'Pricing'}
           </Link>
         </nav>
 
@@ -272,31 +284,6 @@ export function HeaderClientNav({
             )}
           </button>
 
-          {/* Membership / Pricing Button (Local Sandbox Only) */}
-          {isLocalEnv && (
-            <button
-              onClick={openPricingModal}
-              className="ios-glass-btn"
-              title="ดูแพ็กเกจสมาชิก StockHomeTH (Local Sandbox)"
-              style={{
-                background: currentTier === 'vip' ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)' : currentTier === 'pro' ? 'linear-gradient(135deg, rgba(0, 122, 255, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)' : 'rgba(255, 255, 255, 0.06)',
-                border: `1px solid ${currentTier === 'vip' ? 'rgba(168, 85, 247, 0.4)' : currentTier === 'pro' ? 'rgba(0, 122, 255, 0.4)' : 'var(--glass-border)'}`,
-                borderRadius: '100px',
-                padding: '5px 12px',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                color: currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : 'var(--text-secondary)',
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <Sparkles size={13} color={currentTier === 'vip' ? '#a855f7' : currentTier === 'pro' ? 'var(--accent-blue)' : '#fbbf24'} />
-              <span>{currentTier === 'vip' ? 'VIP Trader' : currentTier === 'pro' ? 'Pro Member' : 'แพ็กเกจสมาชิก'}</span>
-            </button>
-          )}
 
           {/* Member Auth Button / Profile Dropdown (Desktop view) */}
           <div className="desktop-nav-bar" style={{ position: 'relative' }} ref={userMenuRef}>
@@ -386,6 +373,33 @@ export function HeaderClientNav({
                       </div>
                     </div>
 
+                    {/* Admin Backoffice Portal shortcut (Strictly Owner/Dev Only) */}
+                    {isOwnerUser && (
+                      <Link
+                        href={ADMIN_PORTAL_PATH}
+                        onClick={() => setIsUserMenuOpen(false)}
+                        style={{
+                          background: 'rgba(236, 72, 153, 0.12)',
+                          border: '1px solid rgba(236, 72, 153, 0.3)',
+                          color: '#f472b6',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          padding: '7px 8px',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          textDecoration: 'none',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          marginBottom: '2px',
+                        }}
+                        className="glass-card-hover"
+                      >
+                        <Crown size={14} color="#ec4899" /> 👑 Admin & Dev Portal
+                      </Link>
+                    )}
+
                     <button
                       onClick={() => {
                         setIsUserMenuOpen(false);
@@ -440,6 +454,7 @@ export function HeaderClientNav({
                       onClick={() => {
                         setIsUserMenuOpen(false);
                         signOut();
+                        adminSignOut();
                       }}
                       style={{
                         background: 'rgba(239, 68, 68, 0.08)',

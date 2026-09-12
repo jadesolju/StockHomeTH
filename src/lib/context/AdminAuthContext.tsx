@@ -4,10 +4,16 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../supabase/client';
 
-// Pre-authorized admin emails (configurable)
+// Pre-authorized admin emails & UIDs (configurable)
 const AUTHORIZED_ADMIN_EMAILS = [
   'afillly002@gmail.com',
 ];
+
+const AUTHORIZED_ADMIN_UIDS = [
+  'EJCisrn5JzWcsgYUgG6k6DtYWhw2', // Firebase UID
+  'addf5ae4-db55-4a32-8f67-b622ee02cc98', // Supabase UID
+];
+
 
 interface AdminAuthContextType {
   user: User | null;
@@ -61,7 +67,10 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, []);
 
   const isAdmin = Boolean(
-    user && user.email && AUTHORIZED_ADMIN_EMAILS.includes(user.email.toLowerCase().trim())
+    user && (
+      (user.email && AUTHORIZED_ADMIN_EMAILS.includes(user.email.toLowerCase().trim())) ||
+      (user.id && AUTHORIZED_ADMIN_UIDS.includes(user.id))
+    )
   );
 
   const signInWithSupabase = async (email: string, pass: string) => {
@@ -77,10 +86,16 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
 
       const userEmail = data.user?.email?.toLowerCase().trim();
-      if (userEmail && !AUTHORIZED_ADMIN_EMAILS.includes(userEmail)) {
+      const userId = data.user?.id;
+      const isAuthorized =
+        (userEmail && AUTHORIZED_ADMIN_EMAILS.includes(userEmail)) ||
+        (userId && AUTHORIZED_ADMIN_UIDS.includes(userId));
+
+      if (!isAuthorized) {
         await supabase.auth.signOut();
-        throw new Error(`อีเมล ${userEmail} ไม่มีสิทธิ์เข้าถึงระบบ Admin Backoffice`);
+        throw new Error(`บัญชีนี้ไม่มีสิทธิ์เข้าถึงระบบ Admin Backoffice`);
       }
+
 
       setUser(data.user);
       setSession(data.session);

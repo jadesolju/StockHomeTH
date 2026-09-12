@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Newspaper, Globe, Landmark, Building, User, BrainCircuit } from 'lucide-react';
+import { Newspaper, TrendingUp, Sparkles, CreditCard, User } from 'lucide-react';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
 import { UserAvatar } from '../ui/UserAvatar';
@@ -13,11 +13,14 @@ export function PwaBottomNav() {
   const { t } = useLanguage();
   const { user, openAuthModal, openProfileModal } = useClientAuth();
 
+  // On AI Helper page, hide bottom nav to give 100% full screen to chat
+  if (pathname === '/ai-helper') {
+    return null;
+  }
+
   const isNewsActive = pathname === '/' || pathname === '/news';
-  const isStocksActive = pathname === '/stocks';
-  const isThaiActive = pathname === '/stocks/thai';
-  const isUsActive = pathname === '/stocks/us';
-  const isAiHelperActive = pathname === '/ai-helper';
+  const isStocksActive = pathname.startsWith('/stocks');
+  const isPaymentsActive = pathname.startsWith('/payments');
 
   return (
     <nav
@@ -31,21 +34,24 @@ export function PwaBottomNav() {
         display: 'none', // Controlled via CSS media query
         justifyContent: 'space-around',
         alignItems: 'center',
-        padding: '8px 12px calc(10px + env(safe-area-inset-bottom, 0px)) 12px',
+        padding: '0 12px calc(4px + env(safe-area-inset-bottom, 0px)) 12px',
+        height: 'calc(54px + env(safe-area-inset-bottom, 0px))',
         background: 'var(--glass-bg)',
         backdropFilter: 'blur(30px) saturate(200%)',
         WebkitBackdropFilter: 'blur(30px) saturate(200%)',
         borderTop: '1px solid var(--glass-border)',
         borderRadius: '24px 24px 0 0',
-        boxShadow: '0 -6px 28px rgba(0, 0, 0, 0.5)',
+        boxShadow: '0 -6px 28px rgba(0, 0, 0, 0.45)',
+        overflow: 'visible',
       }}
       aria-label="Mobile Navigation"
     >
-      {/* 1. News Digest Tab */}
+      {/* 1. News Digest Tab - Pure Minimal Icon */}
       <Link
         href="/"
         title={t('newsDigest')}
         aria-label={t('newsDigest')}
+        className="ios-tappable"
         style={{
           flex: 1,
           height: '44px',
@@ -54,13 +60,13 @@ export function PwaBottomNav() {
           justifyContent: 'center',
           textDecoration: 'none',
           color: isNewsActive ? '#007AFF' : 'var(--text-tertiary)',
-          borderRadius: '14px',
-          background: isNewsActive ? 'rgba(0, 122, 255, 0.14)' : 'transparent',
+          borderRadius: '16px',
+          background: isNewsActive ? 'rgba(0, 122, 255, 0.12)' : 'transparent',
           transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
           position: 'relative',
         }}
       >
-        <Newspaper size={22} strokeWidth={isNewsActive ? 2.4 : 1.8} />
+        <Newspaper size={22} strokeWidth={isNewsActive ? 2.3 : 1.7} />
         {isNewsActive && (
           <span
             style={{
@@ -76,11 +82,12 @@ export function PwaBottomNav() {
         )}
       </Link>
 
-      {/* 2. All Markets Tab */}
+      {/* 2. All Markets Tab - Pure Minimal Icon */}
       <Link
         href="/stocks"
         title={t('marketAndCharts')}
         aria-label={t('marketAndCharts')}
+        className="ios-tappable"
         style={{
           flex: 1,
           height: '44px',
@@ -89,13 +96,13 @@ export function PwaBottomNav() {
           justifyContent: 'center',
           textDecoration: 'none',
           color: isStocksActive ? '#007AFF' : 'var(--text-tertiary)',
-          borderRadius: '14px',
-          background: isStocksActive ? 'rgba(0, 122, 255, 0.14)' : 'transparent',
+          borderRadius: '16px',
+          background: isStocksActive ? 'rgba(0, 122, 255, 0.12)' : 'transparent',
           transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
           position: 'relative',
         }}
       >
-        <Globe size={22} strokeWidth={isStocksActive ? 2.4 : 1.8} />
+        <TrendingUp size={22} strokeWidth={isStocksActive ? 2.3 : 1.7} />
         {isStocksActive && (
           <span
             style={{
@@ -111,81 +118,51 @@ export function PwaBottomNav() {
         )}
       </Link>
 
-      {/* 3. Thai SET Stocks Tab */}
-      <Link
-        href="/stocks/thai"
-        title={t('thaiStocks')}
-        aria-label={t('thaiStocks')}
-        style={{
-          flex: 1,
-          height: '44px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textDecoration: 'none',
-          color: isThaiActive ? '#10b981' : 'var(--text-tertiary)',
-          borderRadius: '14px',
-          background: isThaiActive ? 'rgba(16, 185, 129, 0.14)' : 'transparent',
-          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          position: 'relative',
-        }}
-      >
-        <Landmark size={22} strokeWidth={isThaiActive ? 2.4 : 1.8} color={isThaiActive ? '#10b981' : 'currentColor'} />
-        {isThaiActive && (
-          <span
-            style={{
-              position: 'absolute',
-              bottom: '5px',
-              width: '4px',
-              height: '4px',
-              borderRadius: '50%',
-              background: '#10b981',
-              boxShadow: '0 0 6px #10b981',
-            }}
-          />
-        )}
-      </Link>
-
-      {/* 4. US Stocks Tab */}
-      <Link
-        href="/stocks/us"
-        title={t('foreignStocks')}
-        aria-label={t('foreignStocks')}
-        style={{
-          flex: 1,
-          height: '44px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textDecoration: 'none',
-          color: isUsActive ? '#a855f7' : 'var(--text-tertiary)',
-          borderRadius: '14px',
-          background: isUsActive ? 'rgba(168, 85, 247, 0.14)' : 'transparent',
-          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          position: 'relative',
-        }}
-      >
-        <Building size={22} strokeWidth={isUsActive ? 2.4 : 1.8} color={isUsActive ? '#a855f7' : 'currentColor'} />
-        {isUsActive && (
-          <span
-            style={{
-              position: 'absolute',
-              bottom: '5px',
-              width: '4px',
-              height: '4px',
-              borderRadius: '50%',
-              background: '#a855f7',
-              boxShadow: '0 0 6px #a855f7',
-            }}
-          />
-        )}
-      </Link>
-
-      {/* 5. AI Helper Tab */}
+      {/* 3. AI Agent Hero Tab - Floating Elevated Glowing Circle (Zero Clutter Text) */}
       <Link
         href="/ai-helper"
-        title="AI Helper"
-        aria-label="AI Helper"
+        title="AI Financial Agent"
+        aria-label="AI Financial Agent"
+        className="ios-tappable"
+        style={{
+          flex: 1,
+          height: '48px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textDecoration: 'none',
+          position: 'relative',
+          marginTop: '-16px', // Elevated above the bar
+          overflow: 'visible',
+          zIndex: 20,
+        }}
+      >
+        <div
+          style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#ffffff',
+            boxShadow: '0 6px 20px rgba(6, 182, 212, 0.5), 0 0 10px rgba(59, 130, 246, 0.35)',
+            border: '2px solid rgba(255, 255, 255, 0.35)',
+            transition: 'all 0.2s ease',
+            flexShrink: 0,
+          }}
+        >
+          <Sparkles size={23} strokeWidth={2.4} />
+        </div>
+      </Link>
+
+      {/* 4. Store / GemCoins Tab - Pure Minimal Icon */}
+      <Link
+        href="/payments"
+        title="ร้านค้า & GemCoins"
+        aria-label="ร้านค้า & GemCoins"
+        className="ios-tappable"
         style={{
           flex: 1,
           height: '44px',
@@ -193,15 +170,15 @@ export function PwaBottomNav() {
           alignItems: 'center',
           justifyContent: 'center',
           textDecoration: 'none',
-          color: isAiHelperActive ? '#06b6d4' : 'var(--text-tertiary)',
-          borderRadius: '14px',
-          background: isAiHelperActive ? 'rgba(6, 182, 212, 0.16)' : 'transparent',
+          color: isPaymentsActive ? '#f59e0b' : 'var(--text-tertiary)',
+          borderRadius: '16px',
+          background: isPaymentsActive ? 'rgba(245, 158, 11, 0.12)' : 'transparent',
           transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
           position: 'relative',
         }}
       >
-        <BrainCircuit size={22} strokeWidth={isAiHelperActive ? 2.4 : 1.8} />
-        {isAiHelperActive && (
+        <CreditCard size={22} strokeWidth={isPaymentsActive ? 2.3 : 1.7} />
+        {isPaymentsActive && (
           <span
             style={{
               position: 'absolute',
@@ -209,14 +186,14 @@ export function PwaBottomNav() {
               width: '4px',
               height: '4px',
               borderRadius: '50%',
-              background: '#06b6d4',
-              boxShadow: '0 0 6px #06b6d4',
+              background: '#f59e0b',
+              boxShadow: '0 0 6px #f59e0b',
             }}
           />
         )}
       </Link>
 
-      {/* 6. User Profile / Auth Tab */}
+      {/* 5. User Profile / Auth Tab - Pure Minimal Icon */}
       <button
         onClick={() => {
           if (user) {
@@ -227,6 +204,7 @@ export function PwaBottomNav() {
         }}
         title={user ? (user.displayName || user.email || 'โปรไฟล์') : 'เข้าสู่ระบบ'}
         aria-label={user ? 'โปรไฟล์' : 'เข้าสู่ระบบ'}
+        className="ios-tappable"
         style={{
           flex: 1,
           height: '44px',
@@ -235,8 +213,9 @@ export function PwaBottomNav() {
           justifyContent: 'center',
           background: 'none',
           border: 'none',
-          borderRadius: '14px',
+          borderRadius: '16px',
           cursor: 'pointer',
+          color: 'var(--text-tertiary)',
           transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
@@ -245,28 +224,15 @@ export function PwaBottomNav() {
             photoURL={user.photoURL}
             displayName={user.displayName}
             email={user.email}
-            size={28}
-            border="2px solid rgba(0, 122, 255, 0.45)"
+            size={24}
+            border="1.5px solid rgba(0, 122, 255, 0.45)"
           />
         ) : (
-          <div
-            style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: '50%',
-              background: 'var(--card-sub-bg)',
-              color: 'var(--text-tertiary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '1.5px solid var(--glass-border)',
-            }}
-          >
-            <User size={16} />
-          </div>
+          <User size={22} strokeWidth={1.8} />
         )}
       </button>
     </nav>
   );
 }
+
 export default PwaBottomNav;
