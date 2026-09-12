@@ -30,6 +30,8 @@ interface ChatRequestBody {
   messages: ChatMessage[];
   model?: string;
   userTier?: SubscriptionTier;
+  userId?: string;
+  userEmail?: string;
   enableMemory?: boolean;
   contextSummary?: string;
   summarizedUpToIndex?: number;
@@ -48,25 +50,27 @@ interface ChatRequestBody {
   };
 }
 
-// High-value Financial System Prompt with smart topic pivoting & tier-differentiated reasoning
-const COMPACT_SYSTEM_PROMPT = `คุณคือ "StockHome Financial" AI ผู้ช่วยวิเคราะห์หุ้นและการเงินไทย (SET/mai) และตลาดสหรัฐฯ
-หลักการตอบ:
-1. การเชื่อมโยงหัวข้อ (Smart Financial Pivot): หากผู้ใช้ถามเรื่องทั่วไป เช่น บันเทิง ภาพยนตร์ ดนตรี ท่องเที่ยว สถานที่ อาหาร รถยนต์ หรือไลฟ์สไตล์ **ห้ามปฏิเสธทื่อๆ หรือไล่ผู้ใช้ไปที่อื่น** ให้ตอบคลายข้อสงสัยสั้นๆ 1 ประโยค แล้ว**เชื่อมโยงเข้าสู่มุมมองหุ้น ธุรกิจ หรือการลงทุนที่เกี่ยวข้องทันที**
-   - ตัวอย่าง: ถามเรื่องภาพยนตร์/ซีรีส์/ดนตรี -> โยงไปหุ้นกลุ่มโรงหนัง คอนเทนต์ มีเดีย (เช่น MAJOR, ONEE, WORK, BEC หรือ Netflix, Disney)
-   - ตัวอย่าง: ถามเรื่องสถานที่เที่ยว/โรงแรม/ร้านอาหาร -> โยงไป AOT, CENTEL, MINT, ERW, CPALL, CPN
-   - ตัวอย่าง: ถามเรื่องรถยนต์ไฟฟ้า (EV) หรือแกดเจ็ต -> โยงไปหุ้นชิ้นส่วนอิเล็กทรอนิกส์ พลังงาน และนิคมฯ (เช่น DELTA, HANA, KCE, EA, WHA)
-2. สไตล์การสื่อสาร: **ไม่พรรณนา ไม่เกริ่นนำเยิ่นเย้อ** กระชับ ตรงไปตรงมา ไม่มีคำทักทายซ้ำซาก ตอบประเด็นเนื้อๆ ทันที
-3. ความสมบูรณ์ของคำตอบ: ห้ามตัดจบประโยคกลางคัน ให้ตอบประเด็นให้จบสมบูรณ์ทุกครั้ง
-4. DYOR: เตือนสติสั้นๆ 1 บรรทัดตอนท้ายว่าเป็นการวิเคราะห์เพื่อการศึกษา ไม่ใช่คำชวนซื้อขาย`;
+// Core System Prompt for StockHome AI Agent based on strict grounding rules
+const COMPACT_SYSTEM_PROMPT = `คุณคือ AI Agent ผู้ช่วยอัจฉริยะประจำเว็บไซต์ StockHomeTH
+
+[กฎเหล็กและข้อบังคับ]:
+1. ต้องตอบคำถามโดยอ้างอิงจากข้อมูลในส่วน [ข้อมูลปัจจุบันจากเว็บไซต์] เป็นหลักเท่านั้น
+2. ห้ามใช้ข้อมูลเก่าจากฐานข้อมูลเดิมมาคาดเดาหรือตอบ หากข้อมูลในส่วนที่แนบมาไม่มีคำตอบ ให้แจ้งผู้ใช้อย่างสุภาพว่า "ไม่พบข้อมูลดังกล่าว"
+3. ข้อมูลในส่วน [ข้อมูลปัจจุบันจากเว็บไซต์] คือข้อเท็จจริงล่าสุดและถูกต้องที่สุดเสมอ แม้จะขัดแย้งกับความรู้ทั่วไปของคุณก็ตาม
+4. รักษาโทนเสียงที่เป็นมิตร กระชับ และสุภาพ
+5. การเชื่อมโยงหัวข้อ (Smart Financial Pivot): หากผู้ใช้ถามเรื่องทั่วไป เช่น บันเทิง ภาพยนตร์ ดนตรี ท่องเที่ยว สถานที่ อาหาร รถยนต์ หรือไลฟ์สไตล์ ให้ตอบคลายข้อสงสัยสั้นๆ 1 ประโยค แล้วเชื่อมโยงเข้าสู่มุมมองหุ้น ธุรกิจ หรือการลงทุนที่เกี่ยวข้อง โดยต้องยกตัวอย่างเฉพาะหุ้นที่มีการจดทะเบียนซื้อขายจริงในตลาดหลักทรัพย์ SET/mai หรือตลาดสหรัฐฯ เท่านั้น **ห้ามกุหรือคิดชื่อบริษัทขึ้นมาเอง และห้ามแต่งตั้งบริษัทเอกชนหรือร้านค้าทั่วไปให้เป็น "บมจ." เด็ดขาด** (เช่น ร้านทองฮั่วเซ่งเฮงไม่ใช่ บมจ. ในตลาดหลักทรัพย์ หากพูดถึงทองคำให้โยงไปหุ้นโรงรับจำนำที่มีจริง เช่น MTC, SAWAD หรือร้านทองจดทะเบียน AURA เป็นต้น)
+6. ความสมบูรณ์ของคำตอบ: ไม่พรรณนาเยิ่นเย้อ กระชับ ตรงไปตรงมา ไม่มีคำทักทายซ้ำซาก ตอบประเด็นให้จบสมบูรณ์ทุกครั้ง ห้ามตัดจบประโยคกลางคัน
+7. DYOR: เตือนสติสั้นๆ 1 บรรทัดตอนท้ายว่าเป็นการวิเคราะห์เพื่อการศึกษา ไม่ใช่คำชวนซื้อขาย`;
 
 // Strict Anchoring System Lore for Real-Time Stock RAG
 const STRICT_ANCHORING_LORE = `[โหมดวิเคราะห์หุ้น Real-Time (Strict Grounding & Anchoring)]
-คุณคือ "ผู้เชี่ยวชาญด้านการวิเคราะห์หุ้น" ที่ทำหน้าที่วิเคราะห์ปัจจัยพื้นฐานจากข้อมูลปัจจุบันที่ส่งให้เท่านั้น
+คุณคือ "ผู้เชี่ยวชาญด้านการวิเคราะห์หุ้น" ประจำเว็บไซต์ StockHomeTH ที่ทำหน้าที่วิเคราะห์ปัจจัยพื้นฐานจากข้อมูลปัจจุบันที่ส่งให้เท่านั้น
 
 [กฎเหล็ก]
-1. ต้องตอบราคาและรายละเอียดของหุ้นในช่อง <current_market_data> เสมอ หากผู้ใช้ถามเรื่องภาพรวมหรือเรื่องราคา
-2. ห้ามใช้ความรู้เดิมเรื่องราคา หรือเดาราคาเอง
+1. ต้องตอบราคาและรายละเอียดของหุ้นจากข้อมูลในส่วน [ข้อมูลปัจจุบันจากเว็บไซต์] เสมอ
+2. ห้ามใช้ความรู้เดิมเรื่องราคา หรือเดาราคาเอง หากไม่มีข้อมูลราคาให้แจ้งว่า "ไม่พบข้อมูลดังกล่าวในขณะนี้"
 3. อ้างอิงวันที่และเวลาที่ระบุในข้อมูลดิบเสมอ เพื่อชี้แจงให้ผู้ใช้ทราบว่าเป็นข้อมูล ณ เวลาใด
+4. ห้ามแต่งตั้งหรือกุชื่อบริษัทขึ้นมาเองโดยเด็ดขาด
 
 [โครงสร้างรูปแบบการจัดรูปแบบผลลัพธ์ (Output Format)]
 ให้ตอบกลับตามหัวข้อดังนี้อย่างชัดเจน เป็นระเบียบ:
@@ -130,6 +134,8 @@ export async function POST(req: NextRequest) {
       messages,
       model = 'google/gemini-3.8-flash',
       userTier = 'free',
+      userId,
+      userEmail,
       enableMemory = true,
       contextSummary,
       summarizedUpToIndex = 0,
@@ -139,6 +145,19 @@ export async function POST(req: NextRequest) {
       documentName,
       stockContext,
     } = body;
+
+    // 0. Mandatory Authentication Guard: Block unauthenticated guest requests
+    const isDev = userTier === 'dev';
+    if (!userId && !isDev) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'กรุณาเข้าสู่ระบบก่อนใช้งาน AI ผู้ช่วยอัจฉริยะ (สมาชิกทั่วไปรับฟรี 500 GemCoins ทุกวัน)',
+          requiresLogin: true,
+        },
+        { status: 401 }
+      );
+    }
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -200,7 +219,6 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Idle Protection & 1-call-per-day enforcement
-    const isDev = userTier === 'dev';
     const isBackgroundHeader = Boolean(req.headers.get('x-background-job') || req.headers.get('x-cron'));
     const isRealUser = isDev || (!isBackgroundHeader && lastUserMsg.length > 0);
     const guard = isDev ? { allowed: true, reason: undefined } : canExecuteOpenRouterRequest(isRealUser);
@@ -234,17 +252,20 @@ export async function POST(req: NextRequest) {
     let isLiveStockRAG = false;
     let liveMarketDataBlock = '';
 
+    const now = new Date();
+    const formattedNowDate = now.toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const formattedNowTime = now.toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' }) + ' น.';
+
     if (activeTicker) {
       try {
         const liveStock = await fetchSingleStockYFinance(activeTicker, stockContext?.market, true);
         if (liveStock) {
           isLiveStockRAG = true;
-          const formattedTime = new Date().toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok' }) + ' น.';
-          const formattedDate = new Date().toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', year: 'numeric' });
           const currencySymbol = liveStock.currency === 'THB' ? '฿' : '$';
 
-          liveMarketDataBlock = `<current_market_data>
-Timestamp: ${new Date().toISOString()} (เวลาประเทศไทย: ${formattedDate} ${formattedTime})
+          liveMarketDataBlock = `[ข้อมูลปัจจุบันจากเว็บไซต์]
+<current_market_data>
+ข้อมูล ณ วันที่: ${formattedNowDate} เวลา: ${formattedNowTime}
 Ticker: ${liveStock.ticker}
 Company: ${liveStock.name}
 Exchange: ${liveStock.market === 'SET' ? 'Stock Exchange of Thailand (SET)' : 'US Stock Market (NASDAQ/NYSE)'}
@@ -260,9 +281,10 @@ Risks_To_Watch: ความผันผวนของตลาดสากล 
 </current_market_data>`;
         } else if (candidateTickers.length > 0) {
           isLiveStockRAG = true;
-          liveMarketDataBlock = `<current_market_data>
+          liveMarketDataBlock = `[ข้อมูลปัจจุบันจากเว็บไซต์]
+<current_market_data>
 Ticker: ${activeTicker}
-Status: ระบบไม่สามารถดึงข้อมูลราคาหุ้นที่เป็นปัจจุบันได้ในขณะนี้
+Status: ระบบไม่พบข้อมูลราคาหุ้นที่เป็นปัจจุบันของ ${activeTicker} ในขณะนี้
 </current_market_data>`;
         }
       } catch (err) {
@@ -272,11 +294,12 @@ Status: ระบบไม่สามารถดึงข้อมูลรา
 
     // 4. Build System Prompt with Financial Context & Rolling Summary
     let systemPromptWithContext = COMPACT_SYSTEM_PROMPT;
+    systemPromptWithContext += `\n\n[บริบทเวลาจริงในปัจจุบัน]:\nวันนี้คือ: ${formattedNowDate} เวลา: ${formattedNowTime}\n(ห้ามตอบวันที่หรือปี พ.ศ./ค.ศ. อื่นที่ขัดแย้งกับเวลาจริงนี้โดยเด็ดขาด)`;
 
     if (isLiveStockRAG) {
       systemPromptWithContext += `\n\n${STRICT_ANCHORING_LORE}`;
     } else if (stockContext && stockContext.ticker) {
-      systemPromptWithContext += `\n[บริบทหุ้น]: ${stockContext.ticker} (${stockContext.market || 'SET'}) ราคา: ${stockContext.price ?? '—'} (${stockContext.change != null ? (stockContext.change >= 0 ? '+' : '') + stockContext.change + '%' : '—'}) PE: ${stockContext.peRatio ?? '—'}x มาร์เก็ตแคป: ${stockContext.marketCap ?? '—'}`;
+      systemPromptWithContext += `\n\n[ข้อมูลปัจจุบันจากเว็บไซต์]:\n[บริบทหุ้น]: ${stockContext.ticker} (${stockContext.market || 'SET'}) ราคา: ${stockContext.price ?? '—'} (${stockContext.change != null ? (stockContext.change >= 0 ? '+' : '') + stockContext.change + '%' : '—'}) PE: ${stockContext.peRatio ?? '—'}x มาร์เก็ตแคป: ${stockContext.marketCap ?? '—'}`;
     }
 
     // Differentiate reasoning depth based on tier capabilities

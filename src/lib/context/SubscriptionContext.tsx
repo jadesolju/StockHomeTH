@@ -53,6 +53,7 @@ interface SubscriptionContextType {
   isVip: boolean;
   isOwnerOrDev: boolean;
   isOwnerAccount: boolean;
+  isGuest: boolean;
   restoreOwnerGodMode: () => void;
 
   // GemCoin Economy
@@ -440,6 +441,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         return true;
       }
 
+      if (!user && !isOwnerAccount) {
+        return false;
+      }
+
       const totalAvailable = dailyGemCoinsRemaining + topupGemCoins;
       if (totalAvailable < amount) {
         return false;
@@ -682,16 +687,18 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         isVip,
         isOwnerOrDev,
         isOwnerAccount,
+        isGuest: !user && !isOwnerAccount,
         restoreOwnerGodMode,
 
-
         // GemCoin Economy
-        dailyGemCoins,
-        dailyGemCoinsRemaining,
-        topupGemCoins,
+        dailyGemCoins: (!user && !isOwnerAccount) ? 0 : dailyGemCoins,
+        dailyGemCoinsRemaining: (!user && !isOwnerAccount) ? 0 : dailyGemCoinsRemaining,
+        topupGemCoins: (!user && !isOwnerAccount) ? 0 : topupGemCoins,
         totalGemCoinsAvailable:
           currentTier === 'dev' || isOwnerAccount
             ? 99999999
+            : (!user && !isOwnerAccount)
+            ? 0
             : dailyGemCoinsRemaining + topupGemCoins,
         gemCoinLogs,
         isGemCoinModalOpen,

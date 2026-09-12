@@ -36,6 +36,8 @@ import {
   Paperclip,
   AlertTriangle,
   ChevronDown,
+  Lock,
+  LogIn,
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -149,9 +151,11 @@ export const AiHelperChatClient: React.FC = () => {
     deductGemCoins,
     refundGemCoins,
     openGemCoinModal,
+    isOwnerAccount,
+    isGuest,
   } = useSubscription();
 
-  const { user } = useClientAuth();
+  const { user, openAuthModal } = useClientAuth();
   const userUid = user?.uid || null;
 
   // History & Sessions State
@@ -330,6 +334,12 @@ export const AiHelperChatClient: React.FC = () => {
   // Send message
   const handleSend = useCallback(
     async (textToSend?: string, customHistory?: ChatMessage[]) => {
+      // 0. Mandatory Login Guard for Guest
+      if (!user && !isOwnerAccount) {
+        openAuthModal('login');
+        return;
+      }
+
       const text = (textToSend !== undefined ? textToSend : inputMessage).trim();
       if (!text || isLoading) return;
 
@@ -389,6 +399,8 @@ export const AiHelperChatClient: React.FC = () => {
             messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
             model: selectedModel.id,
             userTier: currentTier,
+            userId: userUid,
+            userEmail: user?.email,
             enableMemory,
             contextSummary: sessionContextSummary,
             summarizedUpToIndex: sessionSummarizedUpToIndex,
@@ -1359,6 +1371,57 @@ export const AiHelperChatClient: React.FC = () => {
                 </div>
               )}
 
+              {/* Guest Login Requirement Banner */}
+              {(!user && !isOwnerAccount) && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    padding: '10px 16px',
+                    marginBottom: '10px',
+                    borderRadius: '14px',
+                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(147, 51, 234, 0.15) 100%)',
+                    border: '1px solid rgba(59, 130, 246, 0.35)',
+                    backdropFilter: 'blur(10px)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ padding: '6px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>
+                      <Lock size={16} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#ffffff' }}>
+                        เข้าสู่ระบบเพื่อใช้งาน AI Agent & รับฟรี 500 GemCoins ทุกวัน
+                      </div>
+                      <div style={{ fontSize: '0.73rem', color: '#94a3b8' }}>
+                        สมาชิกทั่วไปปลดล็อกการวิเคราะห์หุ้นได้ฟรี ปลอดภัย รวดเร็ว
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openAuthModal('login')}
+                    className="ios-btn-primary"
+                    style={{
+                      padding: '7px 15px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      borderRadius: '10px',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                    }}
+                  >
+                    <LogIn size={13} /> เข้าสู่ระบบ
+                  </button>
+                </div>
+              )}
+
               <div className="ai-input-box">
                 {/* Hidden Multi-file input */}
                 <input
@@ -1374,7 +1437,13 @@ export const AiHelperChatClient: React.FC = () => {
                 <button
                   type="button"
                   className="ai-attach-btn"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => {
+                    if (!user && !isOwnerAccount) {
+                      openAuthModal('login');
+                      return;
+                    }
+                    fileInputRef.current?.click();
+                  }}
                   title="แนบรูปภาพกราฟงบ หรือเอกสาร (ย่อเหลือ 1024px อัตโนมัติ +25 GemCoins/รูป)"
                   disabled={isLoading || isUploadingMedia}
                 >
@@ -1386,12 +1455,24 @@ export const AiHelperChatClient: React.FC = () => {
                   className="ai-input-textarea"
                   value={inputMessage}
                   onChange={(e) => {
+                    if (!user && !isOwnerAccount) {
+                      openAuthModal('login');
+                      return;
+                    }
                     setInputMessage(e.target.value);
                     handleTextareaInput();
                   }}
                   onKeyDown={handleKeyDown}
+                  onClick={() => {
+                    if (!user && !isOwnerAccount) openAuthModal('login');
+                  }}
+                  onFocus={() => {
+                    if (!user && !isOwnerAccount) openAuthModal('login');
+                  }}
                   placeholder={
-                    isUploadingMedia
+                    !user && !isOwnerAccount
+                      ? '🔒 กรุณาเข้าสู่ระบบก่อนใช้งาน AI ผู้ช่วยอัจฉริยะ (สมาชิกรับฟรี 500 GemCoins ทุกวัน)'
+                      : isUploadingMedia
                       ? 'กำลังประมวลผลไฟล์แนบ...'
                       : attachedImages.length > 0
                       ? `แนบรูปภาพแล้ว ${attachedImages.length} รูป (+${attachedImages.length * 25} GemCoins) พิมพ์คำถาม...`
@@ -1413,14 +1494,24 @@ export const AiHelperChatClient: React.FC = () => {
                 ) : (
                   <button
                     className="ai-send-action-btn"
-                    onClick={() => handleSend()}
-                    disabled={(!inputMessage.trim() && attachedImages.length === 0 && attachedDocs.length === 0) || isLoading}
-                    title="ส่งข้อความ"
+                    onClick={() => {
+                      if (!user && !isOwnerAccount) {
+                        openAuthModal('login');
+                        return;
+                      }
+                      handleSend();
+                    }}
+                    disabled={(!user && !isOwnerAccount) ? false : ((!inputMessage.trim() && attachedImages.length === 0 && attachedDocs.length === 0) || isLoading)}
+                    title={(!user && !isOwnerAccount) ? "เข้าสู่ระบบเพื่อใช้งาน AI" : "ส่งข้อความ"}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    {(!user && !isOwnerAccount) ? (
+                      <Lock size={15} color="#94a3b8" />
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
                   </button>
                 )}
               </div>
@@ -1428,14 +1519,23 @@ export const AiHelperChatClient: React.FC = () => {
               {/* Subtext bar */}
               <div className="ai-input-subtext">
                 <span>
-                  โควตาฟรีวันนี้:{' '}
-                  <strong className="ai-quota-daily">{dailyGemCoinsRemaining.toLocaleString()}</strong>
-                  {' '}/{' '}{dailyGemCoins.toLocaleString()} · Top-up ถาวร:{' '}
-                  <strong className="ai-quota-topup">{topupGemCoins.toLocaleString()}</strong>
-                  {attachedImages.length > 0 && (
-                    <span style={{ color: '#38bdf8', marginLeft: '6px' }}>
-                      (+{attachedImages.length * 25} GemCoins Vision)
+                  {!user && !isOwnerAccount ? (
+                    <span style={{ color: '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                      <Lock size={11} color="#f59e0b" />
+                      โหมด Guest: <strong style={{ color: '#f87171' }}>0 GemCoins</strong> (กรุณาเข้าสู่ระบบเพื่อรับโควตาฟรี 500 GemCoins/วัน)
                     </span>
+                  ) : (
+                    <>
+                      โควตาฟรีวันนี้:{' '}
+                      <strong className="ai-quota-daily">{dailyGemCoinsRemaining.toLocaleString()}</strong>
+                      {' '}/{' '}{dailyGemCoins.toLocaleString()} · Top-up ถาวร:{' '}
+                      <strong className="ai-quota-topup">{topupGemCoins.toLocaleString()}</strong>
+                      {attachedImages.length > 0 && (
+                        <span style={{ color: '#38bdf8', marginLeft: '6px' }}>
+                          (+{attachedImages.length * 25} GemCoins Vision)
+                        </span>
+                      )}
+                    </>
                   )}
                 </span>
                 <span style={{ display: 'none' }} className="sm-only">
