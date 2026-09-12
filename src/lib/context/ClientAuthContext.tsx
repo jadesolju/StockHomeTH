@@ -115,6 +115,13 @@ export const ClientAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const signOut = async () => {
+    try {
+      if (localStorage.getItem('stockhome_local_subscription_tier') === 'dev') {
+        localStorage.setItem('stockhome_local_subscription_tier', 'free');
+        localStorage.setItem('stockhome_gemcoin_daily_remaining', '500');
+        localStorage.setItem('stockhome_gemcoin_topup_balance', '0');
+      }
+    } catch {}
     await firebaseSignOut(auth);
     setUser(null);
     closeProfileModal();

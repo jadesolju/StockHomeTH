@@ -166,22 +166,24 @@ export const GemCoinModal: React.FC = () => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with Balance Summary & Main Store Direct Link */}
-        <div className="gemcoin-modal-header flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#090d12]">
-          <div className="flex items-center gap-3">
-            <GemCoinIcon className="w-8 h-8" glow={true} />
-            <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                GemCoin Wallet & Store
-                <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+        <div className="gemcoin-modal-header flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-[#090d12]">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+            <GemCoinIcon className="w-7 h-7 sm:w-8 sm:h-8 shrink-0" glow={true} />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <h2 className="text-sm sm:text-lg font-bold text-white leading-tight truncate">
+                  GemCoin Wallet & Store
+                </h2>
+                <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-semibold shrink-0">
                   {currentTier.toUpperCase()} Member
                 </span>
-              </h2>
-              <p className="text-xs text-slate-400">
-                โควตารายวัน: <span className="text-emerald-400 font-medium">{dailyGemCoinsRemaining.toLocaleString()}</span> / {dailyGemCoins.toLocaleString()} | Top-up ถาวร: <span className="text-amber-400 font-medium">{topupGemCoins.toLocaleString()}</span>
+              </div>
+              <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate sm:overflow-visible">
+                โควตารายวัน: <span className="text-emerald-400 font-medium">{dailyGemCoinsRemaining.toLocaleString()}</span> / {dailyGemCoins.toLocaleString()} | Top-up: <span className="text-amber-400 font-medium">{topupGemCoins.toLocaleString()}</span>
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-2">
             <Link
               href="/payments"
               onClick={closeGemCoinModal}
@@ -194,7 +196,7 @@ export const GemCoinModal: React.FC = () => {
             </Link>
             <button
               onClick={closeGemCoinModal}
-              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors text-sm font-bold"
+              className="p-1.5 sm:p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors text-sm font-bold"
               title="ปิดหน้าต่าง"
             >
               ✕
@@ -203,18 +205,41 @@ export const GemCoinModal: React.FC = () => {
         </div>
 
         {/* 1-Month Launch Promo Alert Banner */}
-        <div className="px-6 py-2.5 bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-purple-500/15 border-b border-amber-500/20 flex items-center justify-between text-xs text-amber-200">
-          <div className="flex items-center gap-2 font-medium">
-            <PromoClockSvg className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
-            <span>{PROMO_CAMPAIGN_TEXT}</span>
+        <div className="px-4 sm:px-6 py-2 bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-purple-500/15 border-b border-amber-500/20 flex items-center justify-between text-[11px] sm:text-xs text-amber-200">
+          <div className="flex items-center gap-1.5 sm:gap-2 font-medium truncate">
+            <PromoClockSvg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-pulse shrink-0" />
+            <span className="truncate">{PROMO_CAMPAIGN_TEXT}</span>
           </div>
-          <span className="hidden sm:inline-block text-[11px] px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30 font-semibold">
+          <span className="hidden sm:inline-block text-[11px] px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30 font-semibold shrink-0">
             EARLY BIRD LAUNCH
           </span>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="gemcoin-tabs-nav flex border-b border-slate-800/80 bg-[#0a0e14] px-4 overflow-x-auto">
+        {/* Mobile Viewport Tab Dropdown Switcher (Clean, High Contrast, Intuitive) */}
+        <div className="block sm:hidden px-3.5 py-2.5 bg-[#0a0e14] border-b border-slate-800/80">
+          <div className="relative">
+            <label htmlFor="gemcoin-mobile-tab-select" className="sr-only">เลือกเมนูร้านค้า</label>
+            <select
+              id="gemcoin-mobile-tab-select"
+              value={activeTab}
+              onChange={(e) => setActiveTab(e.target.value as any)}
+              className="w-full appearance-none px-3.5 py-2.5 bg-slate-900 border border-cyan-500/40 rounded-xl text-xs font-bold text-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 shadow-inner cursor-pointer"
+            >
+              <option value="topup" className="bg-[#0d1319] text-white">🟢 เติมเหรียญ (Top-up Packages)</option>
+              <option value="plans" className="bg-[#0d1319] text-white">👑 สมัคร Plan รายเดือน (Monthly Tiers)</option>
+              <option value="redeem" className="bg-[#0d1319] text-white">🎟️ แลกโค้ดฟรี (Redeem Voucher)</option>
+              <option value="logs" className="bg-[#0d1319] text-white">📄 ประวัติการใช้งาน (Usage Logs)</option>
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-cyan-400">
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Navigation Tabs */}
+        <div className="gemcoin-tabs-nav hidden sm:flex border-b border-slate-800/80 bg-[#0a0e14] px-4 overflow-x-auto">
           <button
             onClick={() => setActiveTab('topup')}
             className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
@@ -262,7 +287,7 @@ export const GemCoinModal: React.FC = () => {
         </div>
 
         {/* Tab Contents */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 space-y-4">
           {purchaseNotice && (
             <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-medium animate-fadeIn flex items-center justify-between">
               <span>{purchaseNotice}</span>
@@ -293,44 +318,46 @@ export const GemCoinModal: React.FC = () => {
           {/* TAB 1: TOP-UP PACKAGES (Real Stripe Checkout) */}
           {activeTab === 'topup' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h3 className="text-sm font-bold text-white">แพ็กเกจเติมเหรียญ GemCoin ถาวร</h3>
                   <p className="text-xs text-slate-400">
                     เหรียญไม่มีวันหมดอายุ ใช้ได้ตลอดกาล ตัดใช้เมื่อโควตารายวันหมด
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-center bg-slate-900/60 sm:bg-transparent p-2 sm:p-0 rounded-lg border border-slate-800 sm:border-0">
                   <span className="text-xs text-slate-400">ยอดคงเหลือรวม:</span>
-                  <div className="text-base font-extrabold text-cyan-300 flex items-center justify-end gap-1">
+                  <div className="text-base font-extrabold text-cyan-300 flex items-center gap-1">
                     <GemCoinIcon className="w-4 h-4" />
                     {totalGemCoinsAvailable.toLocaleString()}
                   </div>
                 </div>
               </div>
 
-              {/* Stripe Checkout Direct Link (Clean Responsive Flexbox Layout, No Text Collision) */}
+              {/* Stripe Checkout Direct Link (Responsive Vertical-on-Mobile Layout, No Text Collision) */}
               <Link
                 href="/payments"
                 onClick={closeGemCoinModal}
-                className="flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-cyan-950/60 border border-emerald-500/40 hover:border-emerald-400 transition-all group"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-cyan-950/60 border border-emerald-500/40 hover:border-emerald-400 transition-all group"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300 shrink-0">
+                <div className="flex items-start sm:items-center gap-3 min-w-0">
+                  <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300 shrink-0 mt-0.5 sm:mt-0">
                     <CreditCard className="w-5 h-5" />
                   </div>
-                  <div className="flex flex-col text-left overflow-hidden">
+                  <div className="flex flex-col text-left">
                     <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-emerald-300 transition-colors leading-snug">
                       💳 ไปที่หน้าร้านค้าหลัก (StockHome Official Store)
                     </h4>
                     <p className="text-[11px] text-slate-400 mt-0.5 leading-normal">
-                      เปิดหน้า /payments สำหรับแพ็กเกจรายปีลด 20% และดูข้อมูลความปลอดภัย
+                      เปิดหน้า /payments สำหรับแพ็กเกจรายปีลด 20% หรือดูข้อมูลความปลอดภัย
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform shrink-0 ml-2 whitespace-nowrap">
-                  ไปหน้าร้านหลัก →
-                </span>
+                <div className="w-full sm:w-auto text-center sm:text-right pt-2 sm:pt-0 border-t border-emerald-500/20 sm:border-0 shrink-0">
+                  <span className="inline-block w-full sm:w-auto py-1.5 px-3 rounded-lg sm:rounded-none bg-emerald-500/20 sm:bg-transparent text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform">
+                    ไปหน้าร้านหลัก →
+                  </span>
+                </div>
               </Link>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -438,16 +465,17 @@ export const GemCoinModal: React.FC = () => {
               </div>
 
               {/* Stripe Checkout Direct Link */}
+              {/* Stripe Checkout Direct Link (Responsive Vertical-on-Mobile Layout) */}
               <Link
                 href="/payments"
                 onClick={closeGemCoinModal}
-                className="flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-cyan-950/60 border border-emerald-500/40 hover:border-emerald-400 transition-all group"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-cyan-950/60 border border-emerald-500/40 hover:border-emerald-400 transition-all group"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300 shrink-0">
+                <div className="flex items-start sm:items-center gap-3 min-w-0">
+                  <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300 shrink-0 mt-0.5 sm:mt-0">
                     <CreditCard className="w-5 h-5" />
                   </div>
-                  <div className="flex flex-col text-left overflow-hidden">
+                  <div className="flex flex-col text-left">
                     <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-emerald-300 transition-colors leading-snug">
                       💳 สมัครสมาชิกผ่านหน้าร้านหลัก (Stripe Official Checkout)
                     </h4>
@@ -456,9 +484,11 @@ export const GemCoinModal: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform shrink-0 ml-2 whitespace-nowrap">
-                  ไปหน้าร้านหลัก →
-                </span>
+                <div className="w-full sm:w-auto text-center sm:text-right pt-2 sm:pt-0 border-t border-emerald-500/20 sm:border-0 shrink-0">
+                  <span className="inline-block w-full sm:w-auto py-1.5 px-3 rounded-lg sm:rounded-none bg-emerald-500/20 sm:bg-transparent text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform">
+                    ไปหน้าร้านหลัก →
+                  </span>
+                </div>
               </Link>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

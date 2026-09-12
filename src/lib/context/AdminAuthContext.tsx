@@ -114,6 +114,13 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const signOut = async () => {
     try {
+      if (localStorage.getItem('stockhome_local_subscription_tier') === 'dev') {
+        localStorage.setItem('stockhome_local_subscription_tier', 'free');
+        localStorage.setItem('stockhome_gemcoin_daily_remaining', '500');
+        localStorage.setItem('stockhome_gemcoin_topup_balance', '0');
+      }
+    } catch {}
+    try {
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);

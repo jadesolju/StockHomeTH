@@ -755,9 +755,15 @@
   background: #f1f5f9 !important;
 }
 
-[data-theme='light'] .gemcoin-modal-box input {
+[data-theme='light'] .gemcoin-modal-box input,
+[data-theme='light'] #gemcoin-mobile-tab-select {
   background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.15) !important;
+  border-color: rgba(0, 0, 0, 0.18) !important;
+  color: #0f172a !important;
+}
+
+[data-theme='light'] #gemcoin-mobile-tab-select option {
+  background: #ffffff !important;
   color: #0f172a !important;
 }
 

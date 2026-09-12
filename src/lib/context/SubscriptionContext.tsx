@@ -127,8 +127,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           OWNER_DEV_IDENTIFIERS.supabaseUids.includes(sbUser.id))
       ) {
         setIsSupabaseOwner(true);
+      } else {
+        setIsSupabaseOwner(false);
       }
-    }).catch(() => {});
+    }).catch(() => {
+      setIsSupabaseOwner(false);
+    });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       const sbUser = session?.user;
@@ -138,6 +142,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           OWNER_DEV_IDENTIFIERS.supabaseUids.includes(sbUser.id))
       ) {
         setIsSupabaseOwner(true);
+      } else {
+        setIsSupabaseOwner(false);
       }
     });
 
@@ -165,17 +171,31 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     } catch {}
   }, []);
 
-  // Initial grant Dev + Owner (God Mode) for Owner accounts if no tier set yet
+  // Synchronize tier with ownership status & revoke dev privileges upon logout
   useEffect(() => {
     if (isOwnerAccount) {
       try {
         const savedTier = localStorage.getItem(STORAGE_KEY);
-        if (!savedTier) {
+        if (!savedTier || savedTier !== 'dev') {
           restoreOwnerGodMode();
         }
       } catch {}
+    } else {
+      // User is NOT an owner account (either logged out as guest, or normal user)
+      // If current tier is 'dev' or localStorage has 'dev' -> Revoke to free!
+      try {
+        const savedTier = localStorage.getItem(STORAGE_KEY);
+        if (currentTier === 'dev' || savedTier === 'dev') {
+          setCurrentTierState('free');
+          localStorage.setItem(STORAGE_KEY, 'free');
+          setDailyGemCoinsRemaining(500);
+          setTopupGemCoins(0);
+          localStorage.setItem(GEMCOIN_DAILY_KEY, '500');
+          localStorage.setItem(GEMCOIN_TOPUP_KEY, '0');
+        }
+      } catch {}
     }
-  }, [isOwnerAccount, restoreOwnerGodMode]);
+  }, [isOwnerAccount, currentTier, restoreOwnerGodMode]);
 
   // Auto-claim any pending GemCoin airdrops sent to user's email by Admin
   useEffect(() => {
@@ -248,9 +268,18 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       // 2. Subscription Tier
       const savedTier = localStorage.getItem(STORAGE_KEY) as SubscriptionTier;
       let effectiveTier: SubscriptionTier = 'free';
-      if (savedTier && ['free', 'lite', 'pro', 'vip', 'whale', 'dev'].includes(savedTier)) {
+      if (savedTier && ['free', 'lite', 'pro', 'vip', 'whale'].includes(savedTier)) {
         setCurrentTierState(savedTier);
         effectiveTier = savedTier;
+      } else if (savedTier === 'dev' && isOwnerAccount) {
+        setCurrentTierState('dev');
+        effectiveTier = 'dev';
+      } else {
+        setCurrentTierState('free');
+        effectiveTier = 'free';
+        try {
+          localStorage.setItem(STORAGE_KEY, 'free');
+        } catch {}
       }
 
 
