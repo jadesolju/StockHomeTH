@@ -75,8 +75,8 @@ export default async function HomePage() {
               <Link key={card.href} href={card.href} className="no-underline">
                 <div className="glass-card-hover py-4 px-5 rounded-2xl bg-[var(--card-sub-bg)] border border-[var(--card-sub-border)] flex items-center justify-between cursor-pointer transition-all duration-200">
                   <div className="flex items-center gap-3">
-                    <div 
-                      className="w-10 h-10 rounded-xl flex items-center justify-center" 
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center"
                       style={{ background: card.iconBg }}
                     >
                       <IconComponent size={22} color={card.iconColor} />
