@@ -32,21 +32,21 @@ export default async function UsStocksPage() {
       <MarketTickerBarServer indices={mockMarketIndices} />
 
       {/* US Market Hero Header */}
-      <div className="glass-card" style={{ padding: '24px 28px', borderRadius: '24px', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="glass-card p-6 md:px-7 rounded-3xl mb-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'rgba(139, 92, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(139, 92, 246, 0.15)' }}>
                 <Building size={18} color="#8B5CF6" />
               </div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+              <h2 className="text-2xl font-extrabold m-0 text-[var(--text-primary)]">
                 หุ้นต่างประเทศ (US Markets)
               </h2>
-              <span style={{ fontSize: '0.75rem', background: 'rgba(139, 92, 246, 0.15)', color: '#8B5CF6', padding: '2px 10px', borderRadius: '100px', fontWeight: 700 }}>
+              <span className="text-xs py-0.5 px-2.5 rounded-full font-bold" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#8B5CF6' }}>
                 700+ หุ้นสหรัฐฯ & Tech Giants
               </span>
             </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
+            <p className="text-sm text-[var(--text-secondary)] m-0">
               NYSE & NASDAQ (New York) • Regular Hours: 09:30 - 16:00 ET (20:30 - 03:00 น. เวลาไทย)
             </p>
           </div>

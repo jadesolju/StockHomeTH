@@ -10,6 +10,34 @@ import { Globe, Landmark, Building, ArrowRight, TrendingUp, Sparkles, BarChart3 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+
+const NAV_CARDS = [
+  {
+    href: '/stocks',
+    icon: Globe,
+    iconColor: '#10b981',
+    iconBg: 'rgba(16, 185, 129, 0.15)',
+    title: 'ตลาดหุ้นทั้งหมด (ALL)',
+    description: 'จักรวาลหุ้น 1,500+ ตัว พร้อมตัวคัดกรองแท็ก',
+  },
+  {
+    href: '/stocks/thai',
+    icon: Landmark,
+    iconColor: '#007AFF',
+    iconBg: 'rgba(0, 122, 255, 0.15)',
+    title: 'หุ้นไทย (SET & mai)',
+    description: 'SET50, ปันผลสูง, หุ้นพลังงาน, แบงก์ 800+ ตัว',
+  },
+  {
+    href: '/stocks/us',
+    icon: Building,
+    iconColor: '#8B5CF6',
+    iconBg: 'rgba(139, 92, 246, 0.15)',
+    title: 'หุ้นต่างประเทศ (US)',
+    description: 'Magnificent 7, Tech AI, S&P 500, Nasdaq 700+ ตัว',
+  },
+];
+
 export default async function HomePage() {
   const dynamicDigest = getDynamicDailyDigestSummary();
   const dynamicNews = getDynamicMockNewsItems();
@@ -23,72 +51,47 @@ export default async function HomePage() {
       <DigestHeaderBannerServer summary={dynamicDigest} />
 
       {/* 3. Core Main Section: Real-Time Live AI Financial News Digest & Intelligence */}
-      <div style={{ marginBottom: '40px' }}>
+      <div className="mb-10">
         <HomeNewsSectionHeader />
         <NewsFeedClient initialNews={dynamicNews} />
       </div>
 
       {/* 4. Dedicated Stock Hubs Quick Navigation Cards */}
-      <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', marginBottom: '40px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '8px' }}>
+      <div className="glass-card p-6 rounded-3xl mb-10">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 className="text-lg font-extrabold m-0 text-[var(--text-primary)] flex items-center gap-2">
               <BarChart3 size={20} color="var(--accent-blue)" /> ค้นหาและวิเคราะห์ราคาหุ้นรายตัว (Stock Market Intelligence)
             </h3>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+            <p className="text-sm text-[var(--text-secondary)] mt-1 mb-0">
               เลือกดูภาพรวมตลาดหุ้นทั้งหมด หรือเจาะลึกเฉพาะหุ้นไทย (SET) และหุ้นต่างประเทศ (US)
             </p>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-          {/* Card 1: ตลาดหุ้นทั้งหมด */}
-          <Link href="/stocks" style={{ textDecoration: 'none' }}>
-            <div className="glass-card-hover" style={{ padding: '18px 20px', borderRadius: '18px', background: 'var(--card-sub-bg)', border: '1px solid var(--card-sub-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.2s ease' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Globe size={22} color="#10b981" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {NAV_CARDS.map((card) => {
+            const IconComponent = card.icon;
+            return (
+              <Link key={card.href} href={card.href} className="no-underline">
+                <div className="glass-card-hover py-4 px-5 rounded-2xl bg-[var(--card-sub-bg)] border border-[var(--card-sub-border)] flex items-center justify-between cursor-pointer transition-all duration-200">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style={{ background: card.iconBg }}
+                    >
+                      <IconComponent size={22} color={card.iconColor} />
+                    </div>
+                    <div>
+                      <h4 className="m-0 text-[0.95rem] font-bold text-[var(--text-primary)]">{card.title}</h4>
+                      <p className="m-0 mt-0.5 text-xs text-[var(--text-tertiary)]">{card.description}</p>
+                    </div>
+                  </div>
+                  <ArrowRight size={18} color="var(--text-tertiary)" />
                 </div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>ตลาดหุ้นทั้งหมด (ALL)</h4>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>จักรวาลหุ้น 1,500+ ตัว พร้อมตัวคัดกรองแท็ก</p>
-                </div>
-              </div>
-              <ArrowRight size={18} color="var(--text-tertiary)" />
-            </div>
-          </Link>
-
-          {/* Card 2: หุ้นไทย (SET) */}
-          <Link href="/stocks/thai" style={{ textDecoration: 'none' }}>
-            <div className="glass-card-hover" style={{ padding: '18px 20px', borderRadius: '18px', background: 'var(--card-sub-bg)', border: '1px solid var(--card-sub-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.2s ease' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(0, 122, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Landmark size={22} color="#007AFF" />
-                </div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>หุ้นไทย (SET & mai)</h4>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>SET50, ปันผลสูง, หุ้นพลังงาน, แบงก์ 800+ ตัว</p>
-                </div>
-              </div>
-              <ArrowRight size={18} color="var(--text-tertiary)" />
-            </div>
-          </Link>
-
-          {/* Card 3: หุ้นต่างประเทศ (US) */}
-          <Link href="/stocks/us" style={{ textDecoration: 'none' }}>
-            <div className="glass-card-hover" style={{ padding: '18px 20px', borderRadius: '18px', background: 'var(--card-sub-bg)', border: '1px solid var(--card-sub-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.2s ease' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Building size={22} color="#8B5CF6" />
-                </div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>หุ้นต่างประเทศ (US)</h4>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Magnificent 7, Tech AI, S&P 500, Nasdaq 700+ ตัว</p>
-                </div>
-              </div>
-              <ArrowRight size={18} color="var(--text-tertiary)" />
-            </div>
-          </Link>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </>
