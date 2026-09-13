@@ -126,6 +126,46 @@ export async function deleteSessionFromCloud(userUid: string, sessionId: string)
 }
 
 /**
+ * Migrates local guest chat sessions into the logged-in user account & syncs them to Firestore Cloud.
+ */
+export function migrateGuestSessionsToUser(userUid: string): void {
+  if (typeof window === 'undefined' || !userUid) return;
+  try {
+    const guestId = localStorage.getItem('gemcoin_user_id') || 'guest_device';
+    const guestKey = `${STORAGE_PREFIX}guest_${guestId}`;
+    const guestRaw = localStorage.getItem(guestKey);
+    if (!guestRaw) return;
+
+    const guestSessions: ChatSession[] = JSON.parse(guestRaw);
+    if (!Array.isArray(guestSessions) || guestSessions.length === 0) return;
+
+    const userSessions = loadUserSessions(userUid);
+    const userSessionMap = new Map<string, ChatSession>();
+    for (const s of userSessions) {
+      userSessionMap.set(s.id, s);
+    }
+
+    let migrated = false;
+    for (const gs of guestSessions) {
+      if (!userSessionMap.has(gs.id)) {
+        userSessionMap.set(gs.id, gs);
+        saveSessionToCloud(userUid, gs);
+        migrated = true;
+      }
+    }
+
+    if (migrated) {
+      const merged = Array.from(userSessionMap.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+      saveUserSessions(userUid, merged);
+    }
+
+    localStorage.removeItem(guestKey);
+  } catch (err) {
+    console.warn('[aiChatHistoryService] Guest session migration failed:', err);
+  }
+}
+
+/**
  * Real-Time Firestore Cloud Subscription:
  * Automatically syncs chat sessions across devices (PC and Mobile) when logged in.
  */
@@ -135,6 +175,9 @@ export function subscribeToUserCloudSessions(
 ): () => void {
   if (!userUid || !db) return () => {};
   try {
+    // Attempt guest session migration upon login
+    migrateGuestSessionsToUser(userUid);
+
     const q = query(
       collection(db, 'users', userUid.trim(), 'chat_sessions'),
       orderBy('updatedAt', 'desc'),
