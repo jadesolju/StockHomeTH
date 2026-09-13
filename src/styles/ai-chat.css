@@ -3062,3 +3062,87 @@
   color: #ffffff;
   background: rgba(255, 255, 255, 0.06);
 }
+
+/* ==========================================================================
+   AI Chat Guest Login Banner (Adaptive Dark & Light Theme)
+   ========================================================================== */
+.ai-guest-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(147, 51, 234, 0.15) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.ai-guest-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ai-guest-banner-icon {
+  padding: 6px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ai-guest-banner-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.ai-guest-banner-desc {
+  font-size: 0.73rem;
+  color: #94a3b8;
+}
+
+.ai-guest-banner-btn {
+  padding: 7px 15px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 10px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Light Mode Overrides for AI Chat Guest Banner */
+[data-theme='light'] .ai-guest-banner {
+  background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%) !important;
+  border: 1px solid #bfdbfe !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08) !important;
+}
+
+[data-theme='light'] .ai-guest-banner-icon {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+}
+
+[data-theme='light'] .ai-guest-banner-title {
+  color: #1e3a8a !important; /* Deep blue for sharp WCAG contrast in Light Theme */
+}
+
+[data-theme='light'] .ai-guest-banner-desc {
+  color: #475569 !important; /* Dark slate text for eye comfort and readability */
+}
+
+[data-theme='light'] .ai-guest-banner-btn {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+}
