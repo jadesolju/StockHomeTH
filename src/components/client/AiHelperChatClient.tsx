@@ -343,6 +343,19 @@ export const AiHelperChatClient: React.FC = () => {
       const text = (textToSend !== undefined ? textToSend : inputMessage).trim();
       if (!text || isLoading) return;
 
+      // Handle Slash Commands (/new, /next, /clear)
+      const lowerCmd = text.toLowerCase();
+      if (lowerCmd === '/new' || lowerCmd === '/next') {
+        setInputMessage('');
+        handleNewChat();
+        return;
+      }
+      if (lowerCmd === '/clear') {
+        setInputMessage('');
+        clearCurrentChat();
+        return;
+      }
+
       const visionCost = attachedImages.length * 25;
       const estCoins = getModelGemCoinsEst(selectedModel) + visionCost;
 
@@ -618,10 +631,7 @@ export const AiHelperChatClient: React.FC = () => {
   }, [isLoading, handleSend]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    // Enter key creates newline only; sending requires clicking the Send button.
   };
 
   const copyToClipboard = (id: string, text: string) => {
@@ -1527,7 +1537,7 @@ export const AiHelperChatClient: React.FC = () => {
                       ? 'กำลังประมวลผลไฟล์แนบ...'
                       : attachedImages.length > 0
                       ? `แนบรูปภาพแล้ว ${attachedImages.length} รูป (+${attachedImages.length * 25} GemCoins) พิมพ์คำถาม...`
-                      : 'ถามเกี่ยวกับหุ้น ข่าวการเงิน หรือกลยุทธ์การลงทุน... (Enter ส่ง, Shift+Enter ขึ้นบรรทัด)'
+                      : 'ถามเกี่ยวกับหุ้น ข่าวการเงิน หรือกลยุทธ์การลงทุน... (Enter เพื่อขึ้นบรรทัดใหม่, กดปุ่มส่งเพื่อส่งข้อความ)'
                   }
                   rows={1}
                 />
