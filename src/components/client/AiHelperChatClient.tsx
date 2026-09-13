@@ -1467,29 +1467,16 @@ export const AiHelperChatClient: React.FC = () => {
 
               {/* Guest Login Requirement Banner */}
               {(!user && !isOwnerAccount) && (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                    padding: '10px 16px',
-                    marginBottom: '10px',
-                    borderRadius: '14px',
-                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(147, 51, 234, 0.15) 100%)',
-                    border: '1px solid rgba(59, 130, 246, 0.35)',
-                    backdropFilter: 'blur(10px)',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ padding: '6px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>
+                <div className="ai-guest-banner">
+                  <div className="ai-guest-banner-content">
+                    <div className="ai-guest-banner-icon">
                       <Lock size={16} />
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#ffffff' }}>
+                      <div className="ai-guest-banner-title">
                         เข้าสู่ระบบเพื่อใช้งาน AI Agent & รับฟรี 500 GemCoins ทุกวัน
                       </div>
-                      <div style={{ fontSize: '0.73rem', color: '#94a3b8' }}>
+                      <div className="ai-guest-banner-desc">
                         สมาชิกทั่วไปปลดล็อกการวิเคราะห์หุ้นได้ฟรี ปลอดภัย รวดเร็ว
                       </div>
                     </div>
@@ -1497,19 +1484,7 @@ export const AiHelperChatClient: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => openAuthModal('login')}
-                    className="ios-btn-primary"
-                    style={{
-                      padding: '7px 15px',
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
-                      borderRadius: '10px',
-                      whiteSpace: 'nowrap',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                    }}
+                    className="ai-guest-banner-btn ios-btn-primary"
                   >
                     <LogIn size={13} /> เข้าสู่ระบบ
                   </button>
