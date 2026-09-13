@@ -22,6 +22,7 @@ import {
   Check,
   CreditCard,
   Crown,
+  Ticket,
 } from 'lucide-react';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { useTheme } from '../../lib/context/ThemeContext';
@@ -63,7 +64,7 @@ export function HeaderClientNav({
   const { setSelectedMarket, refreshAll, isSyncing, cooldownRemaining } = useMarketSync();
   const { user, openAuthModal, openProfileModal, signOut } = useClientAuth();
   const { signOut: adminSignOut } = useAdminAuth();
-  const { isOwnerOrDev, isOwnerAccount } = useSubscription();
+  const { isOwnerOrDev, isOwnerAccount, openGemCoinModal } = useSubscription();
 
   const isOwnerUser =
     isOwnerAccount ||
@@ -285,6 +286,31 @@ export function HeaderClientNav({
             )}
           </button>
 
+          {/* Redeem Code Button - Directly in front of Member Profile */}
+          <button
+            onClick={() => openGemCoinModal('redeem')}
+            className="ios-glass-btn header-redeem-btn ios-tappable"
+            title="แลกโค้ดโปรโมชั่นรับเหรียญฟรี (Redeem Voucher)"
+            style={{
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(217, 119, 6, 0.1) 100%)',
+              border: '1px solid rgba(245, 158, 11, 0.4)',
+              borderRadius: '100px',
+              padding: '5px 11px',
+              color: '#f59e0b',
+              fontWeight: 700,
+              fontSize: '0.76rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 10px rgba(245, 158, 11, 0.15)',
+              transition: 'all 0.15s ease',
+              flexShrink: 0,
+            }}
+          >
+            <Ticket size={14} color="#f59e0b" />
+            <span className="header-redeem-label">แลกโค้ด</span>
+          </button>
 
           {/* Member Auth Button / Profile Dropdown (Desktop view) */}
           <div className="desktop-nav-bar" style={{ position: 'relative' }} ref={userMenuRef}>
@@ -400,6 +426,31 @@ export function HeaderClientNav({
                         <Crown size={14} color="#ec4899" /> 👑 Admin & Dev Portal
                       </Link>
                     )}
+
+                    <button
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        openGemCoinModal('redeem');
+                      }}
+                      style={{
+                        background: 'rgba(245, 158, 11, 0.08)',
+                        border: '1px solid rgba(245, 158, 11, 0.25)',
+                        color: '#f59e0b',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        padding: '7px 8px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        marginBottom: '2px',
+                      }}
+                      className="glass-card-hover"
+                    >
+                      <Ticket size={14} color="#f59e0b" /> แลกโค้ดฟรี (Redeem Voucher)
+                    </button>
 
                     <button
                       onClick={() => {

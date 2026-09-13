@@ -16,6 +16,7 @@ import {
   Upload,
   Crown,
   Settings,
+  Ticket,
 } from 'lucide-react';
 import Link from 'next/link';
 import { ADMIN_PORTAL_PATH } from '../../config/adminConfig';
@@ -44,6 +45,7 @@ export function UserProfileModal() {
     isOwnerAccount,
     restoreOwnerGodMode,
     openPricingModal,
+    openGemCoinModal,
   } = useSubscription();
 
   const isOwner =
@@ -310,6 +312,53 @@ export function UserProfileModal() {
           <p style={{ margin: '2px 0 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
             {user.email}
           </p>
+
+          {/* Quick Redeem Voucher Shortcut */}
+          <div
+            style={{
+              marginTop: '14px',
+              padding: '12px 14px',
+              borderRadius: '14px',
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(217, 119, 6, 0.08) 100%)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '10px',
+              textAlign: 'left',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Ticket size={20} color="#f59e0b" style={{ flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  แลกโค้ดโปรโมชั่น / บัตรกำนัล
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  กรอกโค้ดเพื่อรับ GemCoins ฟรีเข้ากระเป๋า
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                closeProfileModal();
+                openGemCoinModal('redeem');
+              }}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '10px',
+                border: 'none',
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                color: '#ffffff',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              กรอกโค้ด
+            </button>
+          </div>
 
           {/* Membership Tier Status (Local Sandbox Only) */}
           {isLocalEnv && (

@@ -14,7 +14,7 @@ import {
   WhaleSvg,
 } from '@/components/ui/TierSvgIcons';
 import type { GemCoinTopupPackage } from '@/config/gemCoinPackages';
-import { Loader2, Zap, Crown, AlertCircle, ShieldCheck, ArrowRight, Check, Sparkles, CreditCard, QrCode, History } from 'lucide-react';
+import { Loader2, Zap, Crown, AlertCircle, ShieldCheck, ArrowRight, Check, Sparkles, CreditCard, QrCode, History, Ticket, CheckCircle2, Gift } from 'lucide-react';
 import { useClientAuth } from '@/lib/context/ClientAuthContext';
 import { useSubscription, OWNER_DEV_IDENTIFIERS } from '@/lib/context/SubscriptionContext';
 
@@ -33,15 +33,58 @@ function TierIcon({ iconType, className }: { iconType: GemCoinTopupPackage['icon
   }
 }
 
-type Tab = 'topup' | 'subscription';
+type Tab = 'topup' | 'subscription' | 'redeem';
 
 export default function PaymentsClient() {
   const { user } = useClientAuth();
-  const { totalGemCoinsAvailable, openGemCoinModal } = useSubscription();
+  const { totalGemCoinsAvailable, openGemCoinModal, redeemPromoCode } = useSubscription();
   const [activeTab, setActiveTab] = useState<Tab>('topup');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Promo Code Redemption State
+  const [promoInput, setPromoInput] = useState('');
+  const [redeemLoading, setRedeemLoading] = useState(false);
+  const [redeemResult, setRedeemResult] = useState<{
+    success: boolean;
+    message: string;
+    coinsAdded?: number;
+  } | null>(null);
+
+  // Auto-switch tab if URL contains ?tab=redeem or #redeem
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'redeem' || window.location.hash === '#redeem') {
+        setActiveTab('redeem');
+      } else if (tabParam === 'subscription') {
+        setActiveTab('subscription');
+      }
+    }
+  }, []);
+
+  const handleRedeemSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!promoInput.trim() || redeemLoading) return;
+    setRedeemLoading(true);
+    setRedeemResult(null);
+    try {
+      const res = await redeemPromoCode(promoInput.trim());
+      setRedeemResult(res);
+      if (res.success) {
+        setPromoInput('');
+      }
+    } catch (err: any) {
+      setRedeemResult({
+        success: false,
+        message: err?.message || 'เกิดข้อผิดพลาดในการแลกโค้ด กรุณาลองใหม่อีกครั้ง',
+      });
+    } finally {
+      setRedeemLoading(false);
+    }
+  };
 
   const isOwnerUser = Boolean(
     user &&
@@ -173,36 +216,59 @@ export default function PaymentsClient() {
             </div>
           </div>
 
-          <button
-            onClick={() => openGemCoinModal('logs')}
-            className="ios-tappable"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              borderRadius: '12px',
-              background: 'rgba(6, 182, 212, 0.12)',
-              border: '1px solid rgba(6, 182, 212, 0.3)',
-              color: '#06b6d4',
-              fontSize: '0.82rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            <History size={16} />
-            <span>ดูประวัติการใช้งาน GemCoins (History)</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setActiveTab('redeem')}
+              className="ios-tappable"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                borderRadius: '12px',
+                background: activeTab === 'redeem' ? 'rgba(245, 158, 11, 0.22)' : 'rgba(245, 158, 11, 0.12)',
+                border: '1px solid rgba(245, 158, 11, 0.35)',
+                color: '#f59e0b',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Ticket size={16} />
+              <span>แลกโค้ดโปรโมชั่น (Redeem)</span>
+            </button>
+
+            <button
+              onClick={() => openGemCoinModal('logs')}
+              className="ios-tappable"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                borderRadius: '12px',
+                background: 'rgba(6, 182, 212, 0.12)',
+                border: '1px solid rgba(6, 182, 212, 0.3)',
+                color: '#06b6d4',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              <History size={16} />
+              <span>ประวัติการใช้ GemCoins</span>
+            </button>
+          </div>
         </div>
 
         {/* ──── Tab Switcher ──── */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '28px' }}>
-
-          <div className="ios-segmented-control" style={{ padding: '4px', maxWidth: '420px', width: '100%' }}>
+          <div className="ios-segmented-control" style={{ padding: '4px', maxWidth: '580px', width: '100%' }}>
             <button
               onClick={() => setActiveTab('topup')}
               className={`ios-segment-btn ${activeTab === 'topup' ? 'active' : ''}`}
-              style={{ flex: 1, padding: '8px 16px', fontSize: '0.88rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              style={{ flex: 1, padding: '8px 14px', fontSize: '0.86rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
             >
               <Zap size={16} />
               <span>เติม GemCoins</span>
@@ -210,10 +276,18 @@ export default function PaymentsClient() {
             <button
               onClick={() => setActiveTab('subscription')}
               className={`ios-segment-btn ${activeTab === 'subscription' ? 'active' : ''}`}
-              style={{ flex: 1, padding: '8px 16px', fontSize: '0.88rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              style={{ flex: 1, padding: '8px 14px', fontSize: '0.86rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
             >
               <Crown size={16} />
-              <span>แผนสมาชิกรายเดือน/ปี</span>
+              <span>แผนสมาชิก</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('redeem')}
+              className={`ios-segment-btn ${activeTab === 'redeem' ? 'active' : ''}`}
+              style={{ flex: 1, padding: '8px 14px', fontSize: '0.86rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            >
+              <Ticket size={16} color={activeTab === 'redeem' ? '#f59e0b' : undefined} />
+              <span>กรอกโค้ดฟรี</span>
             </button>
           </div>
         </div>
@@ -235,6 +309,41 @@ export default function PaymentsClient() {
         {/* ──── TAB 1: TOP-UP PACKAGES ──── */}
         {activeTab === 'topup' && (
           <div className="payment-grid">
+            {/* Quick Promo Code Link Banner */}
+            <div
+              onClick={() => setActiveTab('redeem')}
+              className="glass-card-hover ios-tappable"
+              style={{
+                gridColumn: '1 / -1',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '10px',
+                padding: '12px 18px',
+                borderRadius: '14px',
+                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(217, 119, 6, 0.08) 100%)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                cursor: 'pointer',
+                marginBottom: '8px',
+                color: '#f59e0b',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Ticket size={20} color="#f59e0b" />
+                <div>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    มีโค้ดโปรโมชั่นหรือรหัสบัตรกำนัล?
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    แลกรับ GemCoins ฟรีเข้ากระเป๋าได้ทันทีโดยไม่ต้องชำระเงิน
+                  </div>
+                </div>
+              </div>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                กรอกโค้ดที่นี่ →
+              </span>
+            </div>
             {GEMCOIN_TOPUP_PACKAGES.map((pkg) => {
               const isLoading = loadingId === pkg.id;
               const isDisabled = loadingId !== null;
@@ -491,6 +600,177 @@ export default function PaymentsClient() {
                   <ArrowRight size={13} />
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ──── TAB 3: REDEEM PROMO CODE ──── */}
+        {activeTab === 'redeem' && (
+          <div
+            style={{
+              maxWidth: '620px',
+              margin: '0 auto',
+              padding: '32px 24px',
+              borderRadius: '24px',
+              background: 'var(--card-bg, rgba(255, 255, 255, 0.03))',
+              border: '1px solid var(--card-border, rgba(255, 255, 255, 0.1))',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.45)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+            }}
+          >
+            <div style={{ textAlign: 'center', marginBottom: '26px' }}>
+              <div
+                style={{
+                  width: '58px',
+                  height: '58px',
+                  borderRadius: '18px',
+                  background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.1) 100%)',
+                  border: '1.5px solid rgba(245, 158, 11, 0.4)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '14px',
+                  boxShadow: '0 4px 16px rgba(245, 158, 11, 0.25)',
+                }}
+              >
+                <Gift size={28} color="#f59e0b" />
+              </div>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
+                แลกโค้ดโปรโมชั่น & บัตรกำนัล
+              </h2>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                นำรหัส Voucher หรือ Promo Code จากกิจกรรมมาแลกเป็น GemCoins ฟรีเข้ากระเป๋าได้ทันที
+              </p>
+            </div>
+
+            <form onSubmit={handleRedeemSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  value={promoInput}
+                  onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                  placeholder="พิมพ์โค้ด เช่น Stock-1234"
+                  disabled={redeemLoading}
+                  style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    borderRadius: '14px',
+                    background: 'var(--card-sub-bg, rgba(255, 255, 255, 0.05))',
+                    border: '1.5px solid var(--card-sub-border, rgba(255, 255, 255, 0.15))',
+                    color: 'var(--text-primary)',
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    letterSpacing: '1px',
+                    textAlign: 'center',
+                    textTransform: 'uppercase',
+                    outline: 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={redeemLoading || !promoInput.trim()}
+                className="ios-btn-primary ios-tappable"
+                style={{
+                  padding: '14px',
+                  borderRadius: '14px',
+                  fontSize: '0.92rem',
+                  fontWeight: 800,
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  cursor: redeemLoading || !promoInput.trim() ? 'not-allowed' : 'pointer',
+                  opacity: redeemLoading || !promoInput.trim() ? 0.6 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 16px rgba(245, 158, 11, 0.3)',
+                }}
+              >
+                {redeemLoading ? (
+                  <>
+                    <Loader2 size={18} className="spin-anim" />
+                    <span>กำลังตรวจสอบโค้ด...</span>
+                  </>
+                ) : (
+                  <>
+                    <Ticket size={18} />
+                    <span>ยืนยันการแลกโค้ด (Redeem Code)</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Result Message */}
+            {redeemResult && (
+              <div
+                style={{
+                  marginTop: '16px',
+                  padding: '14px 16px',
+                  borderRadius: '14px',
+                  background: redeemResult.success ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                  border: `1px solid ${redeemResult.success ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
+                  color: redeemResult.success ? '#10b981' : '#f87171',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                }}
+              >
+                {redeemResult.success ? <CheckCircle2 size={20} style={{ flexShrink: 0 }} /> : <AlertCircle size={20} style={{ flexShrink: 0 }} />}
+                <div>{redeemResult.message}</div>
+              </div>
+            )}
+
+            {/* Code Format Hint */}
+            <div
+              style={{
+                marginTop: '20px',
+                padding: '12px 16px',
+                borderRadius: '14px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid var(--card-sub-border, rgba(255, 255, 255, 0.08))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>รูปแบบโค้ดตัวอย่าง:</span>
+              <span
+                style={{
+                  fontFamily: 'monospace',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  color: '#f59e0b',
+                  background: 'rgba(245, 158, 11, 0.12)',
+                  padding: '3px 10px',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                }}
+              >
+                Stock-1234
+              </span>
+            </div>
+
+            {/* Helpful Notes */}
+            <div
+              style={{
+                marginTop: '16px',
+                padding: '12px',
+                borderRadius: '12px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px dashed var(--card-sub-border, rgba(255, 255, 255, 0.08))',
+                fontSize: '0.75rem',
+                color: 'var(--text-tertiary)',
+                lineHeight: 1.5,
+              }}
+            >
+              💡 <strong>คำแนะนำ:</strong> โค้ดแต่ละรหัสสามารถใช้งานได้ตามเงื่อนไขแคมเปญ เหรียญที่ได้รับจากโค้ดจะถูกบันทึกเป็น Permanent GemCoins ถาวรไม่มีวันหมดอายุ
             </div>
           </div>
         )}

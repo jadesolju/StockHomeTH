@@ -637,6 +637,15 @@ body {
   }
 }
 
+@media (max-width: 520px) {
+  .header-redeem-btn .header-redeem-label {
+    display: none !important;
+  }
+  .header-redeem-btn {
+    padding: 6px 8px !important;
+  }
+}
+
 @media (min-width: 768px) {
   .desktop-nav-bar {
     display: flex !important;

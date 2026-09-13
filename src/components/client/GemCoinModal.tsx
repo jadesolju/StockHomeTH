@@ -356,6 +356,21 @@ export const GemCoinModal: React.FC = () => {
                 </div>
               </Link>
 
+              {/* Quick Promo Code Redeem Shortcut */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('redeem')}
+                className="w-full p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center justify-between transition-all group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <TicketVoucherSvg className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                  <span>มีโค้ดโปรโมชั่นหรือรหัสบัตรกำนัล? แลกรับ GemCoins ฟรี</span>
+                </div>
+                <span className="text-amber-400 font-bold group-hover:translate-x-0.5 transition-transform">
+                  กรอกโค้ดที่นี่ →
+                </span>
+              </button>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {GEMCOIN_TOPUP_PACKAGES.map((pkg) => {
                   const isLoadingThis = loadingPkgId === pkg.id;
@@ -610,7 +625,7 @@ export const GemCoinModal: React.FC = () => {
                     type="text"
                     value={promoInput}
                     onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                    placeholder="พิมพ์โค้ด เช่น STOCKHOME-1000"
+                    placeholder="พิมพ์โค้ด เช่น Stock-1234"
                     disabled={redeemLoading}
                     className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono tracking-wider text-center text-sm uppercase"
                   />
@@ -642,21 +657,21 @@ export const GemCoinModal: React.FC = () => {
                 </div>
               )}
 
-              {/* Dev Test Hints */}
-              <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl text-[11px] text-slate-400 space-y-1">
-                <div className="font-semibold text-slate-300">โค้ดสำหรับทดสอบในเครื่อง (Local Sandbox Test Codes):</div>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {['DEV-5000', 'STOCKHOME-1000', 'EARLYBIRD-500'].map((code) => (
-                    <button
-                      key={code}
-                      type="button"
-                      onClick={() => setPromoInput(code)}
-                      className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 font-mono text-[10px] border border-slate-700"
-                    >
-                      {code}
-                    </button>
-                  ))}
-                </div>
+              {/* Code Format Hint */}
+              <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl text-[11px] text-slate-400 flex items-center justify-between">
+                <span className="text-slate-400">รูปแบบโค้ดตัวอย่าง:</span>
+                <span className="font-mono text-cyan-300 font-bold bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">Stock-1234</span>
+              </div>
+
+              <div className="pt-2 text-center">
+                <Link
+                  href="/payments"
+                  onClick={closeGemCoinModal}
+                  className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-cyan-300 transition-colors"
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>หรือไปที่หน้าร้านค้าทางการเพื่อดูแพ็กเกจเติมเหรียญ (Official Store) →</span>
+                </Link>
               </div>
             </div>
           )}
