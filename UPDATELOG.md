@@ -3,7 +3,7 @@
 เอกสารบันทึกประวัติการพัฒนา การอัปเกรดสถาปัตยกรรม และการเปิดตัวฟีเจอร์สำคัญของแพลตฟอร์ม **StockHomeTH** อย่างเป็นทางการ
 
 ## 🎫 [v2.0.1] - 2026-09-13 (Preview Update)
-### "Quick Promo Code Redemption, Chat Sync Hardening & AI UI Optimization"
+### "Quick Promo Code Redemption, Guest Checkout Guard, Catalyst Linking & AI Enhancements"
 - **ปุ่มแลกโค้ดหน้า Profile (Desktop & Mobile):** เพิ่มปุ่ม "แลกโค้ด" (`header-redeem-btn`) โดดเด่นข้างหน้าปุ่ม Profile บนแถบ Header เมนูผู้ใช้ และป๊อปอัปตั้งค่าโปรไฟล์
 - **เชื่อมต่อหน้าร้านค้าและเติมเงิน (/payments):**
   - เพิ่มแท็บ "กรอกโค้ดฟรี" บนหน้า `/payments` พร้อมฟอร์มแลกรับเหรียญ GemCoins ทันทีโดยไม่ต้องเปิดโมดัล
@@ -12,6 +12,14 @@
   - ปรับปรุงข้อความตัวอย่างในช่องกรอกโค้ดเป็น `Stock-1234` และปิดการแสดงรหัสจริงเพื่อความปลอดภัย
   - **สลับ Dropdown และเนื้อหาเข้าสู่ "🎫 แลกโค้ดฟรี (Coupon / Voucher)" ทันที** เมื่อกดปุ่มแลกโค้ด พร้อมระบบ Auto-focus ช่องกรอกโค้ดทันที
   - รองรับ URL Query `?tab=redeem` สลับเข้าแท็บกรอกโค้ดอัตโนมัติ
+- **Guest Checkout Guard & Auto-Resume Top-up:**
+  - เพิ่มระบบป้องกัน Guest Checkout: แสดงแบนเนอร์แจ้งเตือนให้เข้าสู่ระบบก่อนทำการเติมเงิน เพื่อให้ยอดเหรียญและสิทธิ์สมาชิกผูกกับบัญชีผู้ใช้ถาวรบน Cloud
+  - บันทึกแพ็กเกจที่เลือกไว้ใน `sessionStorage` และเปิดหน้าต่างล็อกอินทันที เมื่อล็อกอินสำเร็จ ระบบจะสานต่อการชำระเงิน (Auto-resume Checkout) ให้อัตโนมัติ
+- **Market Catalysts Direct News Linking:**
+  - เชื่อมโยงหัวข้อปัจจัยสำคัญ (Market Catalysts) บน Digest Header Banner เข้ากับข่าวสารตัวจริงในระบบผ่าน `newsId` และ Fuzzy Title Matching เมื่อคลิกจะเปิดอ่านข่าวเต็มได้ทันที
+- **AI Financial Slash Commands & Context Continuity:**
+  - เพิ่มชุดคำสั่งลัดทางการเงิน: `/stock <ชื่อหุ้น>`, `/news <ชื่อหุ้น/ตลาด>`, `/port <สัดส่วนพอร์ต>`, `/pe <ชื่อหุ้น>`, `/macro`, `/gold`, `/btc`, `/help`
+  - ปรับปรุงการกดปุ่ม Enter ให้เป็นการขึ้นบรรทัดใหม่ และคงความต่อเนื่องของการสนทนาหลายรอบ (Multi-turn Chat Continuity)
 - **Guest-to-Cloud Chat Session Migration & Firestore Hardening:**
   - เพิ่มระบบ `migrateGuestSessionsToUser`: นำประวัติการสนทนาที่ผู้ใช้คุยไว้ขณะเป็น Guest ย้ายเข้าบัญชีผู้ใช้อัตโนมัติและซิงก์ขึ้น Firestore Cloud ทันทีเมื่อล็อกอิน
   - ปรับปรุง Security Rules ของ Firestore สำหรับ Subcollection `users/{userId}/chat_sessions/{sessionId}` ป้องกัน Permission Denied
