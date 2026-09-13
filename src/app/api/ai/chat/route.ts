@@ -6,6 +6,10 @@ import {
   getCachedChatResponse,
   setCachedChatResponse,
 } from '@/lib/services/openRouterGuardService';
+import {
+  getSemanticCachedResponse,
+  setSemanticCachedResponse,
+} from '@/lib/services/semanticCacheService';
 import { getModelGemCoinsEst } from '@/config/curated-models';
 import {
   SubscriptionTier,
@@ -395,16 +399,30 @@ export async function POST(req: NextRequest) {
 
     const cacheKey = getChatCacheKey(model, lastUserMsg);
 
-    // Only serve from cache if not an active stock quote query and not streaming/multimodal
-    if (!hasAttachments && !stream && !activeTicker) {
+    // Code-First Semantic Cache Check (0 API calls to OpenRouter if hit)
+    if (!hasAttachments && !stream) {
+      const semanticResult = await getSemanticCachedResponse(lastUserMsg, activeTicker || undefined);
+      if (semanticResult.hit && semanticResult.entry) {
+        return NextResponse.json({
+          success: true,
+          message: semanticResult.entry.responseText,
+          model: semanticResult.entry.model || model,
+          gemCoinsUsed: 0, // 0 OpenRouter API calls
+          fromCache: true,
+          cacheType: semanticResult.source,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
       const cachedResponse = getCachedChatResponse(cacheKey);
       if (cachedResponse) {
         return NextResponse.json({
           success: true,
           message: cachedResponse,
           model,
-          gemCoinsUsed: 1, // minimal fee for instant cache hit
+          gemCoinsUsed: 0, // 0 OpenRouter API calls
           fromCache: true,
+          cacheType: 'exact',
           timestamp: new Date().toISOString(),
         });
       }
@@ -578,11 +596,21 @@ Status: ระบบไม่พบข้อมูลราคาหุ้นแ
     const openRouterUrl = 'https://openrouter.ai/api/v1/chat/completions';
     const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
+    // Enable OpenRouter Prompt Caching structure: System Lore & Financial Grounding is placed at top with cache control hints
     const requestPayload = {
       model,
       models: fallbackArray,
       route: 'fallback',
-      messages: formattedMessages,
+      messages: formattedMessages.map((m, idx) => {
+        // System message or initial system lore is candidate for prompt caching
+        if (m.role === 'system' || idx === 0) {
+          return {
+            ...m,
+            cache_control: { type: 'ephemeral' },
+          };
+        }
+        return m;
+      }),
       temperature: isLiveStockRAG ? 0.1 : 0.7,
       max_tokens: maxTokensLimit,
       stream: Boolean(stream),
@@ -746,10 +774,11 @@ Status: ระบบไม่พบข้อมูลราคาหุ้นแ
     // Rolling memory fee (0 for Pro/VIP/Whale/Dev, 2 for Lite, 5 for Free only when summary was updated)
     gemCoinsUsed += contextResult.memoryCost;
 
-    // Cache response if eligible (not real-time stock RAG and not refusal)
-    if (!hasAttachments && !isLiveStockRAG && !replyContent.includes('ไม่พบข้อมูล')) {
+    // Cache response in both Semantic Cache and OpenRouter Guard Service Cache
+    if (!hasAttachments && !replyContent.includes('ไม่พบข้อมูล')) {
       recordOpenRouterRequest(isRealUser);
       setCachedChatResponse(cacheKey, replyContent, actualModel);
+      await setSemanticCachedResponse(lastUserMsg, replyContent, actualModel, activeTicker || undefined);
     }
 
     return NextResponse.json({

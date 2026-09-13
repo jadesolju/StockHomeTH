@@ -17,7 +17,9 @@ values ('20260907120000', 'new_migration')
 on conflict (version) do nothing;
 
 -- 1. Enable UUID Extension
+-- 1. Enable UUID and Vector Extensions
 create extension if not exists "uuid-ossp";
+create extension if not exists "vector";
 
 -- 2. Admin Whitelist Table (ใช้สำหรับตรวจสอบว่าใครมีสิทธิ์เข้า Admin Backoffice)
 create table if not exists public.admin_users (
@@ -180,5 +182,95 @@ alter table public.user_bookmarks enable row level security;
 -- Here we create a permissive policy for simplicity, but it's recommended to handle bookmarking via Server Actions.
 create policy "Enable all actions for public (temporary)"
   on public.user_bookmarks for all
+  using (true)
+  with check (true);
+
+-- =================================================================================
+-- 6. AI Semantic Caching & RAG Vector Memory Bank (ai_semantic_cache & stock_rag_embeddings)
+-- =================================================================================
+
+create table if not exists public.ai_semantic_cache (
+  id uuid default gen_random_uuid() primary key,
+  prompt_text text not null,
+  prompt_hash text unique not null,
+  ticker text,
+  response_text text not null,
+  model text not null,
+  embedding vector(1536), -- Default 1536-dim embedding vector (e.g. OpenAI/Supabase vector)
+  category text default 'general' check (category in ('financial_report', 'daily_analysis', 'realtime_price', 'general')),
+  ttl_seconds integer default 86400, -- Default 24h Time-To-Live
+  expires_at timestamptz default (now() + interval '1 day'),
+  is_valid boolean default true,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists idx_semantic_cache_ticker on public.ai_semantic_cache(ticker);
+create index if not exists idx_semantic_cache_hash on public.ai_semantic_cache(prompt_hash);
+create index if not exists idx_semantic_cache_expires on public.ai_semantic_cache(expires_at);
+
+-- RAG Knowledge Base Table for Financial Reports & Stock Insights
+create table if not exists public.stock_rag_embeddings (
+  id uuid default gen_random_uuid() primary key,
+  ticker text not null,
+  quarter text, -- e.g. 'Q1-2026'
+  title text not null,
+  content text not null,
+  embedding vector(1536),
+  metadata jsonb default '{}'::jsonb,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_rag_embeddings_ticker on public.stock_rag_embeddings(ticker);
+
+-- RPC Function for Similarity Search in Semantic Cache
+create or replace function match_semantic_cache(
+  query_embedding vector(1536),
+  match_threshold float,
+  match_count int,
+  target_ticker text default null
+)
+returns table (
+  id uuid,
+  prompt_text text,
+  response_text text,
+  model text,
+  similarity float,
+  category text
+)
+language plpgsql
+as $$
+begin
+  return query
+  select
+    c.id,
+    c.prompt_text,
+    c.response_text,
+    c.model,
+    1 - (c.embedding <=> query_embedding) as similarity,
+    c.category
+  from public.ai_semantic_cache c
+  where c.is_valid = true
+    and c.expires_at > now()
+    and (target_ticker is null or c.ticker = target_ticker)
+    and 1 - (c.embedding <=> query_embedding) >= match_threshold
+  order by c.embedding <=> query_embedding
+  limit match_count;
+end;
+$$;
+
+-- Enable RLS for Semantic Cache
+alter table public.ai_semantic_cache enable row level security;
+alter table public.stock_rag_embeddings enable row level security;
+
+drop policy if exists "Public access to semantic cache" on public.ai_semantic_cache;
+create policy "Public access to semantic cache"
+  on public.ai_semantic_cache for all
+  using (true)
+  with check (true);
+
+drop policy if exists "Public access to RAG embeddings" on public.stock_rag_embeddings;
+create policy "Public access to RAG embeddings"
+  on public.stock_rag_embeddings for all
   using (true)
   with check (true);
