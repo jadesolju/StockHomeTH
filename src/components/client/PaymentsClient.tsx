@@ -205,42 +205,16 @@ export default function PaymentsClient() {
       <div className="payment-page-container">
         {/* ──── Guest Mode Banner & Security Reassurance ──── */}
         {!user && (
-          <div
-            style={{
-              padding: '16px 20px',
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(6, 182, 212, 0.12) 100%)',
-              border: '1px solid rgba(245, 158, 11, 0.3)',
-              marginBottom: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '12px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '280px' }}>
-              <div
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '12px',
-                  background: 'rgba(245, 158, 11, 0.2)',
-                  border: '1px solid rgba(245, 158, 11, 0.4)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  color: '#f59e0b',
-                }}
-              >
+          <div className="payment-guest-banner">
+            <div className="payment-guest-content">
+              <div className="payment-guest-icon-wrap">
                 <AlertCircle size={22} />
               </div>
               <div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#fef08a' }}>
+                <div className="payment-guest-title">
                   💡 คุณกำลังใช้งานในฐานะ Guest (ยังไม่ได้เข้าสู่ระบบ)
                 </div>
-                <div style={{ fontSize: '0.78rem', color: '#cbd5e1', marginTop: '2px', lineHeight: 1.4 }}>
+                <div className="payment-guest-desc">
                   เข้าสู่ระบบก่อนเติมเงิน เพื่อให้ <strong>GemCoins</strong> และ <strong>ระดับสมาชิก</strong> ผูกกับบัญชีของคุณถาวรบน Cloud Database สามารถซิงค์และใช้งานข้ามทุกอุปกรณ์ได้อย่างปลอดภัย
                 </div>
               </div>
@@ -248,21 +222,7 @@ export default function PaymentsClient() {
 
             <button
               onClick={() => openAuthModal('login')}
-              className="ios-tappable"
-              style={{
-                padding: '10px 20px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
-                border: 'none',
-                color: '#ffffff',
-                fontSize: '0.84rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 4px 14px rgba(6, 182, 212, 0.3)',
-              }}
+              className="payment-guest-btn ios-tappable"
             >
               <span>เข้าสู่ระบบก่อนเติมเงิน</span>
               <ArrowRight size={15} />
