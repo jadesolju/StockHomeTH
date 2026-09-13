@@ -3,7 +3,7 @@
 เอกสารบันทึกประวัติการพัฒนา การอัปเกรดสถาปัตยกรรม และการเปิดตัวฟีเจอร์สำคัญของแพลตฟอร์ม **StockHomeTH** อย่างเป็นทางการ
 
 ## 🎫 [v2.0.1] - 2026-09-13 (Preview Update)
-### "Quick Promo Code Redemption & Storefront Integration"
+### "Quick Promo Code Redemption, Chat Sync Hardening & AI UI Optimization"
 - **ปุ่มแลกโค้ดหน้า Profile (Desktop & Mobile):** เพิ่มปุ่ม "แลกโค้ด" (`header-redeem-btn`) โดดเด่นข้างหน้าปุ่ม Profile บนแถบ Header เมนูผู้ใช้ และป๊อปอัปตั้งค่าโปรไฟล์
 - **เชื่อมต่อหน้าร้านค้าและเติมเงิน (/payments):**
   - เพิ่มแท็บ "กรอกโค้ดฟรี" บนหน้า `/payments` พร้อมฟอร์มแลกรับเหรียญ GemCoins ทันทีโดยไม่ต้องเปิดโมดัล
@@ -12,6 +12,15 @@
   - ปรับปรุงข้อความตัวอย่างในช่องกรอกโค้ดเป็น `Stock-1234` และปิดการแสดงรหัสจริงเพื่อความปลอดภัย
   - **สลับ Dropdown และเนื้อหาเข้าสู่ "🎫 แลกโค้ดฟรี (Coupon / Voucher)" ทันที** เมื่อกดปุ่มแลกโค้ด พร้อมระบบ Auto-focus ช่องกรอกโค้ดทันที
   - รองรับ URL Query `?tab=redeem` สลับเข้าแท็บกรอกโค้ดอัตโนมัติ
+- **Guest-to-Cloud Chat Session Migration & Firestore Hardening:**
+  - เพิ่มระบบ `migrateGuestSessionsToUser`: นำประวัติการสนทนาที่ผู้ใช้คุยไว้ขณะเป็น Guest ย้ายเข้าบัญชีผู้ใช้อัตโนมัติและซิงก์ขึ้น Firestore Cloud ทันทีเมื่อล็อกอิน
+  - ปรับปรุง Security Rules ของ Firestore สำหรับ Subcollection `users/{userId}/chat_sessions/{sessionId}` ป้องกัน Permission Denied
+- **AI Agent Typography & Mobile Spacing Optimization:**
+  - ปรับลดระยะห่างแนวตั้ง (Vertical Margins/Padding) ในการเรนเดอร์ Markdown ของ AI Assistant ให้กระชับ สบายตา
+  - นำ `white-space: pre-wrap;` ออกเพื่อป้องกันการเบิ้ลเว้นวรรคบรรทัดซ้ำซ้อน
+  - ปรับปรุงการแสดงผลบนหน้าจอมือถือ (`< 640px`): ฟองข้อความกว้างขึ้น (90%) ลด padding ขอบจอ
+- **Automated Theme Contrast Checking Suite:**
+  - เพิ่ม Utility `themeContrastChecker.ts` และชุดทดสอบความเปรียบต่างสีตามมาตรฐานสากล WCAG 2.1 AA/AAA สำหรับ Dark/Light Mode
 
 ---
 
