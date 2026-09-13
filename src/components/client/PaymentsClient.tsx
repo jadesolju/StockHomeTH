@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { GEMCOIN_TOPUP_PACKAGES, GEMCOIN_SUBSCRIPTION_TIERS } from '@/config/gemCoinPackages';
 import { GEMCOIN_STRIPE_PRICE_IDS, SUBSCRIPTION_STRIPE_PRICE_IDS, SUBSCRIPTION_YEARLY_STRIPE_PRICE_IDS } from '@/config/stripePriceIds';
 import {
@@ -51,9 +51,10 @@ export default function PaymentsClient() {
     message: string;
     coinsAdded?: number;
   } | null>(null);
+  const promoInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-switch tab if URL contains ?tab=redeem or #redeem
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
@@ -64,6 +65,15 @@ export default function PaymentsClient() {
       }
     }
   }, []);
+
+  // Auto-focus promo input whenever redeem tab becomes active
+  useEffect(() => {
+    if (activeTab === 'redeem') {
+      setTimeout(() => {
+        promoInputRef.current?.focus();
+      }, 150);
+    }
+  }, [activeTab]);
 
   const handleRedeemSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,8 +273,31 @@ export default function PaymentsClient() {
         </div>
 
         {/* ──── Tab Switcher ──── */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '28px' }}>
-          <div className="ios-segmented-control" style={{ padding: '4px', maxWidth: '580px', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '28px', gap: '10px' }}>
+          {/* Mobile Viewport Tab Dropdown Switcher */}
+          <div className="block sm:hidden w-full max-w-[420px]">
+            <div className="relative">
+              <label htmlFor="payments-mobile-tab-select" className="sr-only">เลือกเมนูบริการ</label>
+              <select
+                id="payments-mobile-tab-select"
+                value={activeTab}
+                onChange={(e) => setActiveTab(e.target.value as any)}
+                className="w-full appearance-none px-4 py-3 bg-slate-900 border border-cyan-500/40 rounded-xl text-xs font-bold text-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 shadow-inner cursor-pointer"
+              >
+                <option value="topup" className="bg-[#0d1319] text-white">⚡ เติม GemCoins (Top-up Packages)</option>
+                <option value="subscription" className="bg-[#0d1319] text-white">👑 แผนสมาชิกรายเดือน/ปี (Subscription)</option>
+                <option value="redeem" className="bg-[#0d1319] text-amber-300 font-bold">🎫 แลกโค้ดฟรี (Coupon / Voucher)</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-cyan-400">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Navigation Tabs */}
+          <div className="hidden sm:flex ios-segmented-control" style={{ padding: '4px', maxWidth: '580px', width: '100%' }}>
             <button
               onClick={() => setActiveTab('topup')}
               className={`ios-segment-btn ${activeTab === 'topup' ? 'active' : ''}`}
@@ -287,7 +320,7 @@ export default function PaymentsClient() {
               style={{ flex: 1, padding: '8px 14px', fontSize: '0.86rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
             >
               <Ticket size={16} color={activeTab === 'redeem' ? '#f59e0b' : undefined} />
-              <span>กรอกโค้ดฟรี</span>
+              <span>แลกโค้ดฟรี (Coupon)</span>
             </button>
           </div>
         </div>
@@ -647,6 +680,7 @@ export default function PaymentsClient() {
             <form onSubmit={handleRedeemSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ position: 'relative' }}>
                 <input
+                  ref={promoInputRef}
                   type="text"
                   value={promoInput}
                   onChange={(e) => setPromoInput(e.target.value.toUpperCase())}

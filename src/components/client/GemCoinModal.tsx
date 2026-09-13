@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSubscription, OWNER_DEV_IDENTIFIERS } from '@/lib/context/SubscriptionContext';
 import { useClientAuth } from '@/lib/context/ClientAuthContext';
 import { GemCoinIcon } from '@/components/ui/GemCoinIcon';
@@ -26,7 +26,7 @@ import {
   PromoClockSvg,
   TicketVoucherSvg,
 } from '@/components/ui/TierSvgIcons';
-import { FileText, CreditCard, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
+import { X, CreditCard, Sparkles, AlertCircle, Loader2, ArrowRight, FileText, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
 export const GemCoinModal: React.FC = () => {
@@ -57,6 +57,20 @@ export const GemCoinModal: React.FC = () => {
   const [purchaseNotice, setPurchaseNotice] = useState<string | null>(null);
   const [loadingPkgId, setLoadingPkgId] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const promoInputRef = useRef<HTMLInputElement>(null);
+
+  // Instantly synchronize activeTab with gemCoinModalInitialTab whenever modal opens or tab changes
+  useEffect(() => {
+    if (isGemCoinModalOpen) {
+      const targetTab = gemCoinModalInitialTab || 'topup';
+      setActiveTab(targetTab);
+      if (targetTab === 'redeem') {
+        setTimeout(() => {
+          promoInputRef.current?.focus();
+        }, 150);
+      }
+    }
+  }, [isGemCoinModalOpen, gemCoinModalInitialTab]);
 
   const isOwnerUser = Boolean(
     user &&
@@ -227,7 +241,7 @@ export const GemCoinModal: React.FC = () => {
             >
               <option value="topup" className="bg-[#0d1319] text-white">เติมเหรียญ (Top-up Packages)</option>
               <option value="plans" className="bg-[#0d1319] text-white">สมัคร Plan รายเดือน (Monthly Tiers)</option>
-              <option value="redeem" className="bg-[#0d1319] text-white">แลกโค้ดฟรี (Redeem Voucher)</option>
+              <option value="redeem" className="bg-[#0d1319] text-amber-300 font-bold">🎫 แลกโค้ดฟรี (Coupon / Voucher)</option>
               <option value="logs" className="bg-[#0d1319] text-white">ประวัติการใช้งาน (Usage Logs)</option>
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-cyan-400">
@@ -268,7 +282,7 @@ export const GemCoinModal: React.FC = () => {
               }`}
           >
             <TicketVoucherSvg className="w-4 h-4" />
-            แลกโค้ดฟรี
+            แลกโค้ดฟรี (Coupon / Voucher)
           </button>
           <button
             onClick={() => setActiveTab('logs')}
@@ -622,6 +636,7 @@ export const GemCoinModal: React.FC = () => {
               <form onSubmit={handleRedeemSubmit} className="space-y-3">
                 <div className="relative">
                   <input
+                    ref={promoInputRef}
                     type="text"
                     value={promoInput}
                     onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
