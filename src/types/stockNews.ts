@@ -92,15 +92,17 @@ export interface DailyWeeklyDigestSummary {
     bearishPercent: number;
     neutralPercent: number;
   };
-  keyCatalysts: string[];
+  keyCatalysts: (string | { text: string; text_th?: string; text_en?: string; newsId?: string })[];
   keyCatalysts_th?: string[];
   keyCatalysts_en?: string[];
-  thaiCatalysts?: string[];
+  thaiCatalysts?: (string | { text: string; text_th?: string; text_en?: string; newsId?: string })[];
   thaiCatalysts_th?: string[];
   thaiCatalysts_en?: string[];
-  usCatalysts?: string[];
+  thaiCatalystsItems?: { text: string; text_th?: string; text_en?: string; newsId?: string }[];
+  usCatalysts?: (string | { text: string; text_th?: string; text_en?: string; newsId?: string })[];
   usCatalysts_th?: string[];
   usCatalysts_en?: string[];
+  usCatalystsItems?: { text: string; text_th?: string; text_en?: string; newsId?: string }[];
   topWatchlistTickers: string[];
   updatedAt: string;
 }

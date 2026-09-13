@@ -76,6 +76,14 @@ export const StockNewsItemSchema = z.object({
 });
 export type StockNewsItem = z.infer<typeof StockNewsItemSchema>;
 
+export const CatalystItemSchema = z.object({
+  text: z.string(),
+  text_th: z.string().optional(),
+  text_en: z.string().optional(),
+  newsId: z.string().optional(),
+});
+export type CatalystItem = z.infer<typeof CatalystItemSchema>;
+
 export const DigestSummarySchema = z.object({
   id: z.string().min(1),
   periodLabel: z.string(),
@@ -94,15 +102,17 @@ export const DigestSummarySchema = z.object({
     bearishPercent: z.number().min(0).max(100),
     neutralPercent: z.number().min(0).max(100),
   }),
-  keyCatalysts: z.array(z.string()),
+  keyCatalysts: z.array(z.union([z.string(), CatalystItemSchema])),
   keyCatalysts_th: z.array(z.string()).optional(),
   keyCatalysts_en: z.array(z.string()).optional(),
-  thaiCatalysts: z.array(z.string()).optional(),
+  thaiCatalysts: z.array(z.union([z.string(), CatalystItemSchema])).optional(),
   thaiCatalysts_th: z.array(z.string()).optional(),
   thaiCatalysts_en: z.array(z.string()).optional(),
-  usCatalysts: z.array(z.string()).optional(),
+  thaiCatalystsItems: z.array(CatalystItemSchema).optional(),
+  usCatalysts: z.array(z.union([z.string(), CatalystItemSchema])).optional(),
   usCatalysts_th: z.array(z.string()).optional(),
   usCatalysts_en: z.array(z.string()).optional(),
+  usCatalystsItems: z.array(CatalystItemSchema).optional(),
   topWatchlistTickers: z.array(z.string()),
   updatedAt: z.string(),
 });

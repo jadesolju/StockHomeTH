@@ -83,18 +83,27 @@ export async function GET(request: NextRequest) {
     // Extract authentic Thai Catalysts
     let thaiCatalysts_th: string[] = [];
     let thaiCatalysts_en: string[] = [];
+    let thaiCatalystsItems: { text: string; text_th?: string; text_en?: string; newsId?: string }[] = [];
 
     if (thaiNews.length > 0) {
-      thaiCatalysts_th = thaiNews.slice(0, 4).map((n) => {
-        const topTakeaway = n.keyTakeaways_th?.[0] || n.keyTakeaways?.[0];
-        const title = n.title_th || n.title;
-        return topTakeaway ? `${title.slice(0, 45)}: ${topTakeaway}` : title;
+      thaiCatalystsItems = thaiNews.slice(0, 4).map((n) => {
+        const topTakeawayTh = n.keyTakeaways_th?.[0] || n.keyTakeaways?.[0];
+        const titleTh = n.title_th || n.title;
+        const textTh = topTakeawayTh ? `${titleTh.slice(0, 45)}: ${topTakeawayTh}` : titleTh;
+
+        const topTakeawayEn = n.keyTakeaways_en?.[0] || n.keyTakeaways?.[0];
+        const titleEn = n.title_en || n.title;
+        const textEn = topTakeawayEn ? `${titleEn.slice(0, 45)}: ${topTakeawayEn}` : titleEn;
+
+        return {
+          text: textTh,
+          text_th: textTh,
+          text_en: textEn,
+          newsId: n.id
+        };
       });
-      thaiCatalysts_en = thaiNews.slice(0, 4).map((n) => {
-        const topTakeaway = n.keyTakeaways_en?.[0] || n.keyTakeaways?.[0];
-        const title = n.title_en || n.title;
-        return topTakeaway ? `${title.slice(0, 45)}: ${topTakeaway}` : title;
-      });
+      thaiCatalysts_th = thaiCatalystsItems.map((c) => c.text_th!);
+      thaiCatalysts_en = thaiCatalystsItems.map((c) => c.text_en!);
     } else {
       thaiCatalysts_th = [
         'ราคาน้ำมันดิบโลกและพลังงานทางเลือกรักษาเสถียรภาพ หนุนหุ้นกลุ่มพลังงาน (PTT, GULF, PTTEP)',
@@ -108,23 +117,33 @@ export async function GET(request: NextRequest) {
         'Domestic consumer spending and medical tourism recovery boosted retail heavyweights (CPALL, BDMS, AOT)',
         'Institutional capital and foreign inflows accumulated core SET50 constituents'
       ];
+      thaiCatalystsItems = thaiCatalysts_th.map((t, idx) => ({ text: t, text_th: t, text_en: thaiCatalysts_en[idx] }));
     }
 
     // Extract authentic US & Global Catalysts
     let usCatalysts_th: string[] = [];
     let usCatalysts_en: string[] = [];
+    let usCatalystsItems: { text: string; text_th?: string; text_en?: string; newsId?: string }[] = [];
 
     if (usNews.length > 0) {
-      usCatalysts_th = usNews.slice(0, 4).map((n) => {
-        const topTakeaway = n.keyTakeaways_th?.[0] || n.keyTakeaways?.[0];
-        const title = n.title_th || n.title;
-        return topTakeaway ? `${title.slice(0, 45)}: ${topTakeaway}` : title;
+      usCatalystsItems = usNews.slice(0, 4).map((n) => {
+        const topTakeawayTh = n.keyTakeaways_th?.[0] || n.keyTakeaways?.[0];
+        const titleTh = n.title_th || n.title;
+        const textTh = topTakeawayTh ? `${titleTh.slice(0, 45)}: ${topTakeawayTh}` : titleTh;
+
+        const topTakeawayEn = n.keyTakeaways_en?.[0] || n.keyTakeaways?.[0];
+        const titleEn = n.title_en || n.title;
+        const textEn = topTakeawayEn ? `${titleEn.slice(0, 45)}: ${topTakeawayEn}` : titleEn;
+
+        return {
+          text: textTh,
+          text_th: textTh,
+          text_en: textEn,
+          newsId: n.id
+        };
       });
-      usCatalysts_en = usNews.slice(0, 4).map((n) => {
-        const topTakeaway = n.keyTakeaways_en?.[0] || n.keyTakeaways?.[0];
-        const title = n.title_en || n.title;
-        return topTakeaway ? `${title.slice(0, 45)}: ${topTakeaway}` : title;
-      });
+      usCatalysts_th = usCatalystsItems.map((c) => c.text_th!);
+      usCatalysts_en = usCatalystsItems.map((c) => c.text_en!);
     } else {
       usCatalysts_th = [
         'NVIDIA (NVDA): ออเดอร์ชิปประมวลผล Blackwell AI และ Data Center ระดับโลกโตแกร่ง',
@@ -138,6 +157,7 @@ export async function GET(request: NextRequest) {
         'Tesla (TSLA): Autonomous driving technology rollout milestones and global EV delivery momentum accelerated',
         'Wall Street (S&P 500 & NASDAQ): Federal Reserve policy expectations and resilient Big Tech earnings supported indices'
       ];
+      usCatalystsItems = usCatalysts_th.map((t, idx) => ({ text: t, text_th: t, text_en: usCatalysts_en[idx] }));
     }
 
     // Overall top catalysts
@@ -220,12 +240,14 @@ export async function GET(request: NextRequest) {
         keyCatalysts: keyCatalysts_th,
         keyCatalysts_th,
         keyCatalysts_en,
-        thaiCatalysts: thaiCatalysts_th,
+        thaiCatalysts: thaiCatalystsItems.length > 0 ? thaiCatalystsItems : thaiCatalysts_th,
         thaiCatalysts_th,
         thaiCatalysts_en,
-        usCatalysts: usCatalysts_th,
+        thaiCatalystsItems,
+        usCatalysts: usCatalystsItems.length > 0 ? usCatalystsItems : usCatalysts_th,
         usCatalysts_th,
         usCatalysts_en,
+        usCatalystsItems,
         topWatchlistTickers: ['PTT', 'DELTA', 'NVDA', 'AAPL', 'CPALL']
       };
 
