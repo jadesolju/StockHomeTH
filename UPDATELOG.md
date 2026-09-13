@@ -20,6 +20,12 @@
 - **AI Financial Slash Commands & Context Continuity:**
   - เพิ่มชุดคำสั่งลัดทางการเงิน: `/stock <ชื่อหุ้น>`, `/news <ชื่อหุ้น/ตลาด>`, `/port <สัดส่วนพอร์ต>`, `/pe <ชื่อหุ้น>`, `/macro`, `/gold`, `/btc`, `/help`
   - ปรับปรุงการกดปุ่ม Enter ให้เป็นการขึ้นบรรทัดใหม่ และคงความต่อเนื่องของการสนทนาหลายรอบ (Multi-turn Chat Continuity)
+- **Luxury Whale Plan & AI Flagships Update:**
+  - เพิ่มดีไซน์การ์ดและปุ่ม Whale Fund ในสไตล์ Cyan-Gold Luxury Glow ทั้ง Dark และ Light Mode
+  - อัปเดตสิทธิ์ AI ระดับ Institutional ปลดล็อกโมเดลเรือธงสูงสุดของโลก: GPT-6 Astra, Claude Fable 5.1, Claude Opus 5, และ Grok 4.6
+  - จัดเต็มเหรียญรายวัน 150,000 GemCoins/วัน พร้อมโบนัสถาวร +500,000 GemCoins
+- **AI Chat Active Session Restore on Refresh:**
+  - เพิ่มระบบจดจำและกู้คืนห้องสนทนา AI ล่าสุดเมื่อผู้ใช้รีเฟรชหน้าต่างเบราว์เซอร์อัตโนมัติผ่าน `localStorage` (`stockhome_ai_active_session_*`) ช่วยให้การสนทนาไม่ขาดตอน
 - **Guest-to-Cloud Chat Session Migration & Firestore Hardening:**
   - เพิ่มระบบ `migrateGuestSessionsToUser`: นำประวัติการสนทนาที่ผู้ใช้คุยไว้ขณะเป็น Guest ย้ายเข้าบัญชีผู้ใช้อัตโนมัติและซิงก์ขึ้น Firestore Cloud ทันทีเมื่อล็อกอิน
   - ปรับปรุง Security Rules ของ Firestore สำหรับ Subcollection `users/{userId}/chat_sessions/{sessionId}` ป้องกัน Permission Denied
