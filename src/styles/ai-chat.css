@@ -199,10 +199,10 @@
 .ai-chat-body {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 28px;
+  padding: 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   scroll-behavior: smooth;
 }
 
@@ -339,10 +339,10 @@
 
 .ai-bubble {
   max-width: 78%;
-  padding: 14px 18px;
+  padding: 12px 16px;
   border-radius: 18px;
   font-size: 0.9rem;
-  line-height: 1.62;
+  line-height: 1.55;
   word-break: break-word;
 }
 
@@ -366,16 +366,15 @@
 .ai-assistant-content {
   color: #f1f5f9;
   font-size: 0.9rem;
-  line-height: 1.68;
-  white-space: pre-wrap;
+  line-height: 1.58;
 }
 
 .ai-bubble-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 10px;
-  padding-top: 8px;
+  margin-top: 8px;
+  padding-top: 6px;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   font-size: 0.74rem;
   color: #94a3b8;
@@ -1223,20 +1222,21 @@
 /* Responsive adjustments */
 @media (max-width: 640px) {
   .ai-workspace-page {
-    padding: 8px 10px;
+    padding: 0 !important;
   }
 
   .ai-chat-card {
-    height: calc(100vh - 80px);
-    border-radius: 18px;
+    border-radius: 0;
   }
 
   .ai-chat-body {
-    padding: 16px 14px;
+    padding: 12px 12px;
+    gap: 12px;
   }
 
   .ai-bubble {
-    max-width: 88%;
+    max-width: 90%;
+    padding: 10px 14px;
   }
 
   .ai-floating-launcher-btn {
@@ -2669,12 +2669,12 @@
    ========================================================================== */
 .ios-markdown-body {
   color: #f1f5f9;
-  font-size: 0.92rem;
-  line-height: 1.68;
+  font-size: 0.91rem;
+  line-height: 1.58;
 }
 
 .ios-markdown-body p {
-  margin: 0 0 10px 0;
+  margin: 0 0 6px 0;
 }
 
 .ios-markdown-body p:last-child {
@@ -2682,34 +2682,34 @@
 }
 
 .ios-markdown-body h1 {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 800;
-  margin: 16px 0 8px 0;
+  margin: 10px 0 5px 0;
   color: #ffffff;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
 }
 
 .ios-markdown-body h2 {
-  font-size: 1.2rem;
+  font-size: 1.12rem;
   font-weight: 750;
-  margin: 14px 0 6px 0;
+  margin: 8px 0 4px 0;
   color: #ffffff;
   letter-spacing: -0.01em;
 }
 
 .ios-markdown-body h3 {
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
-  margin: 12px 0 6px 0;
+  margin: 7px 0 3px 0;
   color: #ffffff;
 }
 
 .ios-markdown-body h4,
 .ios-markdown-body h5,
 .ios-markdown-body h6 {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
-  margin: 10px 0 4px 0;
+  margin: 6px 0 3px 0;
   color: #cbd5e1;
 }
 
@@ -2742,39 +2742,47 @@
 .ios-markdown-body hr {
   border: none;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin: 14px 0;
+  margin: 8px 0;
 }
 
 .ios-markdown-body blockquote {
-  margin: 8px 0;
-  padding: 6px 14px;
+  margin: 5px 0;
+  padding: 4px 12px;
   border-left: 3px solid #38bdf8;
   background: rgba(56, 189, 248, 0.06);
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.ios-markdown-body blockquote p {
+  margin: 0;
 }
 
 .ios-markdown-body blockquote blockquote {
-  margin-top: 6px;
+  margin-top: 4px;
   border-left-color: #0ea5e9;
   background: rgba(14, 165, 233, 0.08);
 }
 
 .ios-markdown-body ul,
 .ios-markdown-body ol {
-  margin: 8px 0 10px 0;
-  padding-left: 22px;
+  margin: 4px 0 6px 0;
+  padding-left: 20px;
 }
 
 .ios-markdown-body li {
-  margin-bottom: 4px;
-  line-height: 1.6;
+  margin-bottom: 3px;
+  line-height: 1.5;
+}
+
+.ios-markdown-body li > p {
+  margin: 0;
 }
 
 .ios-markdown-body code {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 2px 6px;
-  border-radius: 6px;
+  padding: 1px 5px;
+  border-radius: 5px;
   font-size: 0.84em;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   color: #38bdf8;
@@ -2783,10 +2791,10 @@
 .ios-markdown-body pre {
   background: rgba(8, 12, 18, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 12px 16px;
+  border-radius: 10px;
+  padding: 8px 12px;
   overflow-x: auto;
-  margin: 12px 0;
+  margin: 8px 0;
 }
 
 .ios-markdown-body pre code {
@@ -2795,23 +2803,23 @@
   padding: 0;
   color: #f1f5f9;
   font-size: 0.82rem;
-  line-height: 1.55;
+  line-height: 1.48;
 }
 
 .ios-markdown-body table {
   width: 100%;
   border-collapse: collapse;
-  margin: 12px 0;
-  font-size: 0.85rem;
+  margin: 8px 0;
+  font-size: 0.84rem;
   background: rgba(255, 255, 255, 0.02);
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .ios-markdown-body th {
   background: rgba(255, 255, 255, 0.06);
-  padding: 8px 12px;
+  padding: 6px 10px;
   font-weight: 700;
   text-align: left;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -2819,7 +2827,7 @@
 }
 
 .ios-markdown-body td {
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   color: #cbd5e1;
 }
@@ -2831,9 +2839,9 @@
 .ios-markdown-body details {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 10px 14px;
-  margin: 10px 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 8px 0;
 }
 
 .ios-markdown-body summary {
