@@ -1,15 +1,20 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // User profile and wallet rules: users can read and write their own data
+    // User profile, wallet, and chat sessions rules: users can read and write their own data
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // AI Chat history sessions per user
+    // AI Chat history sessions subcollection explicit match
+    match /users/{userId}/chat_sessions/{sessionId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Top-level AI Chat history sessions per user (legacy/fallback)
     match /chat_sessions/{sessionId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow read, write: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
     // Public / general read
