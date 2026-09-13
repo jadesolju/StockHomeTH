@@ -10,8 +10,14 @@ interface DigestHeaderBannerProps {
   summary?: DigestSummary;
 }
 
+interface CatalystObj {
+  text: string;
+  newsId?: string;
+  newsItem?: StockNewsItem;
+}
+
 export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderBannerProps) {
-  const { overview, stocks, news, isSyncing, cooldownRemaining, refreshAll, focusStock, getStockByTicker, lastUpdated, setActiveNewsModal, getNewsByTicker } = useMarketSync();
+  const { overview, stocks, news, weeklyNews, isSyncing, cooldownRemaining, refreshAll, focusStock, getStockByTicker, lastUpdated, setActiveNewsModal, getNewsByTicker } = useMarketSync();
   const { t, tDynamic, language } = useLanguage();
   const [activeMarketTab, setActiveMarketTab] = useState<'ALL' | 'SET' | 'US'>('ALL');
   
@@ -57,13 +63,22 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
     ? { bullishPercent: usSentiment.bullish, neutralPercent: usSentiment.neutral, bearishPercent: usSentiment.bearish }
     : { bullishPercent, neutralPercent, bearishPercent };
 
-  // Extract regional news items from sync context as live fallback
+  // Extract regional news items from sync context
   const thaiNews = useMemo(() => (news || []).filter((n) => n.region === 'thai'), [news]);
   const usNews = useMemo(() => (news || []).filter((n) => n.region === 'global'), [news]);
 
+  const allNewsItems = useMemo(() => {
+    const combined = [...(news || []), ...(weeklyNews || [])];
+    const map = new Map<string, StockNewsItem>();
+    combined.forEach((item) => {
+      if (item && item.id) map.set(item.id, item);
+    });
+    return Array.from(map.values());
+  }, [news, weeklyNews]);
+
   const isEn = language === 'en';
 
-  // Genuine Thai Catalysts (from summary.thaiCatalysts_en / summary.thaiCatalysts_th or thai news keyTakeaways)
+  // Genuine Thai Catalysts
   const resolvedThaiCatalysts = useMemo(() => {
     if (isEn && summary.thaiCatalysts_en && summary.thaiCatalysts_en.length > 0) {
       return summary.thaiCatalysts_en;
@@ -72,7 +87,7 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
       return summary.thaiCatalysts_th;
     }
     if (summary.thaiCatalysts && summary.thaiCatalysts.length > 0) {
-      return summary.thaiCatalysts.map((c) => tDynamic(c));
+      return summary.thaiCatalysts.map((c) => (typeof c === 'string' ? tDynamic(c) : isEn ? c.text_en || c.text : c.text_th || c.text));
     }
     if (thaiNews.length > 0) {
       return thaiNews.slice(0, 4).map((n) => {
@@ -94,7 +109,7 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
     ];
   }, [summary.thaiCatalysts_en, summary.thaiCatalysts_th, summary.thaiCatalysts, thaiNews, isEn, tDynamic]);
 
-  // Genuine US & Global Catalysts (from summary.usCatalysts_en / summary.usCatalysts_th or US/Global news keyTakeaways)
+  // Genuine US & Global Catalysts
   const resolvedUsCatalysts = useMemo(() => {
     if (isEn && summary.usCatalysts_en && summary.usCatalysts_en.length > 0) {
       return summary.usCatalysts_en;
@@ -103,7 +118,7 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
       return summary.usCatalysts_th;
     }
     if (summary.usCatalysts && summary.usCatalysts.length > 0) {
-      return summary.usCatalysts.map((c) => tDynamic(c));
+      return summary.usCatalysts.map((c) => (typeof c === 'string' ? tDynamic(c) : isEn ? c.text_en || c.text : c.text_th || c.text));
     }
     if (usNews.length > 0) {
       return usNews.slice(0, 4).map((n) => {
@@ -140,7 +155,7 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
       return summary.keyCatalysts_th;
     }
     return summary.keyCatalysts && summary.keyCatalysts.length > 0
-      ? summary.keyCatalysts.map((c) => tDynamic(c))
+      ? summary.keyCatalysts.map((c) => (typeof c === 'string' ? tDynamic(c) : isEn ? c.text_en || c.text : c.text_th || c.text))
       : [...resolvedUsCatalysts.slice(0, 2), ...resolvedThaiCatalysts.slice(0, 2)];
   }, [activeMarketTab, resolvedThaiCatalysts, resolvedUsCatalysts, summary.keyCatalysts, summary.keyCatalysts_en, summary.keyCatalysts_th, isEn, tDynamic]);
 
@@ -205,13 +220,48 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
     const matchedTickers = cleanTicker ? [cleanTicker] : [];
 
     const handleCatalystClick = () => {
-      // 1. Check if there's an existing news item specifically matching this company / headline
+      // 1. First, check if summary has catalyst items with exact newsId
       let matchingNews: StockNewsItem | undefined;
 
-      if (cleanTicker && news && news.length > 0) {
-        matchingNews = news.find((n) => {
+      const activeCatalystItems = activeMarketTab === 'SET'
+        ? summary.thaiCatalystsItems
+        : activeMarketTab === 'US'
+        ? summary.usCatalystsItems
+        : [...(summary.thaiCatalystsItems || []), ...(summary.usCatalystsItems || [])];
+
+      if (activeCatalystItems && activeCatalystItems.length > idx) {
+        const item = activeCatalystItems[idx];
+        if (item?.newsId) {
+          matchingNews = allNewsItems.find((n) => n.id === item.newsId);
+        }
+      }
+
+      // 2. Direct title / takeaway / text matching against available news feed items
+      if (!matchingNews && allNewsItems.length > 0) {
+        const catPrefix = cat.split(':')[0].trim().toLowerCase();
+        matchingNews = allNewsItems.find((n) => {
+          const titleTh = (n.title_th || n.title || '').toLowerCase();
+          const titleEn = (n.title_en || n.title || '').toLowerCase();
+          const summaryTh = (n.summary_th || n.summary || '').toLowerCase();
+          const summaryEn = (n.summary_en || n.summary || '').toLowerCase();
+
+          return (
+            titleTh.includes(catPrefix) ||
+            titleEn.includes(catPrefix) ||
+            cat.toLowerCase().includes(titleTh.slice(0, 30)) ||
+            cat.toLowerCase().includes(titleEn.slice(0, 30)) ||
+            summaryTh.includes(catPrefix) ||
+            summaryEn.includes(catPrefix)
+          );
+        });
+      }
+
+      // 3. Fallback: Check if there's news matching ticker
+      if (!matchingNews && cleanTicker && allNewsItems.length > 0) {
+        matchingNews = allNewsItems.find((n) => {
           const hasTicker = (n.tickers || []).includes(cleanTicker);
-          const hasTitleMention = n.title.toLowerCase().includes(cleanTicker.toLowerCase()) || 
+          const hasTitleMention =
+            n.title.toLowerCase().includes(cleanTicker.toLowerCase()) ||
             (n.summary && n.summary.toLowerCase().includes(cleanTicker.toLowerCase()));
           return hasTicker && hasTitleMention;
         });
@@ -222,7 +272,7 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
         return;
       }
 
-      // 2. Generate dynamic rich News Item precisely reflecting this Catalyst
+      // 4. Generate dynamic rich News Item precisely reflecting this Catalyst
       const isThai = cleanTicker && stock ? stock.market === 'SET' : activeMarketTab === 'SET' || (!cat.toLowerCase().includes('us') && !cat.toLowerCase().includes('wall street') && !cat.toLowerCase().includes('tesla') && !cat.toLowerCase().includes('nvidia') && !cat.toLowerCase().includes('apple'));
       const catParts = cat.split(':');
       const catTitle = catParts.length > 1 ? catParts[0].trim() : (cat.length > 60 ? `${cat.slice(0, 60)}...` : cat);
