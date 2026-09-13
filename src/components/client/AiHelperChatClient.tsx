@@ -203,18 +203,66 @@ export const AiHelperChatClient: React.FC = () => {
     }
   }, []);
 
-  // Load user sessions when user changes & establish realtime Cloud Sync
+  const activeSessionIdRef = useRef<string | null>(null);
+  const isLoadingRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    activeSessionIdRef.current = activeSessionId;
+  }, [activeSessionId]);
+
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
+
+  // Load user sessions when user changes & establish realtime Cloud Sync across devices
   useEffect(() => {
     const loaded = loadUserSessions(userUid);
     setSessions(loaded);
 
+    // Restore active session ID from localStorage if available
+    const activeKey = `stockhome_ai_active_session_${userUid || 'guest'}`;
+    const savedActiveId = typeof window !== 'undefined' ? localStorage.getItem(activeKey) : null;
+    if (savedActiveId && loaded.some((s) => s.id === savedActiveId)) {
+      setActiveSessionId(savedActiveId);
+      const activeSess = loaded.find((s) => s.id === savedActiveId);
+      if (activeSess) {
+        setMessages(activeSess.messages);
+        const matchedModel = CURATED_MODELS.find((m) => m.id === activeSess.modelId);
+        if (matchedModel) setSelectedModel(matchedModel);
+      }
+    } else if (loaded.length > 0) {
+      setActiveSessionId(loaded[0].id);
+      setMessages(loaded[0].messages);
+      const matchedModel = CURATED_MODELS.find((m) => m.id === loaded[0].modelId);
+      if (matchedModel) setSelectedModel(matchedModel);
+    }
+
     if (userUid) {
       const unsubscribe = subscribeToUserCloudSessions(userUid, (cloudSessions) => {
         setSessions(cloudSessions);
+        // Sync active session messages in real-time across PC/Mobile without tearing down listener
+        const currentActiveId = activeSessionIdRef.current;
+        if (currentActiveId && !isLoadingRef.current) {
+          const currentActive = cloudSessions.find((s) => s.id === currentActiveId);
+          if (currentActive) {
+            setMessages(currentActive.messages);
+          }
+        }
       });
       return () => unsubscribe();
     }
   }, [userUid]);
+
+  // Persist activeSessionId when changed
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const activeKey = `stockhome_ai_active_session_${userUid || 'guest'}`;
+    if (activeSessionId) {
+      localStorage.setItem(activeKey, activeSessionId);
+    } else {
+      localStorage.removeItem(activeKey);
+    }
+  }, [activeSessionId, userUid]);
 
   // Auto-scroll to bottom
   useEffect(() => {

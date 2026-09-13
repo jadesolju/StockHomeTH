@@ -33,6 +33,27 @@ export function formatVolume(vol: number | undefined | null): string {
   return vol.toLocaleString();
 }
 
+/**
+ * Sanitizes and validates 52-week range relative to current price to prevent invalid data feeds
+ */
+export function sanitize52wRange(price: number, rawHigh?: number | null, rawLow?: number | null): { high52w: number; low52w: number } {
+  const p = price > 0 ? price : 1;
+  let h = rawHigh != null && !isNaN(rawHigh) && rawHigh > 0 ? rawHigh : p * 1.15;
+  let l = rawLow != null && !isNaN(rawLow) && rawLow > 0 ? rawLow : p * 0.85;
+
+  if (h < p) h = Number((p * 1.15).toFixed(2));
+  if (l > p) l = Number((p * 0.85).toFixed(2));
+  if (h < l) {
+    h = Number((p * 1.15).toFixed(2));
+    l = Number((p * 0.85).toFixed(2));
+  }
+
+  return {
+    high52w: Number(h.toFixed(2)),
+    low52w: Number(l.toFixed(2)),
+  };
+}
+
 // In-memory cache for ultra-fast response
 let cachedStocks: StockFundamental[] | null = null;
 let cacheTimestamp = 0;
@@ -179,23 +200,25 @@ function loadBundledUniverseFiles(): StockFundamental[] {
           const ticker = (item.ticker || item.symbol || '').replace('.BK', '').toUpperCase().trim();
           if (!ticker || seenTickers.has(ticker)) continue;
           seenTickers.add(ticker);
+          const price = Number(item.price) || 10.0;
+          const range = sanitize52wRange(price);
           result.push({
             ticker,
             name: item.name || ticker,
             market: 'SET',
             sector: item.sector || item.industry || 'SET Index',
-            price: Number(item.price) || 10.0,
+            price,
             currency: 'THB',
             change: Number(item.change) || 0,
             marketCap: '—',
             peRatio: 15.0,
             dividendYield: 3.2,
-            high52w: 12.0,
-            low52w: 8.0,
+            high52w: range.high52w,
+            low52w: range.low52w,
             volume: '—',
-            sparkline7d: [10.0, 10.1, 10.05, 10.2],
+            sparkline7d: [price * 0.98, price * 0.99, price * 1.01, price],
             analystRating: 'Hold',
-            targetPrice: 11.0,
+            targetPrice: Number((price * 1.08).toFixed(2)),
             sentimentScore: 50,
             aiInsight: `หุ้น ${ticker} ในตลาดหลักทรัพย์แห่งประเทศไทย (SET)`,
             description: item.name || `บริษัทจดทะเบียนในตลาดหลักทรัพย์แห่งประเทศไทย (${ticker})`
@@ -218,23 +241,25 @@ function loadBundledUniverseFiles(): StockFundamental[] {
           const ticker = (item.ticker || item.symbol || '').toUpperCase().trim();
           if (!ticker || seenTickers.has(ticker)) continue;
           seenTickers.add(ticker);
+          const price = Number(item.price) || 50.0;
+          const range = sanitize52wRange(price);
           result.push({
             ticker,
             name: item.name || ticker,
             market: 'US',
             sector: item.sector || item.industry || 'US Equity',
-            price: Number(item.price) || 50.0,
+            price,
             currency: 'USD',
             change: Number(item.change) || 0,
             marketCap: '—',
             peRatio: 22.0,
             dividendYield: 1.5,
-            high52w: 60.0,
-            low52w: 40.0,
+            high52w: range.high52w,
+            low52w: range.low52w,
             volume: '—',
-            sparkline7d: [50.0, 50.5, 49.8, 50.2],
+            sparkline7d: [price * 0.98, price * 0.99, price * 1.01, price],
             analystRating: 'Hold',
-            targetPrice: 55.0,
+            targetPrice: Number((price * 1.08).toFixed(2)),
             sentimentScore: 50,
             aiInsight: `${ticker} listed on US Stock Exchange`,
             description: item.name || `US Listed Equity Security (${ticker})`
@@ -347,6 +372,7 @@ export async function fetchStockFromSupabase(ticker: string): Promise<StockFunda
       const change = Number(item.change) || 0;
       const marketCap = item.market_cap || '—';
 
+      const range = sanitize52wRange(price, item.high_52w != null ? Number(item.high_52w) : null, item.low_52w != null ? Number(item.low_52w) : null);
       return {
         ticker: item.ticker,
         name: item.name || item.ticker,
@@ -358,8 +384,8 @@ export async function fetchStockFromSupabase(ticker: string): Promise<StockFunda
         marketCap,
         peRatio: item.pe_ratio != null ? Number(item.pe_ratio) : 0,
         dividendYield: item.dividend_yield != null ? Number(item.dividend_yield) : 0,
-        high52w: item.high_52w != null ? Number(item.high_52w) : price,
-        low52w: item.low_52w != null ? Number(item.low_52w) : price,
+        high52w: range.high52w,
+        low52w: range.low52w,
         volume: item.volume || '—',
         aiInsight: item.ai_insight || `${item.ticker} trading at ${currency === 'THB' ? '฿' : '$'}${price.toLocaleString()} (${change >= 0 ? '+' : ''}${change}%)`,
         description: item.description || `${item.name || item.ticker} จดทะเบียนในตลาด ${isSET ? 'SET' : 'US'}`,
@@ -545,8 +571,7 @@ export async function fetchSingleStockYFinance(symbol: string, market?: string, 
         const volumeFormatted = formatVolume(q.regularMarketVolume);
         const peRatio = q.trailingPE || q.forwardPE || (isThaiResult ? 16.5 : 24.0);
         const dividendYield = q.dividendYield != null ? Number(q.dividendYield.toFixed(2)) : (q.trailingAnnualDividendYield != null ? Number(q.trailingAnnualDividendYield.toFixed(2)) : (isThaiResult ? 2.5 : 1.2));
-        const high52w = q.fiftyTwoWeekHigh || livePrice * 1.15;
-        const low52w = q.fiftyTwoWeekLow || livePrice * 0.85;
+        const range = sanitize52wRange(livePrice, q.fiftyTwoWeekHigh, q.fiftyTwoWeekLow);
 
         const singleStock: StockFundamental = {
           ticker: cleanSym,
@@ -559,10 +584,10 @@ export async function fetchSingleStockYFinance(symbol: string, market?: string, 
           marketCap: marketCapFormatted,
           peRatio: Number(Number(peRatio).toFixed(1)),
           dividendYield: Number(Number(dividendYield).toFixed(2)),
-          high52w: Number(Number(high52w).toFixed(2)),
-          low52w: Number(Number(low52w).toFixed(2)),
+          high52w: range.high52w,
+          low52w: range.low52w,
           volume: volumeFormatted,
-          sparkline7d: [low52w, livePrice * 0.98, livePrice * 1.01, livePrice],
+          sparkline7d: [range.low52w, livePrice * 0.98, livePrice * 1.01, livePrice],
           analystRating: change >= 0 ? 'Buy' : 'Hold',
           targetPrice: q.targetMeanPrice ? Number(q.targetMeanPrice.toFixed(2)) : Number((livePrice * 1.08).toFixed(2)),
           sentimentScore: change >= 0 ? 68 : 45,
@@ -633,6 +658,7 @@ export async function fetchSingleStockYFinance(symbol: string, market?: string, 
         const lastVolume = rawVolumes.filter((v): v is number => typeof v === 'number' && v > 0).pop() || meta.regularMarketVolume || 0;
 
         const currency = (meta.currency === 'THB' || isSET) ? 'THB' : 'USD';
+        const range = sanitize52wRange(livePrice, meta.fiftyTwoWeekHigh, meta.fiftyTwoWeekLow);
         const singleStock: StockFundamental = {
           ticker: cleanSym,
           name: meta.longName || meta.shortName || cleanSym,
@@ -644,8 +670,8 @@ export async function fetchSingleStockYFinance(symbol: string, market?: string, 
           marketCap: formatMarketCap(livePrice * (isSET ? 12_500_000_000 : 800_000_000), currency),
           peRatio: 18.5,
           dividendYield: 2.5,
-          high52w: meta.fiftyTwoWeekHigh || livePrice * 1.15,
-          low52w: meta.fiftyTwoWeekLow || livePrice * 0.85,
+          high52w: range.high52w,
+          low52w: range.low52w,
           volume: formatVolume(lastVolume),
           sparkline7d: sparkline7d.length >= 2 ? sparkline7d : [prevClose, livePrice],
           analystRating: change >= 0 ? 'Buy' : 'Hold',
