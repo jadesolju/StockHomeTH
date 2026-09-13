@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "oxlint",
+    "test": "vitest run",
     "server": "node server/index.js",
     "server:dev": "node --watch server/index.js",
     "api:fastapi": "py main.py"
