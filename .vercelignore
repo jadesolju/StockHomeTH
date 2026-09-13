@@ -1,0 +1,11 @@
+# Vercel Deployment Ignore Rules
+# Exclude test suites, test configurations, and offline scripts from Vercel hosting
+
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+vitest.config.ts
+
+# Offline server / Python scripts
+server/
+*.py
