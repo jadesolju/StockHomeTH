@@ -2,6 +2,44 @@ import { AssetRegistryItem } from '@/types/asset';
 
 export const assetRegistry: AssetRegistryItem[] = [
   {
+    keywords: ['jpy', 'ค่าเงินเยน', 'เงินเยน', 'เยนเทียบบาท', 'อัตราแลกเปลี่ยนเยน', 'แลกเงินเยน'],
+    defaultIdentity: 'Japanese Yen (ค่าเงินเยน JPY vs หุ้น/ETF ญี่ปุ่น)',
+    bypassKeywords: ['ค่าเงิน', 'แลกเปลี่ยน', 'อัตราแลกเปลี่ยน', 'เทียบบาท', 'jpy/thb', 'jpythb', 'forex', 'สกุลเงิน', 'etf', 'หุ้น'],
+    options: [
+      {
+        label: '💴 อัตราแลกเปลี่ยนค่าเงินเยน (JPY/THB)',
+        value: { exchange: 'Forex FX Market', currency: 'THB' },
+        description: 'อัตราแลกเปลี่ยนสกุลเงินเยนญี่ปุ่นเทียบเงินบาทไทย (หน่วย: บาทต่อ 100 เยน หรือ JPY/THB)',
+        promptSuffix: 'วิเคราะห์อัตราแลกเปลี่ยนค่าเงินเยนญี่ปุ่นเทียบเงินบาท (JPY/THB) และปัจจัยการเงินจากนโยบาย BOJ'
+      },
+      {
+        label: '📈 หุ้น / กองทุน ETF ญี่ปุ่น (Nikkei 225 / US Listed ETF)',
+        value: { exchange: 'TSE / US Markets', currency: 'JPY/USD' },
+        description: 'กองทุน ETF หรือหุ้นในตลาดหุ้นญี่ปุ่น เช่น EWJ, Lazard Japanese Equity ETF, Toyota (7203.T)',
+        promptSuffix: 'วิเคราะห์กองทุน ETF หรือหุ้นบริษัทชั้นนำในตลาดหุ้นญี่ปุ่น (Nikkei / TSE)'
+      }
+    ]
+  },
+  {
+    keywords: ['usd', 'ค่าเงินดอลลาร์', 'เงินดอลลาร์', 'ดอลลาร์เทียบบาท', 'usd/thb', 'usdthb'],
+    defaultIdentity: 'US Dollar Currency (ค่าเงินดอลลาร์ USD/THB vs ดัชนี/หุ้นสหรัฐฯ)',
+    bypassKeywords: ['ค่าเงิน', 'อัตราแลกเปลี่ยน', 'เทียบบาท', 'usd/thb', 'usdthb', 'forex', 'สกุลเงิน', 'ดัชนี', 'หุ้น'],
+    options: [
+      {
+        label: '💵 อัตราแลกเปลี่ยนค่าเงินดอลลาร์ (USD/THB)',
+        value: { exchange: 'Forex FX Market', currency: 'THB' },
+        description: 'อัตราแลกเปลี่ยนเงินดอลลาร์สหรัฐฯ เทียบเงินบาทไทย (USD/THB)',
+        promptSuffix: 'วิเคราะห์อัตราแลกเปลี่ยนค่าเงินดอลลาร์สหรัฐเทียบเงินบาทไทย (USD/THB)'
+      },
+      {
+        label: '🗽 ตลาดหุ้นและดัชนีสหรัฐฯ (S&P 500 / NASDAQ / Dow Jones)',
+        value: { exchange: 'US Markets', currency: 'USD' },
+        description: 'ภาพรวมตลาดหุ้นและดัชนีหลักของสหรัฐอเมริกา',
+        promptSuffix: 'วิเคราะห์ภาพรวมตลาดหุ้นและดัชนีหลักของสหรัฐอเมริกา (S&P 500 / NASDAQ)'
+      }
+    ]
+  },
+  {
     keywords: ['ทองคำ', 'ราคาทอง', 'ทอง', 'gold', 'xau'],
     defaultIdentity: 'Gold (ทองคำ)',
     bypassKeywords: ['สมาคม', 'แท่ง', 'รูปพรรณ', 'spot', 'xau', 'xauusd', 'spdr', 'gld', 'aura', 'ออโรร่า'],

@@ -366,7 +366,7 @@ export function TermsDisclaimerModal({
                 padding: '18px 22px',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399', fontWeight 800, marginBottom: '10px', fontSize: '0.92rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399', fontWeight: 800, marginBottom: '10px', fontSize: '0.92rem' }}>
                 <Lock size={18} strokeWidth={2.2} />
                 <span>{isEn ? 'Section 3: Information Security & Privacy Policy' : 'หมวดที่ ๓: นโยบายความมั่นคงปลอดภัยสารสนเทศและการปกป้องข้อมูล (Information Security & Privacy Policy)'}</span>
               </div>
