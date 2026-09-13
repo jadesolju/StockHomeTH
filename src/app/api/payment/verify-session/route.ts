@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { sessionId } = body;
+    const { sessionId, userId: clientUserId } = body;
 
     if (!sessionId || typeof sessionId !== 'string') {
       return NextResponse.json({ error: 'sessionId is required' }, { status: 400 });
@@ -43,10 +43,14 @@ export async function POST(req: NextRequest) {
 
     const packageId = session.metadata?.packageId || '';
     const mode = (session.metadata?.mode || session.mode) as 'payment' | 'subscription';
+    const resolvedUserId = clientUserId || session.metadata?.userId || session.client_reference_id || null;
+
+    // Track session credited state by Stripe session ID to prevent duplicate fulfillment
     const isAlreadyCredited = creditedSessions.has(sessionId);
 
-    // Record session as credited
-    creditedSessions.add(sessionId);
+    if (!isAlreadyCredited) {
+      creditedSessions.add(sessionId);
+    }
 
     if (mode === 'subscription') {
       const tierSpec = GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === packageId);
@@ -63,6 +67,7 @@ export async function POST(req: NextRequest) {
         customerEmail: session.customer_details?.email || null,
         customerName: session.customer_details?.name || null,
         sessionId: session.id,
+        userId: resolvedUserId,
       });
     }
 
@@ -86,6 +91,7 @@ export async function POST(req: NextRequest) {
       customerEmail: session.customer_details?.email || null,
       customerName: session.customer_details?.name || null,
       sessionId: session.id,
+      userId: resolvedUserId,
     });
   } catch (err: any) {
     console.error('[Verify Session Error]:', err);

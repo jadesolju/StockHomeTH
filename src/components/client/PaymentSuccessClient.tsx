@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, Loader2, Sparkles, AlertCircle, ArrowRight, MessageSquareText } from 'lucide-react';
 import { useSubscription } from '@/lib/context/SubscriptionContext';
+import { useClientAuth } from '@/lib/context/ClientAuthContext';
 import { GemCoinIcon } from '@/components/ui/GemCoinIcon';
 
 interface VerifyResult {
@@ -29,6 +30,7 @@ export function PaymentSuccessClient() {
   const router = useRouter();
   const sessionId = searchParams.get('session_id');
 
+  const { user, openAuthModal } = useClientAuth();
   const {
     totalGemCoinsAvailable,
     topupGemCoinsDirect,
@@ -44,15 +46,14 @@ export function PaymentSuccessClient() {
   const verifiedRef = useRef<boolean>(false);
 
   useEffect(() => {
-    if (!sessionId || verifiedRef.current) return;
-    verifiedRef.current = true;
+    if (!sessionId) return;
 
     async function verify() {
       try {
         const res = await fetch('/api/payment/verify-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId }),
+          body: JSON.stringify({ sessionId, userId: user?.uid || undefined }),
         });
 
         const data: VerifyResult = await res.json();
@@ -88,7 +89,7 @@ export function PaymentSuccessClient() {
     }
 
     verify();
-  }, [sessionId, topupGemCoinsDirect, setTier]);
+  }, [sessionId, user?.uid, topupGemCoinsDirect, setTier]);
 
   return (
     <div className="min-h-screen bg-[#070b10] flex items-center justify-center px-4 py-12">
@@ -120,8 +121,30 @@ export function PaymentSuccessClient() {
             </h1>
 
             <p className="text-slate-300 text-sm mb-6">
-              ขอบคุณสำหรับการสนับสนุน ระบบได้ดำเนินการเติมสิทธิ์ให้บัญชีของคุณทันที
+              ขอบคุณสำหรับการสนับสนุน ระบบได้ดำเนินการเติมสิทธิ์ให้บัญชีของคุณเรียบร้อย
             </p>
+
+            {/* Guest Recovery Prompt Banner if Unauthenticated */}
+            {!user && (
+              <div className="bg-amber-950/40 border border-amber-500/40 rounded-2xl p-4 mb-6 text-left flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+                <div className="space-y-1">
+                  <div className="text-amber-300 font-extrabold text-xs sm:text-sm flex items-center gap-1.5">
+                    <AlertCircle size={17} className="text-amber-400 shrink-0" />
+                    <span>โปรดเข้าสู่ระบบเพื่อผูกเหรียญเข้าบัญชีถาวร</span>
+                  </div>
+                  <p className="text-slate-300 text-xs leading-relaxed">
+                    คุณยังไม่ได้เข้าสู่ระบบ เข้าสู่ระบบ {result?.customerEmail ? `(แนะนำใช้อีเมล ${result.customerEmail})` : ''} เพื่อผูกสิทธิ์สมาชิกรวมถึง GemCoins เข้ากระเป๋าของคุณถาวร ป้องกันข้อมูลหาย
+                  </p>
+                </div>
+                <button
+                  onClick={() => openAuthModal('login')}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 text-xs font-black shrink-0 transition-all shadow-md flex items-center justify-center gap-1"
+                >
+                  <span>เข้าสู่ระบบผูกบัญชี</span>
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            )}
 
             {/* Reward Card */}
             {result?.mode === 'payment' && result.gemCoinsAdded && (

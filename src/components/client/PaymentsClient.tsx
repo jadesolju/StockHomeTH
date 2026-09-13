@@ -36,7 +36,7 @@ function TierIcon({ iconType, className }: { iconType: GemCoinTopupPackage['icon
 type Tab = 'topup' | 'subscription';
 
 export default function PaymentsClient() {
-  const { user } = useClientAuth();
+  const { user, openAuthModal } = useClientAuth();
   const { totalGemCoinsAvailable, openGemCoinModal } = useSubscription();
   const [activeTab, setActiveTab] = useState<Tab>('topup');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -50,10 +50,23 @@ export default function PaymentsClient() {
       OWNER_DEV_IDENTIFIERS.supabaseUids.includes(user.uid))
   );
 
-
   const handleCheckout = useCallback(
     async (packageId: string, mode: 'payment' | 'subscription') => {
       if (loadingId) return;
+
+      if (!user) {
+        // Guest Guard: Intercept guest checkout, save pending package choice, and open login modal
+        try {
+          sessionStorage.setItem(
+            'pending_checkout_package',
+            JSON.stringify({ packageId, mode, billingCycle })
+          );
+        } catch {}
+        setErrorMsg('กรุณาเข้าสู่ระบบหรือสมัครสมาชิกก่อนทำการเติมเงิน เพื่อให้ GemCoins และสิทธิ์สมาชิกผูกกับบัญชีของคุณอย่างปลอดภัยถาวร');
+        openAuthModal('login');
+        return;
+      }
+
       setLoadingId(packageId);
       setErrorMsg(null);
 
@@ -102,8 +115,23 @@ export default function PaymentsClient() {
         setLoadingId(null);
       }
     },
-    [loadingId, billingCycle, user]
+    [loadingId, billingCycle, user, openAuthModal]
   );
+
+  // Auto-resume pending checkout after user logs in
+  React.useEffect(() => {
+    if (!user) return;
+    try {
+      const pendingRaw = sessionStorage.getItem('pending_checkout_package');
+      if (pendingRaw) {
+        const pending = JSON.parse(pendingRaw);
+        sessionStorage.removeItem('pending_checkout_package');
+        if (pending?.packageId && pending?.mode) {
+          handleCheckout(pending.packageId, pending.mode);
+        }
+      }
+    } catch {}
+  }, [user, handleCheckout]);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)', color: 'var(--text-primary)' }}>
@@ -122,6 +150,73 @@ export default function PaymentsClient() {
       </div>
 
       <div className="payment-page-container">
+        {/* ──── Guest Mode Banner & Security Reassurance ──── */}
+        {!user && (
+          <div
+            style={{
+              padding: '16px 20px',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(6, 182, 212, 0.12) 100%)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '280px' }}>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '12px',
+                  background: 'rgba(245, 158, 11, 0.2)',
+                  border: '1px solid rgba(245, 158, 11, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  color: '#f59e0b',
+                }}
+              >
+                <AlertCircle size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#fef08a' }}>
+                  💡 คุณกำลังใช้งานในฐานะ Guest (ยังไม่ได้เข้าสู่ระบบ)
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#cbd5e1', marginTop: '2px', lineHeight: 1.4 }}>
+                  เข้าสู่ระบบก่อนเติมเงิน เพื่อให้ <strong>GemCoins</strong> และ <strong>ระดับสมาชิก</strong> ผูกกับบัญชีของคุณถาวรบน Cloud Database สามารถซิงค์และใช้งานข้ามทุกอุปกรณ์ได้อย่างปลอดภัย
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => openAuthModal('login')}
+              className="ios-tappable"
+              style={{
+                padding: '10px 20px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+                border: 'none',
+                color: '#ffffff',
+                fontSize: '0.84rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 14px rgba(6, 182, 212, 0.3)',
+              }}
+            >
+              <span>เข้าสู่ระบบก่อนเติมเงิน</span>
+              <ArrowRight size={15} />
+            </button>
+          </div>
+        )}
+
         {/* ──── Exclusive Owner Status Banner (Visible ONLY to afillly002@gmail.com) ──── */}
         {isOwnerUser && (
           <div className="payment-owner-banner">
