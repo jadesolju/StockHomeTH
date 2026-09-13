@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../../lib/context/LanguageContext';
 import {
   ShieldCheck,
   CheckCircle2,
@@ -29,6 +30,9 @@ export function TermsDisclaimerModal({
   forceOpen = false,
   initialTab = 'all',
 }: TermsDisclaimerModalProps) {
+  const { language } = useLanguage();
+  const isEn = language === 'en';
+
   const [isOpen, setIsOpen] = useState(false);
   const [hasAcknowledged, setHasAcknowledged] = useState(false);
   const [activeCategory, setActiveCategory] = useState<PolicyCategory>(initialTab);
@@ -137,10 +141,10 @@ export function TermsDisclaimerModal({
             </div>
             <div>
               <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary, #ffffff)', margin: 0, lineHeight: 1.3 }}>
-                ข้อกำหนด นโยบาย และเงื่อนไขการให้บริการอย่างเป็นทางการ
+                {isEn ? 'Official Terms, Policies & Conditions of Service' : 'ข้อกำหนด นโยบาย และเงื่อนไขการให้บริการอย่างเป็นทางการ'}
               </h2>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary, #94a3b8)', margin: '3px 0 0 0', lineHeight: 1.4 }}>
-                StockHomeTH Financial Intelligence Platform • ฉบับปรับปรุงมาตรฐานสากล พ.ศ. ๒๕๖๙
+                StockHomeTH Financial Intelligence Platform • {isEn ? 'Global Standard Edition 2026' : 'ฉบับปรับปรุงมาตรฐานสากล พ.ศ. ๒๕๖๙'}
               </p>
             </div>
           </div>
@@ -183,11 +187,11 @@ export function TermsDisclaimerModal({
           }}
         >
           {[
-            { id: 'all' as PolicyCategory, label: 'ภาพรวมทั้งหมด', icon: FileText },
-            { id: 'terms' as PolicyCategory, label: 'ข้อกำหนดการใช้บริการ', icon: Scale },
-            { id: 'payment' as PolicyCategory, label: 'การชำระเงินและคืนเงิน', icon: CreditCard, highlight: true },
-            { id: 'privacy' as PolicyCategory, label: 'ความเป็นส่วนตัวและความปลอดภัย', icon: Lock },
-            { id: 'disclaimer' as PolicyCategory, label: 'คำเตือนความเสี่ยง (DYOR)', icon: AlertTriangle },
+            { id: 'all' as PolicyCategory, label: isEn ? 'Overview' : 'ภาพรวมทั้งหมด', icon: FileText },
+            { id: 'terms' as PolicyCategory, label: isEn ? 'Terms of Service' : 'ข้อกำหนดการใช้บริการ', icon: Scale },
+            { id: 'payment' as PolicyCategory, label: isEn ? 'Payment & Refunds' : 'การชำระเงินและคืนเงิน', icon: CreditCard, highlight: true },
+            { id: 'privacy' as PolicyCategory, label: isEn ? 'Privacy & Security' : 'ความเป็นส่วนตัวและความปลอดภัย', icon: Lock },
+            { id: 'disclaimer' as PolicyCategory, label: isEn ? 'Risk Disclaimer (DYOR)' : 'คำเตือนความเสี่ยง (DYOR)', icon: AlertTriangle },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeCategory === tab.id;
@@ -250,21 +254,40 @@ export function TermsDisclaimerModal({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#38bdf8', fontWeight: 800, marginBottom: '10px', fontSize: '0.92rem' }}>
                 <Scale size={18} strokeWidth={2.2} />
-                <span>หมวดที่ ๑: ข้อกำหนดและเงื่อนไขการใช้บริการ (Terms of Service)</span>
+                <span>{isEn ? 'Section 1: Terms of Service' : 'หมวดที่ ๑: ข้อกำหนดและเงื่อนไขการใช้บริการ (Terms of Service)'}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', color: 'var(--text-primary, #f1f5f9)' }}>
-                <p style={{ margin: 0 }}>
-                  <strong>๑.๑ วัตถุประสงค์และขอบเขตการให้บริการ:</strong> แพลตฟอร์ม <strong>StockHomeTH</strong> พัฒนาขึ้นเพื่อเป็นเครื่องมือซอฟต์แวร์สนับสนุนการวิเคราะห์ข้อมูลตลาดทุน (Financial Data Analytics & AI Research Assistant) เพื่อการศึกษา ค้นคว้า และวิจัยส่วนบุคคลของผู้ใช้งานเท่านั้น
-                </p>
-                <p style={{ margin: 0 }}>
-                  <strong>๑.๒ สถานะทางกฎหมายของผู้พัฒนา:</strong> ระบบได้รับการพัฒนาและดูแลโดย <strong>บุคคลธรรมดาในฐานะนักพัฒนาอิสระ (Independent Software Developer)</strong> มิได้ดำเนินงานในฐานะนิติบุคคล สถาบันการเงิน หรือบริษัทหลักทรัพย์ที่ได้รับใบอนุญาตจัดการกองทุนหรือให้คำปรึกษาการลงทุนจากสำนักงานคณะกรรมการกำกับหลักทรัพย์และตลาดหลักทรัพย์ (ก.ล.ต.)
-                </p>
-                <p style={{ margin: 0 }}>
-                  <strong>๑.๓ สิทธิ์ในทรัพย์สินทางปัญญา:</strong> โครงสร้างรหัสซอฟต์แวร์ อัลกอริทึม รูปแบบการจัดวางข้อมูล และอินเทอร์เฟซเป็นทรัพย์สินทางปัญญาของผู้พัฒนา ห้ามมิให้ผู้ใดคัดลอก ดัดแปลง วิศวกรรมย้อนกลับ (Reverse Engineer) หรือแสวงหาประโยชน์เชิงพาณิชย์โดยไม่ได้รับความยินยอมเป็นลายลักษณ์อักษร
-                </p>
-                <p style={{ margin: 0 }}>
-                  <strong>๑.๔ การให้บริการตามสภาพจริง (As-Is Basis):</strong> บริการทั้งหมดจัดให้บนหลักการ &ldquo;ตามสภาพที่เป็นอยู่&rdquo; (As-Is) และ &ldquo;ตามความพร้อมให้บริการ&rdquo; (As-Available) ผู้ให้บริการขอสงวนสิทธิ์ในการปรับปรุง บำรุงรักษา หรือระงับการทำงานบางส่วนเพื่อความปลอดภัยของระบบโดยไม่ต้องแจ้งล่วงหน้า
-                </p>
+                {isEn ? (
+                  <>
+                    <p style={{ margin: 0 }}>
+                      <strong>1.1 Purpose & Scope:</strong> The <strong>StockHomeTH</strong> platform is engineered as a software tool for Financial Data Analytics & AI Research Assistance, strictly intended for personal educational research and market exploration.
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>1.2 Legal Developer Status:</strong> This service is maintained by an <strong>Independent Software Developer</strong> and does not operate as a licensed brokerage, financial institution, or fund manager regulated by the SEC.
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>1.3 Intellectual Property:</strong> Software code, algorithms, data aggregation frameworks, and user interfaces remain exclusive IP. Reverse engineering, unauthorized copying, or commercial exploitation is strictly prohibited without written consent.
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>1.4 As-Is Provision:</strong> Services are rendered on an &ldquo;As-Is&rdquo; and &ldquo;As-Available&rdquo; basis. The maintainer reserves the right to perform system upgrades or security maintenance without prior notice.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ margin: 0 }}>
+                      <strong>๑.๑ วัตถุประสงค์และขอบเขตการให้บริการ:</strong> แพลตฟอร์ม <strong>StockHomeTH</strong> พัฒนาขึ้นเพื่อเป็นเครื่องมือซอฟต์แวร์สนับสนุนการวิเคราะห์ข้อมูลตลาดทุน (Financial Data Analytics & AI Research Assistant) เพื่อการศึกษา ค้นคว้า และวิจัยส่วนบุคคลของผู้ใช้งานเท่านั้น
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>๑.๒ สถานะทางกฎหมายของผู้พัฒนา:</strong> ระบบได้รับการพัฒนาและดูแลโดย <strong>บุคคลธรรมดาในฐานะนักพัฒนาอิสระ (Independent Software Developer)</strong> มิได้ดำเนินงานในฐานะนิติบุคคล สถาบันการเงิน หรือบริษัทหลักทรัพย์ที่ได้รับใบอนุญาตจัดการกองทุนหรือให้คำปรึกษาการลงทุนจากสำนักงานคณะกรรมการกำกับหลักทรัพย์และตลาดหลักทรัพย์ (ก.ล.ต.)
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>๑.๓ สิทธิ์ในทรัพย์สินทางปัญญา:</strong> โครงสร้างรหัสซอฟต์แวร์ อัลกอริทึม รูปแบบการจัดวางข้อมูล และอินเทอร์เฟซเป็นทรัพย์สินทางปัญญาของผู้พัฒนา ห้ามมิให้ผู้ใดคัดลอก ดัดแปลง วิศวกรรมย้อนกลับ (Reverse Engineer) หรือแสวงหาประโยชน์เชิงพาณิชย์โดยไม่ได้รับความยินยอมเป็นลายลักษณ์อักษร
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>๑.๔ การให้บริการตามสภาพจริง (As-Is Basis):</strong> บริการทั้งหมดจัดให้บนหลักการ &ldquo;ตามสภาพที่เป็นอยู่&rdquo; (As-Is) และ &ldquo;ตามความพร้อมให้บริการ&rdquo; (As-Available) ผู้ให้บริการขอสงวนสิทธิ์ในการปรับปรุง บำรุงรักษา หรือระงับการทำงานบางส่วนเพื่อความปลอดภัยของระบบโดยไม่ต้องแจ้งล่วงหน้า
+                    </p>
+                  </>
+                )}
               </div>
             </section>
           )}
@@ -283,26 +306,50 @@ export function TermsDisclaimerModal({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#c084fc', fontWeight: 800, marginBottom: '10px', fontSize: '0.92rem' }}>
                 <CreditCard size={18} strokeWidth={2.2} />
-                <span>หมวดที่ ๒: ข้อกำหนดการชำระเงิน สมาชิกภาพ และนโยบายการขอคืนเงิน (Payment & Refund Policy)</span>
+                <span>{isEn ? 'Section 2: Payment, Subscriptions & Refund Policy' : 'หมวดที่ ๒: ข้อกำหนดการชำระเงิน สมาชิกภาพ และนโยบายการขอคืนเงิน (Payment & Refund Policy)'}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', color: 'var(--text-primary, #f1f5f9)' }}>
-                <p style={{ margin: 0 }}>
-                  <strong>๒.๑ ช่องทางและการประมวลผลธุรกรรมทางการเงิน:</strong> การชำระเงินสำหรับแพ็กเกจสมาชิก (Lite, Pro, VIP, Whale) และแพ็กเกจเหรียญ GemCoins ประมวลผลผ่านเกตเวย์ชำระเงินมาตรฐานสากล <strong>Stripe Payments</strong> รองรับบัตรเครดิต/เดบิต (Visa, Mastercard, JCB, UnionPay) และ <strong>QR PromptPay (พร้อมเพย์)</strong> ภายใต้มาตรฐานการเข้ารหัสข้อมูลสูงสุด <strong>PCI-DSS Level 1</strong> โดยไม่มีการจัดเก็บข้อมูลหมายเลขบัตรเครดิตหรือข้อมูลการเงินส่วนบุคคลไว้บนเซิร์ฟเวอร์ของระบบ
-                </p>
-                <p style={{ margin: 0 }}>
-                  <strong>๒.๒ ลักษณะของสินค้าและบริการดิจิทัล:</strong> ค่าบริการสมาชิกและเหรียญ GemCoins จัดเป็น <strong>สินค้าและบริการประมวลผลข้อมูลดิจิทัล (Digital Content & Computational Cloud Service)</strong> ซึ่งจะได้รับการปลดล็อกโควตาและสิทธิประโยชน์เข้าสู่บัญชีของผู้ใช้งานในทันทีที่ธุรกรรมเสร็จสมบูรณ์
-                </p>
-                <p style={{ margin: 0 }}>
-                  <strong>๒.๓ รอบการเรียกเก็บเงินและการยกเลิกการต่ออายุ (Subscription Renewal & Cancellation):</strong>
-                </p>
-                <ul style={{ margin: '0 0 0 20px', padding: 0, fontSize: '0.82rem', lineHeight: 1.6 }}>
-                  <li>การสมัครสมาชิกแบบรายเดือน (Monthly) และรายปี (Yearly) มีระบบต่ออายุอัตโนมัติเมื่อสิ้นสุดรอบบิล เพื่อความต่อเนื่องในการใช้งาน</li>
-                  <li>ผู้ใช้งานสามารถกดยกเลิกการต่ออายุอัตโนมัติ (Cancel Subscription) ได้ตลอดเวลาผ่านหน้า Stripe Customer Portal หรือหน้าการตั้งค่าโปรไฟล์</li>
-                  <li>เมื่อทำการยกเลิก สิทธิประโยชน์ของสมาชิกระดับนั้นๆ จะยังคงมีผลใช้งานได้ตามปกติจนกระทั่งสิ้นสุดรอบบิลปัจจุบัน</li>
-                </ul>
-                <p style={{ margin: 0 }}>
-                  <strong>๒.๔ นโยบายการขอคืนเงิน (Refund Policy):</strong> เนื่องจากระบบมีต้นทุนการจัดสรรทรัพยากรประมวลผลปัญญาประดิษฐ์ (AI GPU/LLM Inference Ingestion) แบบเรียลไทม์ <strong>รายการคำสั่งซื้อที่ได้รับการประมวลผล หรือมีการบริโภค GemCoins ไปแล้ว จะไม่สามารถขอคืนเงินได้ (Non-Refundable)</strong> ยกเว้นในกรณีข้อผิดพลาดทางเทคนิค เช่น ระบบตัดเงินซ้ำซ้อน ซึ่งผู้ใช้สามารถแจ้งหลักฐานเพื่อขอรับเงินคืนได้ภายใน ๗ วันทำการ
-                </p>
+                {isEn ? (
+                  <>
+                    <p style={{ margin: 0 }}>
+                      <strong>2.1 Payment Gateway Security:</strong> All financial transactions for subscription tiers (Lite, Pro, VIP, Whale) and GemCoin top-ups are processed via <strong>Stripe Payments</strong>. We support Credit/Debit Cards (Visa, Mastercard, JCB, UnionPay) and <strong>PromptPay QR</strong> protected by top-tier <strong>PCI-DSS Level 1 Encryption</strong>. No raw payment details are stored on our servers.
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>2.2 Digital Content Classification:</strong> Membership tiers and GemCoin packages are categorized as <strong>Digital Content & Computational Cloud Services</strong>. All features and quotas are granted immediately upon confirmed payment.
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>2.3 Subscriptions & Cancellations:</strong>
+                    </p>
+                    <ul style={{ margin: '0 0 0 20px', padding: 0, fontSize: '0.82rem', lineHeight: 1.6 }}>
+                      <li>Monthly and Yearly plans automatically renew at the end of each billing cycle for seamless access.</li>
+                      <li>Users can cancel auto-renewal anytime via the Stripe Customer Portal or user profile settings.</li>
+                      <li>Upon cancellation, active benefits remain valid until the end of the current billing term.</li>
+                    </ul>
+                    <p style={{ margin: 0 }}>
+                      <strong>2.4 Refund Policy:</strong> Due to immediate real-time allocation of AI inference GPU servers, <strong>processed transactions or consumed GemCoins are strictly Non-Refundable</strong>, except in documented cases of duplicate billing reported within 7 business days.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ margin: 0 }}>
+                      <strong>๒.๑ ช่องทางและการประมวลผลธุรกรรมทางการเงิน:</strong> การชำระเงินสำหรับแพ็กเกจสมาชิก (Lite, Pro, VIP, Whale) และแพ็กเกจเหรียญ GemCoins ประมวลผลผ่านเกตเวย์ชำระเงินมาตรฐานสากล <strong>Stripe Payments</strong> รองรับบัตรเครดิต/เดบิต (Visa, Mastercard, JCB, UnionPay) และ <strong>QR PromptPay (พร้อมเพย์)</strong> ภายใต้มาตรฐานการเข้ารหัสข้อมูลสูงสุด <strong>PCI-DSS Level 1</strong> โดยไม่มีการจัดเก็บข้อมูลหมายเลขบัตรเครดิตหรือข้อมูลการเงินส่วนบุคคลไว้บนเซิร์ฟเวอร์ของระบบ
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>๒.๒ ลักษณะของสินค้าและบริการดิจิทัล:</strong> ค่าบริการสมาชิกและเหรียญ GemCoins จัดเป็น <strong>สินค้าและบริการประมวลผลข้อมูลดิจิทัล (Digital Content & Computational Cloud Service)</strong> ซึ่งจะได้รับการปลดล็อกโควตาและสิทธิประโยชน์เข้าสู่บัญชีของผู้ใช้งานในทันทีที่ธุรกรรมเสร็จสมบูรณ์
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>๒.๓ รอบการเรียกเก็บเงินและการยกเลิกการต่ออายุ (Subscription Renewal & Cancellation):</strong>
+                    </p>
+                    <ul style={{ margin: '0 0 0 20px', padding: 0, fontSize: '0.82rem', lineHeight: 1.6 }}>
+                      <li>การสมัครสมาชิกแบบรายเดือน (Monthly) และรายปี (Yearly) มีระบบต่ออายุอัตโนมัติเมื่อสิ้นสุดรอบบิล เพื่อความต่อเนื่องในการใช้งาน</li>
+                      <li>ผู้ใช้งานสามารถกดยกเลิกการต่ออายุอัตโนมัติ (Cancel Subscription) ได้ตลอดเวลาผ่านหน้า Stripe Customer Portal หรือหน้าการตั้งค่าโปรไฟล์</li>
+                      <li>เมื่อทำการยกเลิก สิทธิประโยชน์ของสมาชิกระดับนั้นๆ จะยังคงมีผลใช้งานได้ตามปกติจนกระทั่งสิ้นสุดรอบบิลปัจจุบัน</li>
+                    </ul>
+                    <p style={{ margin: 0 }}>
+                      <strong>๒.๔ นโยบายการขอคืนเงิน (Refund Policy):</strong> เนื่องจากระบบมีต้นทุนการจัดสรรทรัพยากรประมวลผลปัญญาประดิษฐ์ (AI GPU/LLM Inference Ingestion) แบบเรียลไทม์ <strong>รายการคำสั่งซื้อที่ได้รับการประมวลผล หรือมีการบริโภค GemCoins ไปแล้ว จะไม่สามารถขอคืนเงินได้ (Non-Refundable)</strong> ยกเว้นในกรณีข้อผิดพลาดทางเทคนิค เช่น ระบบตัดเงินซ้ำซ้อน ซึ่งผู้ใช้สามารถแจ้งหลักฐานเพื่อขอรับเงินคืนได้ภายใน ๗ วันทำการ
+                    </p>
+                  </>
+                )}
               </div>
             </section>
           )}
@@ -319,23 +366,42 @@ export function TermsDisclaimerModal({
                 padding: '18px 22px',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399', fontWeight: 800, marginBottom: '10px', fontSize: '0.92rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399', fontWeight 800, marginBottom: '10px', fontSize: '0.92rem' }}>
                 <Lock size={18} strokeWidth={2.2} />
-                <span>หมวดที่ ๓: นโยบายความมั่นคงปลอดภัยสารสนเทศและการปกป้องข้อมูล (Information Security & Privacy Policy)</span>
+                <span>{isEn ? 'Section 3: Information Security & Privacy Policy' : 'หมวดที่ ๓: นโยบายความมั่นคงปลอดภัยสารสนเทศและการปกป้องข้อมูล (Information Security & Privacy Policy)'}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', color: 'var(--text-primary, #f1f5f9)' }}>
-                <p style={{ margin: 0 }}>
-                  <strong>๓.๑ การคุ้มครองข้อมูลส่วนบุคคล (PDPA Compliance):</strong> ข้อมูลที่ระบบจัดเก็บมีเพียงอีเมลและชื่อแสดงผลพื้นฐานที่จำเป็นต่อการยืนยันสิทธิ์เข้าใช้งานผ่านบริการ Firebase Auth และ Supabase Auth โดยไม่มีการเก็บรวบรวมข้อมูลส่วนบุคคลที่มีความอ่อนไหว
-                </p>
-                <p style={{ margin: 0 }}>
-                  <strong>๓.๒ สถาปัตยกรรมการจัดเก็บข้อมูลระดับอุปกรณ์ (Client-Side Storage Architecture):</strong> คีย์ส่วนตัวสำหรับการเชื่อมต่อ AI (Personal API Key) พอร์ตการลงทุนจำลอง และรายชื่อหุ้นที่ติดตาม (Watchlist) จะถูกบันทึกและเข้ารหัสไว้บนหน่วยความจำของอุปกรณ์ผู้ใช้โดยตรง (Browser LocalStorage) โดยไม่มีการส่งไปจัดเก็บหรือดักจับบนเซิร์ฟเวอร์ส่วนกลาง
-                </p>
-                <p style={{ margin: 0 }}>
-                  <strong>๓.๓ การเข้ารหัสการรับส่งข้อมูล (End-to-End Transport Security):</strong> ข้อมูลการเรียกใช้งานทั้งหมดเชื่อมต่อผ่านช่องทางเครือข่ายความปลอดภัยสูงด้วยโปรโตคอล <strong>TLS 1.3 / HTTPS</strong> และเสริมความปลอดภัยระดับ Edge ด้วยโครงข่าย Cloudflare Web Application Firewall (WAF)
-                </p>
-                <p style={{ margin: 0 }}>
-                  <strong>๓.๔ นโยบายการไม่เปิดเผยข้อมูล (Non-Disclosure & Anti-Monetization):</strong> ผู้พัฒนายึดมั่นในจริยธรรมข้อมูลอย่างเคร่งครัด โดยไม่มีนโยบายการจำหน่าย แลกเปลี่ยน หรือส่งต่อประวัติการใช้งานและข้อมูลของสมาชิกให้แก่บริษัทโฆษณาหรือบุคคลภายนอกโดยเด็ดขาด
-                </p>
+                {isEn ? (
+                  <>
+                    <p style={{ margin: 0 }}>
+                      <strong>3.1 Privacy Compliance:</strong> Stored account information is limited to essential email addresses and display names managed securely via Firebase Auth and Supabase Auth. Sensitive personal data is never requested or retained.
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>3.2 Client-Side Storage Architecture:</strong> Custom personal AI keys, watchlists, and portfolio preferences are stored and encrypted directly in your browser&apos;s local storage (Client-Side) rather than centralized database servers.
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>3.3 Transport Security:</strong> All API communication is safeguarded with <strong>TLS 1.3 / HTTPS</strong> and shielded at the edge with Cloudflare Web Application Firewall (WAF) protection.
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>3.4 Non-Disclosure Guarantee:</strong> We strictly prohibit selling, trading, or sharing user data or usage logs with third-party advertisers or data brokers.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ margin: 0 }}>
+                      <strong>๓.๑ การคุ้มครองข้อมูลส่วนบุคคล (PDPA Compliance):</strong> ข้อมูลที่ระบบจัดเก็บมีเพียงอีเมลและชื่อแสดงผลพื้นฐานที่จำเป็นต่อการยืนยันสิทธิ์เข้าใช้งานผ่านบริการ Firebase Auth และ Supabase Auth โดยไม่มีการเก็บรวบรวมข้อมูลส่วนบุคคลที่มีความอ่อนไหว
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>๓.๒ สถาปัตยกรรมการจัดเก็บข้อมูลระดับอุปกรณ์ (Client-Side Storage Architecture):</strong> คีย์ส่วนตัวสำหรับการเชื่อมต่อ AI (Personal API Key) พอร์ตการลงทุนจำลอง และรายชื่อหุ้นที่ติดตาม (Watchlist) จะถูกบันทึกและเข้ารหัสไว้บนหน่วยความจำของอุปกรณ์ผู้ใช้โดยตรง (Browser LocalStorage) โดยไม่มีการส่งไปจัดเก็บหรือดักจับบนเซิร์ฟเวอร์ส่วนกลาง
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>๓.๓ การเข้ารหัสการรับส่งข้อมูล (End-to-End Transport Security):</strong> ข้อมูลการเรียกใช้งานทั้งหมดเชื่อมต่อผ่านช่องทางเครือข่ายความปลอดภัยสูงด้วยโปรโตคอล <strong>TLS 1.3 / HTTPS</strong> และเสริมความปลอดภัยระดับ Edge ด้วยโครงข่าย Cloudflare Web Application Firewall (WAF)
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>๓.๔ นโยบายการไม่เปิดเผยข้อมูล (Non-Disclosure & Anti-Monetization):</strong> ผู้พัฒนายึดมั่นในจริยธรรมข้อมูลอย่างเคร่งครัด โดยไม่มีนโยบายการจำหน่าย แลกเปลี่ยน หรือส่งต่อประวัติการใช้งานและข้อมูลของสมาชิกให้แก่บริษัทโฆษณาหรือบุคคลภายนอกโดยเด็ดขาด
+                    </p>
+                  </>
+                )}
               </div>
             </section>
           )}
@@ -354,18 +420,34 @@ export function TermsDisclaimerModal({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fbbf24', fontWeight: 800, marginBottom: '10px', fontSize: '0.92rem' }}>
                 <AlertTriangle size={18} strokeWidth={2.2} />
-                <span>หมวดที่ ๔: คำเตือนความเสี่ยงและข้อจำกัดความรับผิดชอบทางการเงิน (Risk Disclosure & Financial Disclaimer)</span>
+                <span>{isEn ? 'Section 4: Risk Disclosure & Financial Disclaimer' : 'หมวดที่ ๔: คำเตือนความเสี่ยงและข้อจำกัดความรับผิดชอบทางการเงิน (Risk Disclosure & Financial Disclaimer)'}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', color: 'var(--text-primary, #f1f5f9)' }}>
-                <p style={{ margin: 0 }}>
-                  <strong>๔.๑ มิใช่คำแนะนำทางการเงิน (Not Financial Advice):</strong> ข้อมูลราคา อัตราส่วนทางการเงิน กราฟสถิติ ดัชนีตลาด ข่าวสาร และบทวิเคราะห์เชิงสังเคราะห์ที่สร้างด้วยปัญญาประดิษฐ์ (AI-Generated Analytics) บนแพลตฟอร์มนี้ <strong>มิใช่คำแนะนำการลงทุน (Investment Advice)</strong> และมิใช่การชี้แนะหรือชักชวนให้เข้าซื้อ ขาย หรือถือครองหลักทรัพย์ สินทรัพย์ดิจิทัล หรือตราสารทางการเงินใดๆ
-                </p>
-                <p style={{ margin: 0 }}>
-                  <strong>๔.๒ ขีดจำกัดของแบบจำลองปัญญาประดิษฐ์ (AI Model Limitations):</strong> ข้อมูลที่ประมวลผลจาก AI อาจมีข้อจำกัดด้านความถูกต้อง ความครบถ้วนสมบูรณ์ หรือความคลาดเคลื่อนทางบริบท (AI Hallucination) ผู้ใช้งานพึงตระหนักและต้องทำการตรวจสอบเทียบเคียงกับแหล่งข้อมูลที่เป็นทางการของตลาดหลักทรัพย์แห่งประเทศไทย (SET) และตลาดหลักทรัพย์ต่างประเทศก่อนการดำเนินการใดๆ
-                </p>
-                <p style={{ margin: 0 }}>
-                  <strong>๔.๓ หลักการตัดสินใจด้วยตนเอง (Do Your Own Research - DYOR):</strong> การลงทุนในตราสารทุนและหลักทรัพย์มีความเสี่ยงสูง ราคาอาจมีความผันผวนรุนแรงตามสภาวะเศรษฐกิจและการลงทุน ผู้ใช้บริการตกลงและยอมรับว่าการตัดสินใจลงทุนใดๆ เป็นการตัดสินใจโดยอิสระของผู้ใช้เอง ผู้พัฒนาซอฟต์แวร์ไม่ต้องรับผิดชอบต่อความสูญเสีย ความเสียหาย หรือผลขาดทุนใดๆ ทั้งสิ้น
-                </p>
+                {isEn ? (
+                  <>
+                    <p style={{ margin: 0 }}>
+                      <strong>4.1 Not Financial Advice:</strong> All quotes, financial metrics, chart indicators, and AI-generated summaries displayed across this platform are strictly for informational and research purposes. They do <strong>NOT constitute formal investment advice</strong>, buy/sell recommendations, or financial solicitations.
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>4.2 AI Model Limitations:</strong> AI-generated analytics may occasionally experience context inaccuracies or model hallucinations. Users should independently verify data with primary official exchanges (SET, SEC, SEC Filings, Nasdaq) before executing trades.
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>4.3 Do Your Own Research (DYOR):</strong> Capital market investments carry inherent financial risks. Users acknowledge that all investment decisions are executed independently. The software maintainer bears no liability for financial losses or trading outcomes.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ margin: 0 }}>
+                      <strong>๔.๑ มิใช่คำแนะนำทางการเงิน (Not Financial Advice):</strong> ข้อมูลราคา อัตราส่วนทางการเงิน กราฟสถิติ ดัชนีตลาด ข่าวสาร และบทวิเคราะห์เชิงสังเคราะห์ที่สร้างด้วยปัญญาประดิษฐ์ (AI-Generated Analytics) บนแพลตฟอร์มนี้ <strong>มิใช่คำแนะนำการลงทุน (Investment Advice)</strong> และมิใช่การชี้แนะหรือชักชวนให้เข้าซื้อ ขาย หรือถือครองหลักทรัพย์ สินทรัพย์ดิจิทัล หรือตราสารทางการเงินใดๆ
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>๔.๒ ขีดจำกัดของแบบจำลองปัญญาประดิษฐ์ (AI Model Limitations):</strong> ข้อมูลที่ประมวลผลจาก AI อาจมีข้อจำกัดด้านความถูกต้อง ความครบถ้วนสมบูรณ์ หรือความคลาดเคลื่อนทางบริบท (AI Hallucination) ผู้ใช้งานพึงตระหนักและต้องทำการตรวจสอบเทียบเคียงกับแหล่งข้อมูลที่เป็นทางการของตลาดหลักทรัพย์แห่งประเทศไทย (SET) และตลาดหลักทรัพย์ต่างประเทศก่อนการดำเนินการใดๆ
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong>๔.๓ หลักการตัดสินใจด้วยตนเอง (Do Your Own Research - DYOR):</strong> การลงทุนในตราสารทุนและหลักทรัพย์มีความเสี่ยงสูง ราคาอาจมีความผันผวนรุนแรงตามสภาวะเศรษฐกิจและการลงทุน ผู้ใช้บริการตกลงและยอมรับว่าการตัดสินใจลงทุนใดๆ เป็นการตัดสินใจโดยอิสระของผู้ใช้เอง ผู้พัฒนาซอฟต์แวร์ไม่ต้องรับผิดชอบต่อความสูญเสีย ความเสียหาย หรือผลขาดทุนใดๆ ทั้งสิ้น
+                    </p>
+                  </>
+                )}
               </div>
             </section>
           )}
@@ -409,13 +491,15 @@ export function TermsDisclaimerModal({
               }}
             />
             <span>
-              ข้าพเจ้าได้อ่าน ทำความเข้าใจ และยอมรับข้อกำหนดการให้บริการ นโยบายการชำระเงิน การปกป้องข้อมูล และคำเตือนความเสี่ยงทั้งหมดข้างต้นอย่างสมบูรณ์
+              {isEn
+                ? 'I have read, understood, and fully accept all terms of service, payment policies, data security guidelines, and risk disclaimers above.'
+                : 'ข้าพเจ้าได้อ่าน ทำความเข้าใจ และยอมรับข้อกำหนดการให้บริการ นโยบายการชำระเงิน การปกป้องข้อมูล และคำเตือนความเสี่ยงทั้งหมดข้างต้นอย่างสมบูรณ์'}
             </span>
           </label>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             <span style={{ fontSize: '0.74rem', color: 'var(--text-tertiary, #64748b)' }}>
-              🔒 มาตรฐานความปลอดภัยระดับสากล • เข้ารหัส TLS 1.3 • Stripe PCI-DSS Level 1
+              🔒 {isEn ? 'Global Security Standards • TLS 1.3 • Stripe PCI-DSS Level 1' : 'มาตรฐานความปลอดภัยระดับสากล • เข้ารหัส TLS 1.3 • Stripe PCI-DSS Level 1'}
             </span>
 
             <button
@@ -441,7 +525,7 @@ export function TermsDisclaimerModal({
               }}
             >
               <CheckCircle2 size={18} />
-              <span>เข้าใจและยินยอมรับเงื่อนไข</span>
+              <span>{isEn ? 'I Agree & Accept Terms' : 'เข้าใจและยินยอมรับเงื่อนไข'}</span>
             </button>
           </div>
         </div>
