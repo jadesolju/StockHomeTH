@@ -171,9 +171,13 @@ export function cleanNewsSnippet(raw: string, cleanTitle?: string, isThai?: bool
     .replace(/\s+/g, ' ')
     .trim();
 
-  // If the remaining snippet is identical to title or too short (< 20 chars), return empty string so classifier can synthesize an authentic executive summary
-  if (cleanTitle && (text.toLowerCase() === cleanTitle.toLowerCase() || text.length < 20)) {
-    return '';
+  // If the remaining snippet is identical to title, starts with title, or too short (< 20 chars), return empty string so classifier can synthesize an authentic executive summary
+  if (cleanTitle) {
+    const cleanTitleLower = cleanTitle.toLowerCase().trim();
+    const textLower = text.toLowerCase().trim();
+    if (textLower === cleanTitleLower || textLower.startsWith(cleanTitleLower) || text.length < 20) {
+      return '';
+    }
   }
 
   return text;

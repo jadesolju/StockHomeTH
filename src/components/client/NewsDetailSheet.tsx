@@ -29,9 +29,21 @@ export function NewsDetailSheet({
     ? (item.title_en || tDynamic(item.title_th, item.title_en))
     : (item.title_th || tDynamic(item.title_th, item.title_en));
 
-  const resolvedSummary = isEn
+  let rawSummary = isEn
     ? (item.summary_en || tDynamic(item.summary_th, item.summary_en))
     : (item.summary_th || tDynamic(item.summary_th, item.summary_en));
+
+  // Safeguard: If summary is identical to title or starts with title, fallback to key takeaways or generated synthesis
+  const cleanTitleLower = resolvedTitle.toLowerCase().trim();
+  const cleanSummaryLower = (rawSummary || '').toLowerCase().trim();
+  if (!rawSummary || cleanSummaryLower === cleanTitleLower || cleanSummaryLower.startsWith(cleanTitleLower)) {
+    rawSummary = (item.keyTakeaways_th && item.keyTakeaways_th.length > 0)
+      ? item.keyTakeaways_th.join(' ')
+      : (item.keyTakeaways && item.keyTakeaways.length > 0)
+      ? item.keyTakeaways.join(' ')
+      : (isEn ? `Executive summary for ${resolvedTitle}` : `สาระสำคัญโดยย่อสำหรับ ${resolvedTitle}`);
+  }
+  const resolvedSummary = rawSummary;
 
   const resolvedTakeaways = isEn && item.keyTakeaways_en && item.keyTakeaways_en.length > 0
     ? item.keyTakeaways_en

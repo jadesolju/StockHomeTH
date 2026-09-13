@@ -78,7 +78,7 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
       return thaiNews.slice(0, 4).map((n) => {
         const topTakeaway = isEn ? (n.keyTakeaways_en?.[0] || n.keyTakeaways?.[0]) : (n.keyTakeaways_th?.[0] || n.keyTakeaways?.[0]);
         const title = isEn ? (n.title_en || n.title) : (n.title_th || n.title);
-        return topTakeaway ? `${title.slice(0, 45)}: ${topTakeaway}` : title;
+        return topTakeaway ? `${title}: ${topTakeaway}` : title;
       });
     }
     return isEn ? [
@@ -109,7 +109,7 @@ export function DigestHeaderBannerServer({ summary: propSummary }: DigestHeaderB
       return usNews.slice(0, 4).map((n) => {
         const topTakeaway = isEn ? (n.keyTakeaways_en?.[0] || n.keyTakeaways?.[0]) : (n.keyTakeaways_th?.[0] || n.keyTakeaways?.[0]);
         const title = isEn ? (n.title_en || n.title) : (n.title_th || n.title);
-        return topTakeaway ? `${title.slice(0, 45)}: ${topTakeaway}` : title;
+        return topTakeaway ? `${title}: ${topTakeaway}` : title;
       });
     }
     return isEn ? [
