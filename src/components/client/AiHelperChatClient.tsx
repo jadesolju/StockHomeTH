@@ -208,6 +208,18 @@ export const AiHelperChatClient: React.FC = () => {
     const loaded = loadUserSessions(userUid);
     setSessions(loaded);
 
+    // Restore last active session on refresh/mount if available
+    if (loaded.length > 0) {
+      const lastActiveId = localStorage.getItem(`stockhome_ai_active_session_${userUid || 'guest'}`);
+      const matched = loaded.find((s) => s.id === lastActiveId) || loaded[0];
+      if (matched && matched.messages.length > 0) {
+        setActiveSessionId(matched.id);
+        setMessages(matched.messages);
+        const matchedModel = CURATED_MODELS.find((m) => m.id === matched.modelId);
+        if (matchedModel) setSelectedModel(matchedModel);
+      }
+    }
+
     if (userUid) {
       const unsubscribe = subscribeToUserCloudSessions(userUid, (cloudSessions) => {
         setSessions(cloudSessions);
@@ -215,6 +227,17 @@ export const AiHelperChatClient: React.FC = () => {
       return () => unsubscribe();
     }
   }, [userUid]);
+
+  // Track active session in local storage for refresh recovery
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const key = `stockhome_ai_active_session_${userUid || 'guest'}`;
+    if (activeSessionId) {
+      localStorage.setItem(key, activeSessionId);
+    } else {
+      localStorage.removeItem(key);
+    }
+  }, [activeSessionId, userUid]);
 
   // Auto-scroll to bottom
   useEffect(() => {
