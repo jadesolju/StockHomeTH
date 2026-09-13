@@ -5,6 +5,7 @@ import { useSubscription, type SubscriptionTier } from '../../lib/context/Subscr
 import { PRICING_PLANS } from '../../config/pricingPlans';
 import { MockPaymentModal } from './MockPaymentModal';
 import { X, Check, Zap, Sparkles, ShieldCheck, Crown, ArrowRight, Coffee, QrCode } from 'lucide-react';
+import { WhaleSvg } from '../ui/TierSvgIcons';
 
 export function PricingModal() {
   const { isPricingModalOpen, closePricingModal, currentTier, setTier, billingCycle, setBillingCycle } = useSubscription();
@@ -199,6 +200,7 @@ export function PricingModal() {
         >
           {PRICING_PLANS.filter((p) => p.id !== 'dev').map((plan) => {
             const isCurrent = currentTier === plan.id;
+            const isWhale = plan.id === 'whale';
 
             const displayPrice = billingCycle === 'yearly' ? Math.round(plan.priceYearly / 12) : plan.priceMonthly;
 
@@ -206,16 +208,24 @@ export function PricingModal() {
               <div
                 key={plan.id}
                 style={{
-                  background: plan.popular ? 'linear-gradient(180deg, rgba(59, 130, 246, 0.12) 0%, rgba(18, 18, 20, 0.8) 100%)' : 'var(--card-sub-bg, rgba(255, 255, 255, 0.04))',
-                  border: `2px solid ${plan.popular ? 'var(--accent-blue)' : plan.borderColor}`,
+                  background: isWhale
+                    ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.16) 0%, rgba(245, 158, 11, 0.08) 45%, var(--card-sub-bg, rgba(255, 255, 255, 0.04)) 100%)'
+                    : plan.popular
+                    ? 'linear-gradient(180deg, rgba(59, 130, 246, 0.12) 0%, rgba(18, 18, 20, 0.8) 100%)'
+                    : 'var(--card-sub-bg, rgba(255, 255, 255, 0.04))',
+                  border: isWhale ? '2px solid rgba(6, 182, 212, 0.7)' : `2px solid ${plan.popular ? 'var(--accent-blue)' : plan.borderColor}`,
                   borderRadius: '20px',
                   padding: '24px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   position: 'relative',
-                  transform: plan.popular ? 'scale(1.02)' : 'none',
-                  boxShadow: plan.popular ? '0 12px 36px rgba(59, 130, 246, 0.2)' : 'none',
+                  transform: plan.popular || isWhale ? 'scale(1.02)' : 'none',
+                  boxShadow: isWhale
+                    ? '0 12px 40px rgba(6, 182, 212, 0.25), 0 0 20px rgba(245, 158, 11, 0.15)'
+                    : plan.popular
+                    ? '0 12px 36px rgba(59, 130, 246, 0.2)'
+                    : 'none',
                   transition: 'all 0.25s ease',
                 }}
               >
@@ -227,14 +237,24 @@ export function PricingModal() {
                       top: '-12px',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      background: plan.popular ? 'var(--accent-blue)' : plan.id === 'vip' ? '#a855f7' : plan.id === 'lite' ? '#eab308' : 'var(--accent-bullish)',
+                      background: isWhale
+                        ? 'linear-gradient(135deg, #06b6d4 0%, #b45309 100%)'
+                        : plan.popular
+                        ? 'var(--accent-blue)'
+                        : plan.id === 'vip'
+                        ? '#a855f7'
+                        : plan.id === 'lite'
+                        ? '#eab308'
+                        : 'var(--accent-bullish)',
                       color: plan.id === 'lite' ? '#000000' : '#ffffff',
                       fontSize: '11px',
                       fontWeight: 800,
-                      padding: '4px 12px',
+                      padding: '4px 14px',
                       borderRadius: '100px',
                       letterSpacing: '0.04em',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
+                      boxShadow: isWhale ? '0 4px 16px rgba(6, 182, 212, 0.4)' : '0 4px 12px rgba(0, 0, 0, 0.4)',
+                      border: isWhale ? '1px solid rgba(255, 255, 255, 0.4)' : 'none',
+                      whiteSpace: 'nowrap',
                     }}
                   >
                     {plan.badge}
@@ -245,7 +265,9 @@ export function PricingModal() {
                   {/* Plan Name & Tagline */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <h3 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>{plan.name}</h3>
-                    {plan.id === 'vip' ? (
+                    {isWhale ? (
+                      <WhaleSvg size={24} />
+                    ) : plan.id === 'vip' ? (
                       <Crown size={22} color="#a855f7" />
                     ) : plan.id === 'pro' ? (
                       <Zap size={22} color="var(--accent-blue)" />
@@ -338,6 +360,8 @@ export function PricingModal() {
                       border: isCurrent ? '1px solid rgba(255, 255, 255, 0.2)' : 'none',
                       background: isCurrent
                         ? 'rgba(255, 255, 255, 0.08)'
+                        : isWhale
+                        ? 'linear-gradient(135deg, #06b6d4 0%, #0284c7 40%, #d97706 100%)'
                         : plan.popular
                         ? 'var(--accent-blue)'
                         : plan.id === 'vip'
@@ -351,6 +375,7 @@ export function PricingModal() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '8px',
+                      boxShadow: isWhale && !isCurrent ? '0 4px 16px rgba(6, 182, 212, 0.4)' : 'none',
                       transition: 'all 0.2s',
                     }}
                   >

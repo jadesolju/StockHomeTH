@@ -1324,7 +1324,7 @@ export const AdminBackofficeClient: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '12px', marginBottom: '20px' }}>
               {[
                 { id: 'dev' as SubscriptionTier, name: '👑 Dev + Owner (God Mode)', desc: 'ปลดล็อกทุกโมเดล AI 100%, เหรียญไม่จำกัด, บายพาสลิมิต', color: '#ec4899' },
-                { id: 'whale' as SubscriptionTier, name: '💎 Whale Trader', desc: 'ระดับวาฬ ปลดล็อกโมเดล Claude 3.7 & GPT-4.5', color: '#06b6d4' },
+                { id: 'whale' as SubscriptionTier, name: '🐋 Whale Trader', desc: 'ระดับวาฬ ปลดล็อกโมเดล GPT-6 Astra, Claude Fable 5.1 & Claude Opus 5', color: '#06b6d4' },
                 { id: 'vip' as SubscriptionTier, name: '👑 VIP Trader', desc: 'ระดับ VIP ปลดล็อก o3-mini, Gemini 2.0 Pro', color: '#a855f7' },
                 { id: 'pro' as SubscriptionTier, name: '⚡ Pro Investor', desc: 'ระดับโปร ปลดล็อก Gemini Flash, DeepSeek V3', color: 'var(--accent-blue)' },
                 { id: 'free' as SubscriptionTier, name: '🛡️ Free Member', desc: 'ระดับสายฟรี (จำกัดโมเดลและโควตาใช้งาน)', color: 'var(--accent-bullish)' },

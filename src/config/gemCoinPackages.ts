@@ -183,12 +183,12 @@ export const GEMCOIN_SUBSCRIPTION_TIERS: GemCoinSubscriptionTierInfo[] = [
     dailyGemCoins: 150000,
     permanentTopupBonus: 500000,
     unlockedModels: [
-      { id: 'x-ai/grok-3', name: 'xAI Grok 3', tag: 'Institutional Super' },
-      { id: 'anthropic/claude-3.5-opus', name: 'Claude 3.5 Opus', tag: 'Top Frontier' },
-      { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1', tag: 'Quantitative Alpha' },
-      { id: 'google/gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', tag: 'Institutional Reasoning' },
+      { id: 'openai/gpt-6-astra', name: 'GPT-6 Astra', tag: 'OpenAI Elite' },
+      { id: 'anthropic/claude-fable-5.1', name: 'Claude Fable 5.1', tag: 'Narrative Master' },
+      { id: 'anthropic/claude-opus-5', name: 'Claude Opus 5', tag: 'Top Frontier' },
+      { id: 'x-ai/grok-4.6', name: 'Grok 4.6', tag: 'Institutional Real-time' },
     ],
-    highlight: 'แถม 500,000 GemCoins ถาวร + 150,000 ต่อวัน + Institutional Full Access ทุกโมเดลในโลก',
+    highlight: 'แถม 500,000 GemCoins ถาวร + 150,000 ต่อวัน + Luxury Institutional Full Access ปลดล็อก GPT-6 & Claude Fable/Opus 5',
   },
   {
     tier: 'dev',

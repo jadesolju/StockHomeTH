@@ -529,6 +529,7 @@ export default function PaymentsClient() {
                 const isDisabled = loadingId !== null;
                 const isPro = tier.tier === 'pro';
                 const isVip = tier.tier === 'vip';
+                const isWhale = tier.tier === 'whale';
 
                 const price = billingCycle === 'yearly' ? tier.promoPriceYearly : tier.promoPriceMonthly;
                 const regularPrice = billingCycle === 'yearly' ? tier.regularPriceYearly : tier.regularPriceMonthly;
@@ -537,13 +538,18 @@ export default function PaymentsClient() {
                 return (
                   <div
                     key={tier.tier}
-                    className={`payment-card ${isPro ? 'payment-card-popular' : isVip ? 'payment-card-best' : ''}`}
+                    className={`payment-card ${isWhale ? 'payment-card-whale' : isPro ? 'payment-card-popular' : isVip ? 'payment-card-best' : ''}`}
                   >
+                    {isWhale && <div className="payment-tag payment-tag-whale">👑 วาฬสถาบัน (Whale Luxury)</div>}
                     {isPro && <div className="payment-tag">แนะนำสำหรับนักลงทุน</div>}
 
                     <div>
                       <div className="payment-icon-box">
-                        <Crown size={22} color={isVip ? '#a855f7' : isPro ? '#007aff' : '#06b6d4'} />
+                        {isWhale ? (
+                          <WhaleSvg className="w-6 h-6" />
+                        ) : (
+                          <Crown size={22} color={isVip ? '#a855f7' : isPro ? '#007aff' : '#06b6d4'} />
+                        )}
                       </div>
 
                       <h3 className="payment-card-title">{tier.name}</h3>
@@ -577,7 +583,7 @@ export default function PaymentsClient() {
                       <button
                         onClick={() => handleCheckout(tier.tier, 'subscription')}
                         disabled={isDisabled}
-                        className={isPro ? 'payment-btn-checkout payment-btn-primary' : 'payment-btn-checkout payment-btn-dark'}
+                        className={isWhale ? 'payment-btn-checkout payment-btn-whale' : isPro ? 'payment-btn-checkout payment-btn-primary' : 'payment-btn-checkout payment-btn-dark'}
                       >
                         {isLoading ? <Loader2 size={16} className="spin-anim" /> : <ShieldCheck size={16} />}
                         <span>{isLoading ? 'กำลังเชื่อมต่อ...' : 'สมัครแพ็กเกจ'}</span>

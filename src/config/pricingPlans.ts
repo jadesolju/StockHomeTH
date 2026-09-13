@@ -156,15 +156,15 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     id: 'whale',
     name: 'Whale Fund',
-    tagline: 'แถม 500,000 GemCoins ถาวร + 150,000 ต่อวัน + Institutional Full Access',
-    badge: 'วาฬสถาบัน (2,499 บ.)',
+    tagline: 'แถม 500,000 GemCoins ถาวร + 150,000 ต่อวัน + Luxury Institutional Access',
+    badge: '🐋 วาฬสถาบัน VIP Ultra (2,499 บ.)',
     priceMonthly: 2499,
     priceYearly: 24990, // ~2,083 THB/mo
     currency: '฿',
     periodText: 'บาท / เดือน',
     color: '#06b6d4',
-    accentBg: 'rgba(6, 182, 212, 0.12)',
-    borderColor: 'rgba(6, 182, 212, 0.45)',
+    accentBg: 'rgba(6, 182, 212, 0.15)',
+    borderColor: 'rgba(6, 182, 212, 0.6)',
     limits: {
       watchlistLimit: 99999,
       aiOnDemandDailyLimit: 150000, // 150,000 GemCoins daily
@@ -176,7 +176,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     features: [
       { text: 'สิทธิประโยชน์สูงสุดระดับ Institutional Full Access', included: true, highlight: true },
       { text: 'เหรียญรายวัน: 150,000 Coins/วัน + โบนัสถาวร +500,000 Coins', included: true, highlight: true, badge: '150,000 Coins/วัน' },
-      { text: 'ปลดล็อก AI ทุกตระกูลในโลก: Grok 3, Gemini Ultra, Sonnet, Opus', included: true, highlight: true },
+      { text: 'ปลดล็อก AI ระดับสูงสุดของโลก: GPT-6 Astra, Claude Fable 5.1, Claude Opus 5, Grok 4.6', included: true, highlight: true, badge: 'Ultra Flagships' },
       { text: 'Bypass Queue: ทะลุคิวทันที 0ms ประมวลผลเป็นลำดับแรกเสมอ', included: true, highlight: true },
       { text: 'แนบเอกสารงบการเงินไม่จำกัดขนาด (Unlimited 56-1 One Report)', included: true, highlight: true },
       { text: 'Infinite Memory: จำประวัติการสนทนายาวไม่จำกัดรอบ สรุปฟรี 0 บาท', included: true },
