@@ -1,99 +1,116 @@
 ---
 name: sustainable-tailwind-theme
-description: Central design system rules and CSS-to-Tailwind semantic token mappings based on StockHomeTH Apple iOS glass design system (glass-ios.css). Use when creating or modifying UI components, styling, or theme configurations.
+description: Central design system rules, automated event triggers, and strict CSS-to-Tailwind semantic token mappings based on StockHomeTH Apple iOS glass design system (glass-ios.css).
 ---
 
-# ⚡ SKILL.MD (CORE) - Project Context & Rules
+# SKILL.MD - Project Context, Rules, and Design System Mapping
 
-## 🤖 1. AI Persona & Scope
-- **Role:** Expert Frontend Engineer & UI/UX Architect.
-- **Tone:** Professional, direct, action-oriented peer.
-- **Constraint:** All UI components must adhere strictly to Apple iOS minimalist standards and design layout tokens.
-
-## 🛠️ 2. Tech Stack Tokens & Environment
-- **Framework:** Next.js / React (Tailwind CSS).
-- **Theme Strategy:** Dual-theme using `[data-theme='dark']` (default) and `[data-theme='light']`.
-- **Primary Source:** `src/styles/glass-ios.css` (Contains all strict design tokens).
-
-## 🚨 3. Immutable Execution Rules (กฎเหล็ก)
-1. **[CRITICAL] CSS-to-Tailwind Mapping:** Every time a style, spacing, color, or component is mentioned or modified, the AI **must validate and map** the custom CSS token from `glass-ios.css` to the exact Tailwind / CSS variable equivalent.
-2. **Contrast Alert:** Light mode must maintain WCAG AAA crisp typography (`--text-primary: #000000`, `--text-secondary: #1f2937`).
-3. **No Arbitrary Hardcoding:** Do NOT output arbitrary hardcoded classes like `bg-[#0c0c0e]`, `text-black dark:text-white`, or `bg-white dark:bg-black`. Always refer back to semantic variable tokens (e.g., `glass-card`, `bg-[var(--bg-color)]`, `text-[var(--text-primary)]`).
-4. **[EVENT TRIGGER] CSS/TS/TSX Detection:** Whenever writing or modifying `.css`, `.ts`, or `.tsx` files, the system **must automatically execute** a comprehensive Tailwind Mapping & Style consistency check against `src/styles/glass-ios.css`.
-5. **Strict Code Cleanliness:** Flag any arbitrary classes found in `.tsx` files and replace them with corresponding system tokens instead.
+[SYSTEM DEFINITION]
+This file serves as the single source of truth for AI context, coding standards, and strict system architecture rules. It enforces styling continuity and prevents technical drift across CSS, TS, and TSX files.
 
 ---
 
-## 🎨 4. StockHomeTH Semantic Design Tokens Mapping Table
+## 1. AI Persona and Execution Scope
 
-| Category | CSS Variable Token | Dark Mode (Default) | Light Mode (WCAG AAA) | Tailwind / CSS Class | Usage |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Main Background** | `--bg-color` / `--bg-primary` | `#000000` | `#f2f2f7` | `bg-[var(--bg-color)]` | Full page container background |
-| **Secondary Background** | `--bg-secondary` | `#0c0c0e` | `#ffffff` | `bg-[var(--bg-secondary)]` | Sidebar, panel, nested section |
-| **Glass Surface** | `--glass-bg` | `rgba(28, 28, 30, 0.72)` | `#ffffff` | `glass-card` / `bg-[var(--glass-bg)]` | Main content card, modal surface |
-| **Sub Card Surface** | `--card-sub-bg` | `rgba(255, 255, 255, 0.04)` | `#ffffff` | `bg-[var(--card-sub-bg)]` | Nested mini-card, metric box |
-| **Primary Text** | `--text-primary` | `#ffffff` | `#000000` | `text-[var(--text-primary)]` | Headings, stock tickers, price |
-| **Secondary Text** | `--text-secondary` | `#b0b0b6` | `#1f2937` | `text-[var(--text-secondary)]` | Subtitles, summaries, metadata |
-| **Tertiary Text** | `--text-tertiary` | `#8e8e93` | `#4b5563` | `text-[var(--text-tertiary)]` | Timestamps, captions, disclaimers |
-| **Glass Border** | `--glass-border` | `rgba(255, 255, 255, 0.09)` | `rgba(0, 0, 0, 0.09)` | `border-[var(--glass-border)]` | Card borders, modal outlines |
-| **Subtle Border** | `--glass-border-subtle` | `rgba(255, 255, 255, 0.05)` | `rgba(0, 0, 0, 0.05)` | `border-[var(--glass-border-subtle)]` | Dividers, separators |
-| **Brand Accent (Blue)** | `--accent-blue` | `#0a84ff` | `#007aff` | `text-[var(--accent-blue)]` / `bg-[var(--accent-blue)]` | Primary action buttons, links |
-| **Brand Accent BG** | `--accent-blue-bg` | `rgba(10, 132, 255, 0.14)` | `rgba(0, 122, 255, 0.10)` | `bg-[var(--accent-blue-bg)]` | Category badges, highlights |
-| **Bullish (Green)** | `--accent-bullish` | `#30d158` | `#15803d` | `text-[var(--accent-bullish)]` | Positive price change, buy signal |
-| **Bullish BG** | `--accent-bullish-bg` | `rgba(48, 209, 88, 0.12)` | `rgba(21, 128, 61, 0.10)` | `bg-[var(--accent-bullish-bg)]` | Gain badges, positive alerts |
-| **Bearish (Red)** | `--accent-bearish` | `#ff453a` | `#dc2626` | `text-[var(--accent-bearish)]` | Negative price change, sell alert |
-| **Bearish BG** | `--accent-bearish-bg` | `rgba(255, 69, 58, 0.12)` | `rgba(220, 38, 38, 0.10)` | `bg-[var(--accent-bearish-bg)]` | Loss badges, risk warnings |
-| **Neutral / Amber** | `--accent-neutral` | `#ff9f0a` | `#d97706` | `text-[var(--accent-neutral)]` | GemCoins, vouchers, notifications |
-| **Input Background** | `--input-bg` | `rgba(255, 255, 255, 0.06)` | `#ffffff` | `bg-[var(--input-bg)]` | Form inputs, textareas, selects |
-| **Input Border** | `--input-border` | `rgba(255, 255, 255, 0.14)` | `rgba(0, 0, 0, 0.16)` | `border-[var(--input-border)]` | Form control borders |
+- [ROLE] Expert Frontend Engineer and UI/UX Architect specializing in Apple iOS design language.
+- [TONE] Professional, direct, technical, and objective peer. No fluff, no emoji usage, and pure technical accuracy.
+- [CONTEXT PREFERENCE] Prioritize design system tokens over generic Tailwind structures.
 
 ---
 
-## 💎 5. Golden Examples (Bulletproof Components)
+## 2. Automated Event Triggers (Event-Driven Rules)
 
-### Component: Stock Metric Card
-```tsx
-export function StockMetricCard({ ticker, name, price, changePercent, signal }: {
-  ticker: string;
-  name: string;
-  price: number;
-  changePercent: number;
-  signal: 'BUY' | 'SELL';
-}) {
-  const isBullish = changePercent >= 0;
+The system operates on an automated trigger mechanism based on file extensions. Whenever the user inputs code or queries related to these formats, execute the following protocols:
 
-  return (
-    <div className="glass-card p-5 rounded-[var(--ios-radius)] border border-[var(--glass-border)] transition-all hover:border-[var(--accent-blue-border)]">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-[var(--text-primary)] text-lg font-bold tracking-tight">{ticker}</h3>
-          <p className="text-[var(--text-secondary)] text-xs">{name}</p>
-        </div>
-        
-        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${
-          signal === 'BUY'
-            ? 'bg-[var(--accent-bullish-bg)] text-[var(--accent-bullish)] border border-[var(--accent-bullish-border)]'
-            : 'bg-[var(--accent-bearish-bg)] text-[var(--accent-bearish)] border border-[var(--accent-bearish-border)]'
-        }`}>
-          {signal === 'BUY' ? '🟢 สัญญาณบวก' : '🔴 ระวังแรงขาย'}
-        </span>
-      </div>
+- [.CSS TRIGGER]
+  - Scan for raw color hex codes, absolute pixel values, or unmapped animations.
+  - Cross-reference styles with the token map of `src/styles/glass-ios.css`.
+  - Enforce compliance by outputting exact CSS-to-Tailwind utility translations.
 
-      <div className="mt-4 flex items-baseline justify-between border-t border-[var(--glass-border-subtle)] pt-3">
-        <span className="text-[var(--text-primary)] text-2xl font-black">{price.toFixed(2)} ฿</span>
-        <span className={`text-sm font-bold ${isBullish ? 'text-[var(--accent-bullish)]' : 'text-[var(--accent-bearish)]'}`}>
-          {isBullish ? `+${changePercent.toFixed(2)}%` : `${changePercent.toFixed(2)}%`}
-        </span>
-      </div>
-    </div>
-  );
+- [.TS / .TSX TRIGGER]
+  - Intercept and audit inline styles or arbitrary Tailwind classes (e.g., `bg-[#0c0c0e]`).
+  - Enforce component property definitions (Variants) to match specified theme attributes.
+  - Require the use of `tailwind-merge` or `clsx` for any conditional class merging to avoid collision bugs.
+
+---
+
+## 3. Tailwind Configuration Map (tailwind.config.js)
+
+Inject these exact design tokens inside the configuration file to bridge CSS Variables with utility selectors:
+
+```js
+module.exports = {
+  theme: {
+    extend: {
+      fontFamily: {
+        apple: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', '"Prompt"', '"Inter"', 'sans-serif'],
+      },
+      colors: {
+        apple: {
+          bg: 'var(--bg-color)',
+          primary: 'var(--bg-primary)',
+          secondary: 'var(--bg-secondary)',
+          tertiary: 'var(--bg-tertiary)',
+          glass: 'var(--glass-bg)',
+          'glass-hover': 'var(--glass-bg-hover)',
+          'glass-active': 'var(--glass-bg-active)',
+          'card-sub': 'var(--card-sub-bg)',
+          input: 'var(--input-bg)',
+          'footer-bg': 'var(--footer-bg)',
+        },
+        accent: {
+          blue: { DEFAULT: 'var(--accent-blue)', hover: 'var(--accent-blue-hover)', bg: 'var(--accent-blue-bg)', border: 'var(--accent-blue-border)', glow: 'var(--accent-blue-glow)' },
+          bullish: { DEFAULT: 'var(--accent-bullish)', bg: 'var(--accent-bullish-bg)', border: 'var(--accent-bullish-border)' },
+          bearish: { DEFAULT: 'var(--accent-bearish)', bg: 'var(--accent-bearish-bg)', border: 'var(--accent-bearish-border)' },
+          neutral: { DEFAULT: 'var(--accent-neutral)', bg: 'var(--accent-neutral-bg)', border: 'var(--accent-neutral-border)' },
+        },
+        text: {
+          apple: { primary: 'var(--text-primary)', secondary: 'var(--text-secondary)', tertiary: 'var(--text-tertiary)', inverse: 'var(--text-inverse)', input: 'var(--input-text)' }
+        }
+      },
+      borderColor: {
+        apple: { glass: 'var(--glass-border)', 'glass-subtle': 'var(--glass-border-subtle)', 'glass-active': 'var(--glass-border-active)', 'card-sub': 'var(--card-sub-border)', card: 'var(--card-border)', input: 'var(--input-border)', 'footer-border': 'var(--footer-border)', 'footer-divider': 'var(--footer-divider)' }
+      },
+      borderRadius: { ios: 'var(--ios-radius)', 'ios-sm': 'var(--ios-radius-sm)', 'ios-lg': 'var(--ios-radius-lg)' },
+      boxShadow: { glass: 'var(--glass-shadow)' }
+    },
+  },
 }
 ```
 
 ---
 
-## 🚫 6. Forbidden Anti-Patterns
-1. ❌ `className="bg-white dark:bg-black"` (Never use dark: modifier)
-2. ❌ `className="text-black dark:text-white"` (Use `text-[var(--text-primary)]`)
-3. ❌ Hardcoded Hex values in JSX like `style={{ color: '#fef08a' }}` or `className="bg-[#121212]"`
-4. ❌ Arbitrary Tailwind colors like `text-gray-400` or `bg-slate-800` that break in Light Mode
+## 4. Strict CSS-to-Tailwind Mapping Table
+
+| UI Element | CSS Native Target | Tailwind Utility Equivalent |
+| :--- | :--- | :--- |
+| Body Base | `body { font-family: var(--font-family); ... }` | `font-apple bg-apple text-text-apple-primary min-h-screen overflow-x-hidden relative antialiased` |
+| Glass Card | `.glass-card` | `bg-apple-glass backdrop-blur-[24px] saturate-[180%] border border-apple-glass rounded-ios shadow-glass transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] relative overflow-hidden` |
+| Card Hover | `.glass-card:hover` | `hover:bg-apple-glass-hover hover:border-white/16 data-[theme=light]:hover:border-black/15` |
+| Segmented Control | `.ios-segmented-control` | `inline-flex bg-white/6 data-[theme=light]:bg-black/5 p-[3px] rounded-[12px] border border-apple-glass-subtle data-[theme=light]:border-black/6 backdrop-blur-[24px] relative` |
+| Segment Button | `.ios-segment-btn` | `px-4 py-[7px] rounded-[9px] border-none bg-transparent text-text-apple-secondary font-apple text-[0.85rem] font-semibold cursor-pointer transition-all duration-180 ease flex items-center gap-[6px] z-10 hover:text-text-apple-primary` |
+| Active Segment | `.ios-segment-btn.active` | `!text-white bg-[#2c2c2e] shadow-[0_1px_4px_rgba(0,0,0,0.3)] font-bold data-[theme=light]:!text-black data-[theme=light]:bg-white data-[theme=light]:shadow-[0_1px_4px_rgba(0,0,0,0.1)]` |
+| Solid Dropdown | `.solid-dropdown` | `bg-apple-secondary border border-apple-card shadow-[0_16px_40px_rgba(0,0,0,0.4)] data-[theme=light]:bg-white data-[theme=light]:border-black/10 data-[theme=light]:shadow-[0_16px_40px_rgba(0,0,0,0.1)]` |
+| Bullish Badge | `.badge-bullish` | `inline-flex items-center gap-1.25 px-2.25 py-0.75 rounded-md text-[0.75rem] font-semibold bg-accent-bullish-bg text-accent-bullish border border-accent-bullish-border` |
+| Bearish Badge | `.badge-bearish` | `inline-flex items-center gap-1.25 px-2.25 py-0.75 rounded-md text-[0.75rem] font-semibold bg-accent-bearish-bg text-accent-bearish border border-accent-bearish-border` |
+| Neutral Badge | `.badge-neutral` | `inline-flex items-center gap-1.25 px-2.25 py-0.75 rounded-md text-[0.75rem] font-semibold bg-accent-neutral-bg text-accent-neutral border border-accent-neutral-border` |
+| Ticker Pill | `.ticker-pill` | `px-2 py-0.75 rounded-md bg-apple-card-sub border border-apple-card-sub font-apple text-[0.75rem] font-semibold text-text-apple-primary inline-flex items-center` |
+| Takeaway List | `.takeaway-list` | `flex flex-col gap-2 mt-2.5` |
+| Takeaway Item | `.takeaway-item` | `flex items-start gap-2.5 text-[0.875rem] text-text-apple-primary leading-normal` |
+| Takeaway Bullet | `.takeaway-bullet` | `w-1.25 h-1.25 rounded-full bg-accent-blue mt-[7px] shrink-0` |
+| Sheet Overlay | `.ios-sheet-overlay` | `fixed inset-0 bg-black/72 backdrop-blur-md z-[99999] flex items-center justify-center animate-[fadeIn_0.2s_ease]` |
+
+---
+
+## 5. Critical Architecture Guardrails
+
+- [THEME COMPLIANCE]
+  - Do NOT hardcode colors using hex keys inside components. Always map via semantic variant tokens to guarantee light and dark mode reliability (`data-[theme='light']`).
+  - Light mode typography must strictly retain high-contrast values (`--text-primary: #000000`) for WCAG AAA adherence.
+
+- [LAYOUT INTEGRITY]
+  - Mobile layouts must leverage `--safe-area-top` and `--safe-area-bottom` via custom padding utilities to circumvent notch and home indicator masking on iOS devices.
+  - Interactive elements must inject `-webkit-tap-highlight-color: transparent` to override generic mobile browser behaviors.
+
+- [STATE HIERARCHY]
+  - Interactive states must strictly declare classes sequentially: Base state -> Hover state (`hover:`) -> Active state (`active:`) -> Focus state (`focus:`).
