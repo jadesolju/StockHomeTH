@@ -30,7 +30,7 @@ import { X, CreditCard, Sparkles, AlertCircle, Loader2, ArrowRight, FileText, Ex
 import Link from 'next/link';
 
 export const GemCoinModal: React.FC = () => {
-  const { user } = useClientAuth();
+  const { user, openAuthModal } = useClientAuth();
   const {
     isGemCoinModalOpen,
     gemCoinModalInitialTab,
@@ -106,6 +106,20 @@ export const GemCoinModal: React.FC = () => {
 
   const handleCheckout = async (packageOrTierId: string, mode: 'payment' | 'subscription') => {
     if (loadingPkgId) return;
+
+    if (!user) {
+      try {
+        sessionStorage.setItem(
+          'pending_checkout_package',
+          JSON.stringify({ packageId: packageOrTierId, mode })
+        );
+      } catch {}
+      setCheckoutError('กรุณาเข้าสู่ระบบหรือสมัครสมาชิกก่อนทำการเติมเงิน เพื่อให้ GemCoins ผูกกับบัญชีของคุณอย่างปลอดภัยถาวร');
+      closeGemCoinModal();
+      openAuthModal('login');
+      return;
+    }
+
     setLoadingPkgId(packageOrTierId);
     setCheckoutError(null);
 
@@ -217,6 +231,27 @@ export const GemCoinModal: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Guest Guard Reassurance Banner */}
+        {!user && (
+          <div className="px-4 sm:px-6 py-3 bg-gradient-to-r from-amber-950/50 via-slate-900 to-cyan-950/50 border-b border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2 text-xs text-amber-200">
+              <AlertCircle size={18} className="text-amber-400 shrink-0" />
+              <span>
+                💡 <strong>โหมด Guest:</strong> เข้าสู่ระบบก่อนชำระเงินเพื่อให้ GemCoins ผูกกับบัญชีของคุณถาวร ปลอดภัย ไม่หายเมื่อเปลี่ยนเครื่อง
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                closeGemCoinModal();
+                openAuthModal('login');
+              }}
+              className="px-3 py-1 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-bold shrink-0 transition-all shadow-sm"
+            >
+              เข้าสู่ระบบก่อนเติมเงิน
+            </button>
+          </div>
+        )}
 
         {/* 1-Month Launch Promo Alert Banner */}
         <div className="px-4 sm:px-6 py-2 bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-purple-500/15 border-b border-amber-500/20 flex items-center justify-between text-[11px] sm:text-xs text-amber-200">
