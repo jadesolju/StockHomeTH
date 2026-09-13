@@ -66,6 +66,9 @@ const COMPACT_SYSTEM_PROMPT = `คุณคือ "Core Gatekeeper & Analytical 
    - หากชื่อสินทรัพย์มีในหลายตลาด (เช่น Apple บน NASDAQ vs Apple DRx บน SET) ห้ามเดาเอง ให้ชี้แจงความแตกต่างและสอบถามให้แน่ใจ
 3. เมื่อข้อมูลทุกมิติเคลียร์และสมบูรณ์แล้ว จึงนำข้อมูลตลาดจริงมาวิเคราะห์และสรุปผลเชิงลึก
 
+[CONTINUOUS CONVERSATION & CONTEXT RETENTION]
+- ในการสนทนาแบบต่อเนื่องในห้องแชทเดิม (Multi-turn conversation): ให้รักษาบริบทเรื่องเดิมที่ผู้ใช้กำลังวิเคราะห์อยู่อย่างต่อเนื่องเสมอ เช่น หากเดิมคุยเรื่องพอร์ตการลงทุน สินทรัพย์ทางเลือก (Bitcoin, ทองคำ) แล้วถามต่อ ให้เชื่อมโยงและต่อยอดบริบทเดิมทันที ห้ามทึกทักว่าผู้ใช้เปลี่ยนเรื่องกะทันหัน หรือถามหาการยืนยันตัวเลือกซ้ำซ้อน เว้นแต่ผู้ใช้จะพิมพ์คำสั่งเริ่มต้นเรื่องใหม่ชัดเจน เช่น /new, /next, หรือ /clear
+
 [กฎเกณฑ์การสื่อสารทางวิทยาศาสตร์และวิศวกรรมการเงิน (Sci-Com & Eng-Com Principles)]:
 1. ความโปร่งใสของข้อมูล: ระบุแหล่งที่มา วันที่ และเวลาของข้อมูลอย่างชัดเจนเสมอ
 2. การระบุหน่วยอย่างชัดแจ้ง (Explicit Denomination): ห้ามแสดงตัวเลขลอยๆ ให้กำกับหน่วยเสมอ เช่น บาทต่อบาททองคำ, ดอลลาร์สหรัฐ/ทรอยออนซ์, บาท, USD
@@ -370,18 +373,21 @@ export async function POST(req: NextRequest) {
     const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
 
     // 1.1 Universal Asset Ambiguity Gatekeeper (Zero-Assumption Policy)
-    // Enforces 3-Pillar Validation (Asset Identity, Trading Venue/Exchange, Denomination Currency)
-    const ambiguityResult = resolveAssetAmbiguity(lastUserMsg);
-    if (ambiguityResult.status === 'NEED_CLARIFICATION') {
-      return NextResponse.json({
-        success: true,
-        status: 'NEED_CLARIFICATION',
-        needClarification: true,
-        message: ambiguityResult.payload.prompt_text,
-        payload: ambiguityResult.payload,
-        gemCoinsUsed: 0,
-        timestamp: new Date().toISOString(),
-      });
+    // Enforces 3-Pillar Validation for initial standalone prompts.
+    // Bypassed during multi-turn chat sessions (messages.length > 1) to maintain continuous context.
+    if (messages.length <= 1) {
+      const ambiguityResult = resolveAssetAmbiguity(lastUserMsg);
+      if (ambiguityResult.status === 'NEED_CLARIFICATION') {
+        return NextResponse.json({
+          success: true,
+          status: 'NEED_CLARIFICATION',
+          needClarification: true,
+          message: ambiguityResult.payload.prompt_text,
+          payload: ambiguityResult.payload,
+          gemCoinsUsed: 0,
+          timestamp: new Date().toISOString(),
+        });
+      }
     }
 
     const candidateTickers = extractCandidateTickers(lastUserMsg);

@@ -343,6 +343,52 @@ export const AiHelperChatClient: React.FC = () => {
       const text = (textToSend !== undefined ? textToSend : inputMessage).trim();
       if (!text || isLoading) return;
 
+      // Handle Slash Commands (/new, /next, /clear, /help, /stock, /news, /port, /pe, /macro, /gold, /btc)
+      const lowerCmd = text.toLowerCase();
+      if (lowerCmd === '/new' || lowerCmd === '/next') {
+        setInputMessage('');
+        handleNewChat();
+        return;
+      }
+      if (lowerCmd === '/clear') {
+        setInputMessage('');
+        clearCurrentChat();
+        return;
+      }
+
+      if (lowerCmd === '/help' || lowerCmd === '/cmd') {
+        setInputMessage('');
+        const helpMsg: ChatMessage = {
+          id: 'msg_help_' + Date.now(),
+          role: 'assistant',
+          content: `### 🛠️ รายการคำสั่งลัด (Slash Commands) สำหรับ StockHome AI Agent\n\n| คำสั่ง | ตัวอย่างการใช้งาน | คำอธิบาย |\n| :--- | :--- | :--- |\n| \`/new\` หรือ \`/next\` | \`/new\` | เริ่มต้นการสนทนาห้องใหม่ทันที |\n| \`/clear\` | \`/clear\` | ล้างข้อความทั้งหมดในห้องสนทนาปัจจุบัน |\n| \`/stock <ชื่อหุ้น>\` | \`/stock PTT\` | วิเคราะห์ปัจจัยพื้นฐาน งบการเงิน และแนวโน้มหุ้น |\n| \`/news <ชื่อหุ้น/ตลาด>\` | \`/news AOT\` | สรุปข่าวล่าสุดและปัจจัยกระทบราคา |\n| \`/port <รายละเอียดพอร์ต>\` | \`/port PTT 30% AOT 70%\` | วิเคราะห์โครงสร้างพอร์ต กระจายความเสี่ยง และคำแนะนำ |\n| \`/pe <ชื่อหุ้น>\` | \`/pe BDMS\` | คำนวณ P/E Ratio, P/BV และ Dividend Yield เทียบอุตสาหกรรม |\n| \`/macro\` | \`/macro\` | สรุปภาพรวมเศรษฐกิจมหาภาค ดอกเบี้ย และทิศทางตลาด SET |\n| \`/gold\` | \`/gold\` | วิเคราะห์แนวโน้มราคาทองคำแท่งและ Gold Spot |\n| \`/btc\` | \`/btc\` | วิเคราะห์แนวโน้มราคา Bitcoin และตลาดคริปโทฯ |\n| \`/help\` หรือ \`/cmd\` | \`/help\` | แสดงคู่มือคำสั่งลัดทั้งหมด |`,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, helpMsg]);
+        return;
+      }
+
+      let processedText = text;
+      if (lowerCmd.startsWith('/stock ')) {
+        const arg = text.slice(7).trim();
+        processedText = `ช่วยวิเคราะห์หุ้น ${arg} อย่างละเอียด ทั้งปัจจัยพื้นฐาน งบการเงินล่าสุด P/E Ratio Valuation และแนวโน้มราคา`;
+      } else if (lowerCmd.startsWith('/news ')) {
+        const arg = text.slice(6).trim();
+        processedText = `สรุปข่าวสารล่าสุดและปัจจัยสำคัญที่มีผลกระทบต่อ ${arg} ในขณะนี้`;
+      } else if (lowerCmd.startsWith('/port ')) {
+        const arg = text.slice(6).trim();
+        processedText = `วิเคราะห์โครงสร้างและการจัดพอร์ตการลงทุนตามสัดส่วนนี้: ${arg} พร้อมประเมินความเสี่ยง การกระจายตัว และข้อแนะนำในการปรับพอร์ต`;
+      } else if (lowerCmd.startsWith('/pe ')) {
+        const arg = text.slice(4).trim();
+        processedText = `คำนวณและประเมิน Valuation P/E Ratio, P/BV และอัตราเงินปันผล (Dividend Yield) ของหุ้น ${arg} เทียบกับค่าเฉลี่ยกลุ่มอุตสาหกรรม`;
+      } else if (lowerCmd === '/macro') {
+        processedText = `สรุปภาพรวมเศรษฐกิจมหาภาค อัตราดอกเบี้ย นโยบายการเงิน และทิศทางตลาดหุ้นไทย (SET Index) ในปัจจุบัน`;
+      } else if (lowerCmd === '/gold') {
+        processedText = `วิเคราะห์แนวโน้มราคาทองคำ ทั้งทองคำแท่งสมาคมฯ (THB) และ Gold Spot (USD) พร้อมปัจจัยกดดันและปัจจัยสนับสนุน`;
+      } else if (lowerCmd === '/btc') {
+        processedText = `วิเคราะห์แนวโน้มราคา Bitcoin (BTC) และภาพรวมตลาดคริปโทเคอร์เรนซี พร้อมปัจจัยสำคัญที่ต้องติดตาม`;
+      }
+
       const visionCost = attachedImages.length * 25;
       const estCoins = getModelGemCoinsEst(selectedModel) + visionCost;
 
@@ -354,7 +400,7 @@ export const AiHelperChatClient: React.FC = () => {
       const userMsg: ChatMessage = {
         id: 'msg_' + Date.now(),
         role: 'user',
-        content: text,
+        content: processedText,
         timestamp: new Date().toISOString(),
       };
 
@@ -618,10 +664,7 @@ export const AiHelperChatClient: React.FC = () => {
   }, [isLoading, handleSend]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    // Enter key creates newline only; sending requires clicking the Send button.
   };
 
   const copyToClipboard = (id: string, text: string) => {
@@ -1527,7 +1570,7 @@ export const AiHelperChatClient: React.FC = () => {
                       ? 'กำลังประมวลผลไฟล์แนบ...'
                       : attachedImages.length > 0
                       ? `แนบรูปภาพแล้ว ${attachedImages.length} รูป (+${attachedImages.length * 25} GemCoins) พิมพ์คำถาม...`
-                      : 'ถามเกี่ยวกับหุ้น ข่าวการเงิน หรือกลยุทธ์การลงทุน... (Enter ส่ง, Shift+Enter ขึ้นบรรทัด)'
+                      : 'ถามเกี่ยวกับหุ้น ข่าวการเงิน หรือกลยุทธ์การลงทุน... (Enter เพื่อขึ้นบรรทัดใหม่, กดปุ่มส่งเพื่อส่งข้อความ)'
                   }
                   rows={1}
                 />
