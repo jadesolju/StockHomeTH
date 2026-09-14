@@ -12,7 +12,8 @@
     ],
     "description": "รหัสสำหรับผู้พัฒนาและทดสอบระบบ (+5,000 GemCoins)",
     "isActive": true,
-    "createdAt": "2026-09-14T11:19:19.401Z"
+    "createdAt": "2026-09-14T11:19:19.401Z",
+    "redemptions": []
   },
   {
     "code": "STOCKHOME-1000",
@@ -24,7 +25,8 @@
     "redeemedUsers": [],
     "description": "โค้ดต้อนรับสมาชิกใหม่ StockHomeTH (+1,000 GemCoins)",
     "isActive": true,
-    "createdAt": "2026-09-14T11:19:19.402Z"
+    "createdAt": "2026-09-14T11:19:19.402Z",
+    "redemptions": []
   },
   {
     "code": "EARLYBIRD-500",
@@ -36,7 +38,8 @@
     "redeemedUsers": [],
     "description": "โปรโมชั่นเปิดตัว 1 เดือนแรก (+500 GemCoins)",
     "isActive": true,
-    "createdAt": "2026-09-14T11:19:19.402Z"
+    "createdAt": "2026-09-14T11:19:19.402Z",
+    "redemptions": []
   },
   {
     "code": "VIP-WHALE-50000",
@@ -48,6 +51,7 @@
     "redeemedUsers": [],
     "description": "โค้ดพิเศษสำหรับนักลงทุนพอร์ตใหญ่ระดับ VIP (+50,000 GemCoins)",
     "isActive": true,
-    "createdAt": "2026-09-14T11:19:19.402Z"
+    "createdAt": "2026-09-14T11:19:19.402Z",
+    "redemptions": []
   }
 ]

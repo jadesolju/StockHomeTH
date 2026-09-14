@@ -2,6 +2,13 @@ import fs from 'fs';
 import path from 'path';
 
 // In-memory + persisted promo codes store for Dev/Admin
+export interface RedemptionRecord {
+  userId: string;
+  userEmail?: string;
+  redeemedAt: string;
+  gemCoins: number;
+}
+
 export interface PromoCode {
   code: string;
   gemCoins: number;
@@ -10,6 +17,7 @@ export interface PromoCode {
   redemptionsCount?: number; // Alias field for UI compatibility
   expiresAt: string | null; // ISO string or null for permanent
   redeemedUsers: string[]; // User IDs or fingerprints that have redeemed this
+  redemptions?: RedemptionRecord[]; // Detailed redemption history
   description: string;
   isActive: boolean;
   createdAt: string;
@@ -27,6 +35,7 @@ const initialPromoCodes: PromoCode[] = [
     redemptionsCount: 0,
     expiresAt: null,
     redeemedUsers: [],
+    redemptions: [],
     description: 'รหัสสำหรับผู้พัฒนาและทดสอบระบบ (+5,000 GemCoins)',
     isActive: true,
     createdAt: new Date().toISOString(),
@@ -39,6 +48,7 @@ const initialPromoCodes: PromoCode[] = [
     redemptionsCount: 0,
     expiresAt: null,
     redeemedUsers: [],
+    redemptions: [],
     description: 'โค้ดต้อนรับสมาชิกใหม่ StockHomeTH (+1,000 GemCoins)',
     isActive: true,
     createdAt: new Date().toISOString(),
@@ -51,6 +61,7 @@ const initialPromoCodes: PromoCode[] = [
     redemptionsCount: 0,
     expiresAt: null,
     redeemedUsers: [],
+    redemptions: [],
     description: 'โปรโมชั่นเปิดตัว 1 เดือนแรก (+500 GemCoins)',
     isActive: true,
     createdAt: new Date().toISOString(),
@@ -63,6 +74,7 @@ const initialPromoCodes: PromoCode[] = [
     redemptionsCount: 0,
     expiresAt: null,
     redeemedUsers: [],
+    redemptions: [],
     description: 'โค้ดพิเศษสำหรับนักลงทุนพอร์ตใหญ่ระดับ VIP (+50,000 GemCoins)',
     isActive: true,
     createdAt: new Date().toISOString(),
@@ -90,6 +102,7 @@ function loadPromoCodes(): PromoCode[] {
           currentRedemptions: p.currentRedemptions ?? p.redemptionsCount ?? p.redeemedUsers?.length ?? 0,
           redemptionsCount: p.currentRedemptions ?? p.redemptionsCount ?? p.redeemedUsers?.length ?? 0,
           redeemedUsers: Array.isArray(p.redeemedUsers) ? p.redeemedUsers : [],
+          redemptions: Array.isArray(p.redemptions) ? p.redemptions : [],
         }));
         global.__stockhome_promo_codes__ = loaded;
         return loaded;
@@ -125,7 +138,8 @@ export function findPromoCode(code: string): PromoCode | undefined {
 
 export function redeemCodeForUser(
   code: string,
-  userId: string
+  userId: string,
+  userEmail?: string
 ): { success: boolean; message: string; gemCoins?: number } {
   const store = getPromoCodesStore();
   const normalized = code.trim().toUpperCase();
@@ -150,14 +164,36 @@ export function redeemCodeForUser(
   }
 
   const cleanUserId = userId?.trim() || 'anonymous';
-  if (promo.redeemedUsers.includes(cleanUserId)) {
+  const cleanEmail = userEmail?.trim().toLowerCase() || '';
+
+  if (!promo.redemptions) {
+    promo.redemptions = [];
+  }
+
+  const alreadyRedeemedByUid = cleanUserId !== 'anonymous' && promo.redeemedUsers.includes(cleanUserId);
+  const alreadyRedeemedByEmail =
+    Boolean(cleanEmail) &&
+    promo.redemptions.some((r) => r.userEmail && r.userEmail.toLowerCase() === cleanEmail);
+
+  if (alreadyRedeemedByUid || alreadyRedeemedByEmail) {
     return { success: false, message: 'คุณเคยใช้สิทธิ์แลกรับรหัสโปรโมชั่นนี้ไปแล้ว' };
   }
 
   // Deduct/Mark redeemed
   promo.currentRedemptions = currentCount + 1;
   promo.redemptionsCount = promo.currentRedemptions;
-  promo.redeemedUsers.push(cleanUserId);
+  if (!promo.redeemedUsers.includes(cleanUserId)) {
+    promo.redeemedUsers.push(cleanUserId);
+  }
+
+  const record: RedemptionRecord = {
+    userId: cleanUserId,
+    userEmail: cleanEmail || undefined,
+    redeemedAt: new Date().toISOString(),
+    gemCoins: promo.gemCoins,
+  };
+
+  promo.redemptions.unshift(record);
 
   savePromoCodes(store);
 
@@ -184,6 +220,7 @@ export function createPromoCode(
     currentRedemptions: 0,
     redemptionsCount: 0,
     redeemedUsers: [],
+    redemptions: [],
     createdAt: new Date().toISOString(),
   };
 

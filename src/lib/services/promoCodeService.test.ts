@@ -53,7 +53,7 @@ describe('PromoCodeService & Redemption Counting', () => {
     });
     expect(createRes.success).toBe(true);
 
-    const user1Res = redeemCodeForUser(code, 'user_1');
+    const user1Res = redeemCodeForUser(code, 'user_1', 'user1@example.com');
     expect(user1Res.success).toBe(true);
     expect(user1Res.gemCoins).toBe(100);
 
@@ -61,14 +61,22 @@ describe('PromoCodeService & Redemption Counting', () => {
     expect(found?.currentRedemptions).toBe(1);
     expect(found?.redemptionsCount).toBe(1);
     expect(found?.redeemedUsers).toContain('user_1');
+    expect(found?.redemptions).toHaveLength(1);
+    expect(found?.redemptions?.[0].userEmail).toBe('user1@example.com');
+    expect(found?.redemptions?.[0].userId).toBe('user_1');
 
-    // Duplicate redemption by same user should be blocked
-    const duplicateRes = redeemCodeForUser(code, 'user_1');
-    expect(duplicateRes.success).toBe(false);
-    expect(duplicateRes.message).toContain('เคยใช้สิทธิ์');
+    // Duplicate redemption by same UID should be blocked
+    const duplicateUidRes = redeemCodeForUser(code, 'user_1', 'other_email@example.com');
+    expect(duplicateUidRes.success).toBe(false);
+    expect(duplicateUidRes.message).toContain('เคยใช้สิทธิ์');
+
+    // Duplicate redemption by same Email (with different UID) should also be blocked
+    const duplicateEmailRes = redeemCodeForUser(code, 'different_uid', 'user1@example.com');
+    expect(duplicateEmailRes.success).toBe(false);
+    expect(duplicateEmailRes.message).toContain('เคยใช้สิทธิ์');
 
     // Second unique user should succeed
-    const user2Res = redeemCodeForUser(code, 'user_2');
+    const user2Res = redeemCodeForUser(code, 'user_2', 'user2@example.com');
     expect(user2Res.success).toBe(true);
 
     const found2 = findPromoCode(code);

@@ -155,6 +155,7 @@ export const AdminBackofficeClient: React.FC = () => {
   const [promoSubmitting, setPromoSubmitting] = useState<boolean>(false);
   const [promoFeedback, setPromoFeedback] = useState<{ success: boolean; message: string } | null>(null);
   const [copiedCodeStr, setCopiedCodeStr] = useState<string | null>(null);
+  const [expandedPromoCode, setExpandedPromoCode] = useState<string | null>(null);
 
   const fetchAirdrops = async () => {
     try {
@@ -1228,52 +1229,136 @@ export const AdminBackofficeClient: React.FC = () => {
                         </tr>
                       ) : (
                         promoCodesList.map((item) => (
-                          <tr key={item.code} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                            <td style={{ padding: '8px 10px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#c084fc', fontSize: '12px' }}>
-                                  {item.code}
-                                </span>
-                                <button
-                                  type="button"
-                                  title="คัดลอกโค้ด"
-                                  onClick={() => handleCopyCode(item.code)}
-                                  style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    color: copiedCodeStr === item.code ? '#34d399' : 'var(--text-tertiary)',
-                                    padding: '2px',
-                                  }}
-                                >
-                                  {copiedCodeStr === item.code ? <Check size={13} /> : <Copy size={13} />}
-                                </button>
-                              </div>
-                            </td>
-                            <td style={{ padding: '8px 10px', color: '#f59e0b', fontWeight: 700 }}>
-                              💎 {item.gemCoins.toLocaleString()}
-                            </td>
-                            <td style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>
-                              {(item.currentRedemptions ?? item.redemptionsCount ?? item.redeemedUsers?.length ?? 0)} / {item.maxRedemptions}
-                            </td>
-                            <td style={{ padding: '8px 10px', textAlign: 'right' }}>
-                              <button
-                                type="button"
-                                title="ลบโค้ดนี้"
-                                onClick={() => handleDeletePromoCode(item.code)}
-                                style={{
-                                  background: 'rgba(239, 68, 68, 0.1)',
-                                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                                  borderRadius: '6px',
-                                  color: '#f87171',
-                                  cursor: 'pointer',
-                                  padding: '4px 6px',
-                                }}
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </td>
-                          </tr>
+                          <React.Fragment key={item.code}>
+                            <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                              <td style={{ padding: '8px 10px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#c084fc', fontSize: '12px' }}>
+                                    {item.code}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    title="คัดลอกโค้ด"
+                                    onClick={() => handleCopyCode(item.code)}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      color: copiedCodeStr === item.code ? '#34d399' : 'var(--text-tertiary)',
+                                      padding: '2px',
+                                    }}
+                                  >
+                                    {copiedCodeStr === item.code ? <Check size={13} /> : <Copy size={13} />}
+                                  </button>
+                                </div>
+                              </td>
+                              <td style={{ padding: '8px 10px', color: '#f59e0b', fontWeight: 700 }}>
+                                💎 {item.gemCoins.toLocaleString()}
+                              </td>
+                              <td style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>
+                                {(item.currentRedemptions ?? item.redemptionsCount ?? item.redeemedUsers?.length ?? 0)} / {item.maxRedemptions}
+                              </td>
+                              <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                                  <button
+                                    type="button"
+                                    title="ดูประวัติการแลกใช้งาน"
+                                    onClick={() => setExpandedPromoCode(expandedPromoCode === item.code ? null : item.code)}
+                                    style={{
+                                      background: expandedPromoCode === item.code ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255, 255, 255, 0.06)',
+                                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                                      borderRadius: '6px',
+                                      color: expandedPromoCode === item.code ? '#60a5fa' : 'var(--text-secondary)',
+                                      cursor: 'pointer',
+                                      padding: '4px 8px',
+                                      fontSize: '11px',
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    {expandedPromoCode === item.code ? 'ซ่อนประวัติ' : 'ดูประวัติ'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    title="ลบโค้ดนี้"
+                                    onClick={() => handleDeletePromoCode(item.code)}
+                                    style={{
+                                      background: 'rgba(239, 68, 68, 0.1)',
+                                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                                      borderRadius: '6px',
+                                      color: '#f87171',
+                                      cursor: 'pointer',
+                                      padding: '4px 6px',
+                                    }}
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+
+                            {expandedPromoCode === item.code && (
+                              <tr style={{ background: 'rgba(0, 0, 0, 0.25)' }}>
+                                <td colSpan={4} style={{ padding: '10px 12px' }}>
+                                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                                    📋 ประวัติผู้ใช้งานที่แลกรับรหัส "{item.code}" ({item.redemptions?.length || item.redeemedUsers?.length || 0} รายการ)
+                                  </div>
+
+                                  {(!item.redemptions || item.redemptions.length === 0) && (!item.redeemedUsers || item.redeemedUsers.length === 0) ? (
+                                    <div style={{ color: 'var(--text-tertiary)', fontSize: '11px', fontStyle: 'italic' }}>
+                                      ยังไม่มีผู้ใช้งานแลกรับรหัสนี้
+                                    </div>
+                                  ) : item.redemptions && item.redemptions.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                      {item.redemptions.map((rec: any, idx: number) => (
+                                        <div
+                                          key={idx}
+                                          style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            padding: '4px 8px',
+                                            borderRadius: '6px',
+                                            background: 'rgba(255, 255, 255, 0.03)',
+                                            fontSize: '11px',
+                                          }}
+                                        >
+                                          <div>
+                                            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                                              {rec.userEmail || '— (ไม่ระบุอีเมล)'}
+                                            </span>
+                                            <span style={{ color: 'var(--text-tertiary)', marginLeft: '8px', fontFamily: 'monospace' }}>
+                                              UID: {rec.userId}
+                                            </span>
+                                          </div>
+                                          <div style={{ color: 'var(--text-tertiary)' }}>
+                                            {new Date(rec.redeemedAt).toLocaleString('th-TH')}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                      {item.redeemedUsers.map((uid: string, idx: number) => (
+                                        <span
+                                          key={idx}
+                                          style={{
+                                            background: 'rgba(255, 255, 255, 0.05)',
+                                            padding: '2px 6px',
+                                            borderRadius: '4px',
+                                            fontFamily: 'monospace',
+                                            fontSize: '10.5px',
+                                            color: 'var(--text-secondary)',
+                                          }}
+                                        >
+                                          UID: {uid}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
                         ))
                       )}
                     </tbody>

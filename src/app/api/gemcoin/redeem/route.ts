@@ -4,7 +4,7 @@ import { redeemCodeForUser } from '@/lib/services/promoCodeService';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { code, userId } = body;
+    const { code, userId, userEmail, email } = body;
 
     if (!code || typeof code !== 'string') {
       return NextResponse.json(
@@ -13,7 +13,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = redeemCodeForUser(code, userId || 'local_user');
+    const effectiveEmail = userEmail || email || '';
+    const result = redeemCodeForUser(code, userId || 'local_user', effectiveEmail);
 
     if (!result.success) {
       return NextResponse.json(

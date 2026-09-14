@@ -686,7 +686,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         const res = await fetch('/api/gemcoin/redeem', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, userId: currentUid }),
+          body: JSON.stringify({ code, userId: currentUid, userEmail: user?.email }),
         });
 
         const data = await res.json();
