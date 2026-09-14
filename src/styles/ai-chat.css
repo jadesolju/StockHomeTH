@@ -799,18 +799,18 @@
 }
 
 /* ==========================================================================
-   Light Mode Overrides for GemCoin Modal (WCAG AAA Contrast Guarantees)
+   Light Mode Overrides for GemCoin Modal (WCAG AAA Contrast Guarantees - NO GREY BOXES/BACKGROUNDS)
    ========================================================================== */
 [data-theme='light'] .gemcoin-modal-box {
   background: #ffffff !important;
-  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  border: 1px solid rgba(6, 182, 212, 0.3) !important;
   color: #0f172a !important;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.16) !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.12) !important;
 }
 
 [data-theme='light'] .gemcoin-modal-header {
-  background: #f8fafc !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
 }
 
 [data-theme='light'] .gemcoin-modal-header h2 {
@@ -833,8 +833,8 @@
 }
 
 [data-theme='light'] .gemcoin-tabs-nav {
-  background: #f1f5f9 !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
 }
 
 [data-theme='light'] .gemcoin-tab-item {
@@ -842,8 +842,8 @@
   font-weight: 600 !important;
 }
 [data-theme='light'] .gemcoin-tab-item:hover {
-  color: #0f172a !important;
-  background: rgba(0, 0, 0, 0.04) !important;
+  color: #0284c7 !important;
+  background: #f0f9ff !important;
 }
 [data-theme='light'] .gemcoin-tab-item.active {
   color: #0284c7 !important;
@@ -860,7 +860,7 @@
 }
 
 [data-theme='light'] .gemcoin-modal-box p {
-  color: #475569 !important;
+  color: #334155 !important;
 }
 
 /* Banners in Light Mode */
@@ -897,8 +897,8 @@
 }
 [data-theme='light'] .gemcoin-package-card.default:hover,
 [data-theme='light'] .gemcoin-sub-card.default:hover {
-  border-color: #cbd5e1 !important;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.1) !important;
 }
 
 [data-theme='light'] .gemcoin-package-card.popular {
@@ -926,7 +926,7 @@
   color: #059669 !important;
 }
 [data-theme='light'] .gemcoin-package-card .pkg-regular-price {
-  color: #94a3b8 !important;
+  color: #64748b !important;
 }
 [data-theme='light'] .gemcoin-package-card .pkg-early-pill {
   background: #fef3c7 !important;
@@ -937,7 +937,7 @@
   color: #b45309 !important;
 }
 [data-theme='light'] .gemcoin-package-card .pkg-subtext {
-  color: #64748b !important;
+  color: #475569 !important;
 }
 
 /* BUTTONS in Light Mode - Guaranteed 100% High Contrast */
@@ -961,16 +961,16 @@
 }
 
 [data-theme='light'] .gemcoin-btn-default {
-  background: #0f172a !important;
+  background: #0284c7 !important;
   color: #ffffff !important;
-  border: 1px solid #0f172a !important;
+  border: 1px solid #0284c7 !important;
   font-weight: 700 !important;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15) !important;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2) !important;
 }
 [data-theme='light'] .gemcoin-btn-default:hover {
-  background: #1e293b !important;
+  background: #0369a1 !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25) !important;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3) !important;
 }
 [data-theme='light'] .gemcoin-btn-default span,
 [data-theme='light'] .gemcoin-btn-default svg {
@@ -979,7 +979,7 @@
 }
 
 [data-theme='light'] .gemcoin-btn-current {
-  background: #e2e8f0 !important;
+  background: #ffffff !important;
   color: #64748b !important;
   border: 1px solid #cbd5e1 !important;
 }
@@ -988,7 +988,7 @@
 }
 
 [data-theme='light'] .gemcoin-btn-loading {
-  background: #e2e8f0 !important;
+  background: #ffffff !important;
   color: #0284c7 !important;
   border: 1px solid #cbd5e1 !important;
 }
@@ -1006,6 +1006,31 @@
 [data-theme='light'] #gemcoin-mobile-tab-select option {
   background: #ffffff !important;
   color: #0f172a !important;
+}
+
+/* Light Theme overrides for inner boxes and logs in GemCoin Modal */
+[data-theme='light'] .gemcoin-logs-container {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+[data-theme='light'] .gemcoin-log-item {
+  background: #ffffff !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+[data-theme='light'] .gemcoin-log-item:hover {
+  background: #f8fafc !important;
+}
+[data-theme='light'] .gemcoin-log-model {
+  color: #0f172a !important;
+}
+[data-theme='light'] .gemcoin-log-summary {
+  color: #334155 !important;
+}
+[data-theme='light'] .gemcoin-log-time {
+  color: #64748b !important;
+}
+[data-theme='light'] .gemcoin-icon-bg {
+  background: #f0f9ff !important;
 }
 
 .ai-modal-body {

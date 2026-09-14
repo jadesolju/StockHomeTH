@@ -754,21 +754,21 @@ export const GemCoinModal: React.FC = () => {
               </div>
 
               {gemCoinLogs.length === 0 ? (
-                <div className="py-12 px-4 text-center rounded-xl bg-slate-900/60 border border-slate-800 text-slate-300 text-xs font-medium space-y-2">
-                  <p className="text-slate-300 font-semibold text-sm">ยังไม่มีประวัติการใช้งาน GemCoins ในระบบ</p>
-                  <p className="text-slate-400 text-xs max-w-sm mx-auto">
+                <div className="gemcoin-logs-container py-12 px-4 text-center rounded-xl bg-slate-900/60 border border-slate-800 text-slate-300 text-xs font-medium space-y-2">
+                  <p className="gemcoin-log-model font-semibold text-sm">ยังไม่มีประวัติการใช้งาน GemCoins ในระบบ</p>
+                  <p className="gemcoin-log-summary text-xs max-w-sm mx-auto">
                     เมื่อคุณเริ่มต้นใช้งาน AI วิเคราะห์หุ้น ประวัติการหักเหรียญ GemCoins จะถูกบันทึกแสดงที่นี่โดยอัตโนมัติ
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-800/80 border border-slate-800 rounded-xl overflow-hidden bg-slate-900/40">
+                <div className="gemcoin-logs-container divide-y divide-slate-800/80 border border-slate-800 rounded-xl overflow-hidden bg-slate-900/40">
                   {gemCoinLogs.map((log) => (
                     <div
                       key={log.id}
-                      className="p-3 flex items-center justify-between text-xs hover:bg-slate-800/40 transition-colors"
+                      className="gemcoin-log-item p-3 flex items-center justify-between text-xs hover:bg-slate-800/40 transition-colors"
                     >
                       <div className="space-y-0.5">
-                        <div className="font-semibold text-white flex items-center gap-2">
+                        <div className="gemcoin-log-model font-semibold flex items-center gap-2">
                           <span>{log.model}</span>
                           <span
                             className={`px-1.5 py-0.5 rounded text-[10px] ${log.source === 'daily'
@@ -779,10 +779,10 @@ export const GemCoinModal: React.FC = () => {
                             {log.source === 'daily' ? 'Daily Free' : 'Top-up Balance'}
                           </span>
                         </div>
-                        <div className="text-slate-400 text-[11px] truncate max-w-sm sm:max-w-md">
+                        <div className="gemcoin-log-summary text-[11px] truncate max-w-sm sm:max-w-md">
                           {log.summary || 'สอบถาม AI'}
                         </div>
-                        <div className="text-[10px] text-slate-500">
+                        <div className="gemcoin-log-time text-[10px]">
                           {new Date(log.timestamp).toLocaleString('th-TH')}
                         </div>
                       </div>
