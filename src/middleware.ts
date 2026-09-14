@@ -2,6 +2,15 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { updateSession } from '@/utils/supabase/middleware';
 
 export async function middleware(request: NextRequest) {
+  // 1. Canonical Domain Redirect: Ensure www.stockhometh.online redirects permanently (308) to stockhometh.online
+  const host = request.headers.get('host') || '';
+  if (host.startsWith('www.stockhometh.online')) {
+    const url = request.nextUrl.clone();
+    url.host = 'stockhometh.online';
+    url.protocol = 'https';
+    return NextResponse.redirect(url, 308);
+  }
+
   // Never intercept API routes with Supabase session refresh middleware
   if (request.nextUrl.pathname.startsWith('/api/')) {
     return NextResponse.next();
