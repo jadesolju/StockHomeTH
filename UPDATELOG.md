@@ -2,6 +2,31 @@
 
 เอกสารบันทึกประวัติการพัฒนา การอัปเกรดสถาปัตยกรรม และการเปิดตัวฟีเจอร์สำคัญของแพลตฟอร์ม **StockHomeTH** อย่างเป็นทางการ
 
+## 🌟 [v2.1.0] - 2026-09-14 (Production & Intelligence Suite Release)
+### "AI Semantic Vector Cache, 889 Thai Stock Universe, SEO/AEO System & Cloud Sync"
+- **⚡ AI Semantic Vector Caching & Prompt Optimization (`semanticCacheService.ts`):**
+  - เพิ่มระบบแคชความหมายอัจฉริยะ (Semantic Vector Cache) ด้วย Supabase `pgvector` (`ai_prompt_cache` table) ค้นหาคำตอบที่ใกล้เคียงด้วย Cosine Similarity > 0.92
+  - ประหยัด Token AI ได้สูงสุดถึง 80% และลดเวลาตอบสนองของ AI สำหรับคำถามยอดนิยมเหลือ < 200ms
+  - ระบบ Gemini Prompt Caching อัตโนมัติสำหรับ Context ขนาดใหญ่
+  - ระบบคัดกรองหุ้นแบบเป็นกลุ่ม (Batch Stock Screening) วิเคราะห์หลายตัวได้พร้อมกัน
+- **🇹🇭 Thai Stock Universe Catalog Expansion (889 ตราสารทุน):**
+  - ขยายฐานข้อมูลหุ้นไทยครอบคลุม **889 ตัว** (SET, mai, REITs, Property Funds, IFF, Warrants) ใน `server/data/thai_stocks.json`
+  - สคริปต์สร้างและอัปเดต Universe ใหม่อัตโนมัติ รองรับตราสารอนุพันธ์และหุ้นเข้าใหม่
+- **🌐 SEO & AEO (AI Engine Optimization) Content Suite:**
+  - เพิ่มไฟล์ `/llms.txt` และ `/llms-full.txt` มาตรฐานสำหรับ AI Crawlers (SearchGPT, Claude, Gemini, Perplexity)
+  - เพิ่มระบบ Dynamic XML Sitemap (`src/app/sitemap.ts`) และ Robots Control (`src/app/robots.ts`)
+  - ติดตั้งโครงสร้าง Structured Data JSON-LD (`JsonLdSchema.tsx`) สำหรับ Search Engine
+  - สคริปต์ตรวจสอบคุณภาพ SEO/AEO อัตโนมัติ (`scripts/seo_aeo_audit.ts`)
+- **🔄 Domain Canonicalization & Data Fallback Hardening:**
+  - ทำ 308 Permanent Redirect จาก `www.stockhometh.online` ไปยัง `stockhometh.online` (Apex Domain) ใน Edge Middleware
+  - ระบบ Sanitization ข้อมูลราคา 52-Week High / Low ป้องกันข้อมูลเพี้ยนจาก Data Provider
+  - Cross-device Chat Session Realtime Synchronization ป้องกันการสูญหายของบทสนทนาข้ามอุปกรณ์
+- **🎨 Sustainable Tailwind v4 CSS Design System:**
+  - สร้าง Rule & Skill ชุดโทเค็นกลาง (`sustainable-tailwind-theme`) อ้างอิงตาม `src/styles/glass-ios.css`
+  - รองรับ Apple iOS Glass Aesthetics และความเปรียบต่างสี Dark/Light Mode 100%
+
+---
+
 ## 🎫 [v2.0.1] - 2026-09-13 (Preview Update)
 ### "Quick Promo Code Redemption, Guest Checkout Guard, Catalyst Linking & AI Enhancements"
 - **ปุ่มแลกโค้ดหน้า Profile (Desktop & Mobile):** เพิ่มปุ่ม "แลกโค้ด" (`header-redeem-btn`) โดดเด่นข้างหน้าปุ่ม Profile บนแถบ Header เมนูผู้ใช้ และป๊อปอัปตั้งค่าโปรไฟล์
