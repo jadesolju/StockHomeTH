@@ -83,7 +83,9 @@ export async function getSemanticCachedResponse(
   // 1. Check In-Memory Exact Match
   const memEntry = memoryCache.get(promptHash);
   if (memEntry && memEntry.isValid && new Date(memEntry.expiresAt) > now) {
-    return { hit: true, entry: memEntry, source: 'exact' };
+    if (!memEntry.responseText.includes('ไม่ได้ระบุราคาหุ้น') && !memEntry.responseText.includes('ไม่พบข้อมูลราคา')) {
+      return { hit: true, entry: memEntry, source: 'exact' };
+    }
   }
 
   // 2. Check Supabase pgvector / exact DB match if configured
@@ -101,6 +103,10 @@ export async function getSemanticCachedResponse(
         .maybeSingle();
 
       if (!error && data) {
+        if (data.response_text?.includes('ไม่ได้ระบุราคาหุ้น') || data.response_text?.includes('ไม่พบข้อมูลราคา')) {
+          return { hit: false, source: 'none' };
+        }
+
         const entry: SemanticCacheEntry = {
           id: data.id,
           promptText: data.prompt_text,
@@ -135,6 +141,9 @@ export async function setSemanticCachedResponse(
   ticker?: string,
   overrideCategory?: CacheCategory
 ): Promise<void> {
+  if (!responseText || responseText.includes('ไม่ได้ระบุราคาหุ้น') || responseText.includes('ไม่พบข้อมูลราคา')) {
+    return;
+  }
   const promptHash = hashPrompt(prompt, ticker);
   const category = overrideCategory || detectCacheCategory(prompt);
   const ttlSeconds = CATEGORY_TTL[category];

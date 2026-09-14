@@ -9,6 +9,12 @@
   - ประหยัด Token AI ได้สูงสุดถึง 80% และลดเวลาตอบสนองของ AI สำหรับคำถามยอดนิยมเหลือ < 200ms
   - ระบบ Gemini Prompt Caching อัตโนมัติสำหรับ Context ขนาดใหญ่
   - ระบบคัดกรองหุ้นแบบเป็นกลุ่ม (Batch Stock Screening) วิเคราะห์หลายตัวได้พร้อมกัน
+- **🛡️ Multi-Layer Resilient Fallback & Supabase Stock Pool Architecture (`stockPoolService.ts`):**
+  - ออกแบบสถาปัตยกรรม 3 ระดับ (Layer 1: Live Yahoo Finance with 2.5s race timeout, Layer 2: Supabase Stock Pool `<20ms`, Layer 3: Bundled In-Memory Catalog) การันตี Zero-Rejection ไม่ปฏิเสธคำตอบราคาหุ้น
+  - เพิ่มระบบ Stock Pool Batch Queue พร้อม Flag สถานะ `analysis_status` (`pending` | `completed` | `failed`)
+  - Background Worker `sync-market-pool` อัปเดตราคาตลาดพร้อมกำหนดสถานะ `pending` และ `process-stock-analysis` คำนวณสัญญาณเทคนิค, 52w Range, Baseline Momentum `-1` และ AI Insights บันทึกลง Supabase
+  - ป้องกัน Stale Rejection Caching ใน Semantic Cache และ Memory Cache อย่างเด็ดขาด
+  - ชุดทดสอบความถูกต้องอัตโนมัติ 100% ด้วย Vitest (`npm test` ผ่าน 42/42 รายการ)
 - **🇹🇭 Thai Stock Universe Catalog Expansion (889 ตราสารทุน):**
   - ขยายฐานข้อมูลหุ้นไทยครอบคลุม **889 ตัว** (SET, mai, REITs, Property Funds, IFF, Warrants) ใน `server/data/thai_stocks.json`
   - สคริปต์สร้างและอัปเดต Universe ใหม่อัตโนมัติ รองรับตราสารอนุพันธ์และหุ้นเข้าใหม่

@@ -176,6 +176,11 @@ export function getCachedChatResponse(key: string): string | null {
     responseCache.delete(key);
     return null;
   }
+  // If cached content contains failure/rejection phrases, discard
+  if (cached.content.includes('ไม่ได้ระบุราคาหุ้น') || cached.content.includes('ไม่พบข้อมูลราคา')) {
+    responseCache.delete(key);
+    return null;
+  }
   return cached.content;
 }
 
@@ -183,6 +188,9 @@ export function getCachedChatResponse(key: string): string | null {
  * Store response in cache
  */
 export function setCachedChatResponse(key: string, content: string, model: string): void {
+  if (!content || content.includes('ไม่ได้ระบุราคาหุ้น') || content.includes('ไม่พบข้อมูลราคา')) {
+    return;
+  }
   responseCache.set(key, { timestamp: Date.now(), content, model });
   // Persist periodically
   persistDiskCache();

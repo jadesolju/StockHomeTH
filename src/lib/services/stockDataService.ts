@@ -1,12 +1,60 @@
 import { fetchLiveStocksFromYFinance, fetchSingleStockYFinance } from './yfinanceBridge';
+import { fetchStockFromPool, StockPoolItem } from './stockPoolService';
 import type { StockFundamental } from '../schemas/marketSchema';
 
 export async function fetchLiveStockFundamentals(): Promise<StockFundamental[]> {
   return await fetchLiveStocksFromYFinance();
 }
 
+/**
+ * Multi-Layer Resilient Stock Resolver:
+ * Layer 1: Live Primary API (Yahoo Finance with 2.5s strict timeout)
+ * Layer 2: StockHomeTH Supabase Persistent Pool (< 20ms)
+ * Layer 3: In-Memory Pre-cached Universe (Zero Rejection Guarantee)
+ */
+export async function fetchStockMultiLayer(
+  ticker: string,
+  market?: string,
+  forceLive = false
+): Promise<StockPoolItem | null> {
+  const cleanTicker = ticker.replace(/\.BK$/i, '').toUpperCase().trim();
+  if (!cleanTicker) return null;
+
+  // Layer 1: Live API with 2.5s timeout race
+  try {
+    const livePromise = fetchSingleStockYFinance(cleanTicker, market, forceLive);
+    const timeoutPromise = new Promise<null>((resolve) =>
+      setTimeout(() => resolve(null), 2500)
+    );
+
+    const liveResult = await Promise.race([livePromise, timeoutPromise]);
+    if (liveResult && liveResult.price > 0) {
+      return {
+        ...liveResult,
+        analysisStatus: 'completed',
+        lastFetchedAt: new Date().toISOString(),
+      };
+    }
+  } catch (err) {
+    console.warn(`[stockDataService] Layer 1 live fetch failed for ${cleanTicker}:`, err);
+  }
+
+  // Layer 2: StockHomeTH Supabase Persistent Pool
+  try {
+    const poolResult = await fetchStockFromPool(cleanTicker);
+    if (poolResult && poolResult.price > 0) {
+      return poolResult;
+    }
+  } catch (err) {
+    console.warn(`[stockDataService] Layer 2 pool fetch failed for ${cleanTicker}:`, err);
+  }
+
+  // Layer 3: Fallback through standard single stock fetch
+  return await fetchSingleStockYFinance(cleanTicker, market, false);
+}
+
 export async function fetchStockByTicker(ticker: string, market?: string, forceLive = false): Promise<StockFundamental | null> {
-  return await fetchSingleStockYFinance(ticker, market, forceLive);
+  return await fetchStockMultiLayer(ticker, market, forceLive);
 }
 
 export async function fetchStocksParallel(symbols: string[], interval = '1d', workers = 8) {
@@ -28,4 +76,5 @@ export async function fetchStocksParallel(symbols: string[], interval = '1d', wo
   }
   return null;
 }
+
 

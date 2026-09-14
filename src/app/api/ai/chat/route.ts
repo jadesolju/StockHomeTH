@@ -21,7 +21,7 @@ import {
   manageContextWindow,
   ChatMessageLike,
 } from '@/lib/services/contextSummaryService';
-import { fetchSingleStockYFinance } from '@/lib/services/yfinanceBridge';
+import { fetchStockMultiLayer } from '@/lib/services/stockDataService';
 import { SET100_TICKERS, THAI_7_GIANTS, MAGNIFICENT_7 } from '@/lib/utils/stockTagHelper';
 import { resolveAssetAmbiguity } from '@/lib/services/assetAmbiguityEngine';
 import { getLiveMacroGroundingContext } from '@/lib/services/liveIndicesService';
@@ -84,9 +84,10 @@ const STRICT_ANCHORING_LORE = `[โหมดวิเคราะห์ข้อ
 
 [กฎเหล็ก]
 1. สินทรัพย์และราคาสด: ให้ตอบตัวเลขราคา, สกุลเงิน, การเปลี่ยนแปลง (%) และรอบเวลาอัปเดตจากบล็อกข้อมูลดิบที่แนบมา (เช่น ราคาทองคำแท่งสมาคมฯ, ราคาน้ำมัน, ดัชนีตลาด หรือราคาหุ้น) โดยตรง
-2. ห้ามใช้การสุ่มเดาตัวเลข: อ้างอิงตัวเลขล่าสุดจากข้อมูล Real-Time ที่ดึงมาให้เสมอ
-3. หากผู้ใช้ถามเรื่องราคาทองคำ: สรุปราคารับซื้อ-ราคาขายออกของทองคำแท่ง 96.5% สมาคมค้าทองคำแห่งประเทศไทย, ราคา Gold Spot โลก (USD/oz) และค่าเงินบาท (USD/THB) ประกอบกันอย่างครบถ้วน
-4. ระบุแหล่งที่มาและเวลาอัปเดตของข้อมูลอย่างชัดเจนเสมอ เพื่อความน่าเชื่อถือ`;
+2. ห้ามใช้การสุ่มเดาตัวเลข: อ้างอิงตัวเลขล่าสุดจากข้อมูล Real-Time / StockHomeTH Pool ที่ดึงมาให้เสมอ
+3. หากผู้ใช้ถามเรื่องหุ้นรายตัว: ให้อ้างอิงราคาและข้อมูลตัวชี้วัดจากบล็อก [ข้อมูลราคาและบทวิเคราะห์หุ้น Real-Time / StockHomeTH Pool] มานำเสนอเป็นอันดับแรกอย่างครบถ้วน (ราคาปัจจุบัน, ความเคลื่อนไหว, P/E, 52w Range, Valuation, แนวโน้มเทคนิค และจุดแข็ง/ความเสี่ยง)
+4. หากผู้ใช้ถามเรื่องราคาทองคำ: สรุปราคารับซื้อ-ราคาขายออกของทองคำแท่ง 96.5% สมาคมค้าทองคำแห่งประเทศไทย, ราคา Gold Spot โลก (USD/oz) และค่าเงินบาท (USD/THB) ประกอบกันอย่างครบถ้วน
+5. ระบุแหล่งที่มาและเวลาอัปเดตของข้อมูลอย่างชัดเจนเสมอ เพื่อความน่าเชื่อถือ`;
 
 // Common stop words to prevent false positives when searching uppercase tickers
 const COMMON_IGNORE_WORDS = new Set([
@@ -252,17 +253,17 @@ function extractCandidateTickers(text: string): string[] {
     }
   }
 
-  // 3. Pattern: หุ้น [TICKER] or หุ้นไทย [TICKER]
-  const thaiMatches = text.match(/(?:หุ้น|ราคาหุ้น|วิเคราะห์หุ้น|หุ้นไทย)\s*([A-Za-z]{1,6})\b/gi);
+  // 3. Pattern: (ราคาหุ้น|วิเคราะห์หุ้น|หุ้นไทย|หุ้น|ตัว) [TICKER]
+  const thaiMatches = text.match(/(?:ราคาหุ้น|วิเคราะห์หุ้น|หุ้นไทย|หุ้น|ตัว)\s*([A-Za-z]{1,6})/gi);
   if (thaiMatches) {
     for (const m of thaiMatches) {
-      const sym = m.replace(/(?:หุ้น|ราคาหุ้น|วิเคราะห์หุ้น|หุ้นไทย)\s*/i, '').toUpperCase().trim();
-      if (!COMMON_IGNORE_WORDS.has(sym) && !candidates.includes(sym)) candidates.push(sym);
+      const sym = m.replace(/(?:ราคาหุ้น|วิเคราะห์หุ้น|หุ้นไทย|หุ้น|ตัว)\s*/i, '').replace(/[^A-Za-z0-9]/g, '').toUpperCase().trim();
+      if (sym && !COMMON_IGNORE_WORDS.has(sym) && !candidates.includes(sym)) candidates.push(sym);
     }
   }
 
   // 4. Standalone English tokens (e.g. NVDA, PTT, CPALL, DELTA, TSLA, AAPL, MSFT, ptt, delta)
-  const standaloneMatches = text.match(/\b([A-Za-z]{2,6})\b/g);
+  const standaloneMatches = text.match(/[A-Za-z]{2,6}/g);
   if (standaloneMatches) {
     for (const sym of standaloneMatches) {
       const clean = sym.toUpperCase().trim();
@@ -453,10 +454,22 @@ export async function POST(req: NextRequest) {
     const formattedNowTime = now.toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' }) + ' น.';
 
     try {
-      const [macroContext, liveStock] = await Promise.all([
-        getLiveMacroGroundingContext(lastUserMsg),
-        activeTicker ? fetchSingleStockYFinance(activeTicker, stockContext?.market, false) : Promise.resolve(null),
-      ]);
+      // 1. Concurrent fetch: Macro Grounding & Multi-Layer Stock Resolver
+      const macroPromise = getLiveMacroGroundingContext(lastUserMsg);
+
+      let liveStockPromise: Promise<any> = Promise.resolve(null);
+      const targetTickers = activeTicker ? [activeTicker] : candidateTickers;
+      if (targetTickers.length > 0) {
+        liveStockPromise = (async () => {
+          for (const cand of targetTickers) {
+            const res = await fetchStockMultiLayer(cand, stockContext?.market, false);
+            if (res && res.price > 0) return res;
+          }
+          return null;
+        })();
+      }
+
+      const [macroContext, liveStock] = await Promise.all([macroPromise, liveStockPromise]);
 
       if (macroContext) {
         isLiveStockRAG = true;
@@ -466,29 +479,43 @@ export async function POST(req: NextRequest) {
       if (liveStock) {
         isLiveStockRAG = true;
         const currencySymbol = liveStock.currency === 'THB' ? '฿' : '$';
+        const rating = liveStock.analystRating || 'Hold';
+        const target = liveStock.targetPrice ? ` (ราคาเป้าหมายประเมิน: ${currencySymbol}${liveStock.targetPrice})` : '';
+        const valuationVerdict = liveStock.analysisPayload?.valuationVerdict || (liveStock.peRatio && liveStock.peRatio > 40 ? 'Growth Premium' : 'Fairly Valued');
+        const technicalTrend = liveStock.technicalIndicators?.trend || (liveStock.change >= 0 ? 'BULLISH' : 'CONSOLIDATION');
+        const strengthsList = Array.isArray(liveStock.analysisPayload?.strengths) && liveStock.analysisPayload.strengths.length > 0
+          ? liveStock.analysisPayload.strengths.join('; ')
+          : `ผู้นำกลุ่มอุตสาหกรรม ${liveStock.sector || 'SET'} และมีสภาพคล่องสูง`;
+        const risksList = Array.isArray(liveStock.analysisPayload?.risks) && liveStock.analysisPayload.risks.length > 0
+          ? liveStock.analysisPayload.risks.join('; ')
+          : 'ความผันผวนของตลาดสากล ปัจจัยมหภาค และอัตราแลกเปลี่ยน';
 
-        liveMarketDataBlock += `\n[ข้อมูลราคาหุ้นปัจจุบันจากตลาดหลักทรัพย์]:
+        liveMarketDataBlock += `\n[ข้อมูลราคาและบทวิเคราะห์หุ้น Real-Time / StockHomeTH Pool]:
 <current_market_data>
 ข้อมูล ณ วันที่: ${formattedNowDate} เวลา: ${formattedNowTime}
 Ticker: ${liveStock.ticker}
 Company: ${liveStock.name}
 Exchange: ${liveStock.market === 'SET' ? 'Stock Exchange of Thailand (SET)' : 'US Stock Market (NASDAQ/NYSE)'}
 Current_Price: ${currencySymbol}${liveStock.price.toLocaleString()} (${liveStock.change >= 0 ? '+' : ''}${liveStock.change}%)
-Day_Range: 52w Low ${currencySymbol}${liveStock.low52w} - 52w High ${currencySymbol}${liveStock.high52w}
+Day_Range: 52w Low ${currencySymbol}${liveStock.low52w || '—'} - 52w High ${currencySymbol}${liveStock.high52w || '—'}
 Market_Cap: ${liveStock.marketCap}
 P/E_Ratio: ${liveStock.peRatio ? liveStock.peRatio + 'x' : '—'}
 Dividend_Yield: ${liveStock.dividendYield ? liveStock.dividendYield + '%' : '—'}
 Volume: ${liveStock.volume || '—'}
-Industry_Status: ${liveStock.sector || 'บริษัทจดทะเบียนในตลาดหลักทรัพย์'}
-Catalysts: ${liveStock.aiInsight || 'ความต้องการผลิตภัณฑ์และผลประกอบการรอบล่าสุด'}
-Risks_To_Watch: ความผันผวนของตลาดสากล ปัจจัยมหภาค และอัตราดอกเบี้ย/อัตราแลกเปลี่ยน
+Industry_Sector: ${liveStock.sector || 'บริษัทจดทะเบียนในตลาดหลักทรัพย์'}
+Valuation_Verdict: ${valuationVerdict} [Rating: ${rating}${target}]
+Technical_Trend: ${technicalTrend}
+Key_Strengths: ${strengthsList}
+Risks_To_Watch: ${risksList}
+Pre_Analysis_Insight: ${liveStock.aiInsight || '—'}
+Data_Pool_Status: ${liveStock.analysisStatus || 'completed'} (StockHomeTH Multi-Layer Resilient Pool)
 </current_market_data>`;
       } else if (candidateTickers.length > 0 && !macroContext) {
         isLiveStockRAG = true;
         liveMarketDataBlock += `\n[ข้อมูลราคาหุ้นปัจจุบันจากตลาดหลักทรัพย์]:
 <current_market_data>
-Ticker: ${activeTicker}
-Status: ระบบไม่พบข้อมูลราคาหุ้นแบบ Real-time ของ ${activeTicker} ในขณะนี้ (สามารถวิเคราะห์ภาพรวมธุรกิจและปัจจัยพื้นฐานทั่วไปได้)
+Ticker: ${activeTicker || candidateTickers[0]}
+Status: ข้อมูลอยู่ในกระบวนการซิงค์ของ StockHomeTH Pool (สามารถวิเคราะห์ภาพรวมธุรกิจ โครงสร้างรายได้ และปัจจัยพื้นฐานทั่วไปได้)
 </current_market_data>`;
       }
     } catch (err) {

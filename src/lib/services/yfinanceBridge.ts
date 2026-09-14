@@ -79,7 +79,7 @@ async function detectPythonCommand(): Promise<string> {
   return 'py';
 }
 
-function loadMarketCacheFile(): StockFundamental[] | null {
+export function loadMarketCacheFile(): StockFundamental[] | null {
   try {
     const cwd = process.cwd();
     const cachePath = path.resolve(cwd, 'market_cache.json');
@@ -184,7 +184,7 @@ interface RawUniverseFile {
   }>;
 }
 
-function loadBundledUniverseFiles(): StockFundamental[] {
+export function loadBundledUniverseFiles(): StockFundamental[] {
   const result: StockFundamental[] = [];
   const cwd = process.cwd();
   const seenTickers = new Set<string>();
