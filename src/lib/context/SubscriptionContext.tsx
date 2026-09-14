@@ -101,8 +101,6 @@ export const getTierKey = (uid?: string | null) =>
 export const getResetDateKey = (uid?: string | null) =>
   uid && uid.trim() ? `stockhome_gemcoin_${uid.trim()}_reset_date` : 'stockhome_gemcoin_guest_reset_date';
 
-const GEMCOIN_USER_ID_KEY = 'stockhome_device_user_id';
-
 export { purgeDevStorage } from '../utils/authStorage';
 import { purgeDevStorage } from '../utils/authStorage';
 
@@ -121,7 +119,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const [gemCoinModalInitialTab, setGemCoinModalInitialTab] = useState<
     'topup' | 'plans' | 'redeem' | 'logs'
   >('topup');
-  const [userId, setUserId] = useState<string>('local_device_user');
+  const [userId, setUserId] = useState<string>('guest');
 
   const getTodayStr = () => new Date().toISOString().split('T')[0];
 
@@ -226,23 +224,20 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   // Account-Scoped Hydration: runs whenever active user changes or page mounts
   useEffect(() => {
     try {
-      // 1. Device user ID fallback
-      let savedUserId = localStorage.getItem(GEMCOIN_USER_ID_KEY);
-      if (!savedUserId) {
-        savedUserId = 'user_' + Math.random().toString(36).substring(2, 10);
-        localStorage.setItem(GEMCOIN_USER_ID_KEY, savedUserId);
-      }
-      setUserId(savedUserId);
+      // Clean up legacy random device ID key if present
+      localStorage.removeItem('stockhome_device_user_id');
 
       // If Owner: handled in restoreOwnerGodMode
       if (isOwnerAccount) {
+        setUserId(user?.uid?.trim() || 'owner');
         restoreOwnerGodMode();
         return;
       }
 
-      // If Guest (not logged in): use device-scoped guest wallet with 500 Daily GemCoins
+      // If Guest (not logged in): use unified guest wallet key
       if (!user) {
-        const guestUid = savedUserId || 'guest';
+        setUserId('guest');
+        const guestUid = 'guest';
         const guestDailyKey = getDailyKey(guestUid);
         const guestTopupKey = getTopupKey(guestUid);
         const guestResetDateKey = getResetDateKey(guestUid);
@@ -286,6 +281,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
       // Logged in User: load scoped data for this UID
       const currentUid = user.uid.trim();
+      setUserId(currentUid);
       const dailyKey = getDailyKey(currentUid);
       const topupKey = getTopupKey(currentUid);
       const resetDateKey = getResetDateKey(currentUid);
@@ -533,7 +529,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         summary: summary || 'แชทสอบถามการเงินและวิเคราะห์หุ้น',
       };
 
-      const currentUid = user?.uid?.trim() || userId || 'guest';
+      const currentUid = user?.uid?.trim() || (userId !== 'guest' ? userId : 'guest');
       const today = getTodayStr();
 
       try {
@@ -661,7 +657,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       code: string
     ): Promise<{ success: boolean; message: string; gemCoinsAdded?: number }> => {
       try {
-        const currentUid = user?.uid?.trim() || userId;
+        const currentUid = user?.uid?.trim() || (userId !== 'guest' ? userId : 'guest');
         const res = await fetch('/api/gemcoin/redeem', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -16,8 +16,8 @@ function saveLocalBookmarks(uid: string, items: any[]) {
   if (typeof window === 'undefined' || !uid) return;
   try {
     localStorage.setItem(`${STORAGE_KEY_PREFIX}${uid}`, JSON.stringify(items));
-    // Also save simple id array for backward compatibility
-    localStorage.setItem('stockhome_bookmarked_ids', JSON.stringify(items.map(i => i.newsId || i.id)));
+    // Save simple id array scoped by user uid for backward compatibility
+    localStorage.setItem(`stockhome_bookmarked_ids_${uid}`, JSON.stringify(items.map(i => i.newsId || i.id)));
   } catch {}
 }
 

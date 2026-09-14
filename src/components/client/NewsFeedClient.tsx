@@ -169,7 +169,8 @@ export function NewsFeedClient({ initialNews }: NewsFeedClientProps) {
       } else {
         // Load from LocalStorage
         try {
-          const saved = localStorage.getItem('stockhome_bookmarked_ids');
+          const uid = user ? (user as { uid: string }).uid : null;
+          const saved = uid ? localStorage.getItem(`stockhome_bookmarked_ids_${uid}`) || localStorage.getItem('stockhome_bookmarked_ids') : localStorage.getItem('stockhome_bookmarked_ids');
           if (saved) {
             bookmarkedIds = JSON.parse(saved);
           }
