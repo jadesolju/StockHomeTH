@@ -24,6 +24,9 @@
 - **🎨 Sustainable Tailwind v4 CSS Design System:**
   - สร้าง Rule & Skill ชุดโทเค็นกลาง (`sustainable-tailwind-theme`) อ้างอิงตาม `src/styles/glass-ios.css`
   - รองรับ Apple iOS Glass Aesthetics และความเปรียบต่างสี Dark/Light Mode 100%
+- **🚨 ChunkLoadError & Asset Invalidation Auto-Recovery (`error.tsx` & `chunkErrorHelper.ts`):**
+  - ดักจับ `ChunkLoadError` และ `Failed to fetch dynamically imported module` ที่เกิดขึ้นเมื่อมีการ Deploy เวอร์ชันใหม่บน Production
+  - ระบบ Auto-reload หน้าเว็บอัตโนมัติพร้อมระบบ Throttling ป้องกัน Reload Loop (10s window) ช่วยให้ผู้ใช้ได้รับ Assets เวอร์ชั่นล่าสุดทันทีโดยไม่เจอดาวน์ไทม์หรือหน้าจอขาว
 
 ---
 
