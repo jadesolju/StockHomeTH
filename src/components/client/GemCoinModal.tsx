@@ -479,7 +479,7 @@ export const GemCoinModal: React.FC = () => {
                               ? 'bg-slate-700 text-cyan-300 cursor-wait'
                               : pkg.popular
                                 ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-400 hover:to-blue-500 shadow-md shadow-cyan-500/20'
-                                : 'bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-slate-700'
+                                : 'bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700'
                             }`}
                         >
                           {isLoadingThis ? (
@@ -708,9 +708,9 @@ export const GemCoinModal: React.FC = () => {
               )}
 
               {/* Code Format Hint */}
-              <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl text-[11px] text-slate-400 flex items-center justify-between">
-                <span className="text-slate-400">รูปแบบโค้ดตัวอย่าง:</span>
-                <span className="font-mono text-cyan-300 font-bold bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">Stock-1234</span>
+              <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-xl text-xs text-slate-300 flex items-center justify-between">
+                <span className="text-slate-300 font-medium">รูปแบบโค้ดตัวอย่าง:</span>
+                <span className="font-mono text-cyan-300 font-bold bg-slate-800 px-2.5 py-1 rounded-lg border border-cyan-500/30 shadow-sm">Stock-1234</span>
               </div>
 
               <div className="pt-2 text-center">
@@ -757,8 +757,11 @@ export const GemCoinModal: React.FC = () => {
               </div>
 
               {gemCoinLogs.length === 0 ? (
-                <div className="py-12 text-center text-slate-500 text-xs">
-                  ยังไม่มีประวัติการใช้งาน GemCoins ในระบบ
+                <div className="py-12 px-4 text-center rounded-xl bg-slate-900/60 border border-slate-800 text-slate-300 text-xs font-medium space-y-2">
+                  <p className="text-slate-300 font-semibold text-sm">ยังไม่มีประวัติการใช้งาน GemCoins ในระบบ</p>
+                  <p className="text-slate-400 text-xs max-w-sm mx-auto">
+                    เมื่อคุณเริ่มต้นใช้งาน AI วิเคราะห์หุ้น ประวัติการหักเหรียญ GemCoins จะถูกบันทึกแสดงที่นี่โดยอัตโนมัติ
+                  </p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-800/80 border border-slate-800 rounded-xl overflow-hidden bg-slate-900/40">
