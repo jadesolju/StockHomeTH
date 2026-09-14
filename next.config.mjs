@@ -14,6 +14,21 @@ const nextConfig = {
     }
     return config;
   },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'www.stockhometh.online',
+          },
+        ],
+        destination: 'https://stockhometh.online/:path*',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       // 1. Next.js Static Bundles & CSS (Immutable, aggressive edge cache 1 year)
