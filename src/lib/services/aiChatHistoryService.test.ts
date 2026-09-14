@@ -72,8 +72,7 @@ describe('aiChatHistoryService', () => {
     });
 
     it('returns guest key when userUid is null or empty', () => {
-      localStorage.setItem('gemcoin_user_id', 'device_abc');
-      expect(getUserStorageKey(null)).toBe('stockhome_ai_sessions_guest_device_abc');
+      expect(getUserStorageKey(null)).toBe('stockhome_ai_sessions_guest');
     });
   });
 

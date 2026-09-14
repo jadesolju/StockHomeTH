@@ -49,8 +49,7 @@ export function getUserStorageKey(userUid?: string | null): string {
   if (userUid && userUid.trim().length > 0) {
     return `${STORAGE_PREFIX}user_${userUid.trim()}`;
   }
-  const guestId = localStorage.getItem('gemcoin_user_id') || 'guest_device';
-  return `${STORAGE_PREFIX}guest_${guestId}`;
+  return `${STORAGE_PREFIX}guest`;
 }
 
 /**
@@ -131,35 +130,44 @@ export async function deleteSessionFromCloud(userUid: string, sessionId: string)
 export function migrateGuestSessionsToUser(userUid: string): void {
   if (typeof window === 'undefined' || !userUid) return;
   try {
-    const guestId = localStorage.getItem('gemcoin_user_id') || 'guest_device';
-    const guestKey = `${STORAGE_PREFIX}guest_${guestId}`;
-    const guestRaw = localStorage.getItem(guestKey);
-    if (!guestRaw) return;
-
-    const guestSessions: ChatSession[] = JSON.parse(guestRaw);
-    if (!Array.isArray(guestSessions) || guestSessions.length === 0) return;
-
-    const userSessions = loadUserSessions(userUid);
-    const userSessionMap = new Map<string, ChatSession>();
-    for (const s of userSessions) {
-      userSessionMap.set(s.id, s);
+    const legacyGuestId = localStorage.getItem('gemcoin_user_id');
+    const guestKeys = [`${STORAGE_PREFIX}guest`];
+    if (legacyGuestId) {
+      guestKeys.push(`${STORAGE_PREFIX}guest_${legacyGuestId}`);
     }
 
-    let migrated = false;
-    for (const gs of guestSessions) {
-      if (!userSessionMap.has(gs.id)) {
-        userSessionMap.set(gs.id, gs);
-        saveSessionToCloud(userUid, gs);
-        migrated = true;
+    for (const guestKey of guestKeys) {
+      const guestRaw = localStorage.getItem(guestKey);
+      if (!guestRaw) continue;
+
+      const guestSessions: ChatSession[] = JSON.parse(guestRaw);
+      if (!Array.isArray(guestSessions) || guestSessions.length === 0) {
+        localStorage.removeItem(guestKey);
+        continue;
       }
-    }
 
-    if (migrated) {
-      const merged = Array.from(userSessionMap.values()).sort((a, b) => b.updatedAt - a.updatedAt);
-      saveUserSessions(userUid, merged);
-    }
+      const userSessions = loadUserSessions(userUid);
+      const userSessionMap = new Map<string, ChatSession>();
+      for (const s of userSessions) {
+        userSessionMap.set(s.id, s);
+      }
 
-    localStorage.removeItem(guestKey);
+      let migrated = false;
+      for (const gs of guestSessions) {
+        if (!userSessionMap.has(gs.id)) {
+          userSessionMap.set(gs.id, gs);
+          saveSessionToCloud(userUid, gs);
+          migrated = true;
+        }
+      }
+
+      if (migrated) {
+        const merged = Array.from(userSessionMap.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+        saveUserSessions(userUid, merged);
+      }
+
+      localStorage.removeItem(guestKey);
+    }
   } catch (err) {
     console.warn('[aiChatHistoryService] Guest session migration failed:', err);
   }
