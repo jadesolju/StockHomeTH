@@ -1254,7 +1254,7 @@ export const AdminBackofficeClient: React.FC = () => {
                               💎 {item.gemCoins.toLocaleString()}
                             </td>
                             <td style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>
-                              {(item.redemptionsCount || 0)} / {item.maxRedemptions}
+                              {(item.currentRedemptions ?? item.redemptionsCount ?? item.redeemedUsers?.length ?? 0)} / {item.maxRedemptions}
                             </td>
                             <td style={{ padding: '8px 10px', textAlign: 'right' }}>
                               <button

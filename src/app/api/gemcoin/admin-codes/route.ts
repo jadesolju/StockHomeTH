@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPromoCodesStore, createPromoCode } from '@/lib/services/promoCodeService';
+import { getPromoCodesStore, createPromoCode, deletePromoCode } from '@/lib/services/promoCodeService';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -83,13 +83,8 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'กรุณาระบุรหัสที่ต้องการลบ' }, { status: 400 });
     }
 
-    const store = getPromoCodesStore();
-    const index = store.findIndex((p) => p.code.toUpperCase() === code.trim().toUpperCase());
-    if (index !== -1) {
-      store.splice(index, 1);
-      return NextResponse.json({ success: true, message: `ลบรหัส "${code}" เรียบร้อยแล้ว` });
-    }
-    return NextResponse.json({ success: false, message: 'ไม่พบรหัสที่ระบุ' }, { status: 404 });
+    const result = deletePromoCode(code);
+    return NextResponse.json(result, { status: result.success ? 200 : 404 });
   } catch (err: any) {
     return NextResponse.json({ success: false, message: err.message }, { status: 500 });
   }
