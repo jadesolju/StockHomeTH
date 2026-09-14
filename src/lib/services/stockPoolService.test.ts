@@ -6,7 +6,7 @@ import {
 } from './stockPoolService';
 import { fetchStockMultiLayer } from './stockDataService';
 import { getLiveMacroGroundingContext } from './liveIndicesService';
-import { extractCandidateTickers } from '@/app/api/ai/chat/route';
+import { extractCandidateTickers } from '@/lib/utils/tickerExtractor';
 
 describe('StockPoolService & Multi-Layer Zero-Rejection Architecture', () => {
   beforeEach(() => {
