@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { fetchOfficialThaiGold, calculateFallbackThaiGold } from '@/lib/services/thaiGoldService';
 
 let cachedPayload: any = null;
 let cacheTime = 0;
@@ -36,101 +37,6 @@ const MAJOR_INDEX_DEFINITIONS = [
   { s: 'BTC-USD', name: 'Bitcoin', c: 'USD', cat: 'crypto', country: 'GLOBAL' },
   { s: 'THB=X', name: 'USD / THB', c: 'THB', cat: 'forex', country: 'TH' }
 ];
-
-async function fetchOfficialThaiGold(): Promise<IndexItem | null> {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch('https://classic.goldtraders.or.th/', {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      },
-      next: { revalidate: 60 }
-    });
-    clearTimeout(timeout);
-
-    if (res.ok) {
-      const html = await res.text();
-      const sellMatch = html.match(/id="DetailPlace_uc_goldprices1_lblBLSell"[^>]*>([\d,]+\.?\d*)<\/span>/i);
-      const buyMatch = html.match(/id="DetailPlace_uc_goldprices1_lblBLBuy"[^>]*>([\d,]+\.?\d*)<\/span>/i);
-      const timeMatch = html.match(/id="DetailPlace_uc_goldprices1_lblAsTime"[^>]*>([^<]+)<\/span>/i);
-
-      if (sellMatch && sellMatch[1]) {
-        const sell = parseFloat(sellMatch[1].replace(/,/g, '')) || 0;
-        const buy = buyMatch ? parseFloat(buyMatch[1].replace(/,/g, '')) || (sell - 100) : (sell - 100);
-        const updateTime = timeMatch ? timeMatch[1].trim() : 'สมาคมค้าทองคำ';
-
-        if (sell > 0) {
-          return {
-            symbol: 'GOLD_THAI',
-            name: 'ทองคำแท่ง 96.5% (สมาคม)',
-            value: sell,
-            price: sell,
-            sellPrice: sell,
-            buyPrice: buy,
-            change: 0,
-            changePercent: 0,
-            currency: 'THB',
-            category: 'gold_thai',
-            country: 'TH',
-            region: 'thai',
-            isPositive: true,
-            sparklineData: [sell - 100, sell - 50, sell],
-            updateRound: updateTime,
-            lastUpdated: updateTime,
-            timestamp: new Date().toISOString()
-          };
-        }
-      }
-    }
-  } catch {}
-
-  // Fallback to secondary JSON API
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch('https://api.chnwt.dev/thai-gold-api/latest', {
-      signal: controller.signal,
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-      next: { revalidate: 60 }
-    });
-    clearTimeout(timeout);
-
-    if (res.ok) {
-      const json = await res.json();
-      if (json?.status === 'success' && json?.response?.price?.gold_bar) {
-        const bar = json.response.price.gold_bar;
-        const sell = parseFloat(String(bar.sell).replace(/,/g, '')) || 0;
-        const buy = parseFloat(String(bar.buy).replace(/,/g, '')) || (sell - 100);
-        const updateTime = json.response.update_time || 'สมาคมค้าทองคำ';
-
-        if (sell > 0) {
-          return {
-            symbol: 'GOLD_THAI',
-            name: 'ทองคำแท่ง 96.5% (สมาคม)',
-            value: sell,
-            price: sell,
-            sellPrice: sell,
-            buyPrice: buy,
-            change: 0,
-            changePercent: 0,
-            currency: 'THB',
-            category: 'gold_thai',
-            country: 'TH',
-            region: 'thai',
-            isPositive: true,
-            sparklineData: [sell * 0.995, sell * 0.998, sell],
-            updateRound: updateTime,
-            lastUpdated: updateTime,
-            timestamp: new Date().toISOString()
-          };
-        }
-      }
-    }
-  } catch {}
-  return null;
-}
 
 async function fetchLiveIndicesFromYahoo(): Promise<IndexItem[] | null> {
   try {
@@ -193,17 +99,17 @@ async function fetchLiveIndicesFromYahoo(): Promise<IndexItem[] | null> {
     const valid = results.filter((r): r is IndexItem => r !== null);
     
     // Fetch official Thai Gold or calculate high-precision real-world standard
-    const thaiGold = await fetchOfficialThaiGold();
-    if (thaiGold) {
+    const rawThaiGold = await fetchOfficialThaiGold();
+    if (rawThaiGold) {
       const goldSpot = valid.find((v) => v.symbol === 'GC=F');
-      if (goldSpot) {
-        thaiGold.change = goldSpot.change;
-        thaiGold.changePercent = goldSpot.changePercent;
-        thaiGold.isPositive = goldSpot.isPositive;
-      }
+      const thaiGold: IndexItem = {
+        ...rawThaiGold,
+        change: goldSpot ? goldSpot.change : 0,
+        changePercent: goldSpot ? goldSpot.changePercent : 0,
+        isPositive: goldSpot ? goldSpot.isPositive : true,
+      };
       valid.push(thaiGold);
     } else {
-      // High-precision Thai Gold Traders Association calculation
       const goldSpot = valid.find((v) => v.symbol === 'GC=F');
       const usdThb = valid.find((v) => v.symbol === 'THB=X');
       const fxRate = usdThb && usdThb.value > 0 ? usdThb.value : 32.84;
@@ -214,30 +120,15 @@ async function fetchLiveIndicesFromYahoo(): Promise<IndexItem[] | null> {
         goldSpot.price = realSpotPrice;
       }
       
-      // Thai Gold formula: (Spot USD / 31.1035 oz) * 15.244g * 0.965 purity * USD/THB + Association Margin (~350)
-      const rawThaiGold = Math.round(((realSpotPrice / 31.1035) * 15.244 * 0.965 * fxRate) + 350);
-      const roundedBarPrice = Math.round(rawThaiGold / 50) * 50; // Thai Gold rounds to 50 THB steps
+      const calcGold = calculateFallbackThaiGold(realSpotPrice, fxRate);
       const changePct = goldSpot ? goldSpot.changePercent : 0.35;
-      const changeAmt = Math.round(roundedBarPrice * (changePct / 100));
+      const changeAmt = Math.round(calcGold.sellPrice * (changePct / 100));
 
       valid.push({
-        symbol: 'GOLD_THAI',
-        name: 'ทองคำแท่ง 96.5% (สมาคม)',
-        value: roundedBarPrice,
-        price: roundedBarPrice,
-        sellPrice: roundedBarPrice,
-        buyPrice: roundedBarPrice - 100,
+        ...calcGold,
         change: changeAmt,
         changePercent: Number(changePct.toFixed(2)),
-        currency: 'THB',
-        category: 'gold_thai',
-        country: 'TH',
-        region: 'thai',
         isPositive: changePct >= 0,
-        sparklineData: [roundedBarPrice - 150, roundedBarPrice - 50, roundedBarPrice + 50, roundedBarPrice],
-        updateRound: `รอบที่ 1 • ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.`,
-        lastUpdated: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.',
-        timestamp: new Date().toISOString()
       });
     }
 

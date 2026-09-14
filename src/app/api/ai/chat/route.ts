@@ -22,6 +22,7 @@ import {
   ChatMessageLike,
 } from '@/lib/services/contextSummaryService';
 import { fetchSingleStockYFinance } from '@/lib/services/yfinanceBridge';
+import { getLiveThaiGoldPrice } from '@/lib/services/thaiGoldService';
 import { SET100_TICKERS, THAI_7_GIANTS, MAGNIFICENT_7 } from '@/lib/utils/stockTagHelper';
 import { resolveAssetAmbiguity } from '@/lib/services/assetAmbiguityEngine';
 
@@ -463,7 +464,30 @@ export async function POST(req: NextRequest) {
     const formattedNowDate = now.toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     const formattedNowTime = now.toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' }) + ' น.';
 
-    if (activeTicker) {
+    const isThaiGoldIntent =
+      activeTicker === 'GOLD_THAI' ||
+      /ทองคำแท่ง|ทองรูปพรรณ|สมาคมค้าทอง|ราคาทองสมาคม|goldtraders|GOLD_THAI/i.test(lastUserMsg) ||
+      stockContext?.ticker === 'GOLD_THAI';
+
+    if (isThaiGoldIntent) {
+      try {
+        const thaiGold = await getLiveThaiGoldPrice();
+        if (thaiGold) {
+          isLiveStockRAG = true;
+          liveMarketDataBlock = `[ข้อมูลราคาทองคำสมาคมฯ ปัจจุบันจากสมาคมค้าทองคำแห่งประเทศไทย]:
+<current_market_data>
+ข้อมูล ณ วันที่: ${formattedNowDate} เวลา: ${formattedNowTime}
+ประเภทสินทรัพย์: ราคาทองคำสมาคม (Gold Traders Association of Thailand)
+ทองคำแท่ง 96.5% ราคารับซื้อ: ฿${thaiGold.buyPrice.toLocaleString()} บาท/บาททองคำ
+ทองคำแท่ง 96.5% ราคาขายออก: ฿${thaiGold.sellPrice.toLocaleString()} บาท/บาททองคำ
+${thaiGold.ornamentSellPrice ? `ทองรูปพรรณ 96.5% ราคาขายออก: ฿${thaiGold.ornamentSellPrice.toLocaleString()} บาท/บาททองคำ\n` : ''}${thaiGold.ornamentBuyPrice ? `ทองรูปพรรณ 96.5% ฐานภาษีรับซื้อ: ฿${thaiGold.ornamentBuyPrice.toLocaleString()} บาท/บาททองคำ\n` : ''}รอบประกาศล่าสุด: ${thaiGold.updateRound}
+แหล่งที่มาข้อมูล: ${thaiGold.source === 'official_goldtraders' ? 'เว็บไซต์ทางการ สมาคมค้าทองคำ (goldtraders.or.th)' : thaiGold.source === 'chnwt_api' ? 'ระบบ Thai Gold Real-Time API' : 'คำนวณจาก Spot Gold (XAU/USD) และ อัตราแลกเปลี่ยน THB/USD'}
+</current_market_data>`;
+        }
+      } catch (err) {
+        console.warn('[RAG Thai Gold Fetch Error]:', err);
+      }
+    } else if (activeTicker) {
       try {
         const liveStock = await fetchSingleStockYFinance(activeTicker, stockContext?.market, false);
         if (liveStock) {
