@@ -105,7 +105,7 @@ export { purgeDevStorage } from '../utils/authStorage';
 import { purgeDevStorage } from '../utils/authStorage';
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useClientAuth();
+  const { user, loading: authLoading } = useClientAuth();
   const [currentTier, setCurrentTierState] = useState<SubscriptionTier>('free');
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
   const [isPricingModalOpen, setIsPricingModalOpen] = useState<boolean>(false);
@@ -204,25 +204,28 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
   // Real-time Cloud Wallet synchronization across devices (PC ↔ Mobile) via Firestore
   useEffect(() => {
-    if (!user?.uid || isOwnerAccount) return;
+    if (!user?.uid || isOwnerAccount || authLoading) return;
     const currentUid = user.uid.trim();
     const unsubscribe = subscribeToCloudWallet(currentUid, (cloudWallet) => {
       if (cloudWallet.tier && !isOwnerAccount && cloudWallet.tier !== 'dev') {
         setCurrentTierState(cloudWallet.tier);
       }
       setDailyGemCoinsRemaining(cloudWallet.dailyGemCoinsRemaining);
-      setTopupGemCoins(cloudWallet.topupGemCoins);
+      setTopupGemCoins(cloudWallet.topupGemCoins || 0);
       try {
         localStorage.setItem(getDailyKey(currentUid), cloudWallet.dailyGemCoinsRemaining.toString());
-        localStorage.setItem(getTopupKey(currentUid), cloudWallet.topupGemCoins.toString());
+        localStorage.setItem(getTopupKey(currentUid), (cloudWallet.topupGemCoins || 0).toString());
         localStorage.setItem(getResetDateKey(currentUid), cloudWallet.lastResetDate || getTodayStr());
       } catch {}
     });
     return () => unsubscribe();
-  }, [user?.uid, isOwnerAccount]);
+  }, [user?.uid, isOwnerAccount, authLoading]);
 
   // Account-Scoped Hydration: runs whenever active user changes or page mounts
   useEffect(() => {
+    // If Firebase Auth is still loading initial session on F5 refresh / initial page load, wait until auth resolves!
+    if (authLoading) return;
+
     try {
       // Clean up legacy random device ID key if present
       localStorage.removeItem('stockhome_device_user_id');
@@ -393,7 +396,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     } catch (err) {
       console.warn('[SubscriptionContext] User hydration error:', err);
     }
-  }, [user, isOwnerAccount, restoreOwnerGodMode]);
+  }, [user, authLoading, isOwnerAccount, restoreOwnerGodMode]);
 
   // Auto-claim any pending GemCoin airdrops sent to user's email by Admin
   useEffect(() => {

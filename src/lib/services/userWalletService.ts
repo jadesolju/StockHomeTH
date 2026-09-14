@@ -104,6 +104,7 @@ export function subscribeToCloudWallet(
               ...data,
               dailyGemCoins: tierInfo.dailyGemCoins,
               dailyGemCoinsRemaining: tierInfo.dailyGemCoins,
+              topupGemCoins: data.topupGemCoins || 0,
               lastResetDate: today,
               updatedAt: new Date().toISOString(),
             };
