@@ -1805,7 +1805,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                       padding: '11px 20px',
                       borderRadius: '12px',
                       border: '1px solid var(--glass-border)',
-                      background: 'rgba(255, 255, 255, 0.04)',
+                      background: 'var(--card-sub-bg)',
                       color: 'var(--text-secondary)',
                       fontSize: '0.85rem',
                       fontWeight: 600,
@@ -1910,7 +1910,7 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                   {activeStockModal.currency === 'THB' ? '฿' : '$'}{(Number(activeStockModal.low52w) || 0).toFixed(2)} - {activeStockModal.currency === 'THB' ? '฿' : '$'}{(Number(activeStockModal.high52w) || 0).toFixed(2)}
                 </span>
               </div>
-              <div style={{ position: 'relative', height: '8px', background: 'rgba(255,255,255,0.08)', borderRadius: '100px', overflow: 'hidden' }}>
+              <div style={{ position: 'relative', height: '8px', background: 'var(--bg-tertiary)', borderRadius: '100px', overflow: 'hidden' }}>
                 <div
                   style={{
                     height: '100%',
@@ -1973,8 +1973,8 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                     fontSize: '0.72rem',
                     padding: '3px 10px',
                     borderRadius: '100px',
-                    background: tg.includes('SET50') || tg.includes('Magnificent') || tg.includes('นางฟ้า') ? 'rgba(0, 122, 255, 0.15)' : 'rgba(255, 255, 255, 0.08)',
-                    color: tg.includes('SET50') || tg.includes('Magnificent') || tg.includes('นางฟ้า') ? '#007AFF' : 'var(--text-primary)',
+                    background: tg.includes('SET50') || tg.includes('Magnificent') || tg.includes('นางฟ้า') ? 'var(--accent-blue-bg)' : 'var(--card-sub-bg)',
+                    color: tg.includes('SET50') || tg.includes('Magnificent') || tg.includes('นางฟ้า') ? 'var(--accent-blue)' : 'var(--text-primary)',
                     fontWeight: 700,
                     cursor: 'pointer',
                     border: '1px solid var(--glass-border)',
@@ -1994,17 +1994,17 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
               return (
                 <div
                   style={{
-                    background: 'linear-gradient(180deg, rgba(0, 122, 255, 0.08) 0%, rgba(18, 18, 22, 0.9) 100%)',
-                    border: '1px solid rgba(0, 122, 255, 0.25)',
+                    background: 'var(--card-sub-bg)',
+                    border: '1px solid var(--accent-blue-border)',
                     borderRadius: '18px',
                     padding: '18px 20px',
                     marginBottom: '22px',
                     position: 'relative',
-                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
+                    boxShadow: 'var(--glass-shadow)',
                   }}
                 >
                   {/* Header & Quota Status */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue)', fontWeight: 800, fontSize: '0.95rem' }}>
                       <Bot size={18} />
                       <span>{language === 'en' ? 'AI Stock Intelligence' : 'AI วิเคราะห์หุ้นเจาะลึก'}</span>
@@ -2016,11 +2016,11 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                           style={{
                             fontSize: '0.7rem',
                             fontWeight: 700,
-                            padding: '2px 8px',
+                            padding: '3px 10px',
                             borderRadius: '100px',
-                            background: 'rgba(34, 197, 94, 0.15)',
+                            background: 'var(--accent-bullish-bg)',
                             color: 'var(--accent-bullish)',
-                            border: '1px solid rgba(34, 197, 94, 0.3)',
+                            border: '1px solid var(--accent-bullish-border)',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '4px',
@@ -2031,16 +2031,16 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                       )}
                       <span
                         style={{
-                          fontSize: '0.72rem',
+                          fontSize: '0.75rem',
                           fontWeight: 700,
-                          padding: '3px 10px',
+                          padding: '4px 12px',
                           borderRadius: '100px',
-                          background: 'rgba(255, 255, 255, 0.08)',
+                          background: 'var(--glass-bg)',
                           color: 'var(--text-secondary)',
                           border: '1px solid var(--glass-border)',
                         }}
                       >
-                        โควตา AI วันนี้: <b style={{ color: remainingCredits > 0 ? 'var(--accent-blue)' : '#ef4444' }}>{aiUsageToday}/{currentPlan.limits.aiOnDemandDailyLimit}</b> ครั้ง ({currentPlan.name})
+                        โควตา AI วันนี้: <b style={{ color: remainingCredits > 0 ? 'var(--accent-blue)' : 'var(--accent-bearish)' }}>{aiUsageToday}/{currentPlan.limits.aiOnDemandDailyLimit}</b> ครั้ง ({currentPlan.name})
                       </span>
                     </div>
                   </div>
@@ -2049,8 +2049,8 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                   {aiAnalysisError && (
                     <div
                       style={{
-                        background: 'rgba(239, 68, 68, 0.12)',
-                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        background: 'var(--accent-bearish-bg)',
+                        border: '1px solid var(--accent-bearish-border)',
                         borderRadius: '12px',
                         padding: '12px 14px',
                         marginBottom: '14px',
@@ -2061,8 +2061,8 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                         flexWrap: 'wrap',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fca5a5', fontSize: '0.82rem', fontWeight: 600 }}>
-                        <AlertTriangle size={16} color="#ef4444" />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-bearish)', fontSize: '0.82rem', fontWeight: 600 }}>
+                        <AlertTriangle size={16} />
                         <span>{aiAnalysisError}</span>
                       </div>
                       <button
@@ -2094,13 +2094,13 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                           justifyContent: 'space-between',
                           flexWrap: 'wrap',
                           gap: '10px',
-                          padding: '12px 14px',
-                          background: 'rgba(255, 255, 255, 0.04)',
+                          padding: '12px 16px',
+                          background: 'var(--glass-bg)',
                           borderRadius: '12px',
-                          border: '1px solid rgba(255, 255, 255, 0.06)',
+                          border: '1px solid var(--glass-border)',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                           <span
                             style={{
                               fontSize: '0.8rem',
@@ -2108,47 +2108,50 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                               padding: '4px 10px',
                               borderRadius: '8px',
                               background:
-                                currentAnalysis.rating === 'STRONG_BUY'
-                                  ? 'rgba(34, 197, 94, 0.25)'
-                                  : currentAnalysis.rating === 'BUY'
-                                  ? 'rgba(16, 185, 129, 0.2)'
+                                currentAnalysis.rating === 'STRONG_BUY' || currentAnalysis.rating === 'BUY'
+                                  ? 'var(--accent-bullish-bg)'
                                   : currentAnalysis.rating === 'HOLD'
-                                  ? 'rgba(234, 179, 8, 0.2)'
-                                  : 'rgba(239, 68, 68, 0.2)',
+                                  ? 'var(--accent-neutral-bg)'
+                                  : 'var(--accent-bearish-bg)',
                               color:
                                 currentAnalysis.rating === 'STRONG_BUY' || currentAnalysis.rating === 'BUY'
                                   ? 'var(--accent-bullish)'
                                   : currentAnalysis.rating === 'HOLD'
-                                  ? '#eab308'
-                                  : '#ef4444',
-                              border: '1px solid currentColor',
+                                  ? 'var(--accent-neutral)'
+                                  : 'var(--accent-bearish)',
+                              border:
+                                currentAnalysis.rating === 'STRONG_BUY' || currentAnalysis.rating === 'BUY'
+                                  ? '1px solid var(--accent-bullish-border)'
+                                  : currentAnalysis.rating === 'HOLD'
+                                  ? '1px solid var(--accent-neutral-border)'
+                                  : '1px solid var(--accent-bearish-border)',
                             }}
                           >
                             {currentAnalysis.rating.replace('_', ' ')}
                           </span>
-                          <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                            เป้าหมาย Fair Value: <b style={{ color: 'var(--text-primary)' }}>{currentAnalysis.currency === 'THB' ? '฿' : '$'}{currentAnalysis.fairValueEstimate.targetPrice.toFixed(2)}</b> ({currentAnalysis.fairValueEstimate.upsidePercent >= 0 ? '+' : ''}{currentAnalysis.fairValueEstimate.upsidePercent}% Upside)
+                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                            เป้าหมาย Fair Value: <b style={{ color: 'var(--text-primary)' }}>{currentAnalysis.currency === 'THB' ? '฿' : '$'}{currentAnalysis.fairValueEstimate.targetPrice.toFixed(2)}</b> (<span style={{ color: currentAnalysis.fairValueEstimate.upsidePercent >= 0 ? 'var(--accent-bullish)' : 'var(--accent-bearish)', fontWeight: 700 }}>{currentAnalysis.fairValueEstimate.upsidePercent >= 0 ? '+' : ''}{currentAnalysis.fairValueEstimate.upsidePercent}% Upside</span>)
                           </span>
                         </div>
 
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
                           AI Confidence: <b style={{ color: 'var(--accent-blue)' }}>{currentAnalysis.confidenceScore}%</b>
                         </div>
                       </div>
 
                       {/* Summary */}
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                      <p style={{ fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.6, margin: '4px 0' }}>
                         {currentAnalysis.summary}
                       </p>
 
                       {/* 2-Col Strengths & Risks */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
                         {/* Strengths */}
-                        <div style={{ background: 'rgba(34, 197, 94, 0.05)', border: '1px solid rgba(34, 197, 94, 0.15)', borderRadius: '12px', padding: '10px 12px' }}>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent-bullish)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <CheckCircle2 size={13} /> จุดเด่นเชิงพื้นฐาน
+                        <div style={{ background: 'var(--accent-bullish-bg)', border: '1px solid var(--accent-bullish-border)', borderRadius: '12px', padding: '12px 14px' }}>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--accent-bullish)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <CheckCircle2 size={14} /> จุดเด่นเชิงพื้นฐาน
                           </div>
-                          <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                          <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '0.82rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>
                             {currentAnalysis.keyStrengths.map((s, idx) => (
                               <li key={idx} style={{ marginBottom: '4px' }}>{s}</li>
                             ))}
@@ -2156,11 +2159,11 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                         </div>
 
                         {/* Risks */}
-                        <div style={{ background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.15)', borderRadius: '12px', padding: '10px 12px' }}>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <AlertTriangle size={13} /> ปัจจัยเสี่ยงที่ต้องติดตาม
+                        <div style={{ background: 'var(--accent-bearish-bg)', border: '1px solid var(--accent-bearish-border)', borderRadius: '12px', padding: '12px 14px' }}>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--accent-bearish)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <AlertTriangle size={14} /> ปัจจัยเสี่ยงที่ต้องติดตาม
                           </div>
-                          <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                          <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '0.82rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>
                             {currentAnalysis.keyRisks.map((r, idx) => (
                               <li key={idx} style={{ marginBottom: '4px' }}>{r}</li>
                             ))}
@@ -2171,27 +2174,27 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                       {/* Technical & Verdict Box */}
                       <div
                         style={{
-                          background: 'rgba(0, 122, 255, 0.06)',
+                          background: 'var(--accent-blue-bg)',
                           borderRadius: '12px',
-                          border: '1px solid rgba(0, 122, 255, 0.15)',
-                          padding: '10px 14px',
-                          fontSize: '0.8rem',
+                          border: '1px solid var(--accent-blue-border)',
+                          padding: '12px 16px',
+                          fontSize: '0.84rem',
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: '4px',
+                          gap: '6px',
                         }}
                       >
                         <div style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
-                          กราฟ & เทคนิค: <span style={{ color: currentAnalysis.technicalInsight.trend === 'BULLISH' ? 'var(--accent-bullish)' : '#eab308' }}>{currentAnalysis.technicalInsight.trend}</span> • แนวรับ {currentAnalysis.currency === 'THB' ? '฿' : '$'}{currentAnalysis.technicalInsight.supportLevel} • แนวต้าน {currentAnalysis.currency === 'THB' ? '฿' : '$'}{currentAnalysis.technicalInsight.resistanceLevel}
+                          กราฟ & เทคนิค: <span style={{ color: currentAnalysis.technicalInsight.trend === 'BULLISH' ? 'var(--accent-bullish)' : currentAnalysis.technicalInsight.trend === 'BEARISH' ? 'var(--accent-bearish)' : 'var(--accent-neutral)', fontWeight: 800 }}>{currentAnalysis.technicalInsight.trend}</span> • แนวรับ <b style={{ color: 'var(--text-primary)' }}>{currentAnalysis.currency === 'THB' ? '฿' : '$'}{currentAnalysis.technicalInsight.supportLevel}</b> • แนวต้าน <b style={{ color: 'var(--text-primary)' }}>{currentAnalysis.currency === 'THB' ? '฿' : '$'}{currentAnalysis.technicalInsight.resistanceLevel}</b>
                         </div>
-                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
-                          <b>กลยุทธ์:</b> {currentAnalysis.actionableVerdict}
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: 1.5 }}>
+                          <b style={{ color: 'var(--text-primary)' }}>กลยุทธ์:</b> {currentAnalysis.actionableVerdict}
                         </div>
                       </div>
                     </div>
                   ) : (
                     <div>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 14px 0' }}>
+                      <p style={{ fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.6, margin: '0 0 14px 0' }}>
                         {tDynamic(activeStockModal.aiInsight || activeStockModal.description)}
                       </p>
 
@@ -2200,12 +2203,12 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
                         onClick={() => handleAnalyzeStockWithAi(activeStockModal)}
                         style={{
                           width: '100%',
-                          padding: '11px 18px',
+                          padding: '12px 20px',
                           borderRadius: '12px',
                           border: 'none',
-                          background: 'linear-gradient(90deg, #007AFF 0%, #3B82F6 100%)',
+                          background: 'var(--accent-blue)',
                           color: '#ffffff',
-                          fontSize: '0.88rem',
+                          fontSize: '0.9rem',
                           fontWeight: 800,
                           cursor: isAnalyzingStock ? 'not-allowed' : 'pointer',
                           display: 'flex',
