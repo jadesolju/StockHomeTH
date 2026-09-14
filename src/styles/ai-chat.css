@@ -754,6 +754,30 @@
   background: #f1f5f9 !important;
 }
 
+/* Button Contrast Guarantees for GemCoin Modal in Light Mode */
+[data-theme='light'] .gemcoin-modal-box button.bg-slate-800,
+[data-theme='light'] .gemcoin-modal-box button.bg-slate-900 {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border-color: #0f172a !important;
+}
+
+[data-theme='light'] .gemcoin-modal-box button.bg-slate-800:hover,
+[data-theme='light'] .gemcoin-modal-box button.bg-slate-900:hover {
+  background: #1e293b !important;
+  color: #ffffff !important;
+}
+
+[data-theme='light'] .gemcoin-modal-box button.bg-gradient-to-r,
+[data-theme='light'] .gemcoin-modal-box button[class*='from-cyan-500'] {
+  color: #ffffff !important;
+}
+
+[data-theme='light'] .gemcoin-modal-box button.bg-gradient-to-r span,
+[data-theme='light'] .gemcoin-modal-box button[class*='from-cyan-500'] span {
+  color: #ffffff !important;
+}
+
 [data-theme='light'] .gemcoin-modal-box input,
 [data-theme='light'] #gemcoin-mobile-tab-select {
   background: #ffffff !important;
@@ -2665,16 +2689,18 @@
 }
 
 /* ==========================================================================
+/* ==========================================================================
    Enterprise-Grade Markdown Rendering Engine Styles (.ios-markdown-body)
    ========================================================================== */
 .ios-markdown-body {
-  color: #f1f5f9;
+  color: var(--text-primary);
   font-size: 0.91rem;
   line-height: 1.58;
 }
 
 .ios-markdown-body p {
   margin: 0 0 6px 0;
+  color: var(--text-primary);
 }
 
 .ios-markdown-body p:last-child {
@@ -2685,7 +2711,7 @@
   font-size: 1.25rem;
   font-weight: 800;
   margin: 10px 0 5px 0;
-  color: #ffffff;
+  color: var(--text-primary);
   letter-spacing: -0.015em;
 }
 
@@ -2693,7 +2719,7 @@
   font-size: 1.12rem;
   font-weight: 750;
   margin: 8px 0 4px 0;
-  color: #ffffff;
+  color: var(--text-primary);
   letter-spacing: -0.01em;
 }
 
@@ -2701,7 +2727,7 @@
   font-size: 1rem;
   font-weight: 700;
   margin: 7px 0 3px 0;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .ios-markdown-body h4,
@@ -2710,17 +2736,17 @@
   font-size: 0.92rem;
   font-weight: 700;
   margin: 6px 0 3px 0;
-  color: #cbd5e1;
+  color: var(--text-secondary);
 }
 
 .ios-markdown-body strong {
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .ios-markdown-body em {
   font-style: italic;
-  color: #cbd5e1;
+  color: var(--text-secondary);
 }
 
 .ios-markdown-body del {
@@ -2729,70 +2755,75 @@
 }
 
 .ios-markdown-body a {
-  color: #38bdf8;
+  color: var(--accent-blue);
   text-decoration: underline;
   text-underline-offset: 3px;
   transition: color 0.15s ease;
 }
 
 .ios-markdown-body a:hover {
-  color: #0ea5e9;
+  color: var(--accent-blue-hover);
 }
 
 .ios-markdown-body hr {
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--glass-border);
   margin: 8px 0;
 }
 
 .ios-markdown-body blockquote {
-  margin: 5px 0;
-  padding: 4px 12px;
-  border-left: 3px solid #38bdf8;
-  background: rgba(56, 189, 248, 0.06);
-  border-radius: 0 6px 6px 0;
+  margin: 6px 0;
+  padding: 6px 14px;
+  border-left: 3px solid var(--accent-blue);
+  background: var(--accent-blue-bg);
+  border-radius: 0 8px 8px 0;
+  color: var(--text-primary);
 }
 
 .ios-markdown-body blockquote p {
   margin: 0;
+  color: var(--text-primary);
 }
 
 .ios-markdown-body blockquote blockquote {
   margin-top: 4px;
-  border-left-color: #0ea5e9;
-  background: rgba(14, 165, 233, 0.08);
+  border-left-color: var(--accent-blue-hover);
+  background: var(--accent-blue-bg);
 }
 
 .ios-markdown-body ul,
 .ios-markdown-body ol {
   margin: 4px 0 6px 0;
   padding-left: 20px;
+  color: var(--text-primary);
 }
 
 .ios-markdown-body li {
   margin-bottom: 3px;
   line-height: 1.5;
+  color: var(--text-primary);
 }
 
 .ios-markdown-body li > p {
   margin: 0;
+  color: var(--text-primary);
 }
 
 .ios-markdown-body code {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 1px 5px;
-  border-radius: 5px;
+  background: var(--card-sub-bg);
+  border: 1px solid var(--glass-border);
+  padding: 1px 6px;
+  border-radius: 6px;
   font-size: 0.84em;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  color: #38bdf8;
+  color: var(--accent-blue);
 }
 
 .ios-markdown-body pre {
-  background: rgba(8, 12, 18, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--glass-border);
   border-radius: 10px;
-  padding: 8px 12px;
+  padding: 10px 14px;
   overflow-x: auto;
   margin: 8px 0;
 }
@@ -2801,7 +2832,7 @@
   background: transparent;
   border: none;
   padding: 0;
-  color: #f1f5f9;
+  color: var(--text-primary);
   font-size: 0.82rem;
   line-height: 1.48;
 }
@@ -2809,27 +2840,27 @@
 .ios-markdown-body table {
   width: 100%;
   border-collapse: collapse;
-  margin: 8px 0;
+  margin: 10px 0;
   font-size: 0.84rem;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 8px;
+  background: var(--card-sub-bg);
+  border-radius: 10px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
 }
 
 .ios-markdown-body th {
-  background: rgba(255, 255, 255, 0.06);
-  padding: 6px 10px;
-  font-weight: 700;
+  background: var(--bg-tertiary);
+  padding: 8px 12px;
+  font-weight: 800;
   text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  color: #f1f5f9;
+  border-bottom: 2px solid var(--glass-border);
+  color: var(--text-primary);
 }
 
 .ios-markdown-body td {
-  padding: 6px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: #cbd5e1;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--glass-border);
+  color: var(--text-primary);
 }
 
 .ios-markdown-body tr:last-child td {
@@ -2837,8 +2868,8 @@
 }
 
 .ios-markdown-body details {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--card-sub-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
   padding: 8px 12px;
   margin: 8px 0;
@@ -2847,8 +2878,70 @@
 .ios-markdown-body summary {
   cursor: pointer;
   font-weight: 700;
-  color: #38bdf8;
+  color: var(--accent-blue);
   user-select: none;
+}
+
+/* ──── High-Contrast Light Theme Overrides for Markdown ──── */
+[data-theme='light'] .ios-markdown-body {
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .ios-markdown-body p,
+[data-theme='light'] .ios-markdown-body li {
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .ios-markdown-body h1,
+[data-theme='light'] .ios-markdown-body h2,
+[data-theme='light'] .ios-markdown-body h3,
+[data-theme='light'] .ios-markdown-body h4,
+[data-theme='light'] .ios-markdown-body h5,
+[data-theme='light'] .ios-markdown-body h6,
+[data-theme='light'] .ios-markdown-body strong {
+  color: #000000 !important;
+}
+
+[data-theme='light'] .ios-markdown-body em {
+  color: #334155 !important;
+}
+
+[data-theme='light'] .ios-markdown-body table {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-theme='light'] .ios-markdown-body th {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-theme='light'] .ios-markdown-body td {
+  color: #1e293b !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme='light'] .ios-markdown-body code {
+  background: #f1f5f9 !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #0369a1 !important;
+}
+
+[data-theme='light'] .ios-markdown-body pre {
+  background: #f8fafc !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-theme='light'] .ios-markdown-body pre code {
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .ios-markdown-body blockquote {
+  background: rgba(0, 122, 255, 0.08) !important;
+  border-left: 3px solid #007aff !important;
+  color: #0f172a !important;
 }
 
 /* ==========================================================================

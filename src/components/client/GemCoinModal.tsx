@@ -479,7 +479,7 @@ export const GemCoinModal: React.FC = () => {
                               ? 'bg-slate-700 text-cyan-300 cursor-wait'
                               : pkg.popular
                                 ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-400 hover:to-blue-500 shadow-md shadow-cyan-500/20'
-                                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                                : 'bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-slate-700'
                             }`}
                         >
                           {isLoadingThis ? (
@@ -629,11 +629,11 @@ export const GemCoinModal: React.FC = () => {
                         <button
                           disabled={isCurrent || Boolean(loadingPkgId)}
                           onClick={() => handleCheckout(tierInfo.tier, 'subscription')}
-                          className={`w-full py-2.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${isCurrent
+                          className={`w-full py-2.5 px-3 rounded-lg text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 ${isCurrent
                               ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
                               : isLoadingThis
                                 ? 'bg-slate-700 text-cyan-300 cursor-wait'
-                                : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-md'
+                                : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-md'
                             }`}
                         >
                           {isLoadingThis ? (
@@ -683,7 +683,7 @@ export const GemCoinModal: React.FC = () => {
                 <button
                   type="submit"
                   disabled={redeemLoading || !promoInput.trim()}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-white font-extrabold text-sm shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2"
                 >
                   {redeemLoading ? (
                     <>

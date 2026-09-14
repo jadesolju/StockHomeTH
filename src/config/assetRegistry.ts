@@ -42,7 +42,7 @@ export const assetRegistry: AssetRegistryItem[] = [
   {
     keywords: ['ทองคำ', 'ราคาทอง', 'ทอง', 'gold', 'xau'],
     defaultIdentity: 'Gold (ทองคำ)',
-    bypassKeywords: ['สมาคม', 'แท่ง', 'รูปพรรณ', 'spot', 'xau', 'xauusd', 'spdr', 'gld', 'aura', 'ออโรร่า'],
+    bypassKeywords: ['สมาคม', 'แท่ง', 'รูปพรรณ', 'spot', 'xau', 'xauusd', 'spdr', 'gld', 'aura', 'ออโรร่า', 'วันนี้', 'ล่าสุด', 'ราคา', 'เท่าไหร่', 'บาทละ', 'วิเคราะห์', 'แนวโน้ม', 'ซื้อ', 'ขาย'],
     options: [
       {
         label: '🇹🇭 ทองคำแท่ง / ทองรูปพรรณ',
@@ -73,7 +73,7 @@ export const assetRegistry: AssetRegistryItem[] = [
   {
     keywords: ['น้ำมัน', 'ราคาน้ำมัน', 'oil', 'crude'],
     defaultIdentity: 'Crude Oil (น้ำมันดิบและค้าปลีก)',
-    bypassKeywords: ['หน้าปั๊ม', 'ขายปลีก', 'ลิตร', 'wti', 'brent', 'pttep', 'top', 'sprc', 'bcp', 'or'],
+    bypassKeywords: ['หน้าปั๊ม', 'ขายปลีก', 'ลิตร', 'wti', 'brent', 'pttep', 'top', 'sprc', 'bcp', 'or', 'วันนี้', 'ล่าสุด', 'ราคา', 'เท่าไหร่', 'วิเคราะห์', 'แนวโน้ม'],
     options: [
       {
         label: '⛽ ราคาน้ำมันขายปลีกในไทย',

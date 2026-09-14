@@ -24,6 +24,7 @@ import {
 import { fetchSingleStockYFinance } from '@/lib/services/yfinanceBridge';
 import { SET100_TICKERS, THAI_7_GIANTS, MAGNIFICENT_7 } from '@/lib/utils/stockTagHelper';
 import { resolveAssetAmbiguity } from '@/lib/services/assetAmbiguityEngine';
+import { getLiveMacroGroundingContext } from '@/lib/services/liveIndicesService';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,16 +60,13 @@ interface ChatRequestBody {
 // Core System Prompt for StockHome AI Agent based on accurate grounding & Universal Financial Asset Router v2.0
 const COMPACT_SYSTEM_PROMPT = `คุณคือ "Core Gatekeeper & Analytical Engine" และ AI ผู้ช่วยอัจฉริยะประจำเว็บไซต์ StockHomeTH แพลตฟอร์มศูนย์รวมข้อมูลหุ้นไทยและตลาดสากล
 
-[CRITICAL DIRECTIVE: ZERO-ASSUMPTION POLICY & 3-PILLAR VALIDATION]
-คุณต้องยึดมั่นในนโยบายห้ามสุ่มเดา (Zero-Assumption Policy) โดยเด็ดขาด
-1. การตรวจสอบ 3 มิติ (3-Pillar Validation):
-   - Asset Identity: ตัวตนสินทรัพย์ (ชื่อบริษัท, Ticker เช่น Apple, Gold, Bitcoin)
-   - Trading Venue / Exchange: ตลาดซื้อขาย (เช่น NASDAQ, SET, สมาคมค้าทองคำแห่งประเทศไทย, Bitkub)
-   - Denomination Currency: สกุลเงินอ้างอิง (เช่น USD, THB)
-2. การจัดการความกำกวมและการชนกันของ Ticker (Collision Handling):
-   - หากผู้ใช้ถามถึง "ทองคำ" หรือ "ราคาทอง": **ห้ามทึกทักว่าเป็น SPDR Gold Shares (GLD) หรือ Spot Gold เองโดยเด็ดขาด** หากยังไม่ระบุตลาด/ประเภท ให้สอบถามเพื่อขอความชัดเจนทันทีก่อนวิเคราะห์
-   - หากชื่อสินทรัพย์มีในหลายตลาด (เช่น Apple บน NASDAQ vs Apple DRx บน SET) ห้ามเดาเอง ให้ชี้แจงความแตกต่างและสอบถามให้แน่ใจ
-3. เมื่อข้อมูลทุกมิติเคลียร์และสมบูรณ์แล้ว จึงนำข้อมูลตลาดจริงมาวิเคราะห์และสรุปผลเชิงลึก
+[CRITICAL DIRECTIVE: ZERO-ASSUMPTION POLICY & REAL-TIME GROUNDING]
+คุณต้องยึดมั่นในความถูกต้องแม่นยำของข้อมูลและอ้างอิงข้อมูลสดที่ระบบดึงมาให้เป็นหลัก
+1. การตรวจสอบและตอบสนองทันที (Instant Multi-Asset Grounding):
+   - หากผู้ใช้ถามถึง "ทองคำ" หรือ "ราคาทอง": จงนำข้อมูลราคาทองคำแท่งและทองรูปพรรณจากสมาคมค้าทองคำแห่งประเทศไทย (GTA) และ Spot Gold (USD/oz) ที่ระบบแนบมาให้ในบริบทมาตอบผู้ใช้ทันทีอย่างครบถ้วน ชัดเจน และวิเคราะห์ทิศทางร่วมกับค่าเงินบาท (USD/THB) ได้อย่างมั่นใจ
+   - หากผู้ใช้ถามถึง "หุ้น", "ดัชนีตลาด", "น้ำมัน", "บิตคอยน์" หรือ "ค่าเงิน": ให้อ้างอิงตัวเลขราคาและการเปลี่ยนแปลงล่าสุดจากบล็อกข้อมูล Real-Time ที่ระบบดึงมาให้
+   - หากชื่อสินทรัพย์มีความเฉพาะเจาะจง (เช่น หุ้นแม่บน NASDAQ vs DRx บน SET) ให้อธิบายความต่างให้เข้าใจง่าย
+2. เมื่อมีข้อมูล Real-Time ในบริบท: ให้ตอบข้อมูลและตัวเลขเหล่านั้นทันที ห้ามปฏิเสธหรือบอกว่าระบบไม่มีข้อมูล
 
 [CONTINUOUS CONVERSATION & CONTEXT RETENTION]
 - ในการสนทนาแบบต่อเนื่องในห้องแชทเดิม (Multi-turn conversation): ให้รักษาบริบทเรื่องเดิมที่ผู้ใช้กำลังวิเคราะห์อยู่อย่างต่อเนื่องเสมอ เช่น หากเดิมคุยเรื่องพอร์ตการลงทุน สินทรัพย์ทางเลือก (Bitcoin, ทองคำ) แล้วถามต่อ ให้เชื่อมโยงและต่อยอดบริบทเดิมทันที ห้ามทึกทักว่าผู้ใช้เปลี่ยนเรื่องกะทันหัน หรือถามหาการยืนยันตัวเลือกซ้ำซ้อน เว้นแต่ผู้ใช้จะพิมพ์คำสั่งเริ่มต้นเรื่องใหม่ชัดเจน เช่น /new, /next, หรือ /clear
@@ -76,28 +74,19 @@ const COMPACT_SYSTEM_PROMPT = `คุณคือ "Core Gatekeeper & Analytical 
 [กฎเกณฑ์การสื่อสารทางวิทยาศาสตร์และวิศวกรรมการเงิน (Sci-Com & Eng-Com Principles)]:
 1. ความโปร่งใสของข้อมูล: ระบุแหล่งที่มา วันที่ และเวลาของข้อมูลอย่างชัดเจนเสมอ
 2. การระบุหน่วยอย่างชัดแจ้ง (Explicit Denomination): ห้ามแสดงตัวเลขลอยๆ ให้กำกับหน่วยเสมอ เช่น บาทต่อบาททองคำ, ดอลลาร์สหรัฐ/ทรอยออนซ์, บาท, USD
-3. ปราศจากการปรุงแต่ง (No Hallucination): หากระบบไม่มีข้อมูลราคาล่าสุด ให้แจ้งอย่างตรงไปตรงมาว่ายังไม่พบข้อมูลในขณะนี้ ห้ามเดาตัวเลขราคาเอง
+3. ปราศจากการปรุงแต่ง (No Hallucination): ใช้ตัวเลขราคาล่าสุดจากระบบ ห้ามสุ่มเดาราคา
 4. การคำนวณทางคณิตศาสตร์: อาศัยตัวเลขจริงจากการประมวลผล ห้ามประเมินตัวเลขทบต้นหรือตัวเลขงบการเงินคลาดเคลื่อน
 5. สรุปกระชับ ตรงประเด็น ปิดท้ายด้วยเตือนความเสี่ยง DYOR สั้นๆ 1 บรรทัดเสมอ: "การลงทุนมีความเสี่ยง ข้อมูลนี้จัดทำขึ้นเพื่อการศึกษาและการวิเคราะห์ ไม่ใช่คำชี้ชวนในการซื้อขายหลักทรัพย์"`;
 
-// Strict Anchoring System Lore for Real-Time Stock RAG
-const STRICT_ANCHORING_LORE = `[โหมดวิเคราะห์หุ้น Real-Time (Strict Grounding & Anchoring)]
-คุณคือ "ผู้เชี่ยวชาญด้านการวิเคราะห์หุ้น" ประจำเว็บไซต์ StockHomeTH ที่ทำหน้าที่วิเคราะห์ปัจจัยพื้นฐานจากข้อมูลปัจจุบันที่ส่งให้เท่านั้น
+// Strict Anchoring System Lore for Real-Time Stock & Macro RAG
+const STRICT_ANCHORING_LORE = `[โหมดวิเคราะห์ข้อมูลสินทรัพย์และตลาด Real-Time (Strict Grounding & Multi-Asset Anchoring)]
+คุณคือ "ผู้เชี่ยวชาญด้านการเงินและการลงทุน" ประจำเว็บไซต์ StockHomeTH ที่ทำหน้าที่วิเคราะห์ข้อมูลตลาดจริงจากบล็อกข้อมูล Real-Time ที่แนบมาให้
 
 [กฎเหล็ก]
-1. ต้องตอบราคาและรายละเอียดของหุ้นจากข้อมูลในส่วน [ข้อมูลราคาหุ้นปัจจุบันจากตลาดหลักทรัพย์] เสมอ
-2. ห้ามใช้ความรู้เดิมเรื่องราคา หรือเดาราคาเอง หากไม่มีข้อมูลราคาให้แจ้งว่า "ไม่พบข้อมูลดังกล่าวในขณะนี้"
-3. อ้างอิงวันที่และเวลาที่ระบุในข้อมูลดิบเสมอ เพื่อชี้แจงให้ผู้ใช้ทราบว่าเป็นข้อมูล ณ เวลาใด
-4. ห้ามแต่งตั้งหรือกุชื่อบริษัทขึ้นมาเองโดยเด็ดขาด
-
-[โครงสร้างรูปแบบการจัดรูปแบบผลลัพธ์ (Output Format)]
-ให้ตอบกลับตามหัวข้อดังนี้อย่างชัดเจน เป็นระเบียบ:
-- [ข้อมูลราคาหุ้น {TICKER}]
-- ราคาหุ้น {COMPANY_NAME} ({TICKER}) - ตลาด {EXCHANGE}
-- ราคาปัจจุบัน: ประมวลจากตัวเลขล่าสุด พร้อมระบุความเคลื่อนไหว (%)
-- สถานะปัจจุบัน: สรุปกลุ่มอุตสาหกรรมและกระแสหลัก
-- ปัจจัยสนับสนุน: ระบุความต้องการสินค้าหรือข่าวสารหลักจากข้อมูลที่ให้
-- ประเด็นต้องติดตาม: สรุปความเสี่ยงและเรื่องที่ต้องจับตาดูถัดไป`;
+1. สินทรัพย์และราคาสด: ให้ตอบตัวเลขราคา, สกุลเงิน, การเปลี่ยนแปลง (%) และรอบเวลาอัปเดตจากบล็อกข้อมูลดิบที่แนบมา (เช่น ราคาทองคำแท่งสมาคมฯ, ราคาน้ำมัน, ดัชนีตลาด หรือราคาหุ้น) โดยตรง
+2. ห้ามใช้การสุ่มเดาตัวเลข: อ้างอิงตัวเลขล่าสุดจากข้อมูล Real-Time ที่ดึงมาให้เสมอ
+3. หากผู้ใช้ถามเรื่องราคาทองคำ: สรุปราคารับซื้อ-ราคาขายออกของทองคำแท่ง 96.5% สมาคมค้าทองคำแห่งประเทศไทย, ราคา Gold Spot โลก (USD/oz) และค่าเงินบาท (USD/THB) ประกอบกันอย่างครบถ้วน
+4. ระบุแหล่งที่มาและเวลาอัปเดตของข้อมูลอย่างชัดเจนเสมอ เพื่อความน่าเชื่อถือ`;
 
 // Common stop words to prevent false positives when searching uppercase tickers
 const COMMON_IGNORE_WORDS = new Set([
@@ -455,7 +444,7 @@ export async function POST(req: NextRequest) {
 
     const outboundMessages = contextResult.outboundMessages;
 
-    // 3.5 Real-Time Stock RAG & Grounding Data Retrieval
+    // 3.5 Real-Time Stock RAG & Macro Grounding Data Retrieval (Thai Gold, Oil, SET, BTC, Forex)
     let isLiveStockRAG = false;
     let liveMarketDataBlock = '';
 
@@ -463,14 +452,22 @@ export async function POST(req: NextRequest) {
     const formattedNowDate = now.toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     const formattedNowTime = now.toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' }) + ' น.';
 
-    if (activeTicker) {
-      try {
-        const liveStock = await fetchSingleStockYFinance(activeTicker, stockContext?.market, false);
-        if (liveStock) {
-          isLiveStockRAG = true;
-          const currencySymbol = liveStock.currency === 'THB' ? '฿' : '$';
+    try {
+      const [macroContext, liveStock] = await Promise.all([
+        getLiveMacroGroundingContext(lastUserMsg),
+        activeTicker ? fetchSingleStockYFinance(activeTicker, stockContext?.market, false) : Promise.resolve(null),
+      ]);
 
-          liveMarketDataBlock = `[ข้อมูลราคาหุ้นปัจจุบันจากตลาดหลักทรัพย์]:
+      if (macroContext) {
+        isLiveStockRAG = true;
+        liveMarketDataBlock += `\n${macroContext}\n`;
+      }
+
+      if (liveStock) {
+        isLiveStockRAG = true;
+        const currencySymbol = liveStock.currency === 'THB' ? '฿' : '$';
+
+        liveMarketDataBlock += `\n[ข้อมูลราคาหุ้นปัจจุบันจากตลาดหลักทรัพย์]:
 <current_market_data>
 ข้อมูล ณ วันที่: ${formattedNowDate} เวลา: ${formattedNowTime}
 Ticker: ${liveStock.ticker}
@@ -486,17 +483,16 @@ Industry_Status: ${liveStock.sector || 'บริษัทจดทะเบี�
 Catalysts: ${liveStock.aiInsight || 'ความต้องการผลิตภัณฑ์และผลประกอบการรอบล่าสุด'}
 Risks_To_Watch: ความผันผวนของตลาดสากล ปัจจัยมหภาค และอัตราดอกเบี้ย/อัตราแลกเปลี่ยน
 </current_market_data>`;
-        } else if (candidateTickers.length > 0) {
-          isLiveStockRAG = true;
-          liveMarketDataBlock = `[ข้อมูลราคาหุ้นปัจจุบันจากตลาดหลักทรัพย์]:
+      } else if (candidateTickers.length > 0 && !macroContext) {
+        isLiveStockRAG = true;
+        liveMarketDataBlock += `\n[ข้อมูลราคาหุ้นปัจจุบันจากตลาดหลักทรัพย์]:
 <current_market_data>
 Ticker: ${activeTicker}
 Status: ระบบไม่พบข้อมูลราคาหุ้นแบบ Real-time ของ ${activeTicker} ในขณะนี้ (สามารถวิเคราะห์ภาพรวมธุรกิจและปัจจัยพื้นฐานทั่วไปได้)
 </current_market_data>`;
-        }
-      } catch (err) {
-        console.warn('[RAG Stock Fetch Error]:', err);
       }
+    } catch (err) {
+      console.warn('[RAG Stock / Macro Fetch Error]:', err);
     }
 
     // 3.6 Always-Present Platform Knowledge Context
