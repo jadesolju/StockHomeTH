@@ -316,20 +316,45 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         activeTopup = savedTopup !== null ? parseInt(savedTopup, 10) || 0 : 0;
       }
 
+      // Migrate any guest topup balance or promo redemptions to user account
+      const guestTopupRaw = localStorage.getItem(getTopupKey('guest'));
+      if (guestTopupRaw) {
+        const guestTopupVal = parseInt(guestTopupRaw, 10) || 0;
+        if (guestTopupVal > 0) {
+          activeTopup += guestTopupVal;
+          localStorage.setItem(topupKey, activeTopup.toString());
+          localStorage.removeItem(getTopupKey('guest'));
+          syncServerWallet(currentUid, { action: 'sync', newDaily: activeDaily, newTopup: activeTopup }).catch(() => {});
+        }
+      }
+
       setDailyGemCoinsRemaining(activeDaily);
       setTopupGemCoins(activeTopup);
 
-      // Load scoped logs
+      // Load scoped logs and merge guest logs if present
+      let mergedLogs: GemCoinLogEntry[] = [];
       const savedLogs = localStorage.getItem(logsKey);
       if (savedLogs) {
         try {
-          setGemCoinLogs(JSON.parse(savedLogs));
+          mergedLogs = JSON.parse(savedLogs);
         } catch {
-          setGemCoinLogs([]);
+          mergedLogs = [];
         }
-      } else {
-        setGemCoinLogs([]);
       }
+
+      const guestLogsRaw = localStorage.getItem(getLogsKey('guest'));
+      if (guestLogsRaw) {
+        try {
+          const guestLogs = JSON.parse(guestLogsRaw);
+          if (Array.isArray(guestLogs) && guestLogs.length > 0) {
+            mergedLogs = [...guestLogs, ...mergedLogs].slice(0, 100);
+            localStorage.setItem(logsKey, JSON.stringify(mergedLogs));
+            localStorage.removeItem(getLogsKey('guest'));
+          }
+        } catch {}
+      }
+
+      setGemCoinLogs(mergedLogs);
 
       // Sync with server wallet API in background without wiping locally spent balance
       fetchServerWallet(currentUid).then((serverWallet) => {
