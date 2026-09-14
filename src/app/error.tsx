@@ -2,6 +2,9 @@
 
 import React, { useEffect } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { isChunkLoadError, handleChunkErrorAutoReload } from '../lib/utils/chunkErrorHelper';
+
+export { isChunkLoadError, handleChunkErrorAutoReload };
 
 export default function ErrorBoundary({
   error,
@@ -10,9 +13,20 @@ export default function ErrorBoundary({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const isChunkError = isChunkLoadError(error);
+
   useEffect(() => {
     console.error('App Router Error:', error);
+    handleChunkErrorAutoReload(error);
   }, [error]);
+
+  const handleRetry = () => {
+    if (isChunkError && typeof window !== 'undefined') {
+      window.location.reload();
+    } else {
+      reset();
+    }
+  };
 
   return (
     <div style={{ padding: '40px 0', textAlign: 'center' }}>
@@ -45,13 +59,15 @@ export default function ErrorBoundary({
           <AlertCircle size={24} />
         </div>
         <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-          เกิดข้อผิดพลาดในการโหลดข้อมูล
+          {isChunkError ? 'มีการอัปเดตเวอร์ชันใหม่ของระบบ' : 'เกิดข้อผิดพลาดในการโหลดข้อมูล'}
         </h3>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
-          {error.message || 'ไม่สามารถเชื่อมต่อกับบริการข้อมูลได้ในขณะนี้'}
+          {isChunkError
+            ? 'พบการอัปเดตระบบหรือไฟล์ชั่วคราวหมดอายุ กรุณารีโหลดหน้าเว็บเพื่อโหลดเวอร์ชันล่าสุด'
+            : error.message || 'ไม่สามารถเชื่อมต่อกับบริการข้อมูลได้ในขณะนี้'}
         </p>
         <button
-          onClick={reset}
+          onClick={handleRetry}
           style={{
             background: 'var(--accent-blue)',
             color: '#ffffff',
