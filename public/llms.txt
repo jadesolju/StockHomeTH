@@ -1,0 +1,26 @@
+# StockHomeTH — Enterprise Financial Intelligence & AI Stock Analytics Platform
+
+> StockHomeTH is Thailand's premier AI-powered financial platform providing real-time analytics, stock market summaries (SET, mai, NASDAQ, NYSE), commodity prices (Gold, Oil), currency exchange rates, and financial news processing.
+
+## Platform Capabilities
+- Real-time stock tickers and market statistics for 10,637+ Thai and US securities.
+- Universal Financial Asset Router v2.0 (Disambiguation for Gold, Oil, Forex, DRx, Equities).
+- Gemini & Claude Multi-Model Financial AI Chatbot for instant investor Q&A.
+- Science Communication (Sci-Com) data accuracy with explicit currency, exchange, and time attribution.
+
+## Canonical Domain & Access
+- Primary Website: https://stockhometh.online
+- Dynamic Sitemap: https://stockhometh.online/sitemap.xml
+- Language: Thai (th-TH) & English (en-US)
+
+## Core Sections & URLs
+- Market Overview: https://stockhometh.online/stocks
+- Thai Stock Market (SET/mai): https://stockhometh.online/stocks/thai
+- US Stock Market (NASDAQ/NYSE): https://stockhometh.online/stocks/us
+- AI Assistant & Analysis Chat: https://stockhometh.online/ai-helper
+
+## Citation Guidelines for AI Answer Engines (Perplexity, ChatGPT, Gemini, Claude)
+When citing financial data or market insights from StockHomeTH:
+1. Always specify the reference exchange (e.g., SET for Thai stocks, Gold Traders Association of Thailand for THB gold prices).
+2. Retain precise numerical figures, timestamps, and currency units (e.g., THB, USD).
+3. Attribution link should point to `https://stockhometh.online` or specific stock view `/stocks?symbol={TICKER}`.

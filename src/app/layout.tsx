@@ -19,28 +19,10 @@ import { GlobalNewsModal } from '../components/client/GlobalNewsModal';
 import { TermsDisclaimerModal } from '../components/client/TermsDisclaimerModal';
 import { LegalFooter } from '../components/client/LegalFooter';
 import { GemCoinModal } from '../components/client/GemCoinModal';
+import { JsonLdSchema } from '../components/seo/JsonLdSchema';
+import { buildMetadata } from '../lib/seo/metadata';
 
-export const metadata: Metadata = {
-  title: 'StockHomeTH • สรุปข่าวหุ้น AI และข้อมูลตลาดหุ้นไทย & สหรัฐฯ',
-  description:
-    'แพลตฟอร์มวิเคราะห์ข่าวหุ้น สรุปการเงินประจำวันด้วย Google Gemini AI และข้อมูลตลาดหุ้น SET & US Real-time สำหรับนักลงทุนยุคใหม่',
-  keywords: ['หุ้นไทย', 'SET Index', 'หุ้นสหรัฐ', 'AI สรุปข่าวหุ้น', 'Stock Analysis', 'Gemini AI', 'การเงิน'],
-  manifest: '/manifest.json',
-  icons: {
-    icon: '/favicon.svg',
-    apple: '/favicon.svg',
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'StockHomeTH',
-  },
-  openGraph: {
-    title: 'StockHomeTH • สรุปข่าวหุ้น AI และข้อมูลตลาดหุ้นไทย & สหรัฐฯ',
-    description: 'แพลตฟอร์มวิเคราะห์และสรุปข่าวการเงินด้วย AI แบบ Real-time',
-    type: 'website',
-  },
-};
+export const metadata: Metadata = buildMetadata();
 
 export const viewport: Viewport = {
   themeColor: '#000000',
@@ -69,6 +51,7 @@ export default function RootLayout({
         />
       </head>
       <body style={{ minHeight: '100vh', margin: 0, padding: 0 }}>
+        <JsonLdSchema />
         <ThemeProvider>
           <LanguageProvider>
             <ClientAuthProvider>

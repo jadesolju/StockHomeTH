@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "oxlint",
     "test": "vitest run",
+    "audit:seo": "npx tsx scripts/seo_aeo_audit.ts",
     "server": "node server/index.js",
     "server:dev": "node --watch server/index.js",
     "api:fastapi": "py main.py"
