@@ -215,7 +215,7 @@ export const GemCoinModal: React.FC = () => {
             <Link
               href="/payments"
               onClick={closeGemCoinModal}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-500/30 rounded-lg transition-colors"
+              className="gemcoin-header-store-btn hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors"
               title="เปิดหน้าร้านค้าหลัก"
             >
               <CreditCard size={14} />
@@ -246,7 +246,7 @@ export const GemCoinModal: React.FC = () => {
                 closeGemCoinModal();
                 openAuthModal('login');
               }}
-              className="px-3 py-1 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-bold shrink-0 transition-all shadow-sm"
+              className="px-3 py-1 rounded-lg gemcoin-btn-popular text-xs font-bold shrink-0 transition-all shadow-sm"
             >
               เข้าสู่ระบบก่อนเติมเงิน
             </button>
@@ -383,7 +383,7 @@ export const GemCoinModal: React.FC = () => {
               <Link
                 href="/payments"
                 onClick={closeGemCoinModal}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-cyan-950/60 border border-emerald-500/40 hover:border-emerald-400 transition-all group"
+                className="gemcoin-store-banner flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl transition-all group"
               >
                 <div className="flex items-start sm:items-center gap-3 min-w-0">
                   <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300 shrink-0 mt-0.5 sm:mt-0">
@@ -399,7 +399,7 @@ export const GemCoinModal: React.FC = () => {
                   </div>
                 </div>
                 <div className="w-full sm:w-auto text-center sm:text-right pt-2 sm:pt-0 border-t border-emerald-500/20 sm:border-0 shrink-0">
-                  <span className="inline-block w-full sm:w-auto py-1.5 px-3 rounded-lg sm:rounded-none bg-emerald-500/20 sm:bg-transparent text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform">
+                  <span className="inline-block w-full sm:w-auto py-1.5 px-3 rounded-lg text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform">
                     ไปหน้าร้านหลัก →
                   </span>
                 </div>
@@ -409,13 +409,13 @@ export const GemCoinModal: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setActiveTab('redeem')}
-                className="w-full p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center justify-between transition-all group"
+                className="gemcoin-voucher-banner w-full p-3 rounded-xl text-xs font-semibold flex items-center justify-between transition-all group"
               >
                 <div className="flex items-center gap-2.5">
                   <TicketVoucherSvg className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
                   <span>มีโค้ดโปรโมชั่นหรือรหัสบัตรกำนัล? แลกรับ GemCoins ฟรี</span>
                 </div>
-                <span className="text-amber-400 font-bold group-hover:translate-x-0.5 transition-transform">
+                <span className="font-bold group-hover:translate-x-0.5 transition-transform">
                   กรอกโค้ดที่นี่ →
                 </span>
               </button>
@@ -427,11 +427,11 @@ export const GemCoinModal: React.FC = () => {
                   return (
                     <div
                       key={pkg.id}
-                      className={`relative p-4 rounded-xl border transition-all flex flex-col justify-between ${pkg.popular
-                          ? 'bg-gradient-to-b from-cyan-950/40 to-slate-900/60 border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
+                      className={`gemcoin-package-card relative p-4 rounded-xl border transition-all flex flex-col justify-between ${pkg.popular
+                          ? 'popular'
                           : pkg.bestValue
-                            ? 'bg-gradient-to-b from-amber-950/30 to-slate-900/60 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
-                            : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
+                            ? 'best-value'
+                            : 'default'
                         }`}
                     >
                       {pkg.tag && (
@@ -446,13 +446,13 @@ export const GemCoinModal: React.FC = () => {
                         </div>
                         <h4 className="font-bold text-white text-sm">{pkg.name}</h4>
                         <div className="mt-1 flex items-baseline gap-1.5">
-                          <span className="text-base font-extrabold text-cyan-300">
+                          <span className="text-base font-extrabold text-cyan-300 pkg-coins">
                             {pkg.gemCoins.toLocaleString()}
                           </span>
-                          <span className="text-[11px] text-slate-400">GemCoins</span>
+                          <span className="text-[11px] text-slate-400 pkg-subtext">GemCoins</span>
                         </div>
                         {pkg.bonusCoins > 0 && (
-                          <div className="mt-0.5 text-[11px] text-amber-400 font-semibold">
+                          <div className="mt-0.5 text-[11px] text-amber-400 font-semibold pkg-bonus">
                             +แถมโบนัส {pkg.bonusCoins.toLocaleString()}
                           </div>
                         )}
@@ -460,13 +460,13 @@ export const GemCoinModal: React.FC = () => {
 
                       <div className="mt-4 pt-3 border-t border-slate-800/80 space-y-2">
                         <div className="flex items-baseline gap-2 mb-2">
-                          <span className="text-lg font-extrabold text-emerald-400">
+                          <span className="text-lg font-extrabold text-emerald-400 pkg-promo-price">
                             ฿{pkg.promoPrice}
                           </span>
-                          <span className="text-xs line-through text-slate-500">
+                          <span className="text-xs line-through text-slate-500 pkg-regular-price">
                             ฿{pkg.regularPrice}
                           </span>
-                          <span className="text-[10px] text-amber-300/80 font-medium">
+                          <span className="text-[10px] text-amber-300/80 font-medium pkg-early-pill">
                             (1 ด. แรก)
                           </span>
                         </div>
@@ -476,10 +476,10 @@ export const GemCoinModal: React.FC = () => {
                           disabled={Boolean(loadingPkgId)}
                           onClick={() => handleCheckout(pkg.id, 'payment')}
                           className={`w-full py-2.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${isLoadingThis
-                              ? 'bg-slate-700 text-cyan-300 cursor-wait'
+                              ? 'gemcoin-btn-loading'
                               : pkg.popular
-                                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-400 hover:to-blue-500 shadow-md shadow-cyan-500/20'
-                                : 'bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700'
+                                ? 'gemcoin-btn-popular'
+                                : 'gemcoin-btn-default'
                             }`}
                         >
                           {isLoadingThis ? (
@@ -522,12 +522,11 @@ export const GemCoinModal: React.FC = () => {
                 </p>
               </div>
 
-              {/* Stripe Checkout Direct Link */}
               {/* Stripe Checkout Direct Link (Responsive Vertical-on-Mobile Layout) */}
               <Link
                 href="/payments"
                 onClick={closeGemCoinModal}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-cyan-950/60 border border-emerald-500/40 hover:border-emerald-400 transition-all group"
+                className="gemcoin-store-banner flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl transition-all group"
               >
                 <div className="flex items-start sm:items-center gap-3 min-w-0">
                   <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300 shrink-0 mt-0.5 sm:mt-0">
@@ -543,7 +542,7 @@ export const GemCoinModal: React.FC = () => {
                   </div>
                 </div>
                 <div className="w-full sm:w-auto text-center sm:text-right pt-2 sm:pt-0 border-t border-emerald-500/20 sm:border-0 shrink-0">
-                  <span className="inline-block w-full sm:w-auto py-1.5 px-3 rounded-lg sm:rounded-none bg-emerald-500/20 sm:bg-transparent text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform">
+                  <span className="inline-block w-full sm:w-auto py-1.5 px-3 rounded-lg text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform">
                     ไปหน้าร้านหลัก →
                   </span>
                 </div>
@@ -557,9 +556,7 @@ export const GemCoinModal: React.FC = () => {
                   return (
                     <div
                       key={tierInfo.tier}
-                      className={`p-4 rounded-xl border flex flex-col justify-between transition-all ${isCurrent
-                          ? 'border-emerald-500 bg-emerald-950/20 shadow-[0_0_20px_rgba(16,185,129,0.15)]'
-                          : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
+                      className={`gemcoin-sub-card p-4 rounded-xl border flex flex-col justify-between transition-all ${isCurrent ? 'current' : 'default'
                         }`}
                     >
                       <div>
@@ -573,13 +570,13 @@ export const GemCoinModal: React.FC = () => {
                         </div>
 
                         <div className="flex items-baseline gap-2 mb-2">
-                          <span className="text-xl font-extrabold text-white">
+                          <span className="text-xl font-extrabold text-white pkg-promo-price">
                             ฿{tierInfo.promoPriceMonthly}
                           </span>
-                          <span className="text-xs line-through text-slate-500">
+                          <span className="text-xs line-through text-slate-500 pkg-regular-price">
                             ฿{tierInfo.regularPriceMonthly}
                           </span>
-                          <span className="text-xs text-slate-400">/ เดือน</span>
+                          <span className="text-xs text-slate-400 pkg-subtext">/ เดือน</span>
                         </div>
 
                         <p className="text-xs text-cyan-300 font-medium mb-3">
@@ -630,10 +627,10 @@ export const GemCoinModal: React.FC = () => {
                           disabled={isCurrent || Boolean(loadingPkgId)}
                           onClick={() => handleCheckout(tierInfo.tier, 'subscription')}
                           className={`w-full py-2.5 px-3 rounded-lg text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 ${isCurrent
-                              ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                              ? 'gemcoin-btn-current'
                               : isLoadingThis
-                                ? 'bg-slate-700 text-cyan-300 cursor-wait'
-                                : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-md'
+                                ? 'gemcoin-btn-loading'
+                                : 'gemcoin-btn-popular'
                             }`}
                         >
                           {isLoadingThis ? (
@@ -683,7 +680,7 @@ export const GemCoinModal: React.FC = () => {
                 <button
                   type="submit"
                   disabled={redeemLoading || !promoInput.trim()}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-white font-extrabold text-sm shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl gemcoin-btn-popular disabled:opacity-50 font-extrabold text-sm shadow-lg transition-all flex items-center justify-center gap-2"
                 >
                   {redeemLoading ? (
                     <>

@@ -240,12 +240,47 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         return;
       }
 
-      // If Guest (not logged in): strictly 0 quota
+      // If Guest (not logged in): use device-scoped guest wallet with 500 Daily GemCoins
       if (!user) {
+        const guestUid = savedUserId || 'guest';
+        const guestDailyKey = getDailyKey(guestUid);
+        const guestTopupKey = getTopupKey(guestUid);
+        const guestResetDateKey = getResetDateKey(guestUid);
+        const guestLogsKey = getLogsKey(guestUid);
+
         setCurrentTierState('free');
-        setDailyGemCoinsRemaining(0);
-        setTopupGemCoins(0);
-        setGemCoinLogs([]);
+        const today = getTodayStr();
+        const savedResetDate = localStorage.getItem(guestResetDateKey);
+        const savedDaily = localStorage.getItem(guestDailyKey);
+        const savedTopup = localStorage.getItem(guestTopupKey);
+
+        let activeDaily = 500;
+        let activeTopup = 0;
+
+        if (savedResetDate !== today) {
+          activeDaily = 500;
+          activeTopup = savedTopup !== null ? parseInt(savedTopup, 10) || 0 : 0;
+          localStorage.setItem(guestDailyKey, activeDaily.toString());
+          localStorage.setItem(guestTopupKey, activeTopup.toString());
+          localStorage.setItem(guestResetDateKey, today);
+        } else {
+          activeDaily = savedDaily !== null ? parseInt(savedDaily, 10) || 0 : 500;
+          activeTopup = savedTopup !== null ? parseInt(savedTopup, 10) || 0 : 0;
+        }
+
+        setDailyGemCoinsRemaining(activeDaily);
+        setTopupGemCoins(activeTopup);
+
+        const savedLogs = localStorage.getItem(guestLogsKey);
+        if (savedLogs) {
+          try {
+            setGemCoinLogs(JSON.parse(savedLogs));
+          } catch {
+            setGemCoinLogs([]);
+          }
+        } else {
+          setGemCoinLogs([]);
+        }
         return;
       }
 
@@ -300,21 +335,37 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         setGemCoinLogs([]);
       }
 
-      // Sync with server wallet API in background
+      // Sync with server wallet API in background without wiping locally spent balance
       fetchServerWallet(currentUid).then((serverWallet) => {
         if (serverWallet && !isOwnerAccount) {
           if (serverWallet.lastResetDate === today) {
-            setDailyGemCoinsRemaining(serverWallet.dailyGemCoinsRemaining);
-            setTopupGemCoins(serverWallet.topupGemCoins);
+            // Guard: Take lower remaining daily balance so a rebooted serverless instance cannot erase today's usage back to 500
+            const effectiveDaily = (activeDaily < tierInfo.dailyGemCoins && serverWallet.dailyGemCoinsRemaining === tierInfo.dailyGemCoins)
+              ? activeDaily
+              : Math.min(serverWallet.dailyGemCoinsRemaining, activeDaily);
+
+            const effectiveTopup = Math.max(serverWallet.topupGemCoins, activeTopup);
+
+            setDailyGemCoinsRemaining(effectiveDaily);
+            setTopupGemCoins(effectiveTopup);
+
             if (serverWallet.tier && serverWallet.tier !== 'dev') {
               setCurrentTierState(serverWallet.tier as SubscriptionTier);
             }
             try {
-              localStorage.setItem(dailyKey, serverWallet.dailyGemCoinsRemaining.toString());
-              localStorage.setItem(topupKey, serverWallet.topupGemCoins.toString());
+              localStorage.setItem(dailyKey, effectiveDaily.toString());
+              localStorage.setItem(topupKey, effectiveTopup.toString());
               localStorage.setItem(resetDateKey, today);
               if (serverWallet.tier) localStorage.setItem(tierKey, serverWallet.tier);
             } catch {}
+
+            if (effectiveDaily !== serverWallet.dailyGemCoinsRemaining) {
+              syncServerWallet(currentUid, {
+                action: 'sync',
+                newDaily: effectiveDaily,
+                newTopup: effectiveTopup,
+              }).catch(() => {});
+            }
           }
         }
       }).catch(() => {});
@@ -451,10 +502,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         return true;
       }
 
-      if (!user && !isOwnerAccount) {
-        return false;
-      }
-
       const totalAvailable = dailyGemCoinsRemaining + topupGemCoins;
       if (totalAvailable < amount) {
         return false;
@@ -486,18 +533,18 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         summary: summary || 'แชทสอบถามการเงินและวิเคราะห์หุ้น',
       };
 
-      const currentUid = user?.uid?.trim();
+      const currentUid = user?.uid?.trim() || userId || 'guest';
       const today = getTodayStr();
 
-      if (currentUid) {
-        try {
-          localStorage.setItem(getDailyKey(currentUid), newDaily.toString());
-          localStorage.setItem(getTopupKey(currentUid), newTopup.toString());
-          localStorage.setItem(getResetDateKey(currentUid), today);
-        } catch {}
+      try {
+        localStorage.setItem(getDailyKey(currentUid), newDaily.toString());
+        localStorage.setItem(getTopupKey(currentUid), newTopup.toString());
+        localStorage.setItem(getResetDateKey(currentUid), today);
+      } catch {}
 
+      if (user?.uid) {
         // Persist immediately to Server Wallet API
-        syncServerWallet(currentUid, {
+        syncServerWallet(user.uid.trim(), {
           action: 'deduct',
           amount,
           newDaily,
@@ -505,22 +552,20 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         }).catch(() => {});
 
         // Sync to Firestore Cloud
-        deductCloudCoins(currentUid, amount, model, summary).catch(() => {});
+        deductCloudCoins(user.uid.trim(), amount, model, summary).catch(() => {});
       }
 
       setGemCoinLogs((prev) => {
         const updated = [logEntry, ...prev.slice(0, 49)];
-        if (currentUid) {
-          try {
-            localStorage.setItem(getLogsKey(currentUid), JSON.stringify(updated));
-          } catch {}
-        }
+        try {
+          localStorage.setItem(getLogsKey(currentUid), JSON.stringify(updated));
+        } catch {}
         return updated;
       });
 
       return true;
     },
-    [dailyGemCoinsRemaining, topupGemCoins, currentTier, isOwnerAccount, user]
+    [dailyGemCoinsRemaining, topupGemCoins, currentTier, isOwnerAccount, user, userId]
   );
 
   // Refund GemCoins (e.g. Aborted request or connection error)
