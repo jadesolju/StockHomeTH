@@ -65,10 +65,20 @@ function generateSparkline(basePrice, changePct) {
   return points;
 }
 
-function buildThaiUniverse(targetCount = 500) {
+function buildThaiUniverse(targetCount = 805) {
   console.log(`🇹🇭 Building Thai Stock Universe (target: ${targetCount})...`);
   const thaiStocks = [];
   const seen = new Set();
+
+  let catalogStocks = [];
+  if (fs.existsSync(THAI_SOURCE)) {
+    try {
+      const srcData = JSON.parse(fs.readFileSync(THAI_SOURCE, 'utf-8'));
+      catalogStocks = Array.isArray(srcData) ? srcData : (srcData.stocks || []);
+    } catch (err) {
+      console.warn('Warning loading THAI_SOURCE in JS builder:', err);
+    }
+  }
 
   for (const [ticker, [name, sector, price, mcap, pe, div]] of Object.entries(THAI_CURATED)) {
     if (thaiStocks.length >= targetCount) break;
@@ -102,6 +112,43 @@ function buildThaiUniverse(targetCount = 500) {
     });
   }
 
+  for (const item of catalogStocks) {
+    if (thaiStocks.length >= targetCount) break;
+    const tk = (item.ticker || (item.symbol ? item.symbol.replace('.BK', '') : '')).trim().toUpperCase();
+    if (!tk || seen.has(tk)) continue;
+    seen.add(tk);
+
+    const pr = parseFloat((item.price || (2.5 + Math.random() * 42.5)).toFixed(2));
+    const chg = parseFloat((item.change || (Math.random() * 8.0 - 4.0)).toFixed(2));
+    const spark = generateSparkline(pr, chg);
+    const nm = item.name || `${tk} Public Company Limited`;
+    const sec = item.sector || "Industrial & Services";
+
+    thaiStocks.push({
+      ticker: tk,
+      symbol: `${tk}.BK`,
+      name: nm,
+      market: "SET",
+      sector: sec,
+      price: pr,
+      currency: "THB",
+      change: chg,
+      changeAmount: parseFloat((pr * (chg / 100)).toFixed(2)),
+      marketCap: item.marketCap || `${(2.0 + Math.random() * 45.0).toFixed(1)}B THB`,
+      peRatio: parseFloat((item.peRatio || (8.0 + Math.random() * 24.0)).toFixed(1)),
+      dividendYield: parseFloat((item.dividendYield || (1.5 + Math.random() * 6.0)).toFixed(1)),
+      high52w: parseFloat((pr * (1.10 + Math.random() * 0.25)).toFixed(2)),
+      low52w: parseFloat((pr * (0.70 + Math.random() * 0.20)).toFixed(2)),
+      volume: `${(1.0 + Math.random() * 35.0).toFixed(1)}M`,
+      sparkline7d: spark,
+      analystRating: chg > 0 ? "Buy" : "Hold",
+      targetPrice: parseFloat((pr * 1.15).toFixed(2)),
+      sentimentScore: Math.min(95, Math.max(30, Math.floor(65 + chg * 5))),
+      aiInsight: `หุ้น ${nm} (${tk}) ดำเนินธุรกิจในกลุ่ม ${sec}`,
+      description: `${nm} (${tk}) บริษัทจดทะเบียนในตลาดหลักทรัพย์แห่งประเทศไทย (SET/mai)`
+    });
+  }
+
   // Save to file
   const outputData = {
     updated_at: new Date().toISOString(),
@@ -113,4 +160,4 @@ function buildThaiUniverse(targetCount = 500) {
   console.log(`✅ Saved ${thaiStocks.length} Thai stocks to ${THAI_SOURCE}`);
 }
 
-buildThaiUniverse(500);
+buildThaiUniverse(805);
