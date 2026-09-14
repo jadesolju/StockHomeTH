@@ -6,6 +6,7 @@ import {
 } from './stockPoolService';
 import { fetchStockMultiLayer } from './stockDataService';
 import { getLiveMacroGroundingContext } from './liveIndicesService';
+import { extractCandidateTickers } from '@/lib/utils/tickerExtractor';
 
 describe('StockPoolService & Multi-Layer Zero-Rejection Architecture', () => {
   beforeEach(() => {
@@ -47,6 +48,27 @@ describe('StockPoolService & Multi-Layer Zero-Rejection Architecture', () => {
         expect(result.price).toBeGreaterThan(0);
         expect(result.currency).toBe('USD');
       }
+    });
+
+    it('should resolve SPCX (SpaceX) stock data accurately', async () => {
+      const result = await fetchStockMultiLayer('SPCX');
+      expect(result).not.toBeNull();
+      if (result) {
+        expect(result.ticker).toBe('SPCX');
+        expect(result.price).toBeGreaterThan(0);
+        expect(result.market).toBe('US');
+        expect(result.currency).toBe('USD');
+        expect(result.name.toUpperCase()).toContain('SPACE EXPLORATION TECHNOLOGIES');
+      }
+    });
+  });
+
+  describe('Candidate Ticker Extraction (AI Chat RAG Routing)', () => {
+    it('should correctly extract SPCX for SpaceX queries in Thai and English vernaculars', () => {
+      expect(extractCandidateTickers('หุ้น Space X ละเป็นอย่างไร')).toContain('SPCX');
+      expect(extractCandidateTickers('วิเคราะห์หุ้น SpaceX หน่อย')).toContain('SPCX');
+      expect(extractCandidateTickers('ขอแนวโน้มราคาหุ้น สเปซเอ็กซ์')).toContain('SPCX');
+      expect(extractCandidateTickers('ราคาหุ้น SPCX วันนี้')).toContain('SPCX');
     });
   });
 
