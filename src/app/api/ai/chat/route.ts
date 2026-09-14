@@ -22,7 +22,7 @@ import {
   ChatMessageLike,
 } from '@/lib/services/contextSummaryService';
 import { fetchStockMultiLayer } from '@/lib/services/stockDataService';
-import { SET100_TICKERS, THAI_7_GIANTS, MAGNIFICENT_7 } from '@/lib/utils/stockTagHelper';
+import { SET100_TICKERS, THAI_7_GIANTS, MAGNIFICENT_7, RECENT_IPOS } from '@/lib/utils/stockTagHelper';
 import { resolveAssetAmbiguity } from '@/lib/services/assetAmbiguityEngine';
 import { getLiveMacroGroundingContext } from '@/lib/services/liveIndicesService';
 
@@ -218,6 +218,16 @@ const THAI_STOCK_MAP: Record<string, string> = {
   'เฟสบุ๊ก': 'META',
   'เน็ตฟลิกซ์': 'NFLX',
 
+  // SpaceX / SPCX
+  'สเปซเอ็กซ์': 'SPCX',
+  'สเปซเอ็ก': 'SPCX',
+  'สเปซเอก': 'SPCX',
+  'สเปซเอ็กซ': 'SPCX',
+  'สเปซ x': 'SPCX',
+  'spacex': 'SPCX',
+  'space x': 'SPCX',
+  'spcx': 'SPCX',
+
   // Commodities & Crypto (Specific unambiguous terms only)
   'เอสพีดีอาร์': 'GLD',
   'spdr gold': 'GLD',
@@ -228,7 +238,7 @@ const THAI_STOCK_MAP: Record<string, string> = {
   'อีเทอเรียม': 'ETH-USD',
 };
 
-function extractCandidateTickers(text: string): string[] {
+export function extractCandidateTickers(text: string): string[] {
   if (!text) return [];
   const candidates: string[] = [];
   const lowerText = text.toLowerCase();
@@ -244,7 +254,7 @@ function extractCandidateTickers(text: string): string[] {
     }
   }
 
-  // 2. Pattern: $TICKER (e.g. $NVDA, $DELTA, $PTT)
+  // 2. Pattern: $TICKER (e.g. $NVDA, $DELTA, $PTT, $SPCX)
   const dollarMatches = text.match(/\$([A-Za-z]{1,6})\b/g);
   if (dollarMatches) {
     for (const m of dollarMatches) {
@@ -262,7 +272,7 @@ function extractCandidateTickers(text: string): string[] {
     }
   }
 
-  // 4. Standalone English tokens (e.g. NVDA, PTT, CPALL, DELTA, TSLA, AAPL, MSFT, ptt, delta)
+  // 4. Standalone English tokens (e.g. NVDA, PTT, CPALL, DELTA, TSLA, AAPL, MSFT, ptt, delta, spcx)
   const standaloneMatches = text.match(/[A-Za-z]{2,6}/g);
   if (standaloneMatches) {
     for (const sym of standaloneMatches) {
@@ -273,6 +283,7 @@ function extractCandidateTickers(text: string): string[] {
           SET100_TICKERS.has(clean) ||
           THAI_7_GIANTS.has(clean) ||
           MAGNIFICENT_7.has(clean) ||
+          RECENT_IPOS.has(clean) ||
           clean === 'BTC' ||
           clean === 'ETH' ||
           clean === 'GLD';
