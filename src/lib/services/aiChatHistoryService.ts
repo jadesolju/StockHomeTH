@@ -204,7 +204,7 @@ export function subscribeToUserCloudSessions(
           }
         });
 
-        // Merge cloud with local cache (cloud takes priority if newer)
+        // Merge cloud with local cache intelligently (favoring fuller message history & newer updates)
         const local = loadUserSessions(userUid);
         const mergedMap = new Map<string, ChatSession>();
 
@@ -218,9 +218,13 @@ export function subscribeToUserCloudSessions(
             mergedMap.set(ls.id, ls);
             // Sync orphaned local session to cloud
             saveSessionToCloud(userUid, ls);
-          } else if (ls.updatedAt > cloudMatch.updatedAt) {
-            mergedMap.set(ls.id, ls);
-            saveSessionToCloud(userUid, ls);
+          } else {
+            const lsMsgCount = Array.isArray(ls.messages) ? ls.messages.length : 0;
+            const csMsgCount = Array.isArray(cloudMatch.messages) ? cloudMatch.messages.length : 0;
+            if (lsMsgCount > csMsgCount || (lsMsgCount === csMsgCount && ls.updatedAt > cloudMatch.updatedAt)) {
+              mergedMap.set(ls.id, ls);
+              saveSessionToCloud(userUid, ls);
+            }
           }
         }
 
