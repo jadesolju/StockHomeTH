@@ -54,6 +54,7 @@ import {
   updateSession,
   deleteSession,
   migrateGuestSessionsToUser,
+  subscribeToUserCloudSessions,
   ChatSession,
 } from './aiChatHistoryService';
 
@@ -170,6 +171,39 @@ describe('aiChatHistoryService', () => {
       expect(userSessions).toHaveLength(1);
       expect(userSessions[0].id).toBe('guest_sess_1');
       expect(localStorage.getItem(guestKey)).toBeNull();
+    });
+  });
+
+  describe('subscribeToUserCloudSessions', () => {
+    it('subscribes and merges cloud sessions with local storage', async () => {
+      const { onSnapshot } = await import('firebase/firestore');
+
+      // Mock snapshot callback implementation
+      (onSnapshot as any).mockImplementation((queryObj: any, onNext: any) => {
+        const mockDocSnap = {
+          data: () => ({
+            id: 'cloud_sess_1',
+            title: 'Cloud Chat',
+            modelId: 'gpt-4o',
+            messages: [{ id: 'm1', role: 'user', content: 'Cloud prompt', timestamp: '2025-01-01' }],
+            createdAt: 1000,
+            updatedAt: 1000,
+          }),
+        };
+        onNext([mockDocSnap]);
+        return () => {};
+      });
+
+      let updatedSessions: ChatSession[] = [];
+      const unsub = subscribeToUserCloudSessions(userUid, (sessions) => {
+        updatedSessions = sessions;
+      });
+
+      expect(updatedSessions).toHaveLength(1);
+      expect(updatedSessions[0].id).toBe('cloud_sess_1');
+      expect(updatedSessions[0].title).toBe('Cloud Chat');
+
+      unsub();
     });
   });
 });

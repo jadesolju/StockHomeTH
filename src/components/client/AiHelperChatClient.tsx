@@ -237,10 +237,19 @@ export const AiHelperChatClient: React.FC = () => {
         setSessions(cloudSessions);
         // Sync active session messages in real-time across PC/Mobile without tearing down listener
         const currentActiveId = activeSessionIdRef.current;
-        if (currentActiveId && !isLoadingRef.current) {
-          const currentActive = cloudSessions.find((s) => s.id === currentActiveId);
-          if (currentActive) {
-            setMessages(currentActive.messages);
+        if (!isLoadingRef.current) {
+          if (currentActiveId) {
+            const currentActive = cloudSessions.find((s) => s.id === currentActiveId);
+            if (currentActive) {
+              setMessages(currentActive.messages);
+            }
+          } else if (cloudSessions.length > 0) {
+            // Auto-select latest active session on mobile/PC if none currently selected
+            const latest = cloudSessions[0];
+            setActiveSessionId(latest.id);
+            setMessages(latest.messages);
+            const matchedModel = CURATED_MODELS.find((m) => m.id === latest.modelId);
+            if (matchedModel) setSelectedModel(matchedModel);
           }
         }
       });
