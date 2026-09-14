@@ -39,7 +39,7 @@ describe('resolveAssetAmbiguity', () => {
 
   describe('Negative Path & Ambiguous Queries', () => {
     it('should return NEED_CLARIFICATION for ambiguous gold queries without bypass/option match', () => {
-      const result = resolveAssetAmbiguity('ราคาทองวันนี้เป็นยังไงบ้าง');
+      const result = resolveAssetAmbiguity('ทองคำเป็นยังไงบ้าง');
       expect(result.status).toBe('NEED_CLARIFICATION');
       if (result.status === 'NEED_CLARIFICATION') {
         expect(result.reason).toContain('Gold (ทองคำ)');
