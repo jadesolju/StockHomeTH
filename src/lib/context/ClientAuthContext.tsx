@@ -118,7 +118,9 @@ export const ClientAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const signOut = async () => {
     try {
       purgeDevStorage();
-    } catch {}
+    } catch (err) {
+      console.error('[ClientAuth] Failed to purge dev storage during sign out:', err);
+    }
     await firebaseSignOut(auth);
     setUser(null);
     closeProfileModal();

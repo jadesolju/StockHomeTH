@@ -116,7 +116,9 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const signOut = async () => {
     try {
       purgeDevStorage();
-    } catch {}
+    } catch (err) {
+      console.error('[AdminAuth] Failed to purge dev storage during sign out:', err);
+    }
     try {
       await supabase.auth.signOut();
       setUser(null);
