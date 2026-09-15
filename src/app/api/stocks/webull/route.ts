@@ -1,24 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
-let activePythonCmd: string | null = null;
-async function detectPythonCommand(): Promise<string> {
+interface PythonCmdConfig {
+  command: string;
+  argsPrefix: string[];
+}
+
+let activePythonCmd: PythonCmdConfig | null = null;
+
+async function detectPythonCommand(): Promise<PythonCmdConfig> {
   if (activePythonCmd) return activePythonCmd;
-  const candidates = ['py -3.11', 'py', 'python'];
-  for (const cmd of candidates) {
+  const candidates: PythonCmdConfig[] = [
+    { command: 'py', argsPrefix: ['-3.11'] },
+    { command: 'py', argsPrefix: [] },
+    { command: 'python3', argsPrefix: [] },
+    { command: 'python', argsPrefix: [] },
+  ];
+  for (const cand of candidates) {
     try {
-      const { stdout } = await execAsync(`${cmd} -c "import webull, sys; print('OK')"`, { timeout: 3000 });
+      const { stdout } = await execFileAsync(cand.command, [...cand.argsPrefix, '-c', "import webull, sys; print('OK')"], { timeout: 3000 });
       if (stdout.includes('OK')) {
-        activePythonCmd = cmd;
-        return cmd;
+        activePythonCmd = cand;
+        return cand;
       }
     } catch {}
   }
-  return 'py';
+  activePythonCmd = { command: 'py', argsPrefix: [] };
+  return activePythonCmd;
 }
 
 function parseLastJsonLine(output: string): any {
@@ -42,17 +54,17 @@ export async function GET(request: NextRequest) {
   const interval = searchParams.get('interval') || '1d';
 
   try {
-    const pyCmd = await detectPythonCommand();
+    const { command, argsPrefix } = await detectPythonCommand();
     const scriptPath = path.resolve(process.cwd(), 'server', 'webull_engine.py');
 
-    let cmd = `${pyCmd} "${scriptPath}" --action ${action}`;
+    const args = [...argsPrefix, scriptPath, '--action', String(action)];
     if (action === 'bars' || action === 'quote') {
-      cmd += ` --symbol "${symbol}" --interval "${interval}"`;
+      args.push('--symbol', String(symbol), '--interval', String(interval));
     } else if (action === 'batch_bars' || action === 'parallel') {
-      cmd += ` --symbols "${symbols}" --interval "${interval}"`;
+      args.push('--symbols', String(symbols), '--interval', String(interval));
     }
 
-    const { stdout } = await execAsync(cmd, { timeout: 20000 });
+    const { stdout } = await execFileAsync(command, args, { timeout: 20000 });
     const json = parseLastJsonLine(stdout);
     return NextResponse.json(json);
   } catch (err: any) {
@@ -72,26 +84,30 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const action = body.action || 'batch_bars';
-    const symbols = Array.isArray(body.symbols) ? body.symbols.join(',') : (body.symbols || 'AAPL,TSLA');
-    const symbol = body.symbol || 'AAPL';
-    const interval = body.interval || '1d';
-    const appKey = body.appKey || '';
-    const appSecret = body.appSecret || '';
+    const symbols = Array.isArray(body.symbols) ? body.symbols.join(',') : String(body.symbols || 'AAPL,TSLA');
+    const symbol = String(body.symbol || 'AAPL');
+    const interval = String(body.interval || '1d');
+    const appKey = body.appKey ? String(body.appKey) : '';
+    const appSecret = body.appSecret ? String(body.appSecret) : '';
 
-    const pyCmd = await detectPythonCommand();
+    const { command, argsPrefix } = await detectPythonCommand();
     const scriptPath = path.resolve(process.cwd(), 'server', 'webull_engine.py');
 
-    let cmd = `${pyCmd} "${scriptPath}" --action ${action}`;
+    const args = [...argsPrefix, scriptPath, '--action', String(action)];
     if (action === 'bars' || action === 'quote') {
-      cmd += ` --symbol "${symbol}" --interval "${interval}"`;
+      args.push('--symbol', symbol, '--interval', interval);
     } else {
-      cmd += ` --symbols "${symbols}" --interval "${interval}"`;
+      args.push('--symbols', symbols, '--interval', interval);
     }
 
-    if (appKey) cmd += ` --app_key "${appKey}"`;
-    if (appSecret) cmd += ` --app_secret "${appSecret}"`;
+    if (appKey) {
+      args.push('--app_key', appKey);
+    }
+    if (appSecret) {
+      args.push('--app_secret', appSecret);
+    }
 
-    const { stdout } = await execAsync(cmd, { timeout: 25000 });
+    const { stdout } = await execFileAsync(command, args, { timeout: 25000 });
     const json = parseLastJsonLine(stdout);
     return NextResponse.json(json);
   } catch (err: any) {
