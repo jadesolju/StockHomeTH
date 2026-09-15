@@ -130,18 +130,40 @@ export async function deleteSessionFromCloud(userUid: string, sessionId: string)
 export function migrateGuestSessionsToUser(userUid: string): void {
   if (typeof window === 'undefined' || !userUid) return;
   try {
+    const guestKeys = new Set<string>();
+    guestKeys.add(`${STORAGE_PREFIX}guest`);
+
     const legacyGuestId = localStorage.getItem('gemcoin_user_id');
-    const guestKeys = [`${STORAGE_PREFIX}guest`];
     if (legacyGuestId) {
-      guestKeys.push(`${STORAGE_PREFIX}guest_${legacyGuestId}`);
+      guestKeys.add(`${STORAGE_PREFIX}guest_${legacyGuestId}`);
+    }
+    const legacyDeviceId = localStorage.getItem('stockhome_device_user_id');
+    if (legacyDeviceId) {
+      guestKeys.add(`${STORAGE_PREFIX}guest_${legacyDeviceId}`);
+      guestKeys.add(`${STORAGE_PREFIX}user_${legacyDeviceId}`);
     }
 
-    for (const guestKey of guestKeys) {
+    // Scan all keys in localStorage for any guest/legacy session arrays
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(STORAGE_PREFIX) && !k.startsWith(`${STORAGE_PREFIX}user_${userUid.trim()}`)) {
+        guestKeys.add(k);
+      }
+    }
+
+    for (const guestKey of Array.from(guestKeys)) {
       const guestRaw = localStorage.getItem(guestKey);
       if (!guestRaw) continue;
 
-      const guestSessions: ChatSession[] = JSON.parse(guestRaw);
-      if (!Array.isArray(guestSessions) || guestSessions.length === 0) {
+      let guestSessions: ChatSession[] = [];
+      try {
+        const parsed = JSON.parse(guestRaw);
+        if (Array.isArray(parsed)) guestSessions = parsed;
+      } catch {
+        continue;
+      }
+
+      if (guestSessions.length === 0) {
         localStorage.removeItem(guestKey);
         continue;
       }

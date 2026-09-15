@@ -320,15 +320,32 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       }
 
       // Migrate any guest topup balance or promo redemptions to user account
-      const guestTopupRaw = localStorage.getItem(getTopupKey('guest'));
-      if (guestTopupRaw) {
-        const guestTopupVal = parseInt(guestTopupRaw, 10) || 0;
-        if (guestTopupVal > 0) {
-          activeTopup += guestTopupVal;
-          localStorage.setItem(topupKey, activeTopup.toString());
-          localStorage.removeItem(getTopupKey('guest'));
-          syncServerWallet(currentUid, { action: 'sync', newDaily: activeDaily, newTopup: activeTopup }).catch(() => {});
+      let migratedGuestTopup = 0;
+      const guestTopupKeys = [
+        getTopupKey('guest'),
+        'stockhome_gemcoin_topup_balance',
+        'stockhome_gemcoin_undefined_topup',
+        'stockhome_gemcoin_null_topup',
+        'stockhome_gemcoin_guest_topup',
+      ];
+
+      for (const k of guestTopupKeys) {
+        if (k === topupKey) continue;
+        const valRaw = localStorage.getItem(k);
+        if (valRaw) {
+          const val = parseInt(valRaw, 10) || 0;
+          if (val > 0) {
+            migratedGuestTopup += val;
+          }
+          localStorage.removeItem(k);
         }
+      }
+
+      if (migratedGuestTopup > 0) {
+        activeTopup += migratedGuestTopup;
+        localStorage.setItem(topupKey, activeTopup.toString());
+        creditCloudTopupCoins(currentUid, migratedGuestTopup).catch(() => {});
+        syncServerWallet(currentUid, { action: 'sync', newDaily: activeDaily, newTopup: activeTopup }).catch(() => {});
       }
 
       setDailyGemCoinsRemaining(activeDaily);
