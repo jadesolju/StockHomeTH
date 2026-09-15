@@ -16,6 +16,9 @@ import {
   getTodayStr,
   fetchServerWallet,
   syncServerWallet,
+  fetchServerTransactions,
+  recordCloudTransaction,
+  syncBulkTransactions,
 } from '../services/userWalletService';
 import { realtimeSync } from '../services/realtimeSyncService';
 
@@ -377,6 +380,36 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
       setGemCoinLogs(mergedLogs);
 
+      // Helper to merge and unify transaction records from Cloud and Local
+      const applyUnifiedTransactions = (remoteTx: GemCoinLogEntry[]) => {
+        if (!Array.isArray(remoteTx)) return;
+        const txMap = new Map<string, GemCoinLogEntry>();
+        for (const t of remoteTx) {
+          if (t && t.id) txMap.set(t.id, t);
+        }
+        for (const t of mergedLogs) {
+          if (t && t.id && !txMap.has(t.id)) {
+            txMap.set(t.id, t);
+          }
+        }
+        const unified = Array.from(txMap.values()).sort(
+          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        ).slice(0, 100);
+
+        setGemCoinLogs(unified);
+        try {
+          localStorage.setItem(logsKey, JSON.stringify(unified));
+        } catch {}
+
+        // If local had unsynced entries, push them to Cloud Ledger
+        if (unified.length > remoteTx.length) {
+          syncBulkTransactions(currentUid, unified);
+        }
+      };
+
+      // Fetch cloud transactions ledger
+      fetchServerTransactions(currentUid).then(applyUnifiedTransactions).catch(() => {});
+
       // Helper to apply server wallet updates safely
       const applyServerWallet = (serverWallet: any) => {
         if (!serverWallet || isOwnerAccount) return;
@@ -421,10 +454,16 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       // 2. Connect Real-time WebSocket/SSE Stream & Intra-tab Broadcast
       realtimeSync.connect(currentUid);
       const unsubRealtime = realtimeSync.on('WALLET_UPDATED', (payload) => {
-        if (payload && typeof payload.topupGemCoins === 'number') {
-          applyServerWallet(payload);
-        } else {
-          fetchServerWallet(currentUid).then(applyServerWallet).catch(() => {});
+        if (payload) {
+          if (Array.isArray(payload.transactions)) {
+            applyUnifiedTransactions(payload.transactions);
+          }
+          if (typeof payload.topupGemCoins === 'number') {
+            applyServerWallet(payload);
+          } else {
+            fetchServerWallet(currentUid).then(applyServerWallet).catch(() => {});
+            fetchServerTransactions(currentUid).then(applyUnifiedTransactions).catch(() => {});
+          }
         }
       });
 
@@ -436,6 +475,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       // 4. Auto-sync on window focus & visibility change (when returning to phone app/tab)
       const handleReFocus = () => {
         fetchServerWallet(currentUid).then(applyServerWallet).catch(() => {});
+        fetchServerTransactions(currentUid).then(applyUnifiedTransactions).catch(() => {});
       };
 
       if (typeof window !== 'undefined') {
@@ -475,7 +515,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             } catch {}
             return updated;
           });
-
           const logEntry: GemCoinLogEntry = {
             id: 'airdrop_' + Date.now(),
             timestamp: new Date().toISOString(),
@@ -485,67 +524,77 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             summary: `🎁 ได้รับของขวัญ GemCoins จาก Admin (+${added.toLocaleString()} GemCoins)`,
           };
 
+          recordCloudTransaction(currentUid, logEntry);
+
           setGemCoinLogs((prev) => {
-            const updated = [logEntry, ...prev.slice(0, 49)];
+            const updated = [logEntry, ...prev.slice(0, 99)];
             try {
               localStorage.setItem(getLogsKey(currentUid), JSON.stringify(updated));
             } catch {}
             return updated;
           });
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[SubscriptionContext] Airdrop claim check error:', err);
+      }
     };
-
     checkAirdrops();
-  }, [user?.email, user?.uid]);
+  }, [user]);
 
-  // Save changes to Tier
-  const setTier = useCallback(
+  // Set Dev / Unlimited Role
+  const setDeveloperUnlimited = useCallback(() => {
+    setCurrentTierState('dev');
+    const currentUid = user?.uid?.trim() || (userId !== 'guest' ? userId : 'guest');
+    try {
+      localStorage.setItem(getTierKey(currentUid), 'dev');
+    } catch {}
+    if (user?.uid) {
+      updateCloudTier(user.uid.trim(), 'dev').catch(() => {});
+      syncServerWallet(user.uid.trim(), { action: 'setTier', tier: 'dev' }).catch(() => {});
+    }
+  }, [user?.uid, userId]);
+
+  // Set Plan Tier
+  const setPlanTier = useCallback(
     (tier: SubscriptionTier) => {
-      if (tier === 'dev' && !isOwnerAccount) {
-        console.warn('Unauthorized attempt to set dev tier');
-        return;
-      }
+      const tierInfo =
+        GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === tier) ||
+        GEMCOIN_SUBSCRIPTION_TIERS[0];
       setCurrentTierState(tier);
-      const currentUid = user?.uid?.trim();
-      if (currentUid) {
-        try {
-          localStorage.setItem(getTierKey(currentUid), tier);
-        } catch {}
-        updateCloudTier(currentUid, tier).catch(() => {});
-        syncServerWallet(currentUid, { action: 'setTier', tier }).catch(() => {});
-      }
+      setDailyGemCoinsRemaining(tierInfo.dailyGemCoins);
+
+      const currentUid = user?.uid?.trim() || (userId !== 'guest' ? userId : 'guest');
+      const today = getTodayStr();
       try {
-        if (tier === 'dev') {
-          // Keep dev in-memory only for owner, do not write dev tokens to localStorage!
-          setTopupGemCoins(99999999);
-          setDailyGemCoinsRemaining(10000000);
-        } else {
-          const tierInfo =
-            GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === tier) ||
-            GEMCOIN_SUBSCRIPTION_TIERS[0];
+        localStorage.setItem(getTierKey(currentUid), tier);
+        localStorage.setItem(getDailyKey(currentUid), tierInfo.dailyGemCoins.toString());
+        localStorage.setItem(getResetDateKey(currentUid), today);
+      } catch {}
 
-          // If user upgrades, immediately grant permanent topup bonus!
-          if (tierInfo.permanentTopupBonus > 0) {
-            setTopupGemCoins((prev) => {
-              const updated = prev + tierInfo.permanentTopupBonus;
-              if (currentUid) {
-                try {
-                  localStorage.setItem(getTopupKey(currentUid), updated.toString());
-                } catch {}
-              }
-              return updated;
-            });
-          }
+      if (user?.uid) {
+        updateCloudTier(user.uid.trim(), tier).catch(() => {});
+        syncServerWallet(user.uid.trim(), {
+          action: 'setTier',
+          tier,
+          newDaily: tierInfo.dailyGemCoins,
+        }).catch(() => {});
+      }
+    },
+    [user?.uid, userId]
+  );
 
-          // Adjust daily remaining if lower than new tier's quota
-          setDailyGemCoinsRemaining((prev) => {
-            const updated = Math.max(prev, tierInfo.dailyGemCoins);
-            if (currentUid) {
-              try {
-                localStorage.setItem(getDailyKey(currentUid), updated.toString());
-              } catch {}
-            }
+  // Manual GemCoin top-up adjustment (Dev / Owner)
+  const addTopupGemCoins = useCallback(
+    (amount: number) => {
+      if (isOwnerAccount) return;
+      try {
+        const currentUid = user?.uid?.trim();
+        if (currentUid) {
+          setTopupGemCoins((prev) => {
+            const updated = prev + amount;
+            localStorage.setItem(getTopupKey(currentUid), updated.toString());
+            creditCloudTopupCoins(currentUid, amount).catch(() => {});
+            syncServerWallet(currentUid, { action: 'credit', amount, newTopup: updated }).catch(() => {});
             return updated;
           });
         }
@@ -578,7 +627,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           source: 'topup',
           summary: summary || '👑 Dev & Owner Unlimited Prompt',
         };
-        setGemCoinLogs((prev) => [logEntry, ...prev.slice(0, 49)]);
+        setGemCoinLogs((prev) => [logEntry, ...prev.slice(0, 99)]);
         return true;
       }
 
@@ -605,7 +654,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setTopupGemCoins(newTopup);
 
       const logEntry: GemCoinLogEntry = {
-        id: 'log_' + Date.now(),
+        id: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
         timestamp: new Date().toISOString(),
         model,
         gemCoinsUsed: amount,
@@ -633,10 +682,13 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
         // Sync to Firestore Cloud
         deductCloudCoins(user.uid.trim(), amount, model, summary).catch(() => {});
+
+        // Record to Cloud Transaction Ledger
+        recordCloudTransaction(user.uid.trim(), logEntry);
       }
 
       setGemCoinLogs((prev) => {
-        const updated = [logEntry, ...prev.slice(0, 49)];
+        const updated = [logEntry, ...prev.slice(0, 99)];
         try {
           localStorage.setItem(getLogsKey(currentUid), JSON.stringify(updated));
         } catch {}
@@ -656,6 +708,15 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setTopupGemCoins(newTopup);
 
       const currentUid = user?.uid?.trim();
+      const logEntry: GemCoinLogEntry = {
+        id: 'refund_' + Date.now(),
+        timestamp: new Date().toISOString(),
+        model: 'Refund',
+        gemCoinsUsed: 0,
+        source: 'topup',
+        summary: `🔄 คืนเหรียญ (${reason}) +${amount.toLocaleString()} GemCoins`,
+      };
+
       if (currentUid) {
         try {
           localStorage.setItem(getTopupKey(currentUid), newTopup.toString());
@@ -668,19 +729,11 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         }).catch(() => {});
 
         creditCloudTopupCoins(currentUid, amount).catch(() => {});
+        recordCloudTransaction(currentUid, logEntry);
       }
 
-      const logEntry: GemCoinLogEntry = {
-        id: 'refund_' + Date.now(),
-        timestamp: new Date().toISOString(),
-        model: 'Refund',
-        gemCoinsUsed: 0,
-        source: 'topup',
-        summary: `🔄 คืนเหรียญ (${reason}) +${amount.toLocaleString()} GemCoins`,
-      };
-
       setGemCoinLogs((prev) => {
-        const updated = [logEntry, ...prev.slice(0, 49)];
+        const updated = [logEntry, ...prev.slice(0, 99)];
         if (currentUid) {
           try {
             localStorage.setItem(getLogsKey(currentUid), JSON.stringify(updated));
@@ -699,6 +752,15 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setTopupGemCoins(newTopup);
 
       const currentUid = user?.uid?.trim();
+      const logEntry: GemCoinLogEntry = {
+        id: 'topup_' + Date.now(),
+        timestamp: new Date().toISOString(),
+        model: 'Top-up Package',
+        gemCoinsUsed: 0,
+        source: 'topup',
+        summary: `เติมเหรียญแพ็กเกจ "${packageName}" (+${amount.toLocaleString()} GemCoins)`,
+      };
+
       if (currentUid) {
         try {
           localStorage.setItem(getTopupKey(currentUid), newTopup.toString());
@@ -711,19 +773,11 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         }).catch(() => {});
 
         creditCloudTopupCoins(currentUid, amount).catch(() => {});
+        recordCloudTransaction(currentUid, logEntry);
       }
 
-      const logEntry: GemCoinLogEntry = {
-        id: 'topup_' + Date.now(),
-        timestamp: new Date().toISOString(),
-        model: 'Top-up Package',
-        gemCoinsUsed: 0,
-        source: 'topup',
-        summary: `เติมเหรียญแพ็กเกจ "${packageName}" (+${amount.toLocaleString()} GemCoins)`,
-      };
-
       setGemCoinLogs((prev) => {
-        const updated = [logEntry, ...prev.slice(0, 49)];
+        const updated = [logEntry, ...prev.slice(0, 99)];
         if (currentUid) {
           try {
             localStorage.setItem(getLogsKey(currentUid), JSON.stringify(updated));
@@ -754,6 +808,15 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           const newTopup = topupGemCoins + added;
           setTopupGemCoins(newTopup);
 
+          const logEntry: GemCoinLogEntry = {
+            id: 'redeem_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+            timestamp: new Date().toISOString(),
+            model: 'Promo Voucher',
+            gemCoinsUsed: 0,
+            source: 'topup',
+            summary: `แลกรับรหัสโปรโมชั่น "${code.toUpperCase()}" (+${added.toLocaleString()} GemCoins)`,
+          };
+
           if (currentUid) {
             try {
               localStorage.setItem(getTopupKey(currentUid), newTopup.toString());
@@ -766,19 +829,11 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             }).catch(() => {});
 
             creditCloudTopupCoins(currentUid, added).catch(() => {});
+            recordCloudTransaction(currentUid, logEntry);
           }
 
-          const logEntry: GemCoinLogEntry = {
-            id: 'redeem_' + Date.now(),
-            timestamp: new Date().toISOString(),
-            model: 'Promo Voucher',
-            gemCoinsUsed: 0,
-            source: 'topup',
-            summary: `แลกรับรหัสโปรโมชั่น "${code.toUpperCase()}" (+${added.toLocaleString()} GemCoins)`,
-          };
-
           setGemCoinLogs((prev) => {
-            const updated = [logEntry, ...prev.slice(0, 49)];
+            const updated = [logEntry, ...prev.slice(0, 99)];
             if (currentUid) {
               try {
                 localStorage.setItem(getLogsKey(currentUid), JSON.stringify(updated));

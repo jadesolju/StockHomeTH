@@ -60,6 +60,67 @@ export async function syncServerWallet(
   return null;
 }
 
+export async function fetchServerTransactions(uid: string): Promise<GemCoinLogEntry[]> {
+  if (!uid || typeof window === 'undefined' || !window.location?.origin) return [];
+  try {
+    const res = await fetch(`/api/user/wallet/transactions?uid=${encodeURIComponent(uid.trim())}`, {
+      cache: 'no-store',
+    });
+    const data = await res.json();
+    if (data.success && Array.isArray(data.transactions)) {
+      return data.transactions as GemCoinLogEntry[];
+    }
+  } catch (err) {
+    console.warn('[UserWalletService] fetchServerTransactions error:', err);
+  }
+  return [];
+}
+
+export async function recordCloudTransaction(
+  uid: string,
+  entry: GemCoinLogEntry
+): Promise<void> {
+  if (!uid) return;
+  const cleanUid = uid.trim();
+
+  // 1. Post to Server API
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    fetch('/api/user/wallet/transactions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: cleanUid, transaction: entry }),
+    }).catch((err) => {
+      console.warn('[UserWalletService] Failed to post server transaction:', err);
+    });
+  }
+
+  // 2. Persist to Firestore
+  if (db) {
+    try {
+      const txRef = doc(db, 'users', cleanUid, 'wallet_transactions', entry.id);
+      await setDoc(txRef, entry, { merge: true });
+    } catch (err) {
+      console.warn('[UserWalletService] Firestore transaction save error:', err);
+    }
+  }
+}
+
+export async function syncBulkTransactions(
+  uid: string,
+  entries: GemCoinLogEntry[]
+): Promise<void> {
+  if (!uid || entries.length === 0) return;
+  const cleanUid = uid.trim();
+
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    fetch('/api/user/wallet/transactions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: cleanUid, transactions: entries }),
+    }).catch(() => {});
+  }
+}
+
 export function getDefaultWallet(uid: string, tier: SubscriptionTier = 'free'): UserCloudWallet {
   const tierInfo =
     GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === tier) ||
