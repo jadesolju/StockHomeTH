@@ -555,7 +555,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   }, [user?.uid, userId]);
 
   // Set Plan Tier
-  const setPlanTier = useCallback(
+  const setTier = useCallback(
     (tier: SubscriptionTier) => {
       const tierInfo =
         GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === tier) ||
