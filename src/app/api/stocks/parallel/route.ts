@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
+import { sanitizeSymbol, sanitizeInterval, sanitizeWorkers } from '@/lib/utils/stockSanitizer';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 interface ParallelRequestPayload {
   symbols: string[];
@@ -16,17 +17,29 @@ interface ParallelRequestPayload {
 const parallelCache: Record<string, { timestamp: number; data: any }> = {};
 const CACHE_TTL_MS = 30_000; // 30 seconds
 
-let activePythonCmd: string | null = null;
-async function detectPythonCommand(): Promise<string | null> {
+interface PythonCmd {
+  executable: string;
+  args: string[];
+}
+
+let activePythonCmd: PythonCmd | null = null;
+async function detectPythonCommand(): Promise<PythonCmd | null> {
   if (process.env.VERCEL === '1') return null;
   if (activePythonCmd) return activePythonCmd;
-  const candidates = ['py -3.11', 'py', 'python'];
-  for (const cmd of candidates) {
+
+  const candidates: PythonCmd[] = [
+    { executable: 'py', args: ['-3.11'] },
+    { executable: 'py', args: [] },
+    { executable: 'python', args: [] },
+    { executable: 'python3', args: [] }
+  ];
+
+  for (const cand of candidates) {
     try {
-      const { stdout } = await execAsync(`${cmd} -c "import sys; print('OK')"`, { timeout: 2000 });
+      const { stdout } = await execFileAsync(cand.executable, [...cand.args, '-c', "import sys; print('OK')"], { timeout: 2000 });
       if (stdout.includes('OK')) {
-        activePythonCmd = cmd;
-        return cmd;
+        activePythonCmd = cand;
+        return cand;
       }
     } catch {}
   }
@@ -119,10 +132,16 @@ async function fetchYahooParallelPureNode(symbols: string[]): Promise<Record<str
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const symbolsParam = searchParams.get('symbols') || searchParams.get('tickers') || 'AAPL,TSLA,NVDA,PTT,CPALL';
-  const interval = searchParams.get('interval') || '1d';
-  const workers = parseInt(searchParams.get('workers') || '8', 10);
+  const rawInterval = searchParams.get('interval') || '1d';
+  const rawWorkers = searchParams.get('workers') || '8';
 
-  const symbols = symbolsParam.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
+  const symbols = symbolsParam
+    .split(',')
+    .map((s) => sanitizeSymbol(s))
+    .filter((s): s is string => s !== null);
+
+  const interval = sanitizeInterval(rawInterval);
+  const workers = sanitizeWorkers(rawWorkers);
 
   return handleParallelFetch(symbols, interval, workers);
 }
@@ -130,11 +149,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as ParallelRequestPayload;
-    const symbols = Array.isArray(body.symbols)
-      ? body.symbols.map((s) => String(s).trim().toUpperCase()).filter(Boolean)
-      : [];
-    const interval = body.interval || '1d';
-    const workers = body.workers || 8;
+    const rawSymbols = Array.isArray(body.symbols) ? body.symbols : [];
+    const symbols = rawSymbols
+      .map((s) => sanitizeSymbol(s))
+      .filter((s): s is string => s !== null);
+
+    const interval = sanitizeInterval(body.interval);
+    const workers = sanitizeWorkers(body.workers);
 
     if (symbols.length === 0) {
       return NextResponse.json({ success: false, error: 'No symbols provided in request body' }, { status: 400 });
@@ -165,9 +186,20 @@ async function handleParallelFetch(symbols: string[], interval: string, workers:
     try {
       const scriptPath = path.resolve(process.cwd(), 'server', 'webull_engine.py');
       const symbolsArg = symbols.join(',');
-      const cmd = `${pyCmd} "${scriptPath}" --action parallel --symbols "${symbolsArg}" --interval "${interval}" --workers ${workers}`;
+      const args = [
+        ...pyCmd.args,
+        scriptPath,
+        '--action',
+        'parallel',
+        '--symbols',
+        symbolsArg,
+        '--interval',
+        interval,
+        '--workers',
+        String(workers)
+      ];
 
-      const { stdout } = await execAsync(cmd, { timeout: 15000 });
+      const { stdout } = await execFileAsync(pyCmd.executable, args, { timeout: 15000 });
       const json = parseLastJsonLine(stdout);
 
       if (json && json.success) {
