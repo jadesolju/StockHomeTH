@@ -9,7 +9,7 @@ export async function getFirebaseAdmin(): Promise<any> {
   if (firebaseAdminInstance) return firebaseAdminInstance;
 
   try {
-    // @ts-ignore
+    // @ts-expect-error -- dynamic import of optional firebase-admin package
     const adminModule = await import(/* webpackIgnore: true */ 'firebase-admin');
     const admin = adminModule?.default || adminModule;
     
