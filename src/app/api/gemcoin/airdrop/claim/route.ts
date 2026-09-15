@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { claimAirdropsForEmail } from '@/lib/services/gemAirdropService';
+import { broadcastSyncEvent } from '@/lib/services/serverSyncBroadcaster';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -17,6 +18,13 @@ export async function POST(req: NextRequest) {
     }
 
     const result = claimAirdropsForEmail(email, userId);
+    if (result.success && result.totalGemCoins > 0 && userId) {
+      broadcastSyncEvent(userId, 'AIRDROP_RECEIVED', {
+        totalGemCoins: result.totalGemCoins,
+        claimedCount: result.claimedCount,
+      });
+    }
+
     return NextResponse.json(result);
   } catch (err: any) {
     console.error('[Gem Airdrop Claim Error]:', err);

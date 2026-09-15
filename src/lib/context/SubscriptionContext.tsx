@@ -17,6 +17,7 @@ import {
   fetchServerWallet,
   syncServerWallet,
 } from '../services/userWalletService';
+import { realtimeSync } from '../services/realtimeSyncService';
 
 export type SubscriptionTier = 'free' | 'lite' | 'pro' | 'vip' | 'whale' | 'dev';
 export type BillingCycle = 'monthly' | 'yearly';
@@ -376,40 +377,78 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
       setGemCoinLogs(mergedLogs);
 
-      // Sync with server wallet API in background without wiping locally spent balance
-      fetchServerWallet(currentUid).then((serverWallet) => {
-        if (serverWallet && !isOwnerAccount) {
-          if (serverWallet.lastResetDate === today) {
-            // Guard: Take lower remaining daily balance so a rebooted serverless instance cannot erase today's usage back to 500
-            const effectiveDaily = (activeDaily < tierInfo.dailyGemCoins && serverWallet.dailyGemCoinsRemaining === tierInfo.dailyGemCoins)
-              ? activeDaily
-              : Math.min(serverWallet.dailyGemCoinsRemaining, activeDaily);
+      // Helper to apply server wallet updates safely
+      const applyServerWallet = (serverWallet: any) => {
+        if (!serverWallet || isOwnerAccount) return;
+        const effectiveTopup = Math.max(serverWallet.topupGemCoins || 0, activeTopup || 0);
+        let effectiveDaily = activeDaily;
 
-            const effectiveTopup = Math.max(serverWallet.topupGemCoins, activeTopup);
-
-            setDailyGemCoinsRemaining(effectiveDaily);
-            setTopupGemCoins(effectiveTopup);
-
-            if (serverWallet.tier && serverWallet.tier !== 'dev') {
-              setCurrentTierState(serverWallet.tier as SubscriptionTier);
-            }
-            try {
-              localStorage.setItem(dailyKey, effectiveDaily.toString());
-              localStorage.setItem(topupKey, effectiveTopup.toString());
-              localStorage.setItem(resetDateKey, today);
-              if (serverWallet.tier) localStorage.setItem(tierKey, serverWallet.tier);
-            } catch {}
-
-            if (effectiveDaily !== serverWallet.dailyGemCoinsRemaining) {
-              syncServerWallet(currentUid, {
-                action: 'sync',
-                newDaily: effectiveDaily,
-                newTopup: effectiveTopup,
-              }).catch(() => {});
-            }
-          }
+        if (serverWallet.lastResetDate === today) {
+          // Guard: Take lower remaining daily balance so a rebooted serverless instance cannot erase today's usage back to 500
+          effectiveDaily = (activeDaily < tierInfo.dailyGemCoins && serverWallet.dailyGemCoinsRemaining === tierInfo.dailyGemCoins)
+            ? activeDaily
+            : Math.min(serverWallet.dailyGemCoinsRemaining, activeDaily);
+        } else {
+          effectiveDaily = tierInfo.dailyGemCoins;
         }
-      }).catch(() => {});
+
+        setDailyGemCoinsRemaining(effectiveDaily);
+        setTopupGemCoins(effectiveTopup);
+
+        if (serverWallet.tier && serverWallet.tier !== 'dev') {
+          setCurrentTierState(serverWallet.tier as SubscriptionTier);
+        }
+
+        try {
+          localStorage.setItem(dailyKey, effectiveDaily.toString());
+          localStorage.setItem(topupKey, effectiveTopup.toString());
+          localStorage.setItem(resetDateKey, today);
+          if (serverWallet.tier) localStorage.setItem(tierKey, serverWallet.tier);
+        } catch {}
+
+        if (effectiveDaily !== serverWallet.dailyGemCoinsRemaining || effectiveTopup !== serverWallet.topupGemCoins) {
+          syncServerWallet(currentUid, {
+            action: 'sync',
+            newDaily: effectiveDaily,
+            newTopup: effectiveTopup,
+          }).catch(() => {});
+        }
+      };
+
+      // 1. Initial fetch from server API
+      fetchServerWallet(currentUid).then(applyServerWallet).catch(() => {});
+
+      // 2. Connect Real-time WebSocket/SSE Stream & Intra-tab Broadcast
+      realtimeSync.connect(currentUid);
+      const unsubRealtime = realtimeSync.on('WALLET_UPDATED', (payload) => {
+        if (payload && typeof payload.topupGemCoins === 'number') {
+          applyServerWallet(payload);
+        } else {
+          fetchServerWallet(currentUid).then(applyServerWallet).catch(() => {});
+        }
+      });
+
+      // 3. Connect Firestore Cloud Wallet listener
+      const unsubFirestore = subscribeToCloudWallet(currentUid, (cloudWallet) => {
+        applyServerWallet(cloudWallet);
+      });
+
+      // 4. Auto-sync on window focus & visibility change (when returning to phone app/tab)
+      const handleReFocus = () => {
+        fetchServerWallet(currentUid).then(applyServerWallet).catch(() => {});
+      };
+
+      if (typeof window !== 'undefined') {
+        window.addEventListener('focus', handleReFocus);
+      }
+
+      return () => {
+        unsubRealtime();
+        unsubFirestore();
+        if (typeof window !== 'undefined') {
+          window.removeEventListener('focus', handleReFocus);
+        }
+      };
     } catch (err) {
       console.warn('[SubscriptionContext] User hydration error:', err);
     }

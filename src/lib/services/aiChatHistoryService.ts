@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 
 import { ClarificationPayload } from '@/types/asset';
+import { realtimeSync } from './realtimeSyncService';
 
 export interface ChatMessage {
   id: string;
@@ -86,41 +87,90 @@ export function saveUserSessions(userUid: string | null | undefined, sessions: C
 }
 
 /**
- * Saves a single chat session to Firestore Cloud.
+ * Fetches sessions from the universal Server API (/api/ai/chat/sessions).
+ */
+export async function fetchServerSessions(userUid: string): Promise<ChatSession[]> {
+  if (!userUid || typeof window === 'undefined' || !window.location?.origin) return [];
+  try {
+    const res = await fetch(`/api/ai/chat/sessions?userId=${encodeURIComponent(userUid.trim())}`, {
+      cache: 'no-store',
+    });
+    const data = await res.json();
+    if (data.success && Array.isArray(data.sessions)) {
+      return data.sessions as ChatSession[];
+    }
+  } catch (err) {
+    console.warn('[aiChatHistoryService] Server API fetch sessions failed:', err);
+  }
+  return [];
+}
+
+/**
+ * Saves a single chat session to both Firestore Cloud and Server API.
  */
 export async function saveSessionToCloud(userUid: string, session: ChatSession): Promise<void> {
-  if (!userUid || !db) return;
-  try {
-    const sessionRef = doc(db, 'users', userUid.trim(), 'chat_sessions', session.id);
-    await setDoc(
-      sessionRef,
-      {
-        id: session.id,
-        title: session.title,
-        modelId: session.modelId,
-        messages: session.messages,
-        contextSummary: session.contextSummary || null,
-        summarizedUpToIndex: session.summarizedUpToIndex || 0,
-        createdAt: session.createdAt,
-        updatedAt: session.updatedAt,
-      },
-      { merge: true }
-    );
-  } catch (err) {
-    console.warn('[aiChatHistoryService] Cloud save failed:', err);
+  if (!userUid) return;
+  const cleanUid = userUid.trim();
+
+  // 1. Dispatch non-blocking update to Server API
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    fetch('/api/ai/chat/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: cleanUid, session }),
+    }).catch((err) => {
+      console.warn('[aiChatHistoryService] Server API save failed:', err);
+    });
+  }
+
+  // 2. Dispatch update to Firestore
+  if (db) {
+    try {
+      const sessionRef = doc(db, 'users', cleanUid, 'chat_sessions', session.id);
+      await setDoc(
+        sessionRef,
+        {
+          id: session.id,
+          title: session.title,
+          modelId: session.modelId,
+          messages: session.messages,
+          contextSummary: session.contextSummary || null,
+          summarizedUpToIndex: session.summarizedUpToIndex || 0,
+          createdAt: session.createdAt,
+          updatedAt: session.updatedAt,
+        },
+        { merge: true }
+      );
+    } catch (err) {
+      console.warn('[aiChatHistoryService] Firestore Cloud save failed:', err);
+    }
   }
 }
 
 /**
- * Deletes a session from Firestore Cloud.
+ * Deletes a session from both Firestore Cloud and Server API.
  */
 export async function deleteSessionFromCloud(userUid: string, sessionId: string): Promise<void> {
-  if (!userUid || !db) return;
-  try {
-    const sessionRef = doc(db, 'users', userUid.trim(), 'chat_sessions', sessionId);
-    await deleteDoc(sessionRef);
-  } catch (err) {
-    console.warn('[aiChatHistoryService] Cloud delete failed:', err);
+  if (!userUid) return;
+  const cleanUid = userUid.trim();
+
+  // 1. Dispatch delete to Server API
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    fetch(`/api/ai/chat/sessions?userId=${encodeURIComponent(cleanUid)}&sessionId=${encodeURIComponent(sessionId)}`, {
+      method: 'DELETE',
+    }).catch((err) => {
+      console.warn('[aiChatHistoryService] Server API delete failed:', err);
+    });
+  }
+
+  // 2. Dispatch delete to Firestore
+  if (db) {
+    try {
+      const sessionRef = doc(db, 'users', cleanUid, 'chat_sessions', sessionId);
+      await deleteDoc(sessionRef);
+    } catch (err) {
+      console.warn('[aiChatHistoryService] Firestore delete failed:', err);
+    }
   }
 }
 
@@ -196,78 +246,140 @@ export function migrateGuestSessionsToUser(userUid: string): void {
 }
 
 /**
- * Real-Time Firestore Cloud Subscription:
- * Automatically syncs chat sessions across devices (PC and Mobile) when logged in.
+ * Intelligent helper to merge incoming remote sessions with local cache.
+ */
+function mergeSessionsWithLocal(
+  userUid: string,
+  remoteSessions: ChatSession[],
+  onUpdate: (sessions: ChatSession[]) => void
+) {
+  const local = loadUserSessions(userUid);
+  const mergedMap = new Map<string, ChatSession>();
+
+  for (const rs of remoteSessions) {
+    mergedMap.set(rs.id, rs);
+  }
+
+  for (const ls of local) {
+    const remoteMatch = mergedMap.get(ls.id);
+    if (!remoteMatch) {
+      mergedMap.set(ls.id, ls);
+      // Sync orphaned local session to cloud
+      saveSessionToCloud(userUid, ls);
+    } else {
+      const lsMsgCount = Array.isArray(ls.messages) ? ls.messages.length : 0;
+      const rsMsgCount = Array.isArray(remoteMatch.messages) ? remoteMatch.messages.length : 0;
+      if (lsMsgCount > rsMsgCount || (lsMsgCount === rsMsgCount && ls.updatedAt > remoteMatch.updatedAt)) {
+        mergedMap.set(ls.id, ls);
+        saveSessionToCloud(userUid, ls);
+      }
+    }
+  }
+
+  const merged = Array.from(mergedMap.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+  saveUserSessions(userUid, merged);
+  onUpdate(merged);
+}
+
+/**
+ * Real-Time Cloud Subscription (Firestore + Server API + Visibility/Focus sync):
+ * Automatically syncs chat sessions across devices (PC, Mobile, Tablet) when logged in.
  */
 export function subscribeToUserCloudSessions(
   userUid: string,
   onUpdate: (sessions: ChatSession[]) => void
 ): () => void {
-  if (!userUid || !db) return () => {};
+  if (!userUid) return () => {};
+  const cleanUid = userUid.trim();
+
   try {
-    // Attempt guest session migration upon login
-    migrateGuestSessionsToUser(userUid);
+    // 1. Attempt guest session migration upon login
+    migrateGuestSessionsToUser(cleanUid);
 
-    const q = query(
-      collection(db, 'users', userUid.trim(), 'chat_sessions'),
-      orderBy('updatedAt', 'desc'),
-      limit(50)
-    );
+    // 2. Connect Real-time WebSocket/SSE stream & fetch immediately from Server API
+    realtimeSync.connect(cleanUid);
+    const unsubscribeRealtime = realtimeSync.on('SESSIONS_UPDATED', (payload) => {
+      if (Array.isArray(payload)) {
+        mergeSessionsWithLocal(cleanUid, payload, onUpdate);
+      } else {
+        fetchServerSessions(cleanUid).then((sessions) => {
+          if (sessions.length > 0) {
+            mergeSessionsWithLocal(cleanUid, sessions, onUpdate);
+          }
+        }).catch(() => {});
+      }
+    });
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const cloudSessions: ChatSession[] = [];
-        snapshot.forEach((docSnap) => {
-          const data = docSnap.data() as any;
-          if (data && data.id) {
-            cloudSessions.push({
-              id: data.id,
-              title: data.title || 'การสนทนา',
-              modelId: data.modelId || 'default',
-              messages: Array.isArray(data.messages) ? data.messages : [],
-              contextSummary: data.contextSummary || undefined,
-              summarizedUpToIndex: Number(data.summarizedUpToIndex) || 0,
-              createdAt: Number(data.createdAt) || Date.now(),
-              updatedAt: Number(data.updatedAt) || Date.now(),
-            });
+    fetchServerSessions(cleanUid).then((serverSessions) => {
+      if (serverSessions.length > 0) {
+        mergeSessionsWithLocal(cleanUid, serverSessions, onUpdate);
+      }
+    }).catch(() => {});
+
+    // 3. Setup Firestore Real-Time Listener if available
+    let unsubscribeFirestore = () => {};
+    if (db) {
+      const q = query(
+        collection(db, 'users', cleanUid, 'chat_sessions'),
+        orderBy('updatedAt', 'desc'),
+        limit(50)
+      );
+
+      unsubscribeFirestore = onSnapshot(
+        q,
+        (snapshot) => {
+          const cloudSessions: ChatSession[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as any;
+            if (data && data.id) {
+              cloudSessions.push({
+                id: data.id,
+                title: data.title || 'การสนทนา',
+                modelId: data.modelId || 'default',
+                messages: Array.isArray(data.messages) ? data.messages : [],
+                contextSummary: data.contextSummary || undefined,
+                summarizedUpToIndex: Number(data.summarizedUpToIndex) || 0,
+                createdAt: Number(data.createdAt) || Date.now(),
+                updatedAt: Number(data.updatedAt) || Date.now(),
+              });
+            }
+          });
+
+          mergeSessionsWithLocal(cleanUid, cloudSessions, onUpdate);
+        },
+        (error) => {
+          console.warn('[aiChatHistoryService] Realtime sync error (falling back to Server API):', error);
+        }
+      );
+    }
+
+    // 4. Auto-refresh on window focus / visibility change (switching back to mobile app / tab)
+    const handleReFocus = () => {
+      fetchServerSessions(cleanUid).then((sessions) => {
+        if (sessions.length > 0) {
+          mergeSessionsWithLocal(cleanUid, sessions, onUpdate);
+        }
+      }).catch(() => {});
+    };
+
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('focus', handleReFocus);
+      if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            handleReFocus();
           }
         });
-
-        // Merge cloud with local cache intelligently (favoring fuller message history & newer updates)
-        const local = loadUserSessions(userUid);
-        const mergedMap = new Map<string, ChatSession>();
-
-        for (const cs of cloudSessions) {
-          mergedMap.set(cs.id, cs);
-        }
-
-        for (const ls of local) {
-          const cloudMatch = mergedMap.get(ls.id);
-          if (!cloudMatch) {
-            mergedMap.set(ls.id, ls);
-            // Sync orphaned local session to cloud
-            saveSessionToCloud(userUid, ls);
-          } else {
-            const lsMsgCount = Array.isArray(ls.messages) ? ls.messages.length : 0;
-            const csMsgCount = Array.isArray(cloudMatch.messages) ? cloudMatch.messages.length : 0;
-            if (lsMsgCount > csMsgCount || (lsMsgCount === csMsgCount && ls.updatedAt > cloudMatch.updatedAt)) {
-              mergedMap.set(ls.id, ls);
-              saveSessionToCloud(userUid, ls);
-            }
-          }
-        }
-
-        const merged = Array.from(mergedMap.values()).sort((a, b) => b.updatedAt - a.updatedAt);
-        saveUserSessions(userUid, merged);
-        onUpdate(merged);
-      },
-      (error) => {
-        console.warn('[aiChatHistoryService] Realtime sync error (falling back to local):', error);
       }
-    );
+    }
 
-    return unsubscribe;
+    return () => {
+      unsubscribeRealtime();
+      unsubscribeFirestore();
+      if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+        window.removeEventListener('focus', handleReFocus);
+      }
+    };
   } catch (err) {
     console.warn('[aiChatHistoryService] Failed to establish cloud subscription:', err);
     return () => {};

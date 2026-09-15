@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { redeemCodeForUser } from '@/lib/services/promoCodeService';
+import { broadcastSyncEvent } from '@/lib/services/serverSyncBroadcaster';
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,6 +22,14 @@ export async function POST(req: NextRequest) {
         { success: false, message: result.message },
         { status: 400 }
       );
+    }
+
+    if (userId) {
+      broadcastSyncEvent(userId, 'WALLET_UPDATED', {
+        action: 'promo_redeem',
+        gemCoinsAdded: result.gemCoins,
+        code: code.toUpperCase(),
+      });
     }
 
     return NextResponse.json({

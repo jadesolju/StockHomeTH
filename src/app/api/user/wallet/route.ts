@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 import { GEMCOIN_SUBSCRIPTION_TIERS } from '@/config/gemCoinPackages';
+import { broadcastSyncEvent } from '@/lib/services/serverSyncBroadcaster';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -171,6 +172,9 @@ export async function POST(req: NextRequest) {
 
     wallets[cleanUid] = wallet;
     await writeWallets(wallets);
+
+    // Broadcast real-time sync event to all active devices (PC, Mobile, Tablet)
+    broadcastSyncEvent(cleanUid, 'WALLET_UPDATED', wallet);
 
     return NextResponse.json({
       success: true,
