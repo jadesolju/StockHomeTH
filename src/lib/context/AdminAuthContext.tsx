@@ -100,9 +100,10 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       setUser(data.user);
       setSession(data.session);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[AdminAuth] Supabase sign in error:', err);
-      let msg = err.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+      const errorObj = err instanceof Error ? err : new Error(String(err));
+      let msg = errorObj.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
       if (msg.includes('Invalid login credentials')) {
         msg = 'อีเมลหรือรหัสผ่าน Supabase Admin ไม่ถูกต้อง';
       } else if (msg.includes('Email not confirmed')) {
@@ -122,7 +123,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setUser(null);
       setSession(null);
       setError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[AdminAuth] Supabase sign out error:', err);
     }
   };
