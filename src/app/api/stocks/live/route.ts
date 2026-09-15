@@ -143,41 +143,70 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      // Pre-calculate maps to avoid redundant string operations & parsing in comparator
+      const exactMap = new Map<StockFundamental, number>();
+      const startsMap = new Map<StockFundamental, number>();
+      const volumeMap = new Map<StockFundamental, number>();
+
+      for (let i = 0; i < filtered.length; i++) {
+        const item = filtered[i];
+        const tickerLower = item.ticker.toLowerCase();
+        exactMap.set(item, tickerLower === q ? 1 : 0);
+        startsMap.set(item, tickerLower.startsWith(q) ? 1 : 0);
+        volumeMap.set(item, parseNumericValue(item.volume));
+      }
+
       // Boost exact ticker matches to the top
       filtered.sort((a, b) => {
-        const aExact = a.ticker.toLowerCase() === q ? 1 : 0;
-        const bExact = b.ticker.toLowerCase() === q ? 1 : 0;
+        const aExact = exactMap.get(a)!;
+        const bExact = exactMap.get(b)!;
         if (aExact !== bExact) return bExact - aExact;
 
-        const aStarts = a.ticker.toLowerCase().startsWith(q) ? 1 : 0;
-        const bStarts = b.ticker.toLowerCase().startsWith(q) ? 1 : 0;
+        const aStarts = startsMap.get(a)!;
+        const bStarts = startsMap.get(b)!;
         if (aStarts !== bStarts) return bStarts - aStarts;
 
-        return parseNumericValue(b.volume) - parseNumericValue(a.volume);
+        return volumeMap.get(b)! - volumeMap.get(a)!;
       });
     } else {
+      // Pre-calculate parsed numeric values and rank mappings to avoid redundant calculations inside comparator
+      const volumeMap = new Map<StockFundamental, number>();
+      const marketCapMap = new Map<StockFundamental, number>();
+      const rankMap = new Map<StockFundamental, number>();
+
+      const needsVolume = ['popular', 'volume', 'liquidity', 'marketThaiFirst', 'marketUsFirst'].includes(sortBy) || !['marketCap', 'gainers', 'losers', 'aiScore', 'sentiment', 'dividend', 'divYield', 'peRatio', 'tickerAsc', 'tickerDesc'].includes(sortBy);
+      const needsMarketCap = ['popular', 'volume', 'liquidity', 'marketCap'].includes(sortBy);
+      const needsRank = sortBy === 'popular';
+
+      for (let i = 0; i < filtered.length; i++) {
+        const item = filtered[i];
+        if (needsVolume) volumeMap.set(item, parseNumericValue(item.volume));
+        if (needsMarketCap) marketCapMap.set(item, parseNumericValue(item.marketCap));
+        if (needsRank) rankMap.set(item, getStockPopularityRank(item, market));
+      }
+
       // Apply Sorting when no search query
       filtered.sort((a, b) => {
         switch (sortBy) {
           case 'popular': {
-            const rankA = getStockPopularityRank(a, market);
-            const rankB = getStockPopularityRank(b, market);
+            const rankA = rankMap.get(a)!;
+            const rankB = rankMap.get(b)!;
             if (rankA !== rankB) return rankA - rankB;
 
             // Secondary: Market Cap then Volume
-            const capDiff = parseNumericValue(b.marketCap) - parseNumericValue(a.marketCap);
+            const capDiff = marketCapMap.get(b)! - marketCapMap.get(a)!;
             if (capDiff !== 0) return capDiff;
-            return parseNumericValue(b.volume) - parseNumericValue(a.volume);
+            return volumeMap.get(b)! - volumeMap.get(a)!;
           }
           case 'volume':
           case 'liquidity': {
-            const volA = parseNumericValue(a.volume);
-            const volB = parseNumericValue(b.volume);
+            const volA = volumeMap.get(a)!;
+            const volB = volumeMap.get(b)!;
             if (volB !== volA) return volB - volA;
-            return parseNumericValue(b.marketCap) - parseNumericValue(a.marketCap);
+            return marketCapMap.get(b)! - marketCapMap.get(a)!;
           }
           case 'marketCap': {
-            return parseNumericValue(b.marketCap) - parseNumericValue(a.marketCap);
+            return marketCapMap.get(b)! - marketCapMap.get(a)!;
           }
           case 'gainers':
             return b.change - a.change;
@@ -193,16 +222,16 @@ export async function GET(request: NextRequest) {
             return (a.peRatio || 999) - (b.peRatio || 999);
           case 'marketThaiFirst':
             if (a.market !== b.market) return a.market === 'SET' ? -1 : 1;
-            return parseNumericValue(b.volume) - parseNumericValue(a.volume);
+            return volumeMap.get(b)! - volumeMap.get(a)!;
           case 'marketUsFirst':
             if (a.market !== b.market) return a.market === 'US' ? -1 : 1;
-            return parseNumericValue(b.volume) - parseNumericValue(a.volume);
+            return volumeMap.get(b)! - volumeMap.get(a)!;
           case 'tickerAsc':
             return a.ticker.localeCompare(b.ticker);
           case 'tickerDesc':
             return b.ticker.localeCompare(a.ticker);
           default:
-            return parseNumericValue(b.volume) - parseNumericValue(a.volume);
+            return volumeMap.get(b)! - volumeMap.get(a)!;
         }
       });
     }
