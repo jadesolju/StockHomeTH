@@ -125,7 +125,14 @@ export async function GET(request: NextRequest) {
       // Instant On-Demand Ticker Retrieval: Actively fetch live quote for exact ticker match or missing data
       if (/^[A-Z0-9.\-]{1,10}$/i.test(rawTicker)) {
         try {
-          const exactIdx = filtered.findIndex((s) => s.ticker.toUpperCase() === rawTicker);
+          let exactIdx = -1;
+          for (let i = 0; i < filtered.length; i++) {
+            const t = filtered[i].ticker;
+            if (t === rawTicker || t.toUpperCase() === rawTicker) {
+              exactIdx = i;
+              break;
+            }
+          }
           const needsEnrichment = exactIdx === -1 || filtered[exactIdx].volume === '—' || (filtered[exactIdx].price === 50 && filtered[exactIdx].change === 0);
           
           if (needsEnrichment) {
