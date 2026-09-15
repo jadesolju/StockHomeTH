@@ -51,10 +51,17 @@ export async function GET(request: Request) {
 
     if (symbolsToFetch.length > 0) {
       const results = await yahooFinance.quote(symbolsToFetch as string[]);
+      const quoteArray = Array.isArray(results) ? results : results ? [results] : [];
+      const quoteMap = new Map<string, any>();
+      for (const quote of quoteArray) {
+        if (quote && quote.symbol) {
+          quoteMap.set(quote.symbol, quote);
+        }
+      }
       
       for (const stock of stocks as any[]) {
         const querySymbol = stock.market === 'SET' ? `${stock.ticker}.BK` : stock.ticker;
-        const quote = (Array.isArray(results) ? results : [results]).find((r: any) => r.symbol === querySymbol);
+        const quote = quoteMap.get(querySymbol);
         
         const price = quote?.regularMarketPrice ?? stock.price ?? 0;
         const change = quote?.regularMarketChangePercent ?? stock.change ?? 0;
