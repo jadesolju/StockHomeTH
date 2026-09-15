@@ -1,35 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
-let activePyCmd: string | null = null;
+interface PythonRunner {
+  executable: string;
+  baseArgs: string[];
+}
 
-async function getPythonCommand(): Promise<string> {
-  if (activePyCmd) return activePyCmd;
-  for (const cmd of ['py -3.11', 'py', 'python']) {
+let activePyRunner: PythonRunner | null = null;
+
+async function getPythonRunner(): Promise<PythonRunner> {
+  if (activePyRunner) return activePyRunner;
+
+  const candidates: PythonRunner[] = [
+    { executable: 'py', baseArgs: ['-3.11'] },
+    { executable: 'py', baseArgs: [] },
+    { executable: 'python3', baseArgs: [] },
+    { executable: 'python', baseArgs: [] },
+  ];
+
+  for (const candidate of candidates) {
     try {
-      const { stdout } = await execAsync(`${cmd} -c "import yfinance; print('OK')"`, { timeout: 3000 });
+      const { stdout } = await execFileAsync(
+        candidate.executable,
+        [...candidate.baseArgs, '-c', "import yfinance; print('OK')"],
+        { timeout: 3000 }
+      );
       if (stdout.includes('OK')) {
-        activePyCmd = cmd;
-        return cmd;
+        activePyRunner = candidate;
+        return candidate;
       }
     } catch {
       // try next
     }
   }
-  activePyCmd = 'py -3.11';
-  return activePyCmd;
+
+  activePyRunner = { executable: 'python3', baseArgs: [] };
+  return activePyRunner;
 }
 
 function isDevEnvironment(): boolean {
   return process.env.NODE_ENV === 'development' && process.env.VERCEL !== '1';
 }
 
-const SAFE_SYMBOL_REGEX = /^[A-Za-z0-9._\-]{1,20}$/;
-const SAFE_ACTION_REGEX = /^[A-Za-z0-9_\-]{1,30}$/;
+const SAFE_SYMBOL_REGEX = /^[A-Za-z0-9._-]{1,20}$/;
+const SAFE_ACTION_REGEX = /^[A-Za-z0-9_-]{1,30}$/;
 
 export async function GET(req: NextRequest) {
   if (!isDevEnvironment()) {
@@ -52,11 +70,11 @@ export async function GET(req: NextRequest) {
   const symbol = rawSymbol.trim();
 
   try {
-    const pyCmd = await getPythonCommand();
+    const runner = await getPythonRunner();
     const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
-    const pythonCmd = `${pyCmd} "${scriptPath}" --action single --symbol "${symbol}"`;
+    const args = [...runner.baseArgs, scriptPath, '--action', 'single', '--symbol', symbol];
 
-    const { stdout, stderr } = await execAsync(pythonCmd, { timeout: 12000 });
+    const { stdout, stderr } = await execFileAsync(runner.executable, args, { timeout: 12000 });
     const json = JSON.parse(stdout.trim());
 
     return NextResponse.json({
@@ -99,11 +117,11 @@ export async function POST(req: NextRequest) {
     }
 
     const action = rawAction.trim();
-    const pyCmd = await getPythonCommand();
+    const runner = await getPythonRunner();
     const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
-    const pythonCmd = `${pyCmd} "${scriptPath}" --action ${action}`;
+    const args = [...runner.baseArgs, scriptPath, '--action', action];
 
-    const { stdout, stderr } = await execAsync(pythonCmd, { timeout: 20000 });
+    const { stdout, stderr } = await execFileAsync(runner.executable, args, { timeout: 20000 });
     const json = JSON.parse(stdout.trim());
 
     return NextResponse.json({
