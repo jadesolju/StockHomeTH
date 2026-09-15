@@ -191,11 +191,15 @@ async function fetchLiveIndicesFromYahoo(): Promise<IndexItem[] | null> {
     );
 
     const valid = results.filter((r): r is IndexItem => r !== null);
+    const validMap: Record<string, IndexItem> = {};
+    for (let i = 0; i < valid.length; i++) {
+      validMap[valid[i].symbol] = valid[i];
+    }
     
     // Fetch official Thai Gold or calculate high-precision real-world standard
     const thaiGold = await fetchOfficialThaiGold();
     if (thaiGold) {
-      const goldSpot = valid.find((v) => v.symbol === 'GC=F');
+      const goldSpot = validMap['GC=F'];
       if (goldSpot) {
         thaiGold.change = goldSpot.change;
         thaiGold.changePercent = goldSpot.changePercent;
@@ -204,8 +208,8 @@ async function fetchLiveIndicesFromYahoo(): Promise<IndexItem[] | null> {
       valid.push(thaiGold);
     } else {
       // High-precision Thai Gold Traders Association calculation
-      const goldSpot = valid.find((v) => v.symbol === 'GC=F');
-      const usdThb = valid.find((v) => v.symbol === 'THB=X');
+      const goldSpot = validMap['GC=F'];
+      const usdThb = validMap['THB=X'];
       const fxRate = usdThb && usdThb.value > 0 ? usdThb.value : 32.84;
       
       let realSpotPrice = goldSpot && goldSpot.value > 0 ? goldSpot.value : 4476.60;
