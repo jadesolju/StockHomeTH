@@ -15,7 +15,7 @@ describe('Dev yfinance API Route - Security & Parameter Validation', () => {
   });
 
   it('should return 403 if not in development environment', async () => {
-    process.env.NODE_ENV = 'production';
+    (process.env as any).NODE_ENV = 'production';
 
     const req = new NextRequest('http://localhost:3000/api/dev/yfinance?symbol=AAPL');
     const res = await GET(req);
@@ -27,7 +27,7 @@ describe('Dev yfinance API Route - Security & Parameter Validation', () => {
   });
 
   it('should reject invalid symbols containing command injection payloads (GET)', async () => {
-    process.env.NODE_ENV = 'development';
+    (process.env as any).NODE_ENV = 'development';
     delete process.env.VERCEL;
 
     const maliciousSymbols = [
@@ -51,7 +51,7 @@ describe('Dev yfinance API Route - Security & Parameter Validation', () => {
   });
 
   it('should reject invalid action parameter containing command injection payloads (POST)', async () => {
-    process.env.NODE_ENV = 'development';
+    (process.env as any).NODE_ENV = 'development';
     delete process.env.VERCEL;
 
     const maliciousActions = [
