@@ -90,15 +90,18 @@ export function AuthModal({
     } catch (err: any) {
       console.error('[AuthModal Error]:', err);
       let msg = err.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
-      if (msg.includes('auth/email-already-in-use')) {
+      const lower = msg.toLowerCase();
+      if (lower.includes('user already registered') || lower.includes('already registered') || lower.includes('user_already_exists') || lower.includes('auth/email-already-in-use')) {
         msg = 'อีเมลนี้ถูกใช้งานในระบบแล้ว กรุณาเข้าสู่ระบบ';
-      } else if (msg.includes('auth/invalid-credential') || msg.includes('auth/wrong-password') || msg.includes('auth/user-not-found')) {
+      } else if (lower.includes('invalid login credentials') || lower.includes('invalid credential') || lower.includes('wrong-password') || lower.includes('user-not-found')) {
         msg = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
-      } else if (msg.includes('auth/weak-password')) {
+      } else if (lower.includes('email not confirmed')) {
+        msg = 'กรุณายืนยันอีเมลของคุณก่อนเข้าสู่ระบบ';
+      } else if (lower.includes('password should be at least') || lower.includes('weak-password') || lower.includes('at least 6 characters')) {
         msg = 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร';
-      } else if (msg.includes('auth/invalid-email')) {
+      } else if (lower.includes('invalid email') || lower.includes('format')) {
         msg = 'รูปแบบอีเมลไม่ถูกต้อง';
-      } else if (msg.includes('auth/popup-closed-by-user')) {
+      } else if (lower.includes('popup-closed-by-user') || lower.includes('cancelled')) {
         msg = 'ยกเลิกการเข้าสู่ระบบผ่าน Google';
       }
       setErrorMessage(msg);
@@ -112,10 +115,10 @@ export function AuthModal({
     setErrorMessage('');
     try {
       await signInWithGoogle();
-      setSuccessMessage('เข้าสู่ระบบด้วย Google สำเร็จ');
-      setTimeout(() => handleClose(), 600);
+      // On web/PWA OAuth, the browser may redirect or authenticate in-place
+      setSuccessMessage('กำลังนำคุณเข้าสู่ระบบผ่าน Google...');
     } catch (err: any) {
-      if (!err.message?.includes('popup-closed-by-user')) {
+      if (!err.message?.includes('popup-closed-by-user') && !err.message?.includes('cancelled')) {
         setErrorMessage(err.message || 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ');
       }
     } finally {

@@ -1,23 +1,10 @@
 /**
  * AI Chat History Service
- * Manages isolated chat sessions and message histories per user account (Firebase UID or Guest device ID).
- * Features Real-Time Cloud Sync across PC and Mobile via Firebase Firestore keyed by userUid.
+ * Manages isolated chat sessions and message histories per user account.
+ * Features Real-Time Cloud Sync across PC and Mobile via Supabase PostgreSQL & Server API.
  */
 
-import { db } from '@/lib/firebase/firebaseClient';
-import {
-  collection,
-  doc,
-  setDoc,
-  deleteDoc,
-  onSnapshot,
-  query,
-  orderBy,
-  limit,
-  getDocs,
-  writeBatch,
-} from 'firebase/firestore';
-
+import { supabase } from '@/lib/supabase/client';
 import { ClarificationPayload } from '@/types/asset';
 import { realtimeSync } from './realtimeSyncService';
 
@@ -106,7 +93,7 @@ export async function fetchServerSessions(userUid: string): Promise<ChatSession[
 }
 
 /**
- * Saves a single chat session to both Firestore Cloud and Server API.
+ * Saves a single chat session to both Supabase Cloud and Server API.
  */
 export async function saveSessionToCloud(userUid: string, session: ChatSession): Promise<void> {
   if (!userUid) return;
@@ -123,32 +110,30 @@ export async function saveSessionToCloud(userUid: string, session: ChatSession):
     });
   }
 
-  // 2. Dispatch update to Firestore
-  if (db) {
-    try {
-      const sessionRef = doc(db, 'users', cleanUid, 'chat_sessions', session.id);
-      await setDoc(
-        sessionRef,
-        {
+  // 2. Dispatch update to Supabase PostgreSQL if client authenticated
+  try {
+    Promise.resolve(
+      supabase
+        .from('user_chat_sessions')
+        .upsert({
           id: session.id,
+          user_id: cleanUid,
           title: session.title,
-          modelId: session.modelId,
+          model_id: session.modelId,
           messages: session.messages,
-          contextSummary: session.contextSummary || null,
-          summarizedUpToIndex: session.summarizedUpToIndex || 0,
-          createdAt: session.createdAt,
-          updatedAt: session.updatedAt,
-        },
-        { merge: true }
-      );
-    } catch (err) {
-      console.warn('[aiChatHistoryService] Firestore Cloud save failed:', err);
-    }
+          context_summary: session.contextSummary || null,
+          summarized_up_to_index: session.summarizedUpToIndex || 0,
+          created_at: new Date(session.createdAt).toISOString(),
+          updated_at: new Date(session.updatedAt).toISOString(),
+        })
+    ).catch(() => {});
+  } catch (err) {
+    console.warn('[aiChatHistoryService] Supabase Cloud save failed:', err);
   }
 }
 
 /**
- * Deletes a session from both Firestore Cloud and Server API.
+ * Deletes a session from both Supabase Cloud and Server API.
  */
 export async function deleteSessionFromCloud(userUid: string, sessionId: string): Promise<void> {
   if (!userUid) return;
@@ -163,19 +148,22 @@ export async function deleteSessionFromCloud(userUid: string, sessionId: string)
     });
   }
 
-  // 2. Dispatch delete to Firestore
-  if (db) {
-    try {
-      const sessionRef = doc(db, 'users', cleanUid, 'chat_sessions', sessionId);
-      await deleteDoc(sessionRef);
-    } catch (err) {
-      console.warn('[aiChatHistoryService] Firestore delete failed:', err);
-    }
+  // 2. Dispatch delete to Supabase PostgreSQL
+  try {
+    Promise.resolve(
+      supabase
+        .from('user_chat_sessions')
+        .delete()
+        .eq('user_id', cleanUid)
+        .eq('id', sessionId)
+    ).catch(() => {});
+  } catch (err) {
+    console.warn('[aiChatHistoryService] Supabase delete failed:', err);
   }
 }
 
 /**
- * Migrates local guest chat sessions into the logged-in user account & syncs them to Firestore Cloud.
+ * Migrates local guest chat sessions into the logged-in user account & syncs them to Cloud.
  */
 export function migrateGuestSessionsToUser(userUid: string): void {
   if (typeof window === 'undefined' || !userUid) return;
@@ -282,7 +270,7 @@ function mergeSessionsWithLocal(
 }
 
 /**
- * Real-Time Cloud Subscription (Firestore + Server API + Visibility/Focus sync):
+ * Real-Time Cloud Subscription:
  * Automatically syncs chat sessions across devices (PC, Mobile, Tablet) when logged in.
  */
 export function subscribeToUserCloudSessions(
@@ -316,44 +304,29 @@ export function subscribeToUserCloudSessions(
       }
     }).catch(() => {});
 
-    // 3. Setup Firestore Real-Time Listener if available
-    let unsubscribeFirestore = () => {};
-    if (db) {
-      const q = query(
-        collection(db, 'users', cleanUid, 'chat_sessions'),
-        orderBy('updatedAt', 'desc'),
-        limit(50)
-      );
-
-      unsubscribeFirestore = onSnapshot(
-        q,
-        (snapshot) => {
-          const cloudSessions: ChatSession[] = [];
-          snapshot.forEach((docSnap) => {
-            const data = docSnap.data() as any;
-            if (data && data.id) {
-              cloudSessions.push({
-                id: data.id,
-                title: data.title || 'การสนทนา',
-                modelId: data.modelId || 'default',
-                messages: Array.isArray(data.messages) ? data.messages : [],
-                contextSummary: data.contextSummary || undefined,
-                summarizedUpToIndex: Number(data.summarizedUpToIndex) || 0,
-                createdAt: Number(data.createdAt) || Date.now(),
-                updatedAt: Number(data.updatedAt) || Date.now(),
-              });
-            }
-          });
-
-          mergeSessionsWithLocal(cleanUid, cloudSessions, onUpdate);
+    // 3. Supabase Realtime Channel
+    const channelName = `chat-sessions-sync-${cleanUid}-${Date.now()}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_chat_sessions',
+          filter: `user_id=eq.${cleanUid}`,
         },
-        (error) => {
-          console.warn('[aiChatHistoryService] Realtime sync error (falling back to Server API):', error);
+        () => {
+          fetchServerSessions(cleanUid).then((sessions) => {
+            if (sessions.length > 0) {
+              mergeSessionsWithLocal(cleanUid, sessions, onUpdate);
+            }
+          }).catch(() => {});
         }
-      );
-    }
+      )
+      .subscribe();
 
-    // 4. Auto-refresh on window focus / visibility change (switching back to mobile app / tab)
+    // 4. Auto-refresh on window focus / visibility change
     const handleReFocus = () => {
       fetchServerSessions(cleanUid).then((sessions) => {
         if (sessions.length > 0) {
@@ -375,7 +348,7 @@ export function subscribeToUserCloudSessions(
 
     return () => {
       unsubscribeRealtime();
-      unsubscribeFirestore();
+      supabase.removeChannel(channel).catch(() => {});
       if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
         window.removeEventListener('focus', handleReFocus);
       }
@@ -497,17 +470,7 @@ export async function clearAllSessions(userUid: string | null | undefined): Prom
   const key = getUserStorageKey(userUid);
   localStorage.removeItem(key);
 
-  if (userUid && db) {
-    try {
-      const q = query(collection(db, 'users', userUid.trim(), 'chat_sessions'));
-      const snap = await getDocs(q);
-      const batch = writeBatch(db);
-      snap.forEach((d) => {
-        batch.delete(d.ref);
-      });
-      await batch.commit();
-    } catch (err) {
-      console.warn('[aiChatHistoryService] Failed to clear cloud sessions:', err);
-    }
+  if (userUid) {
+    deleteSessionFromCloud(userUid, '');
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 import { broadcastSyncEvent } from '@/lib/services/serverSyncBroadcaster';
+import { createAdminClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -49,12 +50,42 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    let supabaseSessions: ChatSessionPayload[] | null = null;
+
+    // 1. Fetch from Supabase PostgreSQL
+    try {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('user_chat_sessions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(50);
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        supabaseSessions = data.map((d: any) => ({
+          id: d.id,
+          title: d.title || 'การสนทนา',
+          modelId: d.model_id || 'default',
+          messages: Array.isArray(d.messages) ? d.messages : [],
+          contextSummary: d.context_summary || undefined,
+          summarizedUpToIndex: Number(d.summarized_up_to_index) || 0,
+          createdAt: d.created_at ? new Date(d.created_at).getTime() : Date.now(),
+          updatedAt: d.updated_at ? new Date(d.updated_at).getTime() : Date.now(),
+        }));
+      }
+    } catch {
+      // Ignore Supabase connection error and fall back to local file
+    }
+
     const allSessions = await readAllChatSessions();
-    const userSessions = allSessions[userId] || [];
+    const localSessions = allSessions[userId] || [];
+
+    const finalSessions = supabaseSessions || localSessions;
 
     return NextResponse.json({
       success: true,
-      sessions: userSessions,
+      sessions: finalSessions,
     });
   } catch (err: any) {
     return NextResponse.json(
@@ -117,6 +148,24 @@ export async function POST(req: NextRequest) {
     allSessions[cleanUserId] = capped;
     await writeAllChatSessions(allSessions);
 
+    // Sync to Supabase PostgreSQL in background
+    if (session && session.id) {
+      try {
+        const supabase = createAdminClient();
+        await supabase.from('user_chat_sessions').upsert({
+          id: session.id,
+          user_id: cleanUserId,
+          title: session.title || 'การสนทนา',
+          model_id: session.modelId || 'default',
+          messages: session.messages || [],
+          context_summary: session.contextSummary || null,
+          summarized_up_to_index: session.summarizedUpToIndex || 0,
+          created_at: new Date(session.createdAt || Date.now()).toISOString(),
+          updated_at: new Date(session.updatedAt || Date.now()).toISOString(),
+        });
+      } catch {}
+    }
+
     // Broadcast real-time sync event across all user devices
     broadcastSyncEvent(cleanUserId, 'SESSIONS_UPDATED', capped);
 
@@ -150,8 +199,27 @@ export async function DELETE(req: NextRequest) {
 
     if (sessionId) {
       allSessions[userId] = allSessions[userId].filter((s) => s.id !== sessionId);
+
+      // Delete from Supabase PostgreSQL
+      try {
+        const supabase = createAdminClient();
+        await supabase
+          .from('user_chat_sessions')
+          .delete()
+          .eq('user_id', userId)
+          .eq('id', sessionId);
+      } catch {}
     } else {
       delete allSessions[userId];
+
+      // Delete all sessions from Supabase PostgreSQL
+      try {
+        const supabase = createAdminClient();
+        await supabase
+          .from('user_chat_sessions')
+          .delete()
+          .eq('user_id', userId);
+      } catch {}
     }
 
     await writeAllChatSessions(allSessions);

@@ -171,8 +171,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
   const isFirebaseOwner = Boolean(
     user &&
-      (OWNER_DEV_IDENTIFIERS.emails.includes(user.email?.toLowerCase().trim() ?? '') ||
-        OWNER_DEV_IDENTIFIERS.firebaseUids.includes(user.uid))
+    (OWNER_DEV_IDENTIFIERS.emails.includes(user.email?.toLowerCase().trim() ?? '') ||
+      OWNER_DEV_IDENTIFIERS.firebaseUids.includes(user.uid))
   );
 
   const isOwnerAccount = isFirebaseOwner || isSupabaseOwner;
@@ -196,7 +196,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       localStorage.removeItem('stockhome_local_subscription_tier');
       localStorage.removeItem('stockhome_local_ai_reset_date');
       localStorage.removeItem('stockhome_local_ai_usage_count');
-    } catch {}
+    } catch { }
 
     if (isOwnerAccount) {
       restoreOwnerGodMode();
@@ -220,7 +220,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         localStorage.setItem(getDailyKey(currentUid), cloudWallet.dailyGemCoinsRemaining.toString());
         localStorage.setItem(getTopupKey(currentUid), (cloudWallet.topupGemCoins || 0).toString());
         localStorage.setItem(getResetDateKey(currentUid), cloudWallet.lastResetDate || getTodayStr());
-      } catch {}
+      } catch { }
     });
     return () => unsubscribe();
   }, [user?.uid, isOwnerAccount, authLoading]);
@@ -348,8 +348,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       if (migratedGuestTopup > 0) {
         activeTopup += migratedGuestTopup;
         localStorage.setItem(topupKey, activeTopup.toString());
-        creditCloudTopupCoins(currentUid, migratedGuestTopup).catch(() => {});
-        syncServerWallet(currentUid, { action: 'sync', newDaily: activeDaily, newTopup: activeTopup }).catch(() => {});
+        creditCloudTopupCoins(currentUid, migratedGuestTopup).catch(() => { });
+        syncServerWallet(currentUid, { action: 'sync', newDaily: activeDaily, newTopup: activeTopup }).catch(() => { });
       }
 
       setDailyGemCoinsRemaining(activeDaily);
@@ -375,7 +375,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             localStorage.setItem(logsKey, JSON.stringify(mergedLogs));
             localStorage.removeItem(getLogsKey('guest'));
           }
-        } catch {}
+        } catch { }
       }
 
       setGemCoinLogs(mergedLogs);
@@ -399,7 +399,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         setGemCoinLogs(unified);
         try {
           localStorage.setItem(logsKey, JSON.stringify(unified));
-        } catch {}
+        } catch { }
 
         // If local had unsynced entries, push them to Cloud Ledger
         if (unified.length > remoteTx.length) {
@@ -408,7 +408,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       };
 
       // Fetch cloud transactions ledger
-      fetchServerTransactions(currentUid).then(applyUnifiedTransactions).catch(() => {});
+      fetchServerTransactions(currentUid).then(applyUnifiedTransactions).catch(() => { });
 
       // Helper to apply server wallet updates safely
       const applyServerWallet = (serverWallet: any) => {
@@ -437,19 +437,19 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           localStorage.setItem(topupKey, effectiveTopup.toString());
           localStorage.setItem(resetDateKey, today);
           if (serverWallet.tier) localStorage.setItem(tierKey, serverWallet.tier);
-        } catch {}
+        } catch { }
 
         if (effectiveDaily !== serverWallet.dailyGemCoinsRemaining || effectiveTopup !== serverWallet.topupGemCoins) {
           syncServerWallet(currentUid, {
             action: 'sync',
             newDaily: effectiveDaily,
             newTopup: effectiveTopup,
-          }).catch(() => {});
+          }).catch(() => { });
         }
       };
 
       // 1. Initial fetch from server API
-      fetchServerWallet(currentUid).then(applyServerWallet).catch(() => {});
+      fetchServerWallet(currentUid).then(applyServerWallet).catch(() => { });
 
       // 2. Connect Real-time WebSocket/SSE Stream & Intra-tab Broadcast
       realtimeSync.connect(currentUid);
@@ -461,8 +461,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           if (typeof payload.topupGemCoins === 'number') {
             applyServerWallet(payload);
           } else {
-            fetchServerWallet(currentUid).then(applyServerWallet).catch(() => {});
-            fetchServerTransactions(currentUid).then(applyUnifiedTransactions).catch(() => {});
+            fetchServerWallet(currentUid).then(applyServerWallet).catch(() => { });
+            fetchServerTransactions(currentUid).then(applyUnifiedTransactions).catch(() => { });
           }
         }
       });
@@ -474,8 +474,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
       // 4. Auto-sync on window focus & visibility change (when returning to phone app/tab)
       const handleReFocus = () => {
-        fetchServerWallet(currentUid).then(applyServerWallet).catch(() => {});
-        fetchServerTransactions(currentUid).then(applyUnifiedTransactions).catch(() => {});
+        fetchServerWallet(currentUid).then(applyServerWallet).catch(() => { });
+        fetchServerTransactions(currentUid).then(applyUnifiedTransactions).catch(() => { });
       };
 
       if (typeof window !== 'undefined') {
@@ -512,7 +512,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             const updated = prev + added;
             try {
               localStorage.setItem(getTopupKey(currentUid), updated.toString());
-            } catch {}
+            } catch { }
             return updated;
           });
           const logEntry: GemCoinLogEntry = {
@@ -530,7 +530,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             const updated = [logEntry, ...prev.slice(0, 99)];
             try {
               localStorage.setItem(getLogsKey(currentUid), JSON.stringify(updated));
-            } catch {}
+            } catch { }
             return updated;
           });
         }
@@ -547,10 +547,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     const currentUid = user?.uid?.trim() || (userId !== 'guest' ? userId : 'guest');
     try {
       localStorage.setItem(getTierKey(currentUid), 'dev');
-    } catch {}
+    } catch { }
     if (user?.uid) {
-      updateCloudTier(user.uid.trim(), 'dev').catch(() => {});
-      syncServerWallet(user.uid.trim(), { action: 'setTier', tier: 'dev' }).catch(() => {});
+      updateCloudTier(user.uid.trim(), 'dev').catch(() => { });
+      syncServerWallet(user.uid.trim(), { action: 'setTier', tier: 'dev' }).catch(() => { });
     }
   }, [user?.uid, userId]);
 
@@ -569,15 +569,15 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         localStorage.setItem(getTierKey(currentUid), tier);
         localStorage.setItem(getDailyKey(currentUid), tierInfo.dailyGemCoins.toString());
         localStorage.setItem(getResetDateKey(currentUid), today);
-      } catch {}
+      } catch { }
 
       if (user?.uid) {
-        updateCloudTier(user.uid.trim(), tier).catch(() => {});
+        updateCloudTier(user.uid.trim(), tier).catch(() => { });
         syncServerWallet(user.uid.trim(), {
           action: 'setTier',
           tier,
           newDaily: tierInfo.dailyGemCoins,
-        }).catch(() => {});
+        }).catch(() => { });
       }
     },
     [user?.uid, userId]
@@ -593,12 +593,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           setTopupGemCoins((prev) => {
             const updated = prev + amount;
             localStorage.setItem(getTopupKey(currentUid), updated.toString());
-            creditCloudTopupCoins(currentUid, amount).catch(() => {});
-            syncServerWallet(currentUid, { action: 'credit', amount, newTopup: updated }).catch(() => {});
+            creditCloudTopupCoins(currentUid, amount).catch(() => { });
+            syncServerWallet(currentUid, { action: 'credit', amount, newTopup: updated }).catch(() => { });
             return updated;
           });
         }
-      } catch {}
+      } catch { }
     },
     [user?.uid, isOwnerAccount]
   );
@@ -669,7 +669,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         localStorage.setItem(getDailyKey(currentUid), newDaily.toString());
         localStorage.setItem(getTopupKey(currentUid), newTopup.toString());
         localStorage.setItem(getResetDateKey(currentUid), today);
-      } catch {}
+      } catch { }
 
       if (user?.uid) {
         // Persist immediately to Server Wallet API
@@ -678,10 +678,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           amount,
           newDaily,
           newTopup,
-        }).catch(() => {});
+        }).catch(() => { });
 
         // Sync to Firestore Cloud
-        deductCloudCoins(user.uid.trim(), amount, model, summary).catch(() => {});
+        deductCloudCoins(user.uid.trim(), amount, model, summary).catch(() => { });
 
         // Record to Cloud Transaction Ledger
         recordCloudTransaction(user.uid.trim(), logEntry);
@@ -691,7 +691,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         const updated = [logEntry, ...prev.slice(0, 99)];
         try {
           localStorage.setItem(getLogsKey(currentUid), JSON.stringify(updated));
-        } catch {}
+        } catch { }
         return updated;
       });
 
@@ -720,15 +720,15 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       if (currentUid) {
         try {
           localStorage.setItem(getTopupKey(currentUid), newTopup.toString());
-        } catch {}
+        } catch { }
 
         syncServerWallet(currentUid, {
           action: 'credit',
           amount,
           newTopup,
-        }).catch(() => {});
+        }).catch(() => { });
 
-        creditCloudTopupCoins(currentUid, amount).catch(() => {});
+        creditCloudTopupCoins(currentUid, amount).catch(() => { });
         recordCloudTransaction(currentUid, logEntry);
       }
 
@@ -737,7 +737,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         if (currentUid) {
           try {
             localStorage.setItem(getLogsKey(currentUid), JSON.stringify(updated));
-          } catch {}
+          } catch { }
         }
         return updated;
       });
@@ -764,15 +764,15 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       if (currentUid) {
         try {
           localStorage.setItem(getTopupKey(currentUid), newTopup.toString());
-        } catch {}
+        } catch { }
 
         syncServerWallet(currentUid, {
           action: 'credit',
           amount,
           newTopup,
-        }).catch(() => {});
+        }).catch(() => { });
 
-        creditCloudTopupCoins(currentUid, amount).catch(() => {});
+        creditCloudTopupCoins(currentUid, amount).catch(() => { });
         recordCloudTransaction(currentUid, logEntry);
       }
 
@@ -781,7 +781,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         if (currentUid) {
           try {
             localStorage.setItem(getLogsKey(currentUid), JSON.stringify(updated));
-          } catch {}
+          } catch { }
         }
         return updated;
       });
@@ -820,15 +820,15 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           if (currentUid) {
             try {
               localStorage.setItem(getTopupKey(currentUid), newTopup.toString());
-            } catch {}
+            } catch { }
 
             syncServerWallet(currentUid, {
               action: 'credit',
               amount: added,
               newTopup,
-            }).catch(() => {});
+            }).catch(() => { });
 
-            creditCloudTopupCoins(currentUid, added).catch(() => {});
+            creditCloudTopupCoins(currentUid, added).catch(() => { });
             recordCloudTransaction(currentUid, logEntry);
           }
 
@@ -837,7 +837,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             if (currentUid) {
               try {
                 localStorage.setItem(getLogsKey(currentUid), JSON.stringify(updated));
-              } catch {}
+              } catch { }
             }
             return updated;
           });
@@ -887,7 +887,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       try {
         localStorage.setItem(AI_RESET_DATE_KEY, today);
         localStorage.setItem(AI_USAGE_KEY, updated.toString());
-      } catch {}
+      } catch { }
       return updated;
     });
   }, []);
@@ -898,7 +898,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     try {
       localStorage.setItem(AI_RESET_DATE_KEY, today);
       localStorage.setItem(AI_USAGE_KEY, '0');
-    } catch {}
+    } catch { }
   }, []);
 
   return (
@@ -934,8 +934,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           currentTier === 'dev' || isOwnerAccount
             ? 99999999
             : (!user && !isOwnerAccount)
-            ? 0
-            : dailyGemCoinsRemaining + topupGemCoins,
+              ? 0
+              : dailyGemCoinsRemaining + topupGemCoins,
         gemCoinLogs,
         isGemCoinModalOpen,
         gemCoinModalInitialTab,

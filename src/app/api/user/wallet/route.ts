@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { GEMCOIN_SUBSCRIPTION_TIERS } from '@/config/gemCoinPackages';
 import { broadcastSyncEvent } from '@/lib/services/serverSyncBroadcaster';
+import { createAdminClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -46,6 +47,23 @@ function getTierDailyCoins(tier: string): number {
   return t ? t.dailyGemCoins : 500;
 }
 
+async function syncToSupabase(wallet: UserWalletRecord) {
+  try {
+    const supabase = createAdminClient();
+    await supabase.from('user_wallets').upsert({
+      user_id: wallet.uid,
+      tier: wallet.tier,
+      daily_gem_coins: wallet.dailyGemCoins,
+      daily_gem_coins_remaining: wallet.dailyGemCoinsRemaining,
+      topup_gem_coins: wallet.topupGemCoins,
+      last_reset_date: wallet.lastResetDate,
+      updated_at: wallet.updatedAt,
+    });
+  } catch (err) {
+    // Non-blocking fallback
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -61,12 +79,37 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const wallets = await readWallets();
     const today = getTodayStr();
+    let wallet: UserWalletRecord | null = null;
 
-    let wallet = wallets[uid];
+    // 1. Try reading from Supabase PostgreSQL first
+    try {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from('user_wallets')
+        .select('*')
+        .eq('user_id', uid)
+        .maybeSingle();
+
+      if (!error && data) {
+        wallet = {
+          uid: data.user_id,
+          tier: data.tier || 'free',
+          dailyGemCoins: Number(data.daily_gem_coins) || 500,
+          dailyGemCoinsRemaining: Number(data.daily_gem_coins_remaining) || 500,
+          topupGemCoins: Number(data.topup_gem_coins) || 0,
+          lastResetDate: data.last_reset_date || today,
+          updatedAt: data.updated_at || new Date().toISOString(),
+        };
+      }
+    } catch {
+      // Ignore Supabase connection error and fall back to local store
+    }
+
+    const wallets = await readWallets();
+
     if (!wallet) {
-      wallet = {
+      wallet = wallets[uid] || {
         uid,
         tier: 'free',
         dailyGemCoins: 500,
@@ -75,20 +118,21 @@ export async function GET(req: NextRequest) {
         lastResetDate: today,
         updatedAt: new Date().toISOString(),
       };
-      wallets[uid] = wallet;
-      await writeWallets(wallets);
-    } else {
-      // Check midnight daily reset
-      if (wallet.lastResetDate !== today) {
-        const tierQuota = getTierDailyCoins(wallet.tier || 'free');
-        wallet.dailyGemCoins = tierQuota;
-        wallet.dailyGemCoinsRemaining = tierQuota;
-        wallet.lastResetDate = today;
-        wallet.updatedAt = new Date().toISOString();
-        wallets[uid] = wallet;
-        await writeWallets(wallets);
-      }
     }
+
+    // Check midnight daily reset
+    if (wallet.lastResetDate !== today) {
+      const tierQuota = getTierDailyCoins(wallet.tier || 'free');
+      wallet.dailyGemCoins = tierQuota;
+      wallet.dailyGemCoinsRemaining = tierQuota;
+      wallet.lastResetDate = today;
+      wallet.updatedAt = new Date().toISOString();
+    }
+
+    // Keep both Supabase and local JSON file in sync
+    wallets[uid] = wallet;
+    await writeWallets(wallets);
+    syncToSupabase(wallet);
 
     return NextResponse.json({
       success: true,
@@ -172,6 +216,23 @@ export async function POST(req: NextRequest) {
 
     wallets[cleanUid] = wallet;
     await writeWallets(wallets);
+    syncToSupabase(wallet);
+
+    // If transaction details provided, record to user_wallet_transactions
+    if (action === 'deduct' || action === 'credit') {
+      try {
+        const supabase = createAdminClient();
+        await supabase.from('user_wallet_transactions').insert({
+          id: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          user_id: cleanUid,
+          type: action,
+          amount: Number(amount || 0),
+          model_name: model || 'StockHome AI',
+          summary: summary || '',
+          created_at: new Date().toISOString(),
+        });
+      } catch {}
+    }
 
     // Broadcast real-time sync event to all active devices (PC, Mobile, Tablet)
     broadcastSyncEvent(cleanUid, 'WALLET_UPDATED', wallet);

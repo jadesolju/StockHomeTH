@@ -1,10 +1,9 @@
-import {
-  doc,
-  getDoc,
-  setDoc,
-  onSnapshot,
-} from 'firebase/firestore';
-import { db } from '../firebase/firebaseClient';
+/**
+ * User Wallet Service (Supabase PostgreSQL + Realtime Sync)
+ * Manages GemCoins, Subscription Quotas, and Transaction Records backed by Supabase PostgreSQL.
+ */
+
+import { supabase } from '../supabase/client';
 import { SubscriptionTier, GemCoinLogEntry } from '../context/SubscriptionContext';
 import { GEMCOIN_SUBSCRIPTION_TIERS } from '../../config/gemCoinPackages';
 
@@ -21,6 +20,22 @@ export interface UserCloudWallet {
 export function getTodayStr(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export function getDefaultWallet(uid: string, tier: SubscriptionTier = 'free'): UserCloudWallet {
+  const tierInfo =
+    GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === tier) ||
+    GEMCOIN_SUBSCRIPTION_TIERS[0];
+
+  return {
+    uid,
+    tier,
+    dailyGemCoins: tierInfo.dailyGemCoins,
+    dailyGemCoinsRemaining: tierInfo.dailyGemCoins,
+    topupGemCoins: 0,
+    lastResetDate: getTodayStr(),
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 export async function fetchServerWallet(uid: string): Promise<UserCloudWallet | null> {
@@ -41,7 +56,15 @@ export async function fetchServerWallet(uid: string): Promise<UserCloudWallet | 
 
 export async function syncServerWallet(
   uid: string,
-  updates: { action: 'deduct' | 'credit' | 'setTier' | 'sync'; amount?: number; newDaily?: number; newTopup?: number; tier?: SubscriptionTier }
+  updates: {
+    action: 'deduct' | 'credit' | 'setTier' | 'sync';
+    amount?: number;
+    newDaily?: number;
+    newTopup?: number;
+    tier?: SubscriptionTier;
+    model?: string;
+    summary?: string;
+  }
 ): Promise<UserCloudWallet | null> {
   if (!uid) return null;
   try {
@@ -94,14 +117,23 @@ export async function recordCloudTransaction(
     });
   }
 
-  // 2. Persist to Firestore
-  if (db) {
-    try {
-      const txRef = doc(db, 'users', cleanUid, 'wallet_transactions', entry.id);
-      await setDoc(txRef, entry, { merge: true });
-    } catch (err) {
-      console.warn('[UserWalletService] Firestore transaction save error:', err);
-    }
+  // 2. Persist to Supabase if authenticated client is available
+  try {
+    Promise.resolve(
+      supabase
+        .from('user_wallet_transactions')
+        .upsert({
+          id: entry.id,
+          user_id: cleanUid,
+          type: 'deduct',
+          amount: entry.gemCoinsUsed,
+          model_name: entry.model || 'StockHome AI',
+          summary: entry.summary || '',
+          created_at: new Date(entry.timestamp).toISOString(),
+        })
+    ).catch(() => {});
+  } catch (err) {
+    console.warn('[UserWalletService] Supabase transaction save error:', err);
   }
 }
 
@@ -121,80 +153,64 @@ export async function syncBulkTransactions(
   }
 }
 
-export function getDefaultWallet(uid: string, tier: SubscriptionTier = 'free'): UserCloudWallet {
-  const tierInfo =
-    GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === tier) ||
-    GEMCOIN_SUBSCRIPTION_TIERS[0];
-
-  return {
-    uid,
-    tier,
-    dailyGemCoins: tierInfo.dailyGemCoins,
-    dailyGemCoinsRemaining: tierInfo.dailyGemCoins,
-    topupGemCoins: 0,
-    lastResetDate: getTodayStr(),
-    updatedAt: new Date().toISOString(),
-  };
-}
-
 /**
- * Real-time Firestore Cloud Wallet listener.
+ * Real-time Supabase Cloud Wallet listener.
  * Automatically synchronizes GemCoins across all devices (PC, Mobile, Tablet) when user is logged in.
  */
 export function subscribeToCloudWallet(
   uid: string,
   onUpdate: (wallet: UserCloudWallet) => void
 ): () => void {
-  if (!uid || !db) return () => {};
+  if (!uid) return () => {};
+  const cleanUid = uid.trim();
 
   try {
-    const walletRef = doc(db, 'users', uid.trim(), 'wallet', 'balance');
-    const unsubscribe = onSnapshot(
-      walletRef,
-      (snap) => {
-        if (snap.exists()) {
-          const data = snap.data() as UserCloudWallet;
-          // Check for midnight daily reset
-          const today = getTodayStr();
-          if (data.lastResetDate !== today) {
-            const tierInfo =
-              GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === data.tier) ||
-              GEMCOIN_SUBSCRIPTION_TIERS[0];
+    // 1. Initial fetch from Server API
+    fetchServerWallet(cleanUid).then((w) => {
+      if (w) onUpdate(w);
+    }).catch(() => {});
 
-            const resetWallet: UserCloudWallet = {
-              ...data,
-              dailyGemCoins: tierInfo.dailyGemCoins,
-              dailyGemCoinsRemaining: tierInfo.dailyGemCoins,
-              topupGemCoins: data.topupGemCoins || 0,
-              lastResetDate: today,
-              updatedAt: new Date().toISOString(),
+    // 2. Supabase Realtime Channel
+    const channelName = `wallet-sync-${cleanUid}-${Date.now()}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_wallets',
+          filter: `user_id=eq.${cleanUid}`,
+        },
+        (payload) => {
+          if (payload.new) {
+            const row = payload.new as any;
+            const updatedWallet: UserCloudWallet = {
+              uid: row.user_id,
+              tier: (row.tier as SubscriptionTier) || 'free',
+              dailyGemCoins: Number(row.daily_gem_coins) || 500,
+              dailyGemCoinsRemaining: Number(row.daily_gem_coins_remaining) || 0,
+              topupGemCoins: Number(row.topup_gem_coins) || 0,
+              lastResetDate: row.last_reset_date || getTodayStr(),
+              updatedAt: row.updated_at || new Date().toISOString(),
             };
-            setDoc(walletRef, resetWallet, { merge: true }).catch(() => {});
-            onUpdate(resetWallet);
-          } else {
-            onUpdate(data);
+            onUpdate(updatedWallet);
           }
-        } else {
-          // Initialize new cloud wallet record
-          const initial = getDefaultWallet(uid);
-          setDoc(walletRef, initial, { merge: true }).catch(() => {});
-          onUpdate(initial);
         }
-      },
-      (err) => {
-        console.warn('[CloudWallet] onSnapshot listener warning:', err);
-      }
-    );
+      )
+      .subscribe();
 
-    return () => unsubscribe();
+    return () => {
+      supabase.removeChannel(channel).catch(() => {});
+    };
   } catch (err) {
-    console.warn('[CloudWallet] Subscription error:', err);
+    console.warn('[UserWalletService] Subscription error:', err);
     return () => {};
   }
 }
 
 /**
- * Deducts coins directly on Firestore Cloud.
+ * Deducts coins directly on Supabase Cloud.
  */
 export async function deductCloudCoins(
   uid: string,
@@ -202,102 +218,68 @@ export async function deductCloudCoins(
   modelName: string,
   summary?: string
 ): Promise<{ success: boolean; newDaily: number; newTopup: number }> {
-  if (!uid || !db || amount <= 0) return { success: false, newDaily: 0, newTopup: 0 };
+  if (!uid || amount <= 0) return { success: false, newDaily: 0, newTopup: 0 };
 
   try {
-    const walletRef = doc(db, 'users', uid.trim(), 'wallet', 'balance');
-    const snap = await getDoc(walletRef);
-    const data: UserCloudWallet = snap.exists()
-      ? (snap.data() as UserCloudWallet)
-      : getDefaultWallet(uid);
+    const updated = await syncServerWallet(uid, {
+      action: 'deduct',
+      amount,
+      model: modelName,
+      summary,
+    });
 
-    let { dailyGemCoinsRemaining, topupGemCoins } = data;
-    let deductFromDaily = Math.min(dailyGemCoinsRemaining, amount);
-    let remainingToDeduct = amount - deductFromDaily;
-    let deductFromTopup = Math.min(topupGemCoins, remainingToDeduct);
-
-    dailyGemCoinsRemaining = Math.max(0, dailyGemCoinsRemaining - deductFromDaily);
-    topupGemCoins = Math.max(0, topupGemCoins - deductFromTopup);
-
-    const updated: Partial<UserCloudWallet> = {
-      dailyGemCoinsRemaining,
-      topupGemCoins,
-      updatedAt: new Date().toISOString(),
-    };
-
-    await setDoc(walletRef, updated, { merge: true });
-
-    return {
-      success: true,
-      newDaily: dailyGemCoinsRemaining,
-      newTopup: topupGemCoins,
-    };
+    if (updated) {
+      return {
+        success: true,
+        newDaily: updated.dailyGemCoinsRemaining,
+        newTopup: updated.topupGemCoins,
+      };
+    }
   } catch (err) {
-    console.error('[CloudWallet] Deduct error:', err);
-    return { success: false, newDaily: 0, newTopup: 0 };
+    console.error('[UserWalletService] Deduct error:', err);
   }
+  return { success: false, newDaily: 0, newTopup: 0 };
 }
 
 /**
- * Credits topup coins on Firestore Cloud.
+ * Credits topup coins on Supabase Cloud.
  */
 export async function creditCloudTopupCoins(
   uid: string,
   amount: number
 ): Promise<{ success: boolean; newTopup: number }> {
-  if (!uid || !db || amount <= 0) return { success: false, newTopup: 0 };
+  if (!uid || amount <= 0) return { success: false, newTopup: 0 };
 
   try {
-    const walletRef = doc(db, 'users', uid.trim(), 'wallet', 'balance');
-    const snap = await getDoc(walletRef);
-    const data: UserCloudWallet = snap.exists()
-      ? (snap.data() as UserCloudWallet)
-      : getDefaultWallet(uid);
+    const updated = await syncServerWallet(uid, {
+      action: 'credit',
+      amount,
+    });
 
-    const updatedTopup = (data.topupGemCoins || 0) + amount;
-
-    await setDoc(
-      walletRef,
-      {
-        topupGemCoins: updatedTopup,
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true }
-    );
-
-    return { success: true, newTopup: updatedTopup };
+    if (updated) {
+      return { success: true, newTopup: updated.topupGemCoins };
+    }
   } catch (err) {
-    console.error('[CloudWallet] Credit error:', err);
-    return { success: false, newTopup: 0 };
+    console.error('[UserWalletService] Credit error:', err);
   }
+  return { success: false, newTopup: 0 };
 }
 
 /**
- * Updates user subscription tier on Firestore Cloud.
+ * Updates user subscription tier on Supabase Cloud.
  */
 export async function updateCloudTier(
   uid: string,
   tier: SubscriptionTier
 ): Promise<void> {
-  if (!uid || !db) return;
+  if (!uid) return;
 
   try {
-    const tierInfo =
-      GEMCOIN_SUBSCRIPTION_TIERS.find((t) => t.tier === tier) ||
-      GEMCOIN_SUBSCRIPTION_TIERS[0];
-
-    const walletRef = doc(db, 'users', uid.trim(), 'wallet', 'balance');
-    await setDoc(
-      walletRef,
-      {
-        tier,
-        dailyGemCoins: tierInfo.dailyGemCoins,
-        dailyGemCoinsRemaining: tierInfo.dailyGemCoins,
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true }
-    );
+    await syncServerWallet(uid, {
+      action: 'setTier',
+      tier,
+    });
   } catch (err) {
-    console.error('[CloudWallet] Tier update error:', err);
+    console.error('[UserWalletService] Tier update error:', err);
   }
 }
