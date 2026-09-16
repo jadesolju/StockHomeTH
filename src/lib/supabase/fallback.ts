@@ -1,5 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Polyfill WebSocket in Node.js server/test runtime to prevent @supabase/realtime-js from crashing
+if (typeof globalThis.WebSocket === 'undefined') {
+  globalThis.WebSocket = class DummyWebSocket {
+    static CONNECTING = 0;
+    static OPEN = 1;
+    static CLOSING = 2;
+    static CLOSED = 3;
+    readyState = 3;
+    addEventListener() {}
+    removeEventListener() {}
+    send() {}
+    close() {}
+  } as any;
+}
+
 const PRIMARY_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const PRIMARY_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
