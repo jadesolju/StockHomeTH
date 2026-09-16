@@ -136,7 +136,21 @@ export function AuthModal({
       : 'เปลี่ยนรหัสผ่านใหม่';
 
   return (
-    <div className="ios-sheet-overlay" onClick={handleClose} style={{ zIndex: 100000, position: 'fixed', inset: 0 }}>
+    <div
+      className="ios-sheet-overlay"
+      onClick={handleClose}
+      style={{
+        zIndex: 100000,
+        position: 'fixed',
+        inset: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
+      }}
+    >
       <section
         className="auth-dialog"
         onClick={(event) => event.stopPropagation()}
@@ -144,7 +158,11 @@ export function AuthModal({
           borderRadius: '28px',
           padding: '32px 28px',
           maxWidth: '420px',
-          width: '90%',
+          width: '100%',
+          maxHeight: 'calc(100dvh - 32px)',
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          margin: 'auto',
           background: 'var(--bg-secondary)',
           backgroundColor: 'var(--bg-secondary)',
           boxShadow: '0 24px 60px rgba(0, 0, 0, 0.75)',
@@ -153,7 +171,12 @@ export function AuthModal({
           zIndex: 100001,
         }}
       >
-        <button className="icon-button auth-close" onClick={handleClose} aria-label="ปิด">
+        <button
+          className="icon-button auth-close"
+          onClick={handleClose}
+          aria-label="ปิด"
+          style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 20, cursor: 'pointer' }}
+        >
           <X size={19} />
         </button>
 
