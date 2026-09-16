@@ -13,8 +13,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 308);
   }
 
-  // 2. Security Guard Easter Egg: Block direct access / directory listing on /api and /api/
+  // 2. Security Guard Easter Egg: Completely block direct access / directory listing on /api and /api/
   if (pathname === '/api' || pathname === '/api/') {
+    const acceptHeader = request.headers.get('accept') || '';
+    // If opened in a web browser, redirect straight to homepage so public never sees the directory
+    if (acceptHeader.includes('text/html')) {
+      const homeUrl = request.nextUrl.clone();
+      homeUrl.pathname = '/';
+      return NextResponse.redirect(homeUrl, 307);
+    }
+
+    // If probed via API client / curl / scanner, return 404 with security Easter egg
     return NextResponse.json(
       {
         status: 404,

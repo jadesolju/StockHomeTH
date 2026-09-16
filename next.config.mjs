@@ -17,6 +17,16 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: '/api',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/api/',
+        destination: '/',
+        permanent: false,
+      },
+      {
         source: '/:path*',
         has: [
           {
