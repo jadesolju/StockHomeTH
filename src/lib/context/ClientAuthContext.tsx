@@ -131,10 +131,13 @@ export const ClientAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const signInWithGoogle = async () => {
-    const redirectUrl =
-      typeof window !== 'undefined'
-        ? `${window.location.origin}/auth/callback`
-        : undefined;
+    const isLocal =
+      typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+    const redirectUrl = isLocal
+      ? `${window.location.origin}/auth/callback`
+      : 'https://stockhometh.online/auth/callback';
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
