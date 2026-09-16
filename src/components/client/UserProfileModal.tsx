@@ -160,6 +160,8 @@ export function UserProfileModal() {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '16px',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
       }}
     >
       <section
@@ -170,6 +172,10 @@ export function UserProfileModal() {
           padding: '32px 28px',
           maxWidth: '420px',
           width: '100%',
+          maxHeight: 'calc(100dvh - 32px)',
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          margin: 'auto',
           background: 'var(--bg-secondary)',
           backgroundColor: 'var(--bg-secondary)',
           boxShadow: '0 24px 60px rgba(0, 0, 0, 0.75)',
@@ -183,7 +189,7 @@ export function UserProfileModal() {
           className="icon-button auth-close"
           onClick={closeProfileModal}
           aria-label="ปิด"
-          style={{ position: 'absolute', top: '20px', right: '20px', cursor: 'pointer' }}
+          style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 20, cursor: 'pointer' }}
         >
           <X size={20} />
         </button>
