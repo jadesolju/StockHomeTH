@@ -1,4 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
+import {
+  isCircuitTripped,
+  recordCircuitFailure,
+  recordCircuitSuccess,
+} from '@/lib/services/edgeConfigService';
 
 // Polyfill WebSocket in Node.js server/test runtime to prevent @supabase/realtime-js from crashing
 if (typeof globalThis.WebSocket === 'undefined') {
@@ -87,36 +92,48 @@ export async function fetchWithFallback<T>(
     throw new Error('Supabase client or credentials (URL/Key) not configured.');
   }
 
-  try {
-    return await withTimeout(
-      queryFn(primaryClient),
-      timeoutMs,
-      `Primary database query timed out after ${timeoutMs}ms`
-    );
-  } catch (error: any) {
-    console.error(
-      '[Supabase Fallback] Primary database failure, initiating fallback protocol...',
-      error?.message || error
-    );
+  let primaryError: any = null;
 
-    if (!fallbackUrl) {
-      console.warn('[Supabase Fallback] No FALLBACK_URL / NEON_DATABASE_URL defined.');
-      throw error;
-    }
-
+  // If circuit breaker is tripped, bypass primary DB query immediately
+  if (isCircuitTripped()) {
+    console.warn('[Supabase Fallback] Circuit breaker is TRIPPED. Bypassing primary DB attempt.');
+    primaryError = new Error('Circuit breaker is tripped');
+  } else {
     try {
-      const fallbackClient = createClient(fallbackUrl, fallbackKey);
-      return await withTimeout(
-        queryFn(fallbackClient),
+      const result = await withTimeout(
+        queryFn(primaryClient),
         timeoutMs,
-        `Fallback database query timed out after ${timeoutMs}ms`
+        `Primary database query timed out after ${timeoutMs}ms`
       );
-    } catch (fallbackError: any) {
+      recordCircuitSuccess();
+      return result;
+    } catch (error: any) {
+      primaryError = error;
+      recordCircuitFailure();
       console.error(
-        '[Supabase Fallback] Fallback database query failed:',
-        fallbackError?.message || fallbackError
+        '[Supabase Fallback] Primary database failure, initiating fallback protocol...',
+        error?.message || error
       );
-      throw fallbackError;
     }
+  }
+
+  if (!fallbackUrl) {
+    console.warn('[Supabase Fallback] No FALLBACK_URL / NEON_DATABASE_URL defined.');
+    throw primaryError || new Error('Primary database query failed');
+  }
+
+  try {
+    const fallbackClient = createClient(fallbackUrl, fallbackKey);
+    return await withTimeout(
+      queryFn(fallbackClient),
+      timeoutMs,
+      `Fallback database query timed out after ${timeoutMs}ms`
+    );
+  } catch (fallbackError: any) {
+    console.error(
+      '[Supabase Fallback] Fallback database query failed:',
+      fallbackError?.message || fallbackError
+    );
+    throw fallbackError;
   }
 }

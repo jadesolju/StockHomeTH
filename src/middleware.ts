@@ -1,8 +1,24 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { updateSession } from '@/utils/supabase/middleware';
+import { isMaintenanceMode, shouldUseStaticFallback } from '@/lib/services/edgeConfigService';
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  // 0. Circuit Breaker / Edge Config Maintenance Guard
+  if (await isMaintenanceMode()) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Service Unavailable',
+          message: 'ระบบกำลังปิดปรับปรุงชั่วคราวเพื่ออัปเกรดประสิทธิภาพ (Scheduled Maintenance Mode)',
+          timestamp: new Date().toISOString(),
+        },
+        { status: 503, headers: { 'Retry-After': '300' } }
+      );
+    }
+  }
 
   // 1. Canonical Domain Redirect: Ensure www.stockhometh.online redirects permanently (308) to stockhometh.online
   const host = request.headers.get('host') || '';
@@ -42,12 +58,23 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // 3. Never intercept sub-API routes with Supabase session refresh middleware
+  // 3. Static Fallback Flag Header Injection
+  const isStaticFallback = await shouldUseStaticFallback();
+
+  // Never intercept sub-API routes with Supabase session refresh middleware
   if (pathname.startsWith('/api/')) {
-    return NextResponse.next();
+    const apiResponse = NextResponse.next();
+    if (isStaticFallback) {
+      apiResponse.headers.set('X-Static-Fallback', 'true');
+    }
+    return apiResponse;
   }
 
-  return await updateSession(request);
+  const response = await updateSession(request);
+  if (isStaticFallback) {
+    response.headers.set('X-Static-Fallback', 'true');
+  }
+  return response;
 }
 
 export const config = {
