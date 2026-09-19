@@ -20,7 +20,7 @@ export function sanitizeInterval(interval: unknown): string {
 }
 
 export function sanitizeWorkers(workers: unknown): number {
-  const parsed = typeof workers === 'number' ? workers : parseInt(String(workers), 10);
+  const parsed = typeof workers === 'number' ? Math.floor(workers) : parseInt(String(workers), 10);
   if (isNaN(parsed) || parsed < 1) return 8;
   return Math.min(parsed, 32);
 }
