@@ -23,6 +23,7 @@ import {
   CreditCard,
   Crown,
   Ticket,
+  Cloud,
 } from 'lucide-react';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { useTheme } from '../../lib/context/ThemeContext';
@@ -32,6 +33,7 @@ import { useAdminAuth } from '../../lib/context/AdminAuthContext';
 import { useSubscription, OWNER_DEV_IDENTIFIERS } from '../../lib/context/SubscriptionContext';
 import { purgeDevStorage } from '../../lib/utils/authStorage';
 import { UserAvatar } from '../ui/UserAvatar';
+import { EgressAuditModal } from './EgressAuditModal';
 
 import { ADMIN_PORTAL_PATH } from '../../config/adminConfig';
 
@@ -77,6 +79,7 @@ export function HeaderClientNav({
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLocalEnv, setIsLocalEnv] = useState(false);
+  const [isEgressModalOpen, setIsEgressModalOpen] = useState(false);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -479,6 +482,31 @@ export function HeaderClientNav({
                     <button
                       onClick={() => {
                         setIsUserMenuOpen(false);
+                        setIsEgressModalOpen(true);
+                      }}
+                      style={{
+                        background: 'rgba(16, 185, 129, 0.08)',
+                        border: '1px solid rgba(16, 185, 129, 0.25)',
+                        color: '#10b981',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        padding: '7px 8px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        marginBottom: '2px',
+                      }}
+                      className="glass-card-hover"
+                    >
+                      <Cloud size={14} color="#10b981" /> R2 & Supabase Egress Audit
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
                         openAuthModal('changePassword');
                       }}
                       style={{
@@ -551,6 +579,11 @@ export function HeaderClientNav({
           </div>
         </div>
       </div>
+
+      <EgressAuditModal
+        isOpen={isEgressModalOpen}
+        onClose={() => setIsEgressModalOpen(false)}
+      />
     </header>
   );
 }

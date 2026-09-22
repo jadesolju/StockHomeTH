@@ -7,6 +7,7 @@
 import { supabase } from '@/lib/supabase/client';
 import type { StockFundamental } from '../schemas/marketSchema';
 import { loadBundledUniverseFiles, loadMarketCacheFile } from './yfinanceBridge';
+import { syncStockAnalysisToR2, fetchStockAnalysisFromR2 } from './r2DataSyncService';
 
 export interface StockPoolItem extends StockFundamental {
   analysisStatus?: 'pending' | 'completed' | 'failed' | 'processing';
@@ -43,7 +44,7 @@ export function normalizeTicker(symbol: string): string {
 }
 
 /**
- * Layer 2 / Pool Query: Fetch stock data and analysis from Supabase pool
+ * Layer 2 / Pool Query: Fetch stock data and analysis from Supabase pool (Egress Optimized Projection)
  */
 export async function fetchStockFromPool(symbol: string): Promise<StockPoolItem | null> {
   const cleanTicker = normalizeTicker(symbol);
@@ -55,16 +56,24 @@ export async function fetchStockFromPool(symbol: string): Promise<StockPoolItem 
     return cached.data;
   }
 
-  // 1. Query Supabase public.stocks table
+  // 1. Query Supabase with explicit column projections (Zero unnecessary egress)
   try {
     if (supabase) {
       const { data, error } = await supabase
         .from('stocks')
-        .select('*')
+        .select(
+          'ticker, name, market, sector, price, currency, change, market_cap, pe_ratio, dividend_yield, high_52w, low_52w, volume, ai_insight, description, sparkline_7d, analyst_rating, target_price, sentiment_score, analysis_status, last_fetched_at, last_analyzed_at, updated_at'
+        )
         .eq('ticker', cleanTicker)
         .maybeSingle();
 
       if (!error && data && data.price > 0) {
+        // Fetch heavy analysis payload from R2 in background or on-demand
+        let r2Analysis = null;
+        try {
+          r2Analysis = await fetchStockAnalysisFromR2(cleanTicker);
+        } catch {}
+
         const item: StockPoolItem = {
           ticker: data.ticker,
           name: data.name || cleanTicker,
@@ -88,9 +97,9 @@ export async function fetchStockFromPool(symbol: string): Promise<StockPoolItem 
           analysisStatus: data.analysis_status || 'pending',
           lastFetchedAt: data.last_fetched_at || data.updated_at,
           lastAnalyzedAt: data.last_analyzed_at,
-          analysisPayload: data.analysis_payload || {},
-          priceHistorySample: Array.isArray(data.price_history_sample) ? data.price_history_sample : [],
-          technicalIndicators: data.technical_indicators || {},
+          analysisPayload: (r2Analysis as any) || {},
+          priceHistorySample: [],
+          technicalIndicators: {},
         };
 
         inMemoryPoolCache.set(cleanTicker, { data: item, timestamp: now });
@@ -200,7 +209,7 @@ export async function upsertStocksToPool(stocks: StockFundamental[]): Promise<nu
 }
 
 /**
- * Fetch a batch of stocks with analysis_status = 'pending' for background AI processing
+ * Fetch a batch of stocks with analysis_status = 'pending' for background AI processing (Egress Optimized)
  */
 export async function fetchPendingAnalysisBatch(limit = 10): Promise<StockPoolItem[]> {
   if (!supabase) return [];
@@ -208,7 +217,9 @@ export async function fetchPendingAnalysisBatch(limit = 10): Promise<StockPoolIt
   try {
     const { data, error } = await supabase
       .from('stocks')
-      .select('*')
+      .select(
+        'ticker, name, market, sector, price, currency, change, market_cap, pe_ratio, dividend_yield, high_52w, low_52w, volume, ai_insight, sparkline_7d, analyst_rating, target_price, sentiment_score, analysis_status, last_fetched_at'
+      )
       .eq('analysis_status', 'pending')
       .order('last_fetched_at', { ascending: false })
       .limit(limit);
@@ -240,9 +251,9 @@ export async function fetchPendingAnalysisBatch(limit = 10): Promise<StockPoolIt
       analysisStatus: d.analysis_status,
       lastFetchedAt: d.last_fetched_at,
       lastAnalyzedAt: d.last_analyzed_at,
-      analysisPayload: d.analysis_payload || {},
-      priceHistorySample: d.price_history_sample || [],
-      technicalIndicators: d.technical_indicators || {},
+      analysisPayload: {},
+      priceHistorySample: [],
+      technicalIndicators: {},
     }));
   } catch (err) {
     console.warn('[stockPoolService] Error fetching pending batch:', err);
@@ -251,7 +262,7 @@ export async function fetchPendingAnalysisBatch(limit = 10): Promise<StockPoolIt
 }
 
 /**
- * Updates a stock's analysis payload, insights, and marks status = 'completed'
+ * Updates a stock's analysis payload, insights, and offloads heavy JSON to R2
  */
 export async function updateStockAnalysisResult(
   ticker: string,
@@ -283,9 +294,14 @@ export async function updateStockAnalysisResult(
 
   try {
     const nowIso = new Date().toISOString();
+
+    // 1. Offload rich analysis payload to Cloudflare R2 (Zero Egress storage)
+    syncStockAnalysisToR2(cleanTicker, analysisData.analysisPayload).catch((err) => {
+      console.warn(`[stockPoolService] Error offloading analysis to R2 for ${cleanTicker}:`, err);
+    });
+
     const updatePayload: any = {
       ai_insight: analysisData.aiInsight,
-      analysis_payload: analysisData.analysisPayload,
       analysis_status: 'completed',
       last_analyzed_at: nowIso,
       updated_at: nowIso,
@@ -323,3 +339,4 @@ export async function updateStockAnalysisResult(
     return false;
   }
 }
+
