@@ -107,16 +107,21 @@ CREATE TABLE public.bot_delivery_logs (
 
 ## 3. Message Delivery Format & Quota Management
 
-### A. LINE Messaging API (Flex Message)
-- **Format**: Single unified **Flex Message Carousel / Bubble** ต่อรอบ เพื่อให้สมาชิกอ่านง่ายและนับเป็น **1 Push Message เท่านั้น** (ประหยัดโควต้าข้อความ)
-- **Rate Limit**: สูงสุด ~2,000 requests/นาที
-- **Webhook Events**:
-  - `follow`: สมัครสมาชิกใหม่ และแสดง Rich Menu ตั้งค่า
-  - `unfollow`: อัปเดต `is_active = false` ป้องกันการส่งซ้ำ
-  - `message`: ตอบกลับคำสั่ง `ตั้งค่าข่าว`, `เปลี่ยนรอบ`, `หยุดรับชั่วคราว`, `ยกเลิก`
+### A. LINE Messaging API (Strict 100% Free Tier Policy - 0 บาท)
+- **กลยุทธ์จำกัดโควต้าฟรี (Zero-Cost Architecture)**:
+  - 🟢 **Reply Message (ผ่าน Rich Menu)**: **ฟรี 100% ไม่จำกัดจำนวนครั้ง และไม่กินโควต้า Push แม้แต่ข้อความเดียว!**
+  - 🔴 **Push Message**: LINE ให้โควต้าฟรี 300-500 ข้อความ/เดือนเท่านั้น **ห้ามยิง Push รายวันเป็นรายคนเด็ดขาดเพื่อไม่ให้มีค่าบริการ**
+- **วิธีจัดส่งบน LINE**:
+  1. **โหมด On-Demand ผ่าน Rich Menu 6 ช่อง (หลัก)**:
+     - สมาชิกกดเมนู 📊 สรุปหุ้น, 🥇 ราคาทอง, 📰 ข่าวธุรกิจ, 📈 สัญญาณเทคนิค -> ระบบตอบกลับด้วย **Reply Message ทันที (0 บาท ไม่จำกัดจำนวนครั้ง)**
+  2. **Push Message โควต้าฟรี 300 ข้อความ/ด.**:
+     - สงวนไว้เฉพาะการต้อนรับสมาชิกใหม่ หรือส่งสรุปภาพรวมใหญ่สัปดาห์ละ 1 ครั้งเท่านั้น
+  3. **การชวนไปรับ Push บน Telegram**:
+     - สมาชิกใน LINE ที่ต้องการรับแจ้งเตือนอัตโนมัติวันละ 2 รอบ (08:00 และ 18:00 น.) ให้กดปุ่มบน Rich Menu เพื่อเชื่อมต่อไปรับบน **Telegram Bot (ฟรีไม่จำกัด 100%)**
 
-### B. Telegram Bot API
+### B. Telegram Bot API (100% Free Unlimited Push Broadcast)
 - **Format**: MarkdownV2 หรือ HTML Message พร้อม Inline Keyboard ปุ่มปรับแต่งค่า
+- **Cost**: **0 บาทตลอดชีพ (ฟรี 100% ไม่จำกัดจำนวนผู้รับและจำนวนรอบส่ง)**
 - **Rate Limit**: ห้ามส่งเกิน **30 ข้อความ/วินาที** สู่ผู้รับต่างกัน และไม่เกิน **1 ข้อความ/วินาที** สู่แชทเดิม
 - **Commands**:
   - `/start`: แสดงตัวเลือกสมัครและหมวดหมู่
@@ -136,30 +141,35 @@ CREATE TABLE public.bot_delivery_logs (
 
 ---
 
-## 5. Cost Breakdown & Budgeting (100–500 Members)
+## 5. Cost Breakdown & Budget (Strict 100% Free Quota - 0 บาท)
 
-| รายการ | ผู้รับ 100 คน | ผู้รับ 300 คน | ผู้รับ 500 คน | หมายเหตุ |
-| :--- | :--- | :--- | :--- | :--- |
-| **Telegram Bot API** | **0 บาท** | **0 บาท** | **0 บาท** | ฟรี 100% ไม่มีค่า Push Message |
-| **LINE Official Account (Push Fee)** | **1,200 บาท/ด.** (Basic) | **1,500 บาท/ด.** (Pro) | **1,500 บาท/ด.** (Pro) | คิดตามรอบส่ง 2 รอบ/วัน (Flex Message นับ 1 bubble/รอบ) |
-| **เซิร์ฟเวอร์ & Database (Supabase + Next.js)** | **0 บาท** (Free Tier) | **0 บาท** (Free Tier) | **0 – 800 บาท/ด.** | ใช้ Supabase Free + R2 Zero Egress |
-| **AI Summarizer (Gemini Flash)** | **< 10 บาท/ด.** | **< 10 บาท/ด.** | **< 10 บาท/ด.** | สรุปกลาง 6 ครั้ง/วัน รวม ~180 ครั้ง/ด. |
-| **รวมงบประมาณโดยประมาณ** | **~1,200 บาท/เดือน** | **~1,500 บาท/เดือน** | **~1,500 – 2,300 บาท/เดือน** | คุ้มค่าและควบคุมค่าใช้จ่ายได้แน่นอน |
+| ส่วนประกอบระบบ | โควต้าที่ใช้ | ค่าใช้จ่าย | หมายเหตุการควบคุมต้นทุน |
+| :--- | :--- | :--- | :--- |
+| **LINE Official Account** | Free Tier (Reply Messages ไม่จำกัด) | **0 บาท / เดือน** | สมาชิกกดดูผ่าน Rich Menu (Reply Token ฟรี 100%) ไม่เสียค่า Push |
+| **Telegram Bot API** | ไม่จำกัด (Unlimited Broadcast) | **0 บาท / เดือน** | รองรับการยิง Push อัตโนมัติ 2 รอบ/วัน สมาชิก 100-500+ คน ฟรี 100% |
+| **Database (Supabase)** | Free Tier (500MB DB, 50k MAU) | **0 บาท / เดือน** | เก็บเฉพาะ Preferences และ Channel ID เล็กๆ |
+| **Storage (Cloudflare R2)** | Free Tier (10GB, Zero Egress) | **0 บาท / เดือน** | เก็บไฟล์ JSON สรุปข่าวกลาง ($0.00 Egress fee) |
+| **AI Engine (Gemini Flash)** | Free Tier (15 RPM / 1,500 RPD) | **0 บาท / เดือน** | สรุปกลาง 1 ครั้งต่อหมวดต่อรอบ (ใช้วันละ 6 ครั้งจากโควต้า 1,500 ครั้ง) |
+| **รวมงบประมาณรายเดือนทั้งหมด** | **100% FREE TIER** | **0 บาท / เดือน** | **ไม่มีค่าใช้จ่ายแอบแฝง รันระบบได้ฟรีสมบูรณ์แบบ** |
 
 ---
 
 ## 6. Implementation Checklist
 
-- [ ] **Step 1: บัญชีและ Token**
-  - สมัคร LINE Official Account & เปิดใช้ LINE Messaging API Channel
-  - สร้าง Telegram Bot ผ่าน `@BotFather` และรับ `BOT_TOKEN`
+- [ ] **Step 1: บัญชีและ Token (Free Tier)**
+  - สมัคร LINE Official Account (Free Package) & เปิดใช้ Messaging API
+  - สร้าง Telegram Bot ผ่าน `@BotFather`
+  - ออกแบบ LINE Rich Menu 6 ช่อง (สรุปหุ้น, ราคาทอง, ข่าวธุรกิจ, สัญญาณ, ตั้งค่า, รับบน Telegram ฟรี)
 - [ ] **Step 2: Database Schema & Webhook Handler**
   - รัน Migration ตาราง `bot_subscribers`, `bot_digest_archives`, `bot_delivery_logs`
   - สร้าง Webhook Endpoint สำหรับ LINE (`/api/bot/line/webhook`) และ Telegram (`/api/bot/telegram/webhook`)
+  - ใช้ `replyMessage` สำหรับทุกคำขอจาก LINE Rich Menu (0 บาท ไม่กินโควต้า Push)
 - [ ] **Step 3: Central Aggregator & Cron Job**
-  - สร้างฟังก์ชันรวบรวมข่าวและราคาทอง/หุ้นรอบ 07:30 และ 17:30 น.
-  - ย่อสรุปกลางด้วย AI และบันทึกลง `bot_digest_archives`
+  - สรุปข่าวกลางและสัญญาณรอบ 07:30 และ 17:30 น.
+  - ย่อสรุปด้วย Gemini Flash Free Tier และบันทึกลง `bot_digest_archives`
 - [ ] **Step 4: หน้า Admin Review Dashboard**
   - ผู้ดูแลตรวจข้อความและกดยืนยัน (Approved) ก่อนเวลา 08:00 และ 18:00 น.
-- [ ] **Step 5: Queue Dispatcher**
-  - ยิงข้อความกระจายตามคิวพร้อมระบบ Retry และ Rate Limiting
+- [ ] **Step 5: Telegram Push & LINE On-Demand Engine**
+  - กระจาย Push อัตโนมัติไปยังสมาชิก Telegram ตามรอบ
+  - อัปเดตข้อมูลกลางพร้อมให้สมาชิก LINE กดอ่านผ่าน Rich Menu ได้ทันที 24 ชม.
+
