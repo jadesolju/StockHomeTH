@@ -316,6 +316,27 @@ export async function fetchLiveMajorIndices(): Promise<LiveIndexItem[]> {
  * Builds an explicit, high-precision text block containing real-time market data
  * for AI Chat prompt grounding (Thai Gold, Gold Spot, Oil, SET Index, BTC, USD/THB).
  */
+/**
+ * Alias for fetchLiveMajorIndices for backward compatibility
+ */
+export async function fetchLiveIndices(): Promise<LiveIndexItem[]> {
+  return await fetchLiveMajorIndices();
+}
+
+/**
+ * Returns formatted Live Gold context string for bot/chat responses
+ */
+export async function getLiveGoldContext(): Promise<string> {
+  const gold = await fetchOfficialThaiGold();
+  if (!gold) return 'ไม่สามารถดึงราคาทองคำได้ในขณะนี้';
+  const sell = gold.value;
+  const buy = gold.buyPrice || (sell - 100);
+  return (
+    `• ทองคำแท่ง 96.5%: ขายออก ฿${sell.toLocaleString()} | รับซื้อ ฿${buy.toLocaleString()} บาท/บาททองคำ\n` +
+    `• เวลาอัปเดต: ${gold.updateRound || gold.lastUpdated}`
+  );
+}
+
 export async function getLiveMacroGroundingContext(query: string): Promise<string> {
   const isAskingGold = /ทอง|gold|xau|gld|ทองคำ|สมาคมค้าทอง|ฮั่วเซ่งเฮง|แม่ทองสุก/i.test(query);
   const isAskingMacro = /น้ำมัน|oil|wti|brent|set|ดัชนี|btc|bitcoin|usd|เงินบาท|ดอลลาร์|crypto|คริปโต|เหรียญ|fed|ดอกเบี้ย|macro|ตลาด|เศรษฐกิจ|commodit|ภาพรวม/i.test(query);
