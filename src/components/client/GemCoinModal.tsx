@@ -24,7 +24,6 @@ import {
   CastleSvg,
   WhaleSvg,
   PromoClockSvg,
-  TicketVoucherSvg,
 } from '@/components/ui/TierSvgIcons';
 import { X, CreditCard, Sparkles, AlertCircle, Loader2, ArrowRight, FileText, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
@@ -42,33 +41,18 @@ export const GemCoinModal: React.FC = () => {
     gemCoinLogs,
     currentTier,
     topupGemCoinsDirect,
-    redeemPromoCode,
   } = useSubscription();
 
-  const [activeTab, setActiveTab] = useState<'topup' | 'plans' | 'redeem' | 'logs'>(
-    gemCoinModalInitialTab || 'topup'
-  );
-  const [promoInput, setPromoInput] = useState('');
-  const [redeemLoading, setRedeemLoading] = useState(false);
-  const [redeemResult, setRedeemResult] = useState<{
-    success: boolean;
-    message: string;
-  } | null>(null);
+  const [activeTab, setActiveTab] = useState<'topup' | 'plans' | 'logs'>('topup');
   const [purchaseNotice, setPurchaseNotice] = useState<string | null>(null);
   const [loadingPkgId, setLoadingPkgId] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const promoInputRef = useRef<HTMLInputElement>(null);
 
   // Instantly synchronize activeTab with gemCoinModalInitialTab whenever modal opens or tab changes
   useEffect(() => {
     if (isGemCoinModalOpen) {
-      const targetTab = gemCoinModalInitialTab || 'topup';
-      setActiveTab(targetTab);
-      if (targetTab === 'redeem') {
-        setTimeout(() => {
-          promoInputRef.current?.focus();
-        }, 150);
-      }
+      const targetTab = gemCoinModalInitialTab === 'redeem' ? 'topup' : (gemCoinModalInitialTab || 'topup');
+      setActiveTab(targetTab === 'logs' || targetTab === 'plans' ? targetTab : 'topup');
     }
   }, [isGemCoinModalOpen, gemCoinModalInitialTab]);
 
@@ -171,21 +155,7 @@ export const GemCoinModal: React.FC = () => {
     setTimeout(() => setPurchaseNotice(null), 5000);
   };
 
-  const handleRedeemSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!promoInput.trim()) return;
 
-    setRedeemLoading(true);
-    setRedeemResult(null);
-
-    const res = await redeemPromoCode(promoInput.trim());
-    setRedeemLoading(false);
-    setRedeemResult(res);
-
-    if (res.success) {
-      setPromoInput('');
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
@@ -276,7 +246,6 @@ export const GemCoinModal: React.FC = () => {
             >
               <option value="topup" className="bg-[#0d1319] text-white">เติมเหรียญ (Top-up Packages)</option>
               <option value="plans" className="bg-[#0d1319] text-white">สมัคร Plan รายเดือน (Monthly Tiers)</option>
-              <option value="redeem" className="bg-[#0d1319] text-amber-300 font-bold">🎫 แลกโค้ดฟรี (Coupon / Voucher)</option>
               <option value="logs" className="bg-[#0d1319] text-white">ประวัติการใช้งาน (Usage Logs)</option>
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-cyan-400">
@@ -308,16 +277,6 @@ export const GemCoinModal: React.FC = () => {
           >
             <CrownSvg className="w-4 h-4" />
             สมัคร Plan รายเดือน
-          </button>
-          <button
-            onClick={() => setActiveTab('redeem')}
-            className={`gemcoin-tab-item px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-2 shrink-0 ${activeTab === 'redeem'
-                ? 'active border-cyan-400 text-cyan-300 bg-cyan-950/20'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-          >
-            <TicketVoucherSvg className="w-4 h-4" />
-            แลกโค้ดฟรี (Coupon / Voucher)
           </button>
           <button
             onClick={() => setActiveTab('logs')}
@@ -405,20 +364,7 @@ export const GemCoinModal: React.FC = () => {
                 </div>
               </Link>
 
-              {/* Quick Promo Code Redeem Shortcut */}
-              <button
-                type="button"
-                onClick={() => setActiveTab('redeem')}
-                className="gemcoin-voucher-banner w-full p-3 rounded-xl text-xs font-semibold flex items-center justify-between transition-all group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <TicketVoucherSvg className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
-                  <span>มีโค้ดโปรโมชั่นหรือรหัสบัตรกำนัล? แลกรับ GemCoins ฟรี</span>
-                </div>
-                <span className="font-bold group-hover:translate-x-0.5 transition-transform">
-                  กรอกโค้ดที่นี่ →
-                </span>
-              </button>
+
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {GEMCOIN_TOPUP_PACKAGES.map((pkg) => {
@@ -652,76 +598,7 @@ export const GemCoinModal: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 3: REDEEM PROMO CODE */}
-          {activeTab === 'redeem' && (
-            <div className="max-w-md mx-auto py-6 space-y-6">
-              <div className="text-center space-y-1">
-                <div className="w-12 h-12 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center justify-center mx-auto mb-2">
-                  <TicketVoucherSvg className="w-6 h-6" />
-                </div>
-                <h3 className="text-base font-bold text-white">กรอกโค้ดรับเหรียญ GemCoins ฟรี</h3>
-                <p className="text-xs text-slate-400">
-                  นำ Voucher Code จากแคมเปญ กิจกรรม หรือจากแอดมินมาแลกเป็น GemCoin ถาวรได้ทันที
-                </p>
-              </div>
 
-              <form onSubmit={handleRedeemSubmit} className="space-y-3">
-                <div className="relative">
-                  <input
-                    ref={promoInputRef}
-                    type="text"
-                    value={promoInput}
-                    onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                    placeholder="พิมพ์โค้ด เช่น Stock-1234"
-                    disabled={redeemLoading}
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono tracking-wider text-center text-sm uppercase"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={redeemLoading || !promoInput.trim()}
-                  className="w-full py-3 rounded-xl gemcoin-btn-popular disabled:opacity-50 font-extrabold text-sm shadow-lg transition-all flex items-center justify-center gap-2"
-                >
-                  {redeemLoading ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      <span>กำลังตรวจสอบโค้ด...</span>
-                    </>
-                  ) : (
-                    <span>ยืนยันการแลกโค้ด</span>
-                  )}
-                </button>
-              </form>
-
-              {redeemResult && (
-                <div
-                  className={`p-4 rounded-xl text-xs border ${redeemResult.success
-                      ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
-                      : 'bg-rose-950/40 border-rose-500/50 text-rose-300'
-                    }`}
-                >
-                  <p className="font-semibold">{redeemResult.message}</p>
-                </div>
-              )}
-
-              {/* Code Format Hint */}
-              <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-xl text-xs text-slate-300 flex items-center justify-between">
-                <span className="text-slate-300 font-medium">รูปแบบโค้ดตัวอย่าง:</span>
-                <span className="font-mono text-cyan-300 font-bold bg-slate-800 px-2.5 py-1 rounded-lg border border-cyan-500/30 shadow-sm">Stock-1234</span>
-              </div>
-
-              <div className="pt-2 text-center">
-                <Link
-                  href="/payments"
-                  onClick={closeGemCoinModal}
-                  className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-cyan-300 transition-colors"
-                >
-                  <CreditCard className="w-3.5 h-3.5" />
-                  <span>หรือไปที่หน้าร้านค้าทางการเพื่อดูแพ็กเกจเติมเหรียญ (Official Store) →</span>
-                </Link>
-              </div>
-            </div>
-          )}
 
           {/* TAB 4: USAGE LOG & BENCHMARKS */}
           {activeTab === 'logs' && (
