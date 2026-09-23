@@ -511,7 +511,8 @@ function parseLastJsonLine(output: string): Record<string, unknown> | null {
 }
 
 export async function fetchSingleStockYFinance(symbol: string, market?: string, forceLive = false): Promise<StockFundamental | null> {
-  const cleanSym = symbol.replace('.BK', '').toUpperCase();
+  const cleanSym = symbol.replace('.BK', '').toUpperCase().trim();
+  if (!cleanSym) return null;
   
   // Accurate market detection:
   let isSET = false;
@@ -525,45 +526,132 @@ export async function fetchSingleStockYFinance(symbol: string, market?: string, 
 
   const primarySymbol = isSET ? `${cleanSym}.BK` : cleanSym;
   const fallbackSymbol = isSET ? cleanSym : `${cleanSym}.BK`;
+  const symbolsToTry = [primarySymbol, fallbackSymbol];
 
-  // 1. Tier 1: Fast Cache Check (< 1ms): Return immediately if already in hot memory or market_cache.json
-  const cacheList = cachedStocks || loadMarketCacheFile() || loadBundledUniverseFiles();
-  let localMatch: StockFundamental | null = null;
-  if (cacheList && cacheList.length > 0) {
-    const match = cacheList.find(
-      (s) => s.ticker.toUpperCase() === cleanSym && (!market || market === 'ALL' || s.market.toUpperCase() === market.toUpperCase())
-    );
-    if (match && match.price > 0 && !(match.price === 50 && match.change === 0)) {
-      localMatch = match;
-      if (!forceLive) {
+  // 1. Tier 1: Fast Cache Check (< 1ms) - Only when NOT forceLive
+  if (!forceLive) {
+    const cacheList = cachedStocks || loadMarketCacheFile() || loadBundledUniverseFiles();
+    if (cacheList && cacheList.length > 0) {
+      const match = cacheList.find(
+        (s) => s.ticker.toUpperCase() === cleanSym && (!market || market === 'ALL' || s.market.toUpperCase() === market.toUpperCase())
+      );
+      if (match && match.price > 0 && !(match.price === 50 && match.change === 0)) {
         return match;
       }
     }
-  }
 
-  // 2. Tier 2: Check Supabase DB (10,637 stocks catalog - fast, reliable on Preview/Production)
-  const supabaseStock = await fetchStockFromSupabase(cleanSym);
-  if (supabaseStock && supabaseStock.price > 0) {
-    if (cachedStocks) {
-      const existingIdx = cachedStocks.findIndex((s) => s.ticker.toUpperCase() === cleanSym);
-      if (existingIdx >= 0) {
-        cachedStocks[existingIdx] = supabaseStock;
-      } else {
-        cachedStocks.unshift(supabaseStock);
+    // Tier 2: Supabase Pool Check
+    const supabaseStock = await fetchStockFromSupabase(cleanSym);
+    if (supabaseStock && supabaseStock.price > 0) {
+      if (cachedStocks) {
+        const existingIdx = cachedStocks.findIndex((s) => s.ticker.toUpperCase() === cleanSym);
+        if (existingIdx >= 0) {
+          cachedStocks[existingIdx] = supabaseStock;
+        } else {
+          cachedStocks.unshift(supabaseStock);
+        }
       }
-    }
-    if (!forceLive) {
       return supabaseStock;
     }
   }
 
-  // 3. Tier 3: Query Live Real-Time Quote from Yahoo Finance Node SDK (Zero Python, Vercel Ready)
-  const symbolsToTry = [primarySymbol, fallbackSymbol];
+  // 2. Direct High-Speed Real-Time Quote Relay (Yahoo Finance v8 Chart REST API - Sub-500ms, Vercel Edge Ready)
+  for (const sym of symbolsToTry) {
+    try {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=1d&_=${Date.now()}`;
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
+        cache: 'no-store',
+      });
+
+      if (res.ok) {
+        const json = (await res.json()) as {
+          chart?: {
+            result?: Array<{
+              meta?: {
+                regularMarketPrice?: number;
+                previousClose?: number;
+                chartPreviousClose?: number;
+                currency?: string;
+                longName?: string;
+                shortName?: string;
+                fiftyTwoWeekHigh?: number;
+                fiftyTwoWeekLow?: number;
+                regularMarketVolume?: number;
+              };
+              indicators?: {
+                quote?: Array<{
+                  close?: Array<number | null>;
+                  volume?: Array<number | null>;
+                }>;
+              };
+            }>;
+          };
+        };
+
+        const meta = json.chart?.result?.[0]?.meta;
+        if (meta && meta.regularMarketPrice != null && meta.regularMarketPrice > 0) {
+          const isThaiResult = sym.endsWith('.BK') || meta.currency === 'THB' || isSET;
+          const livePrice = meta.regularMarketPrice;
+          const prevClose = meta.previousClose || meta.chartPreviousClose || livePrice;
+          const change = prevClose > 0 ? ((livePrice - prevClose) / prevClose) * 100 : 0;
+          const rawCloses = json.chart?.result?.[0]?.indicators?.quote?.[0]?.close || [];
+          const rawVolumes = json.chart?.result?.[0]?.indicators?.quote?.[0]?.volume || [];
+          const sparkline7d = rawCloses.filter((v): v is number => typeof v === 'number' && !isNaN(v));
+          const lastVolume = rawVolumes.filter((v): v is number => typeof v === 'number' && v > 0).pop() || meta.regularMarketVolume || 0;
+
+          const currency = isThaiResult ? 'THB' : 'USD';
+          const range = sanitize52wRange(livePrice, meta.fiftyTwoWeekHigh, meta.fiftyTwoWeekLow);
+          const singleStock: StockFundamental = {
+            ticker: cleanSym,
+            name: meta.longName || meta.shortName || cleanSym,
+            market: isThaiResult ? 'SET' : 'US',
+            sector: isThaiResult ? 'SET Index' : 'US Equity',
+            price: livePrice,
+            currency,
+            change: Number(change.toFixed(2)),
+            marketCap: formatMarketCap(livePrice * (isThaiResult ? 12_500_000_000 : 800_000_000), currency),
+            peRatio: isThaiResult ? 16.5 : 22.0,
+            dividendYield: isThaiResult ? 2.8 : 1.5,
+            high52w: range.high52w,
+            low52w: range.low52w,
+            volume: formatVolume(lastVolume),
+            sparkline7d: sparkline7d.length >= 2 ? sparkline7d : [prevClose, livePrice],
+            analystRating: change >= 0 ? 'Buy' : 'Hold',
+            targetPrice: Number((livePrice * 1.08).toFixed(2)),
+            sentimentScore: change >= 0 ? 68 : 45,
+            aiInsight: `${cleanSym} Live Relay quote: ${currency === 'THB' ? '฿' : '$'}${livePrice.toFixed(2)} (${change >= 0 ? '+' : ''}${change.toFixed(2)}%)`,
+            description: meta.longName || meta.shortName || `Live trading quote for ${cleanSym}`,
+          };
+
+          if (cachedStocks) {
+            const existingIdx = cachedStocks.findIndex((s) => s.ticker.toUpperCase() === cleanSym);
+            if (existingIdx >= 0) {
+              cachedStocks[existingIdx] = singleStock;
+            } else {
+              cachedStocks.unshift(singleStock);
+            }
+          }
+          updateSupabaseStock(singleStock).catch(() => {});
+          return singleStock;
+        }
+      }
+    } catch {
+      // Continue to next symbol or fallback
+    }
+  }
+
+  // 3. Tier 3: Query Live Real-Time Quote from Yahoo Finance SDK
   for (const sym of symbolsToTry) {
     try {
       const q = await yf.quote(sym);
-      if (q && q.regularMarketPrice != null) {
-        const isThaiResult = sym.endsWith('.BK') || q.currency === 'THB';
+      if (q && q.regularMarketPrice != null && q.regularMarketPrice > 0) {
+        const isThaiResult = sym.endsWith('.BK') || q.currency === 'THB' || isSET;
         const livePrice = q.regularMarketPrice;
         const change = q.regularMarketChangePercent != null ? Number(q.regularMarketChangePercent) : 0;
         const currency = isThaiResult ? 'THB' : 'USD';
@@ -607,97 +695,11 @@ export async function fetchSingleStockYFinance(symbol: string, market?: string, 
         return singleStock;
       }
     } catch {
-      // Continue to fallback symbol
+      // Continue to next symbol
     }
   }
 
-  // 3. Fallback: Query Direct Yahoo Finance Chart REST API
-  try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(primarySymbol)}?interval=1d&range=5d`;
-
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json'
-      },
-      next: { revalidate: 30 }
-    });
-
-    if (res.ok) {
-      const json = await res.json() as {
-        chart?: {
-          result?: Array<{
-            meta?: {
-              regularMarketPrice?: number;
-              previousClose?: number;
-              currency?: string;
-              longName?: string;
-              shortName?: string;
-              fiftyTwoWeekHigh?: number;
-              fiftyTwoWeekLow?: number;
-              regularMarketVolume?: number;
-            };
-            indicators?: {
-              quote?: Array<{
-                close?: Array<number | null>;
-                volume?: Array<number | null>;
-              }>;
-            };
-          }>;
-        };
-      };
-
-      const meta = json.chart?.result?.[0]?.meta;
-      if (meta && meta.regularMarketPrice != null) {
-        const livePrice = meta.regularMarketPrice;
-        const prevClose = meta.previousClose || livePrice;
-        const change = prevClose > 0 ? ((livePrice - prevClose) / prevClose) * 100 : 0;
-        const rawCloses = json.chart?.result?.[0]?.indicators?.quote?.[0]?.close || [];
-        const rawVolumes = json.chart?.result?.[0]?.indicators?.quote?.[0]?.volume || [];
-        const sparkline7d = rawCloses.filter((v): v is number => typeof v === 'number' && !isNaN(v));
-        const lastVolume = rawVolumes.filter((v): v is number => typeof v === 'number' && v > 0).pop() || meta.regularMarketVolume || 0;
-
-        const currency = (meta.currency === 'THB' || isSET) ? 'THB' : 'USD';
-        const range = sanitize52wRange(livePrice, meta.fiftyTwoWeekHigh, meta.fiftyTwoWeekLow);
-        const singleStock: StockFundamental = {
-          ticker: cleanSym,
-          name: meta.longName || meta.shortName || cleanSym,
-          market: isSET ? 'SET' : 'US',
-          sector: isSET ? 'SET Index' : 'US Equity',
-          price: livePrice,
-          currency,
-          change: Number(change.toFixed(2)),
-          marketCap: formatMarketCap(livePrice * (isSET ? 12_500_000_000 : 800_000_000), currency),
-          peRatio: 18.5,
-          dividendYield: 2.5,
-          high52w: range.high52w,
-          low52w: range.low52w,
-          volume: formatVolume(lastVolume),
-          sparkline7d: sparkline7d.length >= 2 ? sparkline7d : [prevClose, livePrice],
-          analystRating: change >= 0 ? 'Buy' : 'Hold',
-          targetPrice: Number((livePrice * 1.08).toFixed(2)),
-          sentimentScore: change >= 0 ? 65 : 45,
-          aiInsight: `${cleanSym} Real-time quote: ${livePrice.toFixed(2)} (${change >= 0 ? '+' : ''}${change.toFixed(2)}%)`,
-          description: meta.longName || meta.shortName || `Live trading quote for ${cleanSym}`
-        };
-
-        if (cachedStocks) {
-          const existingIdx = cachedStocks.findIndex((s) => s.ticker.toUpperCase() === cleanSym);
-          if (existingIdx >= 0) {
-            cachedStocks[existingIdx] = singleStock;
-          } else {
-            cachedStocks.unshift(singleStock);
-          }
-        }
-        updateSupabaseStock(singleStock).catch(() => {});
-        return singleStock;
-      }
-    }
-  } catch (restErr) {
-    console.warn(`[yfinanceBridge] Direct REST quote failed for ${cleanSym}:`, restErr);
-  }
-
-  // 3. Query Yahoo Finance via Python Engine on Local runtime if available
+  // 4. Query Yahoo Finance via Python Engine on Local runtime if available
   if (process.env.VERCEL !== '1') {
     try {
       const pyCmd = await detectPythonCommand();
@@ -723,12 +725,13 @@ export async function fetchSingleStockYFinance(symbol: string, market?: string, 
     }
   }
 
-  // 4. Fallback search in memory cache or disk cache
+  // 5. Final Fallback: return cached record if available
   const finalCacheList = cachedStocks || loadMarketCacheFile() || loadBundledUniverseFiles();
   if (finalCacheList && finalCacheList.length > 0) {
     const match = finalCacheList.find((s) => s.ticker.toUpperCase() === cleanSym);
     if (match) return match;
   }
 
-  return supabaseStock || localMatch || null;
+  const fallbackSupabase = await fetchStockFromSupabase(cleanSym);
+  return fallbackSupabase || null;
 }

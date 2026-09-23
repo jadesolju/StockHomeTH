@@ -20,11 +20,12 @@ export async function fetchStockMultiLayer(
   const cleanTicker = ticker.replace(/\.BK$/i, '').toUpperCase().trim();
   if (!cleanTicker) return null;
 
-  // Layer 1: Live API with 2.5s timeout race
+  // Layer 1: High-Speed Direct Live API Relay (5s timeout race for forceLive)
   try {
     const livePromise = fetchSingleStockYFinance(cleanTicker, market, forceLive);
+    const timeoutDuration = forceLive ? 5000 : 2500;
     const timeoutPromise = new Promise<null>((resolve) =>
-      setTimeout(() => resolve(null), 2500)
+      setTimeout(() => resolve(null), timeoutDuration)
     );
 
     const liveResult = await Promise.race([livePromise, timeoutPromise]);
@@ -49,7 +50,7 @@ export async function fetchStockMultiLayer(
     console.warn(`[stockDataService] Layer 2 pool fetch failed for ${cleanTicker}:`, err);
   }
 
-  // Layer 3: Fallback through standard single stock fetch
+  // Layer 3: Fallback through cached universe
   return await fetchSingleStockYFinance(cleanTicker, market, false);
 }
 

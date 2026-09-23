@@ -38,6 +38,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Loader2,
+  RefreshCw,
   Lock,
   LogIn,
   Layers
@@ -198,6 +199,46 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
   const [isSearchingApi, setIsSearchingApi] = useState<boolean>(false);
   const [modalStockNews, setModalStockNews] = useState<any[]>([]);
   const [isLoadingModalNews, setIsLoadingModalNews] = useState<boolean>(false);
+  const [isRelayingModalStock, setIsRelayingModalStock] = useState<boolean>(false);
+  const [lastRelayedTime, setLastRelayedTime] = useState<string | null>(null);
+
+  const handleRelayLiveStock = useCallback(
+    async (ticker: string, market: string) => {
+      if (!ticker) return;
+      setIsRelayingModalStock(true);
+      try {
+        const res = await fetch(
+          `/api/stocks/live?ticker=${encodeURIComponent(ticker)}&market=${market}&forceLive=true`
+        ).then((r) => (r.ok ? r.json() : null));
+
+        if (res && res.success && res.data) {
+          const freshData = res.data as StockFundamental;
+          setActiveStockModal(freshData);
+          updateStock(freshData);
+          setLocalExtraStocks((prev) => {
+            const idx = prev.findIndex(
+              (s) => s.ticker.toUpperCase() === freshData.ticker.toUpperCase() && s.market === freshData.market
+            );
+            if (idx >= 0) {
+              const next = [...prev];
+              next[idx] = freshData;
+              return next;
+            }
+            return [freshData, ...prev];
+          });
+          const now = new Date();
+          setLastRelayedTime(
+            now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' น.'
+          );
+        }
+      } catch (err) {
+        console.warn('[StockExplorer] Live stock quote relay warning:', err);
+      } finally {
+        setIsRelayingModalStock(false);
+      }
+    },
+    [setActiveStockModal, updateStock]
+  );
 
   // Combine live stocks with any search-fetched extra stocks and strictly guarantee 100% uniqueness
   const stocks = useMemo(() => {
@@ -568,41 +609,11 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
     };
   }, [updateStocks]);
 
-  // Fetch real-time live stock quote & fundamentals from Yahoo Finance & Webull when opening modal
+  // Automatically relay real-time live stock quote & fundamentals from Yahoo Finance & Webull when opening modal
   useEffect(() => {
-    if (!activeStockModal) return;
-    const ticker = activeStockModal.ticker;
-    const market = activeStockModal.market;
-    let isCancelled = false;
-
-    fetch(`/api/stocks/live?ticker=${encodeURIComponent(ticker)}&market=${market}&forceLive=true`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((res) => {
-        if (!isCancelled && res && res.success && res.data) {
-          const freshData = res.data as StockFundamental;
-          setActiveStockModal(freshData);
-          updateStock(freshData);
-          setLocalExtraStocks((prev) => {
-            const idx = prev.findIndex(
-              (s) => s.ticker.toUpperCase() === freshData.ticker.toUpperCase() && s.market === freshData.market
-            );
-            if (idx >= 0) {
-              const next = [...prev];
-              next[idx] = freshData;
-              return next;
-            }
-            return [freshData, ...prev];
-          });
-        }
-      })
-      .catch((err) => {
-        console.warn('[StockExplorer] Live stock quote refresh warning:', err);
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [activeStockModal?.ticker, activeStockModal?.market, updateStock]);
+    if (!activeStockModal?.ticker) return;
+    handleRelayLiveStock(activeStockModal.ticker, activeStockModal.market);
+  }, [activeStockModal?.ticker, activeStockModal?.market, handleRelayLiveStock]);
 
   const relatedNews = useMemo(() => {
     if (!activeStockModal) return [];
@@ -1853,51 +1864,87 @@ export function StockExplorerClient({ initialStocks, marketOverride, hideMarketT
               </button>
             </div>
 
-            {/* Price Banner */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '20px' }}>
-              <span style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-                {activeStockModal.currency === 'THB' ? '฿' : '$'}
-                {(Number(activeStockModal.price) || 0).toFixed(2)}
-              </span>
-              <span
-                style={{
-                  fontSize: '1rem',
-                  fontWeight: 700,
-                  color: Number(activeStockModal.change) >= 0 ? 'var(--accent-bullish)' : 'var(--accent-bearish)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
-                {Number(activeStockModal.change) >= 0 ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
-                {Number(activeStockModal.change) >= 0 ? '+' : ''}
-                {(Number(activeStockModal.change) || 0).toFixed(2)}%
-              </span>
+            {/* Price Banner & Real-time Live Relay Bar */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                <span style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+                  {activeStockModal.currency === 'THB' ? '฿' : '$'}
+                  {(Number(activeStockModal.price) || 0).toFixed(2)}
+                </span>
+                <span
+                  style={{
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    color: Number(activeStockModal.change) >= 0 ? 'var(--accent-bullish)' : 'var(--accent-bearish)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  {Number(activeStockModal.change) >= 0 ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
+                  {Number(activeStockModal.change) >= 0 ? '+' : ''}
+                  {(Number(activeStockModal.change) || 0).toFixed(2)}%
+                </span>
+              </div>
 
-              <a
-                href={activeStockModal.market === 'SET' ? `https://www.set.or.th/th/market/product/stock/quote/${encodeURIComponent(activeStockModal.ticker)}/price` : `https://finance.yahoo.com/quote/${encodeURIComponent(activeStockModal.ticker)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  marginLeft: 'auto',
-                  fontSize: '0.68rem',
-                  padding: '3px 10px',
-                  borderRadius: '100px',
-                  background: 'var(--accent-bullish-bg)',
-                  color: 'var(--accent-bullish)',
-                  border: '1px solid var(--accent-bullish-border)',
-                  fontWeight: 700,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  textDecoration: 'none',
-                  cursor: 'pointer'
-                }}
-                title="Don't Trust, Verify: กดเพื่อตรวจสอบข้อมูลราคาและเอกสารงบการเงินจริงจากต้นทางทางการ"
-              >
-                <span className="live-pulse-dot" style={{ width: '5px', height: '5px' }} />
-                <span>{activeStockModal.market === 'SET' ? 'SET IR & Yahoo (Verify ↗)' : 'Yahoo & Webull (Verify ↗)'}</span>
-              </a>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* On-Demand Realtime Relay Button */}
+                <button
+                  onClick={() => handleRelayLiveStock(activeStockModal.ticker, activeStockModal.market)}
+                  disabled={isRelayingModalStock}
+                  style={{
+                    fontSize: '0.72rem',
+                    padding: '5px 12px',
+                    borderRadius: '100px',
+                    background: isRelayingModalStock ? 'rgba(0, 122, 255, 0.12)' : 'var(--card-sub-bg)',
+                    color: isRelayingModalStock ? 'var(--accent-blue)' : 'var(--text-primary)',
+                    border: '1px solid var(--card-sub-border)',
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    cursor: isRelayingModalStock ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  title="คลิกเพื่อส่งคำสั่งตรวจสอบและรีเลย์ราคาหุ้นสดจากตลาดแบบเรียลไทม์ทันที"
+                >
+                  {isRelayingModalStock ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin" />
+                      <span>กำลังตรวจราคา...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw size={13} />
+                      <span>{lastRelayedTime ? `สด (${lastRelayedTime})` : 'ตรวจราคาสด'}</span>
+                    </>
+                  )}
+                </button>
+
+                <a
+                  href={activeStockModal.market === 'SET' ? `https://www.set.or.th/th/market/product/stock/quote/${encodeURIComponent(activeStockModal.ticker)}/price` : `https://finance.yahoo.com/quote/${encodeURIComponent(activeStockModal.ticker)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: '0.68rem',
+                    padding: '5px 10px',
+                    borderRadius: '100px',
+                    background: 'var(--accent-bullish-bg)',
+                    color: 'var(--accent-bullish)',
+                    border: '1px solid var(--accent-bullish-border)',
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    textDecoration: 'none',
+                    cursor: 'pointer'
+                  }}
+                  title="Don't Trust, Verify: กดเพื่อตรวจสอบข้อมูลราคาและเอกสารงบการเงินจริงจากต้นทางทางการ"
+                >
+                  <span className="live-pulse-dot" style={{ width: '5px', height: '5px' }} />
+                  <span>{activeStockModal.market === 'SET' ? 'SET Verify ↗' : 'Yahoo Verify ↗'}</span>
+                </a>
+              </div>
             </div>
 
             {/* 52-Week Price Range Indicator */}

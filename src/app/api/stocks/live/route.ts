@@ -29,18 +29,28 @@ export async function GET(request: NextRequest) {
     const market = searchParams.get('market') || 'ALL';
     const forceLive = searchParams.get('forceLive') === 'true';
 
-    // 1. Instant Single Stock Live Lookup (Direct from Yahoo Finance & Webull)
+    // 1. Instant Single Stock Live Lookup (Direct from Yahoo Finance & Webull Relay)
     if (singleTicker && (forceLive || !searchParams.has('page'))) {
       try {
         const liveStock = await fetchStockByTicker(singleTicker, market !== 'ALL' ? market : undefined, forceLive);
         if (liveStock) {
-          return NextResponse.json({
-            success: true,
-            source: 'live_vendor',
-            provider: 'yfinance_webull_bridge',
-            data: liveStock,
-            timestamp: new Date().toISOString()
-          });
+          return NextResponse.json(
+            {
+              success: true,
+              source: 'live_vendor',
+              provider: 'yfinance_webull_bridge',
+              data: liveStock,
+              timestamp: new Date().toISOString()
+            },
+            {
+              headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+                'Surrogate-Control': 'no-store',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+              },
+            }
+          );
         }
       } catch (err) {
         console.warn('[stocks/live] Single live ticker query warning:', err);
