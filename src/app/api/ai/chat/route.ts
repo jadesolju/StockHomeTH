@@ -9,6 +9,7 @@ import {
 import {
   getSemanticCachedResponse,
   setSemanticCachedResponse,
+  detectCacheCategory,
 } from '@/lib/services/semanticCacheService';
 import { getModelGemCoinsEst } from '@/config/curated-models';
 import {
@@ -185,11 +186,13 @@ export async function POST(req: NextRequest) {
 
     const candidateTickers = extractCandidateTickers(lastUserMsg);
     const activeTicker = stockContext?.ticker || (candidateTickers.length > 0 ? candidateTickers[0] : null);
+    const isFreshMarketQuestion =
+      Boolean(stockContext?.ticker) || detectCacheCategory(lastUserMsg) === 'realtime_price';
 
     const cacheKey = getChatCacheKey(model, lastUserMsg);
 
     // Code-First Semantic Cache Check (0 API calls to OpenRouter if hit)
-    if (!hasAttachments && !stream) {
+    if (!hasAttachments && !stream && !isFreshMarketQuestion) {
       const semanticResult = await getSemanticCachedResponse(lastUserMsg, activeTicker || undefined);
       if (semanticResult.hit && semanticResult.entry) {
         return NextResponse.json({
@@ -553,7 +556,7 @@ Status: ข้อมูลอยู่ในกระบวนการซิง
             }
 
             // Cache response if eligible (not real-time stock RAG and not refusal)
-            if (!hasAttachments && !isLiveStockRAG && accumulatedText && !accumulatedText.includes('ไม่พบข้อมูล')) {
+            if (!hasAttachments && !isFreshMarketQuestion && !isLiveStockRAG && accumulatedText && !accumulatedText.includes('ไม่พบข้อมูล')) {
               recordOpenRouterRequest(isRealUser);
               setCachedChatResponse(cacheKey, accumulatedText, actualModelUsed);
             }
@@ -597,7 +600,7 @@ Status: ข้อมูลอยู่ในกระบวนการซิง
     gemCoinsUsed += contextResult.memoryCost;
 
     // Cache response in both Semantic Cache and OpenRouter Guard Service Cache
-    if (!hasAttachments && !replyContent.includes('ไม่พบข้อมูล')) {
+    if (!hasAttachments && !isFreshMarketQuestion && !replyContent.includes('ไม่พบข้อมูล')) {
       recordOpenRouterRequest(isRealUser);
       setCachedChatResponse(cacheKey, replyContent, actualModel);
       await setSemanticCachedResponse(lastUserMsg, replyContent, actualModel, activeTicker || undefined);

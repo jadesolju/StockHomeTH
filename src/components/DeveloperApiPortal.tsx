@@ -75,7 +75,7 @@ export const DeveloperApiPortal: React.FC<DeveloperApiPortalProps> = ({ onReques
 
   // Generate code snippet based on selected endpoint & language
   const getCodeSnippet = () => {
-    const fullUrl = `https://stockhometh.com${selectedEndpoint}`;
+    const fullUrl = `https://stockhometh.online${selectedEndpoint}`;
     if (snippetLanguage === 'curl') {
       if (selectedMethod === 'POST') {
         return `curl -X POST "${fullUrl}" \\

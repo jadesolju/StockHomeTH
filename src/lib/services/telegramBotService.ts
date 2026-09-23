@@ -45,6 +45,7 @@ export interface MarketDigestData {
 }
 
 const TELEGRAM_API_BASE = 'https://api.telegram.org';
+const STOCKHOME_BASE_URL = 'https://stockhometh.online';
 
 export function getTelegramBotToken(): string {
   return process.env.TELEGRAM_BOT_TOKEN || '';
@@ -60,8 +61,11 @@ export async function sendTelegramMessage(
 ): Promise<{ success: boolean; messageId?: number; error?: string }> {
   const token = getTelegramBotToken();
   if (!token) {
-    console.warn('[TelegramBotService] TELEGRAM_BOT_TOKEN not configured. Simulated send to:', chatId);
-    return { success: true, messageId: Math.floor(Math.random() * 100000) };
+    if (process.env.NODE_ENV === 'test' || process.env.TELEGRAM_MOCK_MODE === 'true') {
+      console.warn('[TelegramBotService] Mock send to:', chatId);
+      return { success: true, messageId: Math.floor(Math.random() * 100000) };
+    }
+    return { success: false, error: 'TELEGRAM_BOT_TOKEN is not configured' };
   }
 
   try {
@@ -240,7 +244,7 @@ export function formatMarketDigestHTML(data: MarketDigestData): string {
 
   // 6. Footer Disclaimer & Link
   lines.push(`<i>*สรุปและวิเคราะห์อัตโนมัติโดย StockHomeTH AI Engine</i>`);
-  lines.push(`🌐 <i>ติดตามกราฟสดและงบการเงินเต็มได้ที่: stockhometh.com</i>`);
+  lines.push(`🌐 <i>ติดตามกราฟสดและงบการเงินเต็มได้ที่: stockhometh.online</i>`);
 
   return lines.join('\n');
 }
@@ -270,7 +274,7 @@ export async function broadcastTelegramDigest(
 
   const buttons = [
     [
-      { text: '📊 ดูกราฟสดบนเว็บ', url: 'https://stockhometh.com' },
+      { text: '📊 ดูกราฟสดบนเว็บ', url: STOCKHOME_BASE_URL },
       { text: '⚙️ ตั้งค่าหมวดข่าว', callback_data: 'cmd_settings' },
     ],
   ];

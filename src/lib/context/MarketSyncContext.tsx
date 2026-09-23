@@ -207,18 +207,18 @@ export function MarketSyncProvider({
     }
   }, []);
 
-  // Fetch Stocks & Indices (Every 1 min when Open / 30 min when Closed)
+  // Fetch Stocks & Indices (Every 30s when Open / 15m when Closed)
   const refreshStocksAndIndices = useCallback(async () => {
     const startTime = Date.now();
     const createdLogs: SyncLogItem[] = [];
     const currentStatus = getDualMarketStatus();
 
     try {
-      const stockPromise = fetch(`/api/stocks/live?page=1&limit=50&market=${selectedMarket}`)
+      const stockPromise = fetch(`/api/stocks/live?page=1&limit=50&market=${selectedMarket}`, { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null);
 
-      const indexPromise = fetch('/api/indices/live')
+      const indexPromise = fetch('/api/indices/live', { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null);
 
@@ -276,17 +276,17 @@ export function MarketSyncProvider({
     }
   }, [selectedMarket, addLogEntries]);
 
-  // Fetch News & AI Overview (Every 30 minutes)
+  // Fetch News & AI Overview (Every 5 minutes)
   const refreshNewsAndOverview = useCallback(async () => {
     const startTime = Date.now();
     const createdLogs: SyncLogItem[] = [];
 
     try {
-      const newsPromise = fetch('/api/news/live')
+      const newsPromise = fetch('/api/news/live', { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null);
 
-      const overviewPromise = fetch('/api/market/overview')
+      const overviewPromise = fetch('/api/market/overview', { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null);
 
@@ -306,7 +306,7 @@ export function MarketSyncProvider({
           type: 'news',
           status: 'success',
           itemCount: newsRes.value.data.length,
-          summary: `ดึงข่าวสดการเงิน ${newsRes.value.data.length} รายการ (รอบกำหนด 30 นาที) พร้อม AI Sentiment Analysis`,
+          summary: `ดึงข่าวสดการเงิน ${newsRes.value.data.length} รายการ (รอบกำหนด 5 นาที) พร้อม AI Sentiment Analysis`,
           durationMs: elapsed
         });
       }
@@ -342,7 +342,7 @@ export function MarketSyncProvider({
   const refreshWeeklyNews = useCallback(async (force = false) => {
     const startTime = Date.now();
     try {
-      const res = await fetch(`/api/news/weekly${force ? '?refresh=true' : ''}`)
+      const res = await fetch(`/api/news/weekly${force ? '?refresh=true' : ''}`, { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null);
 
@@ -415,7 +415,7 @@ export function MarketSyncProvider({
     const startTime = Date.now();
     try {
       const nextPage = stockPage + 1;
-      const res = await fetch(`/api/stocks/live?page=${nextPage}&limit=50&market=${selectedMarket}`).then((r) =>
+      const res = await fetch(`/api/stocks/live?page=${nextPage}&limit=50&market=${selectedMarket}`, { cache: 'no-store' }).then((r) =>
         r.ok ? r.json() : null
       );
       if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
@@ -464,7 +464,7 @@ export function MarketSyncProvider({
     setIsLoadingMoreStocks(true);
     const startTime = Date.now();
     try {
-      const res = await fetch(`/api/stocks/live?all=true&market=${selectedMarket}`).then((r) =>
+      const res = await fetch(`/api/stocks/live?all=true&market=${selectedMarket}`, { cache: 'no-store' }).then((r) =>
         r.ok ? r.json() : null
       );
       if (res && res.success && Array.isArray(res.data)) {
@@ -502,39 +502,83 @@ export function MarketSyncProvider({
   // Prices are 100% genuine and reflect real server updates without simulated fluctuations.
 
   // 2. Silent Background REST Polling (every 30s when market is open / every 15m when closed/weekends)
+  const isMarketActive =
+    selectedMarket === 'SET' ? marketStatus.set.isOpen :
+    selectedMarket === 'US' ? marketStatus.us.isOpen :
+    marketStatus.isAnyOpen;
+
   useEffect(() => {
-    const isMarketActive =
-      selectedMarket === 'SET' ? marketStatus.set.isOpen :
-      selectedMarket === 'US' ? marketStatus.us.isOpen :
-      marketStatus.isAnyOpen;
+    const stockPollIntervalMs = isMarketActive ? 30000 : 15 * 60 * 1000;
+    let isPollingStocks = false;
+    let isPollingIndices = false;
 
-    const pollIntervalMs = isMarketActive ? 30000 : 15 * 60 * 1000;
-
-    const silentPollTimer = setInterval(async () => {
+    const pollStocks = async () => {
+      if (isPollingStocks) return;
+      isPollingStocks = true;
       try {
-        const [stockRes, indexRes] = await Promise.allSettled([
-          fetch(`/api/stocks/live?page=1&limit=60&market=${selectedMarket}`).then((r) => (r.ok ? r.json() : null)),
-          fetch('/api/indices/live').then((r) => (r.ok ? r.json() : null))
-        ]);
-
-        if (stockRes.status === 'fulfilled' && stockRes.value?.success && Array.isArray(stockRes.value.data)) {
-          const freshStocks = stockRes.value.data as StockFundamental[];
+        const response = await fetch(`/api/stocks/live?page=1&limit=60&market=${selectedMarket}`, { cache: 'no-store' });
+        const data = response.ok ? await response.json() : null;
+        if (data?.success && Array.isArray(data.data)) {
+          const freshStocks = data.data as StockFundamental[];
           setStocks((prev) => {
             const incomingMap = new Map<string, StockFundamental>(freshStocks.map((s) => [`${s.market}-${s.ticker}`, s]));
             return prev.map((old) => incomingMap.get(`${old.market}-${old.ticker}`) || old);
           });
-        }
-
-        if (indexRes.status === 'fulfilled' && indexRes.value?.success && Array.isArray(indexRes.value.data)) {
-          setIndices(indexRes.value.data);
+          const syncTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' น.';
+          setLastStockSyncTime(syncTime);
+          setLastUpdated(syncTime);
         }
       } catch (err) {
         // Silent catch for background poll
+      } finally {
+        isPollingStocks = false;
       }
-    }, pollIntervalMs);
+    };
 
-    return () => clearInterval(silentPollTimer);
-  }, [selectedMarket, marketStatus]);
+    const pollIndices = async () => {
+      if (isPollingIndices) return;
+      isPollingIndices = true;
+      try {
+        const response = await fetch('/api/indices/live', { cache: 'no-store' });
+        const data = response.ok ? await response.json() : null;
+        if (data?.success && Array.isArray(data.data)) {
+          setIndices(data.data);
+          setLastUpdated(new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' น.');
+        }
+      } catch (err) {
+        // Silent catch for background poll
+      } finally {
+        isPollingIndices = false;
+      }
+    };
+
+    const pollMarketData = () => {
+      void pollStocks();
+      void pollIndices();
+    };
+    const stockPollTimer = setInterval(() => void pollStocks(), stockPollIntervalMs);
+    const indexPollTimer = setInterval(() => void pollIndices(), 60_000);
+    const refreshOnFocus = () => {
+      if (document.visibilityState === 'visible') void pollMarketData();
+    };
+    window.addEventListener('focus', refreshOnFocus);
+    document.addEventListener('visibilitychange', refreshOnFocus);
+
+    return () => {
+      clearInterval(stockPollTimer);
+      clearInterval(indexPollTimer);
+      window.removeEventListener('focus', refreshOnFocus);
+      document.removeEventListener('visibilitychange', refreshOnFocus);
+    };
+  }, [selectedMarket, isMarketActive]);
+
+  // News and AI market overview have their own slower refresh cadence.
+  useEffect(() => {
+    const timer = setInterval(() => {
+      void refreshNewsAndOverview();
+    }, 5 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [refreshNewsAndOverview]);
 
   const isInitialMountRef = useRef<boolean>(true);
 

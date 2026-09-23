@@ -2,8 +2,8 @@
  * StockHomeTH - Market Hours & Auto-Sync Schedule Engine
  * Calculates real-time market status for SET (Thailand) and US (NYSE/NASDAQ)
  * Determines intelligent API polling intervals:
- * - Stocks: 1 minute (60s) during Market Open / 30 minutes (1800s) during Market Closed
- * - News & AI Analysis: 30 minutes (1800s) constant interval
+ * - Stocks: 30 seconds during market hours / 15 minutes outside market hours
+ * - News & AI Analysis: 5 minutes while the market dashboard is open
  */
 
 export interface MarketStatusInfo {
@@ -302,13 +302,13 @@ export function getDualMarketStatus(date = new Date()): DualMarketStatus {
   const briefingSession = getCurrentBriefingSession(date);
   const isSunday = isSundayWeeklySynthesisDay(date);
 
-  // 5 minutes when open, 30 minutes when closed (Prevents API rate limiting and stability issues)
-  const stockSyncIntervalMs = isAnyOpen ? 5 * 60 * 1000 : 30 * 60 * 1000;
-  const stockSyncIntervalLabel = isAnyOpen ? '5 นาที (ตลาดเปิด)' : '30 นาที (ตลาดปิด/ประหยัด API)';
+  // Refresh promptly during trading and reduce requests outside market hours.
+  const stockSyncIntervalMs = isAnyOpen ? 30_000 : 15 * 60 * 1000;
+  const stockSyncIntervalLabel = isAnyOpen ? '30 วินาที (ตลาดเปิด)' : '15 นาที (ตลาดปิด/นอกเวลาซื้อขาย)';
 
-  // News and AI Analysis: 4 sessions daily (สาย เที่ยง เย็น ค่ำ)
-  const newsSyncIntervalMs = 30 * 60 * 1000;
-  const newsSyncIntervalLabel = `4 รอบต่อวัน (${briefingSession.labelTh}${isSunday ? ' • วันอาทิตย์สรุปสัปดาห์' : ''})`;
+  // News and market overview refresh independently from stock quotes.
+  const newsSyncIntervalMs = 5 * 60 * 1000;
+  const newsSyncIntervalLabel = `ทุก 5 นาที (${briefingSession.labelTh}${isSunday ? ' • วันอาทิตย์สรุปสัปดาห์' : ''})`;
 
   return {
     set: setStatus,

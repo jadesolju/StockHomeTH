@@ -74,7 +74,7 @@ describe('Telegram Market Digest Bot & Subscription Service', () => {
       expect(html).toContain('DELTA แจ้งงบไตรมาสเติบโตโดดเด่น');
       expect(html).toContain('[<b>$DELTA</b>]');
       expect(html).toContain('Bullish Breakout');
-      expect(html).toContain('stockhometh.com');
+      expect(html).toContain('stockhometh.online');
     });
 
     it('should correctly escape HTML sensitive characters', () => {

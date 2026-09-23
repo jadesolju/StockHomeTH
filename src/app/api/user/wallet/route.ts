@@ -19,6 +19,9 @@ interface UserWalletRecord {
 }
 
 const WALLET_FILE_PATH = path.join(process.cwd(), 'user_wallets.json');
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+};
 
 function getTodayStr(): string {
   const d = new Date();
@@ -76,7 +79,7 @@ export async function GET(req: NextRequest) {
         dailyCoins: 0,
         topupCoins: 0,
         message: 'Guest session active',
-      });
+      }, { headers: NO_STORE_HEADERS });
     }
 
     const today = getTodayStr();
@@ -87,7 +90,7 @@ export async function GET(req: NextRequest) {
       const supabase = createAdminClient();
       const { data, error } = await supabase
         .from('user_wallets')
-        .select('*')
+        .select('user_id,tier,daily_gem_coins,daily_gem_coins_remaining,topup_gem_coins,last_reset_date,updated_at')
         .eq('user_id', uid)
         .maybeSingle();
 
@@ -95,9 +98,9 @@ export async function GET(req: NextRequest) {
         wallet = {
           uid: data.user_id,
           tier: data.tier || 'free',
-          dailyGemCoins: Number(data.daily_gem_coins) || 500,
-          dailyGemCoinsRemaining: Number(data.daily_gem_coins_remaining) || 500,
-          topupGemCoins: Number(data.topup_gem_coins) || 0,
+          dailyGemCoins: Number(data.daily_gem_coins ?? 500),
+          dailyGemCoinsRemaining: Number(data.daily_gem_coins_remaining ?? 500),
+          topupGemCoins: Number(data.topup_gem_coins ?? 0),
           lastResetDate: data.last_reset_date || today,
           updatedAt: data.updated_at || new Date().toISOString(),
         };
@@ -137,11 +140,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       wallet,
-    });
+    }, { headers: NO_STORE_HEADERS });
   } catch (err: any) {
     return NextResponse.json(
       { success: false, error: err.message || 'Error fetching user wallet' },
-      { status: 500 }
+      { status: 500, headers: NO_STORE_HEADERS }
     );
   }
 }
@@ -154,7 +157,7 @@ export async function POST(req: NextRequest) {
     if (!uid || typeof uid !== 'string') {
       return NextResponse.json(
         { success: false, error: 'User ID is required' },
-        { status: 400 }
+        { status: 400, headers: NO_STORE_HEADERS }
       );
     }
 
@@ -240,12 +243,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       wallet,
-    });
+    }, { headers: NO_STORE_HEADERS });
   } catch (err: any) {
     console.error('[User Wallet POST Error]:', err);
     return NextResponse.json(
       { success: false, error: err.message || 'Error processing user wallet action' },
-      { status: 500 }
+      { status: 500, headers: NO_STORE_HEADERS }
     );
   }
 }

@@ -146,7 +146,7 @@ export async function GET(req: NextRequest) {
     const broadcastResult = await broadcastTelegramDigest(chatIds, digestData);
 
     return NextResponse.json({
-      success: true,
+      success: broadcastResult.failed === 0,
       roundType,
       subscriberCount: chatIds.length,
       broadcastResult,

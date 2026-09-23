@@ -19,6 +19,7 @@ import { getLiveGoldContext } from '@/lib/services/liveIndicesService';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+const STOCKHOME_BASE_URL = 'https://stockhometh.online';
 
 /**
  * Builds the interactive settings keyboard for Telegram
@@ -65,7 +66,7 @@ function buildSettingsKeyboard(sub: BotSubscriber): TelegramInlineButton[][] {
       },
       {
         text: '📊 ดูกราฟสดบนเว็บ',
-        url: 'https://stockhometh.com',
+        url: STOCKHOME_BASE_URL,
       },
     ],
   ];
@@ -209,7 +210,7 @@ export async function POST(req: NextRequest) {
           `• <b>High/Low 52 สัปดาห์:</b> ${stock.high52w} / ${stock.low52w} ${stock.currency}\n` +
           `━━━━━━━━━━━━━━━━━━━━━\n` +
           (stock.aiInsight ? `💡 <b>AI Insight:</b> <i>${stock.aiInsight}</i>\n` : '') +
-          `🌐 <i>ดูกราฟและงบการเงินเต็ม: <a href="https://stockhometh.com/stock/${stock.ticker}">stockhometh.com/stock/${stock.ticker}</a></i>`;
+          `🌐 <i>ดูกราฟและงบการเงินเต็ม: <a href="${STOCKHOME_BASE_URL}/stocks?symbol=${encodeURIComponent(stock.ticker)}">stockhometh.online/stocks?symbol=${encodeURIComponent(stock.ticker)}</a></i>`;
 
         await sendTelegramMessage(chatId, stockText, { parse_mode: 'HTML' });
         return NextResponse.json({ ok: true });

@@ -164,17 +164,21 @@ const nextConfig = {
           },
         ],
       },
-      // 8. Stock Universe Daily Cache (Edge Cache 5 minutes, S-Maxage for CDN)
+      // 8. API responses must stay fresh and bypass browser/CDN response caches.
       {
-        source: '/api/stocks/universe',
+        source: '/api/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0',
+          },
+          {
+            key: 'CDN-Cache-Control',
+            value: 'no-store',
           },
           {
             key: 'Cloudflare-CDN-Cache-Control',
-            value: 'max-age=300',
+            value: 'no-store',
           },
         ],
       },

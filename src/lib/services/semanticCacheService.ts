@@ -29,7 +29,7 @@ export interface SemanticCacheEntry {
 export const CATEGORY_TTL: Record<CacheCategory, number> = {
   financial_report: 90 * 24 * 3600, // 90 days for quarterly report analysis (invalidated on new data update)
   daily_analysis: 24 * 3600,       // 24 hours for daily digest
-  realtime_price: 3600,            // 1 hour for stock price / technical signals
+  realtime_price: 30,              // Never keep market quote answers stale for more than one poll cycle
   general: 24 * 3600,              // 24 hours general Q&A
 };
 
@@ -57,11 +57,14 @@ export function hashPrompt(prompt: string, ticker?: string): string {
  */
 export function detectCacheCategory(prompt: string): CacheCategory {
   const text = prompt.toLowerCase();
+  if (
+    ['ราคา', 'วันนี้', 'ตอนนี้', 'ล่าสุด', 'ปัจจุบัน', 'เรียลไทม์', 'realtime', 'real-time', 'live price', 'current price', 'quote', 'price', 'สัญญาณ', 'กราฟ', 'แนวรับ', 'แนวต้าน']
+      .some((term) => text.includes(term))
+  ) {
+    return 'realtime_price';
+  }
   if (text.includes('งบ') || text.includes('กำไร') || text.includes('รายได้') || text.includes('ไตรมาส') || text.includes('pe') || text.includes('pbv') || text.includes('ปันผล')) {
     return 'financial_report';
-  }
-  if (text.includes('ราคา') || text.includes('วันนี้') || text.includes('สัญญาณ') || text.includes('กราฟ') || text.includes('แนวรับ')) {
-    return 'realtime_price';
   }
   if (text.includes('วิเคราะห์') || text.includes('แนวโน้ม') || text.includes('สรุปข่าว')) {
     return 'daily_analysis';
@@ -95,7 +98,7 @@ export async function getSemanticCachedResponse(
       // 2.1 Check exact hash in DB
       const { data, error } = await supabase
         .from('ai_semantic_cache')
-        .select('*')
+        .select('id,prompt_text,prompt_hash,ticker,response_text,model,category,ttl_seconds,expires_at,is_valid')
         .eq('prompt_hash', promptHash)
         .eq('is_valid', true)
         .gt('expires_at', now.toISOString())

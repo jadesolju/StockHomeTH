@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
  * Helper endpoint to set up or verify Telegram Bot Webhook
  * Usage:
  * - GET /api/bot/telegram/setup (Checks current webhook info)
- * - GET /api/bot/telegram/setup?url=https://your-domain.com/api/bot/telegram/webhook (Sets webhook URL)
+ * - GET /api/bot/telegram/setup?url=https://stockhometh.online/api/bot/telegram/webhook (Sets webhook URL)
  */
 export async function GET(req: NextRequest) {
   const token = getTelegramBotToken();
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
       success: true,
       botTokenConfigured: true,
       currentWebhookInfo: data.result || data,
-      instructions: 'To set webhook, pass ?url=https://your-domain.com/api/bot/telegram/webhook',
+      instructions: 'To set webhook, pass ?url=https://stockhometh.online/api/bot/telegram/webhook',
     });
   } catch (err: any) {
     return NextResponse.json({
