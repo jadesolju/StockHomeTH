@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Newspaper, TrendingUp, Sparkles, CreditCard, User } from 'lucide-react';
+import { Newspaper, TrendingUp, Sparkles, CreditCard, User, Send } from 'lucide-react';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { useClientAuth } from '../../lib/context/ClientAuthContext';
 import { UserAvatar } from '../ui/UserAvatar';
@@ -118,11 +118,13 @@ export function PwaBottomNav() {
         )}
       </Link>
 
-      {/* 3. AI Agent Hero Tab - Floating Elevated Glowing Circle (Zero Clutter Text) */}
-      <Link
-        href="/ai-helper"
-        title="AI Financial Agent"
-        aria-label="AI Financial Agent"
+      {/* 3. Telegram Bot Hero Tab - Floating Elevated Glowing Circle (Zero Cost, 100% Free) */}
+      <a
+        href="https://t.me/StockHomeTHBot"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Telegram Bot รับสรุปข่าว & ราคาทองฟรี"
+        aria-label="Telegram Bot"
         className="ios-tappable"
         style={{
           flex: 1,
@@ -142,20 +144,20 @@ export function PwaBottomNav() {
             width: '48px',
             height: '48px',
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%)',
+            background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 50%, #0ea5e9 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#ffffff',
-            boxShadow: '0 6px 20px rgba(6, 182, 212, 0.5), 0 0 10px rgba(59, 130, 246, 0.35)',
-            border: '2px solid rgba(255, 255, 255, 0.35)',
+            boxShadow: '0 6px 20px rgba(14, 165, 233, 0.5), 0 0 10px rgba(56, 189, 248, 0.35)',
+            border: '2px solid rgba(255, 255, 255, 0.45)',
             transition: 'all 0.2s ease',
             flexShrink: 0,
           }}
         >
-          <Sparkles size={23} strokeWidth={2.4} />
+          <Send size={22} strokeWidth={2.4} style={{ marginLeft: '-2px' }} />
         </div>
-      </Link>
+      </a>
 
       {/* 4. Store / GemCoins Tab - Pure Minimal Icon */}
       <Link

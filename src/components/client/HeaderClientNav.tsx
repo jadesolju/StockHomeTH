@@ -24,6 +24,7 @@ import {
   Crown,
   Ticket,
   Cloud,
+  Send,
 } from 'lucide-react';
 import { useLanguage } from '../../lib/context/LanguageContext';
 import { useTheme } from '../../lib/context/ThemeContext';
@@ -203,13 +204,17 @@ export function HeaderClientNav({
           >
             <Globe size={15} /> {t('marketAndCharts')}
           </Link>
-          <Link
-            href="/ai-helper"
-            className={`ios-segment-btn ${pathname === '/ai-helper' ? 'active' : ''}`}
-            style={{ textDecoration: 'none', padding: '6px 14px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          <a
+            href="https://t.me/StockHomeTHBot"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ios-segment-btn"
+            style={{ textDecoration: 'none', padding: '6px 14px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#38bdf8' }}
+            title="เปิดใช้งาน Telegram Bot รับสรุปข่าวและราคาทองฟรี 100%"
           >
-            <Sparkles size={15} color="#06b6d4" /> AI Helper
-          </Link>
+            <Send size={15} color="#38bdf8" /> Telegram Bot
+            <span style={{ fontSize: '0.62rem', padding: '1px 5px', borderRadius: '100px', background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', fontWeight: 800 }}>ฟรี</span>
+          </a>
           <Link
             href="/payments"
             className={`ios-segment-btn ${pathname === '/payments' ? 'active' : ''}`}
@@ -287,32 +292,6 @@ export function HeaderClientNav({
             ) : (
               <Moon size={15} color="#007AFF" />
             )}
-          </button>
-
-          {/* Redeem Code Button - Directly in front of Member Profile */}
-          <button
-            onClick={() => openGemCoinModal('redeem')}
-            className="ios-glass-btn header-redeem-btn ios-tappable"
-            title="แลกโค้ดโปรโมชั่นรับเหรียญฟรี (Redeem Voucher)"
-            style={{
-              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(217, 119, 6, 0.1) 100%)',
-              border: '1px solid rgba(245, 158, 11, 0.4)',
-              borderRadius: '100px',
-              padding: '5px 11px',
-              color: '#f59e0b',
-              fontWeight: 700,
-              fontSize: '0.76rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              cursor: 'pointer',
-              boxShadow: '0 2px 10px rgba(245, 158, 11, 0.15)',
-              transition: 'all 0.15s ease',
-              flexShrink: 0,
-            }}
-          >
-            <Ticket size={14} color="#f59e0b" />
-            <span className="header-redeem-label">แลกโค้ด</span>
           </button>
 
           {/* Member Auth Button / Profile Dropdown (Desktop view) */}

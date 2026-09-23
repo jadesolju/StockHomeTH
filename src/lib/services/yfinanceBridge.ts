@@ -535,7 +535,7 @@ export async function fetchSingleStockYFinance(symbol: string, market?: string, 
       const match = cacheList.find(
         (s) => s.ticker.toUpperCase() === cleanSym && (!market || market === 'ALL' || s.market.toUpperCase() === market.toUpperCase())
       );
-      if (match && match.price > 0 && !(match.price === 50 && match.change === 0)) {
+      if (match && match.price > 0) {
         return match;
       }
     }

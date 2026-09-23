@@ -17,6 +17,7 @@ import {
   Crown,
   Settings,
   Ticket,
+  Send,
 } from 'lucide-react';
 import Link from 'next/link';
 import { ADMIN_PORTAL_PATH } from '../../config/adminConfig';
@@ -318,6 +319,68 @@ export function UserProfileModal() {
           <p style={{ margin: '2px 0 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
             {user.email}
           </p>
+
+          {/* Telegram Bot Connection Card */}
+          <div
+            style={{
+              marginTop: '14px',
+              padding: '12px 14px',
+              borderRadius: '14px',
+              background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(14, 165, 233, 0.08) 100%)',
+              border: '1px solid rgba(14, 165, 233, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '10px',
+              textAlign: 'left',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: '#ffffff',
+                  flexShrink: 0,
+                }}
+              >
+                <Send size={16} />
+              </div>
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  Telegram Market Digest Bot
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  รับสรุปข่าวเช้า-เย็น และเช็คราคาทองคำแท่งฟรี 2 รอบ/วัน
+                </div>
+              </div>
+            </div>
+            <a
+              href="https://t.me/StockHomeTHBot"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                padding: '6px 12px',
+                borderRadius: '10px',
+                border: 'none',
+                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                color: '#ffffff',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              เปิดบอท
+            </a>
+          </div>
 
           {/* Quick Redeem Voucher Shortcut */}
           <div
