@@ -313,6 +313,42 @@ export async function fetchLiveMajorIndices(): Promise<LiveIndexItem[]> {
 }
 
 /**
+ * Combined fetcher for major indices + Thai Gold
+ */
+export async function fetchLiveIndices(): Promise<LiveIndexItem[]> {
+  const [majorIndices, thaiGold] = await Promise.all([
+    fetchLiveMajorIndices(),
+    fetchOfficialThaiGold(),
+  ]);
+  const results = [...majorIndices];
+  if (thaiGold) {
+    results.push(thaiGold);
+  }
+  return results;
+}
+
+/**
+ * Returns formatted HTML/text context for Thai & Spot Gold
+ */
+export async function getLiveGoldContext(): Promise<string> {
+  const thaiGold = await fetchOfficialThaiGold();
+  if (!thaiGold) {
+    return 'ไม่สามารถดึงข้อมูลราคาทองคำได้ในขณะนี้';
+  }
+  const sell = thaiGold.value;
+  const buy = thaiGold.buyPrice || (sell - 100);
+  const goldOrnamentBuy = Math.round(buy * 0.98);
+  const goldOrnamentSell = sell + 500;
+
+  return (
+    `• <b>ทองคำแท่ง 96.5% (ขายออก):</b> ฿${sell.toLocaleString()} บาท/บาททอง\n` +
+    `• <b>ทองคำแท่ง 96.5% (รับซื้อ):</b> ฿${buy.toLocaleString()} บาท/บาททอง\n` +
+    `• <b>ประมาณการทองรูปพรรณ:</b> ขายออก ฿${goldOrnamentSell.toLocaleString()} / รับซื้อ ฿${goldOrnamentBuy.toLocaleString()}\n` +
+    `• <b>อัปเดตล่าสุด:</b> ${thaiGold.updateRound || thaiGold.lastUpdated}`
+  );
+}
+
+/**
  * Builds an explicit, high-precision text block containing real-time market data
  * for AI Chat prompt grounding (Thai Gold, Gold Spot, Oil, SET Index, BTC, USD/THB).
  */

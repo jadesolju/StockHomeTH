@@ -83,7 +83,7 @@ async function buildDigestPackage(roundType: DeliveryRound): Promise<MarketDiges
       usdThb: usdThbItem ? { price: usdThbItem.price, change: usdThbItem.change } : { price: 33.25, change: -0.1 },
     },
     highlights: (weeklyNews || []).slice(0, 4),
-    overviewSummary: overview?.marketOutlook || 'ตลาดหุ้นและราคาทองคำเคลื่อนไหวในกรอบรอปัจจัยเศรษฐกิจและการแถลงตัวเลขเงินเฟ้อ',
+    overviewSummary: overview?.overviewSummary || overview?.overviewSummary_th || 'ตลาดหุ้นและราคาทองคำเคลื่อนไหวในกรอบรอปัจจัยเศรษฐกิจและการแถลงตัวเลขเงินเฟ้อ',
     signals,
   };
 
