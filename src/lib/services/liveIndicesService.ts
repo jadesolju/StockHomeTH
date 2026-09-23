@@ -363,3 +363,34 @@ export async function getLiveMacroGroundingContext(query: string): Promise<strin
 
   return blocks.join('\n\n');
 }
+
+/**
+ * Convenient helper to fetch live Thai & Spot gold context text for Bots & Webhooks
+ */
+export async function getLiveGoldContext(): Promise<string> {
+  const thaiGold = await fetchOfficialThaiGold();
+  const spotGold = await fetchLiveMajorIndices();
+  const spot = spotGold.find((i) => i.symbol === 'GC=F' || i.name.includes('Gold'));
+
+  const lines: string[] = [];
+  if (thaiGold) {
+    lines.push(`• <b>ทองคำแท่ง 96.5% (สมาคมค้าทองคำ):</b>`);
+    lines.push(`  - ขายออก: <code>${thaiGold.value.toLocaleString()}</code> บาท/บาททองคำ`);
+    lines.push(`  - รับซื้อ: <code>${(thaiGold.buyPrice || thaiGold.value - 100).toLocaleString()}</code> บาท/บาททองคำ`);
+    lines.push(`  - การเปลี่ยนแปลง: ${thaiGold.change >= 0 ? '+' : ''}${thaiGold.change} บาท`);
+    lines.push(`  - อัปเดต: ${thaiGold.updateRound || thaiGold.lastUpdated}`);
+  }
+
+  if (spot) {
+    const sign = spot.change >= 0 ? '+' : '';
+    lines.push(`• <b>Gold Spot (XAU/USD):</b> <code>$${spot.price.toFixed(2)}</code> (${sign}${spot.changePercent}%)`);
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Alias export for fetchLiveMajorIndices
+ */
+export const fetchLiveIndices = fetchLiveMajorIndices;
+
