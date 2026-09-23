@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { updateSession } from '@/utils/supabase/middleware';
+import { getEdgeConfigState } from '@/lib/services/edgeConfigService';
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -13,7 +14,36 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 308);
   }
 
-  // 2. Security Guard Easter Egg: Completely block direct access / directory listing on /api and /api/
+  // 2. Circuit Breaker Execution via Vercel Edge Config
+  if (process.env.EDGE_CONFIG) {
+    try {
+      const edgeState = await getEdgeConfigState();
+      if (edgeState.maintenance_mode || edgeState.use_static_fallback) {
+        if (pathname.startsWith('/api/')) {
+          return NextResponse.json(
+            {
+              status: 503,
+              error: 'Service Unavailable',
+              message: 'ระบบกำลังอยู่ระหว่างปรับปรุงชั่วคราวหรือใช้งาน Static Fallback Mode (Circuit Breaker Active)',
+              timestamp: new Date().toISOString(),
+              circuit_breaker: 'tripped',
+            },
+            {
+              status: 503,
+              headers: {
+                'Retry-After': '60',
+                'Cache-Control': 'no-store, no-cache, must-revalidate',
+              },
+            }
+          );
+        }
+      }
+    } catch (err) {
+      console.error('[Middleware] Edge Config check error:', err);
+    }
+  }
+
+  // 3. Security Guard Easter Egg: Completely block direct access / directory listing on /api and /api/
   if (pathname === '/api' || pathname === '/api/') {
     const acceptHeader = request.headers.get('accept') || '';
     // If opened in a web browser, redirect straight to homepage so public never sees the directory
@@ -42,7 +72,7 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // 3. Never intercept sub-API routes with Supabase session refresh middleware
+  // 4. Never intercept sub-API routes with Supabase session refresh middleware
   if (pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
