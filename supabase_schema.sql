@@ -1,43 +1,31 @@
 -- =========================================================================
--- StockHomeTH Supabase Production Schema & Security Configuration
--- Migration: 20260907120000_new_migration.sql
+-- StockHomeTH Supabase Production Master Schema
 -- (Idempotent: Safe to re-run multiple times)
 -- =========================================================================
 
--- 0. Register Migration in Supabase Migration History
-create schema if not exists supabase_migrations;
-create table if not exists supabase_migrations.schema_migrations (
-  version text primary key,
-  statements text[],
-  name text
+-- 1. Enable Necessary Extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "vector";
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+CREATE EXTENSION IF NOT EXISTS pg_net;
+
+-- 2. Admin Whitelist Table
+CREATE TABLE IF NOT EXISTS public.admin_users (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  email text UNIQUE NOT NULL,
+  role text DEFAULT 'admin' CHECK (role IN ('admin', 'superadmin', 'editor')),
+  created_at timestamptz DEFAULT now()
 );
 
-insert into supabase_migrations.schema_migrations (version, name)
-values ('20260907120000', 'new_migration')
-on conflict (version) do nothing;
-
--- 1. Enable UUID Extension
--- 1. Enable UUID and Vector Extensions
-create extension if not exists "uuid-ossp";
-create extension if not exists "vector";
-
--- 2. Admin Whitelist Table (ใช้สำหรับตรวจสอบว่าใครมีสิทธิ์เข้า Admin Backoffice)
-create table if not exists public.admin_users (
-  id uuid default uuid_generate_v4() primary key,
-  email text unique not null,
-  role text default 'admin' check (role in ('admin', 'superadmin', 'editor')),
-  created_at timestamptz default now()
-);
-
--- 3. Stocks Master Catalog & Fundamentals (เก็บหุ้นทั้งหมด SET 277+ ตัว, US 1,000+ ตัว)
-create table if not exists public.stocks (
-  ticker text primary key,
-  name text not null,
-  market text not null check (market in ('SET', 'MAI', 'US', 'CRYPTO', 'INDEX')),
+-- 3. Stocks Master Catalog & Fundamentals (SET, MAI, US, CRYPTO, INDEX)
+CREATE TABLE IF NOT EXISTS public.stocks (
+  ticker text PRIMARY KEY,
+  name text NOT NULL,
+  market text NOT NULL CHECK (market IN ('SET', 'MAI', 'US', 'CRYPTO', 'INDEX')),
   sector text,
-  price numeric not null default 0,
-  currency text default 'THB',
-  change numeric default 0,
+  price numeric NOT NULL DEFAULT 0,
+  currency text DEFAULT 'THB',
+  change numeric DEFAULT 0,
   market_cap text,
   pe_ratio numeric,
   dividend_yield numeric,
@@ -46,231 +34,163 @@ create table if not exists public.stocks (
   volume text,
   ai_insight text,
   description text,
-  sparkline_7d jsonb default '[]'::jsonb,
-  analyst_rating text default 'Hold',
+  sparkline_7d jsonb DEFAULT '[]'::jsonb,
+  analyst_rating text DEFAULT 'Hold',
   target_price numeric,
-  sentiment_score integer default 50,
-  is_active boolean default true,
-  updated_at timestamptz default now()
+  sentiment_score integer DEFAULT 50,
+  analysis_status text DEFAULT 'pending' CHECK (analysis_status IN ('pending', 'completed', 'failed', 'processing')),
+  analysis_payload jsonb DEFAULT '{}'::jsonb,
+  price_history_sample jsonb DEFAULT '[]'::jsonb,
+  technical_indicators jsonb DEFAULT '{}'::jsonb,
+  last_fetched_at timestamptz DEFAULT now(),
+  last_analyzed_at timestamptz,
+  is_active boolean DEFAULT true,
+  updated_at timestamptz DEFAULT now()
 );
 
-create index if not exists idx_stocks_market on public.stocks(market);
-create index if not exists idx_stocks_sector on public.stocks(sector);
-create index if not exists idx_stocks_updated_at on public.stocks(updated_at desc);
+CREATE INDEX IF NOT EXISTS idx_stocks_market ON public.stocks(market);
+CREATE INDEX IF NOT EXISTS idx_stocks_sector ON public.stocks(sector);
+CREATE INDEX IF NOT EXISTS idx_stocks_status ON public.stocks(analysis_status);
+CREATE INDEX IF NOT EXISTS idx_stocks_updated_at ON public.stocks(updated_at DESC);
 
--- 4. News Items Table (เก็บข่าวกรองแล้ว)
-create table if not exists public.news_items (
-  id text primary key,
-  title text not null,
+-- 4. Bot Subscribers Table (Telegram & LINE Multi-Channel Digest Bot)
+CREATE TABLE IF NOT EXISTS public.bot_subscribers (
+  id text PRIMARY KEY,
+  user_id text,
+  channel text NOT NULL CHECK (channel IN ('telegram', 'line')),
+  channel_user_id text NOT NULL,
+  display_name text,
+  username text,
+  categories text[] DEFAULT ARRAY['stocks', 'gold', 'business'],
+  delivery_rounds text[] DEFAULT ARRAY['morning', 'evening'],
+  tier text DEFAULT 'free' CHECK (tier IN ('free', 'pro')),
+  is_active boolean DEFAULT true,
+  is_paused boolean DEFAULT false,
+  link_token text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  CONSTRAINT uq_bot_subscribers_channel_user UNIQUE (channel, channel_user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_bot_sub_channel_user ON public.bot_subscribers(channel, channel_user_id);
+CREATE INDEX IF NOT EXISTS idx_bot_sub_active ON public.bot_subscribers(is_active);
+
+-- 5. News Items Table
+CREATE TABLE IF NOT EXISTS public.news_items (
+  id text PRIMARY KEY,
+  title text NOT NULL,
   summary text,
   full_content text,
-  link text not null,
-  source text not null,
-  published_at timestamptz not null default now(),
-  relevance_score integer not null default 50,
-  relevance_level text default 'medium' check (relevance_level in ('high', 'medium', 'low', 'unrelated')),
-  impact_level text default 'neutral' check (impact_level in ('high_positive', 'positive', 'neutral', 'negative', 'high_negative')),
-  symbols text[] default '{}',
-  tags text[] default '{}',
-  is_published boolean default true,
-  created_at timestamptz default now()
+  link text NOT NULL,
+  source text NOT NULL,
+  published_at timestamptz NOT NULL DEFAULT now(),
+  relevance_score integer NOT NULL DEFAULT 50,
+  relevance_level text DEFAULT 'medium' CHECK (relevance_level IN ('high', 'medium', 'low', 'unrelated')),
+  impact_level text DEFAULT 'neutral' CHECK (impact_level IN ('high_positive', 'positive', 'neutral', 'negative', 'high_negative')),
+  symbols text[] DEFAULT '{}',
+  tags text[] DEFAULT '{}',
+  is_published boolean DEFAULT true,
+  created_at timestamptz DEFAULT now()
 );
 
-create index if not exists idx_news_published_at on public.news_items(published_at desc);
-create index if not exists idx_news_relevance_score on public.news_items(relevance_score desc);
-create index if not exists idx_news_is_published on public.news_items(is_published);
+CREATE INDEX IF NOT EXISTS idx_news_published_at ON public.news_items(published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_news_relevance_score ON public.news_items(relevance_score DESC);
+CREATE INDEX IF NOT EXISTS idx_news_is_published ON public.news_items(is_published);
 
--- 5. Stock Watchlist Table (รายชื่อหุ้นที่ต้องการ Focus)
-create table if not exists public.stock_watchlist (
-  symbol text primary key,
-  name text not null,
-  market text default 'SET' check (market in ('SET', 'MAI', 'US', 'CRYPTO', 'INDEX')),
-  sector text,
-  is_active boolean default true,
-  display_order integer default 0,
-  created_at timestamptz default now()
+-- 6. User Bookmarks Table
+CREATE TABLE IF NOT EXISTS public.user_bookmarks (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id text NOT NULL,
+  news_id text NOT NULL,
+  title text NOT NULL,
+  source text DEFAULT 'StockHomeTH',
+  link text DEFAULT '',
+  symbols text[] DEFAULT '{}',
+  published_at timestamptz DEFAULT now(),
+  created_at timestamptz DEFAULT now(),
+  CONSTRAINT uq_user_bookmarks UNIQUE (user_id, news_id)
 );
 
--- 6. Admin System Configuration (เก็บค่า Settings ต่างๆ)
-create table if not exists public.admin_config (
-  key text primary key,
-  value jsonb not null,
-  description text,
-  updated_at timestamptz default now()
+CREATE INDEX IF NOT EXISTS idx_bookmarks_user ON public.user_bookmarks(user_id);
+CREATE INDEX IF NOT EXISTS idx_bookmarks_news ON public.user_bookmarks(news_id);
+
+-- 7. User Profiles Table (Linked with Supabase Auth)
+CREATE TABLE IF NOT EXISTS public.user_profiles (
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email text,
+  display_name text,
+  avatar_url text,
+  role text DEFAULT 'user' CHECK (role IN ('user', 'pro', 'vip', 'whale', 'dev', 'admin', 'superadmin')),
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 );
 
--- Insert Default Config
-insert into public.admin_config (key, value, description)
-values 
-  ('relevance_filter', '{"threshold": 50, "drop_below_threshold": true, "high_priority_threshold": 70}'::jsonb, 'Financial relevance scoring engine settings'),
-  ('news_sources', '{"thunhoon": true, "kaohoon": true, "settrade": true, "bangkokbiz": true, "moneychannel": true}'::jsonb, 'Enabled/Disabled news aggregation sources'),
-  ('market_status', '{"auto_fetch_interval_seconds": 60, "maintenance_mode": false}'::jsonb, 'Market sync and maintenance settings')
-on conflict (key) do nothing;
-
--- =========================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
--- =========================================================================
-
--- Enable RLS on all tables
-alter table public.admin_users enable row level security;
-alter table public.stocks enable row level security;
-alter table public.news_items enable row level security;
-alter table public.stock_watchlist enable row level security;
-alter table public.admin_config enable row level security;
-
--- Stocks Policies:
-drop policy if exists "Public can view active stocks" on public.stocks;
-create policy "Public can view active stocks"
-  on public.stocks for select
-  using (is_active = true);
-
-drop policy if exists "Service role and anon can upsert stocks" on public.stocks;
-create policy "Service role and anon can upsert stocks"
-  on public.stocks for all
-  using (true)
-  with check (true);
-
--- News Items Policies:
-drop policy if exists "Public can view published news" on public.news_items;
-create policy "Public can view published news"
-  on public.news_items for select
-  using (is_published = true);
-
-drop policy if exists "Service role and anon can manage news" on public.news_items;
-create policy "Service role and anon can manage news"
-  on public.news_items for all
-  using (true)
-  with check (true);
-
--- Stock Watchlist Policies:
-drop policy if exists "Public can view active watchlist" on public.stock_watchlist;
-create policy "Public can view active watchlist"
-  on public.stock_watchlist for select
-  using (is_active = true);
-
--- Admin Config Policies:
-drop policy if exists "Public can read non-sensitive config" on public.admin_config;
-create policy "Public can read non-sensitive config"
-  on public.admin_config for select
-  using (true);
-
--- =================================================================================
--- 5. User Bookmarks (user_bookmarks)
--- Stores bookmarked news articles for each user.
--- =================================================================================
-create table if not exists public.user_bookmarks (
-  id uuid default gen_random_uuid() primary key,
-  user_id text not null, -- Firebase UID
-  news_id text not null, -- ID of the news item in news_items table
-  title text not null,
-  link text,
-  source text,
-  symbols jsonb default '[]'::jsonb,
-  published_at timestamp with time zone,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  unique (user_id, news_id)
+-- 8. User Wallets Table (GemCoins & Subscription Status)
+CREATE TABLE IF NOT EXISTS public.user_wallets (
+  user_id text PRIMARY KEY,
+  tier text DEFAULT 'free' CHECK (tier IN ('free', 'pro', 'vip', 'whale', 'dev')),
+  daily_gem_coins integer DEFAULT 500,
+  daily_gem_coins_remaining integer DEFAULT 500,
+  topup_gem_coins integer DEFAULT 0,
+  last_reset_date text DEFAULT to_char(now(), 'YYYY-MM-DD'),
+  updated_at timestamptz DEFAULT now()
 );
 
--- Enable RLS
-alter table public.user_bookmarks enable row level security;
+-- 9. User Wallet Transactions Table
+CREATE TABLE IF NOT EXISTS public.user_wallet_transactions (
+  id text PRIMARY KEY,
+  user_id text NOT NULL,
+  type text NOT NULL CHECK (type IN ('deduct', 'credit', 'reset', 'bonus', 'refund', 'subscription')),
+  amount integer NOT NULL DEFAULT 0,
+  model_name text,
+  summary text,
+  created_at timestamptz DEFAULT now()
+);
 
--- Policies for user_bookmarks
--- Note: Since we use Firebase Auth, we verify identity via an API route or pass the UID directly. 
--- For a truly secure setup with Firebase Auth and Supabase RLS, we would need to pass a custom JWT. 
--- However, for this project, we'll allow anon/public access to insert/select if they provide the correct user_id, 
--- or we handle it securely in a Next.js Server Action / API Route using the Supabase Service Role.
--- Here we create a permissive policy for simplicity, but it's recommended to handle bookmarking via Server Actions.
-create policy "Enable all actions for public (temporary)"
-  on public.user_bookmarks for all
-  using (true)
-  with check (true);
-
--- =================================================================================
--- 6. AI Semantic Caching & RAG Vector Memory Bank (ai_semantic_cache & stock_rag_embeddings)
--- =================================================================================
-
-create table if not exists public.ai_semantic_cache (
-  id uuid default gen_random_uuid() primary key,
-  prompt_text text not null,
-  prompt_hash text unique not null,
+-- 10. AI Semantic Caching Table
+CREATE TABLE IF NOT EXISTS public.ai_semantic_cache (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  prompt_text text NOT NULL,
+  prompt_hash text UNIQUE NOT NULL,
   ticker text,
-  response_text text not null,
-  model text not null,
-  embedding vector(1536), -- Default 1536-dim embedding vector (e.g. OpenAI/Supabase vector)
-  category text default 'general' check (category in ('financial_report', 'daily_analysis', 'realtime_price', 'general')),
-  ttl_seconds integer default 86400, -- Default 24h Time-To-Live
-  expires_at timestamptz default (now() + interval '1 day'),
-  is_valid boolean default true,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
-create index if not exists idx_semantic_cache_ticker on public.ai_semantic_cache(ticker);
-create index if not exists idx_semantic_cache_hash on public.ai_semantic_cache(prompt_hash);
-create index if not exists idx_semantic_cache_expires on public.ai_semantic_cache(expires_at);
-
--- RAG Knowledge Base Table for Financial Reports & Stock Insights
-create table if not exists public.stock_rag_embeddings (
-  id uuid default gen_random_uuid() primary key,
-  ticker text not null,
-  quarter text, -- e.g. 'Q1-2026'
-  title text not null,
-  content text not null,
+  response_text text NOT NULL,
+  model text NOT NULL,
   embedding vector(1536),
-  metadata jsonb default '{}'::jsonb,
-  created_at timestamptz default now()
+  category text DEFAULT 'general' CHECK (category IN ('financial_report', 'daily_analysis', 'realtime_price', 'general')),
+  ttl_seconds integer DEFAULT 86400,
+  expires_at timestamptz DEFAULT (now() + interval '1 day'),
+  is_valid boolean DEFAULT true,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 );
 
-create index if not exists idx_rag_embeddings_ticker on public.stock_rag_embeddings(ticker);
+CREATE INDEX IF NOT EXISTS idx_semantic_cache_ticker ON public.ai_semantic_cache(ticker);
+CREATE INDEX IF NOT EXISTS idx_semantic_cache_hash ON public.ai_semantic_cache(prompt_hash);
+CREATE INDEX IF NOT EXISTS idx_semantic_cache_expires ON public.ai_semantic_cache(expires_at);
 
--- RPC Function for Similarity Search in Semantic Cache
-create or replace function match_semantic_cache(
-  query_embedding vector(1536),
-  match_threshold float,
-  match_count int,
-  target_ticker text default null
-)
-returns table (
-  id uuid,
-  prompt_text text,
-  response_text text,
-  model text,
-  similarity float,
-  category text
-)
-language plpgsql
-as $$
-begin
-  return query
-  select
-    c.id,
-    c.prompt_text,
-    c.response_text,
-    c.model,
-    1 - (c.embedding <=> query_embedding) as similarity,
-    c.category
-  from public.ai_semantic_cache c
-  where c.is_valid = true
-    and c.expires_at > now()
-    and (target_ticker is null or c.ticker = target_ticker)
-    and 1 - (c.embedding <=> query_embedding) >= match_threshold
-  order by c.embedding <=> query_embedding
-  limit match_count;
-end;
-$$;
+-- 11. Row Level Security (RLS) Configuration
+ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stocks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bot_subscribers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.news_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_bookmarks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_wallets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_wallet_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ai_semantic_cache ENABLE ROW LEVEL SECURITY;
 
--- Enable RLS for Semantic Cache
-alter table public.ai_semantic_cache enable row level security;
-alter table public.stock_rag_embeddings enable row level security;
+-- Permissive and Service Role Policies
+CREATE POLICY "Public Read Stocks" ON public.stocks FOR SELECT USING (is_active = true);
+CREATE POLICY "Service Role Full Access Stocks" ON public.stocks FOR ALL USING (true) WITH CHECK (true);
 
-drop policy if exists "Public access to semantic cache" on public.ai_semantic_cache;
-create policy "Public access to semantic cache"
-  on public.ai_semantic_cache for all
-  using (true)
-  with check (true);
+CREATE POLICY "Public Read Bot Subs" ON public.bot_subscribers FOR SELECT USING (true);
+CREATE POLICY "Service Role Full Access Bot" ON public.bot_subscribers FOR ALL USING (true) WITH CHECK (true);
 
-drop policy if exists "Public access to RAG embeddings" on public.stock_rag_embeddings;
-create policy "Public access to RAG embeddings"
-  on public.stock_rag_embeddings for all
-  using (true)
-  with check (true);
+CREATE POLICY "Public Read News" ON public.news_items FOR SELECT USING (is_published = true);
+CREATE POLICY "Service Role Full Access News" ON public.news_items FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Public Manage Bookmarks" ON public.user_bookmarks FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Manage Profiles" ON public.user_profiles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Manage Wallets" ON public.user_wallets FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Manage Wallet TX" ON public.user_wallet_transactions FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access Semantic Cache" ON public.ai_semantic_cache FOR ALL USING (true) WITH CHECK (true);
