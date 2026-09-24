@@ -52,7 +52,7 @@ export async function fetchOfficialThaiGold(): Promise<LiveIndexItem | null> {
   // Primary: Direct Web Scrape from Gold Traders Association
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
+    const timeout = setTimeout(() => controller.abort(), 1500);
     const res = await fetch('https://classic.goldtraders.or.th/', {
       signal: controller.signal,
       headers: {
@@ -103,7 +103,7 @@ export async function fetchOfficialThaiGold(): Promise<LiveIndexItem | null> {
   // Secondary High-Speed Fallback: Thai Gold API
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    const timeout = setTimeout(() => controller.abort(), 1500);
     const res = await fetch('https://api.chnwt.dev/thai-gold-api/latest', {
       signal: controller.signal,
       headers: { 'User-Agent': 'Mozilla/5.0' },
@@ -209,7 +209,7 @@ export async function fetchLiveMajorIndices(): Promise<LiveIndexItem[]> {
         try {
           const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(item.s)}?interval=1d&range=5d`;
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 4000);
+          const timeout = setTimeout(() => controller.abort(), 1500);
 
           const res = await fetch(url, {
             headers: {
