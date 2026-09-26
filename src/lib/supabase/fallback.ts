@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { tripCircuitBreaker } from '../services/edgeConfigService';
 
 // Polyfill WebSocket in Node.js server/test runtime to prevent @supabase/realtime-js from crashing
 if (typeof globalThis.WebSocket === 'undefined') {
@@ -15,7 +16,30 @@ if (typeof globalThis.WebSocket === 'undefined') {
   } as any;
 }
 
-const PRIMARY_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
+/**
+ * Formats a PostgreSQL connection string to use Supavisor connection pooler port (6543)
+ * in transaction mode for serverless/edge environments.
+ */
+export function getSupavisorPoolerUrl(postgresConnectionString: string): string {
+  if (!postgresConnectionString) return postgresConnectionString;
+  try {
+    // Check if it's a PostgreSQL connection URI (e.g. postgres:// or postgresql://)
+    if (!postgresConnectionString.startsWith('postgres://') && !postgresConnectionString.startsWith('postgresql://')) {
+      return postgresConnectionString;
+    }
+    const url = new URL(postgresConnectionString);
+    // Switch port to 6543 for Supavisor transaction pooler if default 5432 or unassigned
+    if (url.port === '5432' || !url.port) {
+      url.port = '6543';
+    }
+    return url.toString();
+  } catch {
+    return postgresConnectionString;
+  }
+}
+
+const PRIMARY_RAW_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const PRIMARY_URL = getSupavisorPoolerUrl(PRIMARY_RAW_URL);
 const PRIMARY_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 /**
@@ -39,28 +63,6 @@ export async function withTimeout<T>(
     return result;
   } finally {
     clearTimeout(timeoutId!);
-  }
-}
-
-/**
- * Formats a PostgreSQL connection string to use Supavisor connection pooler port (6543)
- * in transaction mode for serverless/edge environments.
- */
-export function getSupavisorPoolerUrl(postgresConnectionString: string): string {
-  if (!postgresConnectionString) return postgresConnectionString;
-  try {
-    // Check if it's a PostgreSQL connection URI (e.g. postgres:// or postgresql://)
-    if (!postgresConnectionString.startsWith('postgres://') && !postgresConnectionString.startsWith('postgresql://')) {
-      return postgresConnectionString;
-    }
-    const url = new URL(postgresConnectionString);
-    // Switch port to 6543 for Supavisor transaction pooler if default 5432 or unassigned
-    if (url.port === '5432' || !url.port) {
-      url.port = '6543';
-    }
-    return url.toString();
-  } catch {
-    return postgresConnectionString;
   }
 }
 
@@ -101,11 +103,14 @@ export async function fetchWithFallback<T>(
 
     if (!fallbackUrl) {
       console.warn('[Supabase Fallback] No FALLBACK_URL / NEON_DATABASE_URL defined.');
+      // Auto-trip Edge Config circuit breaker to activate static fallback mode
+      tripCircuitBreaker('use_static_fallback', true).catch(() => {});
       throw error;
     }
 
     try {
-      const fallbackClient = createClient(fallbackUrl, fallbackKey);
+      const formattedFallbackUrl = getSupavisorPoolerUrl(fallbackUrl);
+      const fallbackClient = createClient(formattedFallbackUrl, fallbackKey);
       return await withTimeout(
         queryFn(fallbackClient),
         timeoutMs,
@@ -116,6 +121,8 @@ export async function fetchWithFallback<T>(
         '[Supabase Fallback] Fallback database query failed:',
         fallbackError?.message || fallbackError
       );
+      // Auto-trip Edge Config circuit breaker when primary and fallback fail
+      tripCircuitBreaker('use_static_fallback', true).catch(() => {});
       throw fallbackError;
     }
   }
