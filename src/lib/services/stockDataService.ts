@@ -1,9 +1,10 @@
 import { fetchLiveStocksFromYFinance, fetchSingleStockYFinance } from './yfinanceBridge';
 import { fetchStockFromPool, StockPoolItem } from './stockPoolService';
 import type { StockFundamental } from '../schemas/marketSchema';
+import { withTimeout } from '../supabase/fallback';
 
 export async function fetchLiveStockFundamentals(): Promise<StockFundamental[]> {
-  return await fetchLiveStocksFromYFinance();
+  return await withTimeout(fetchLiveStocksFromYFinance(), 5000, 'Live stock fundamentals fetch timed out after 5000ms');
 }
 
 /**
@@ -66,16 +67,19 @@ export async function fetchStocksParallel(symbols: string[], interval = '1d', wo
       ? ''
       : (process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://127.0.0.1:3000'));
     
-    const res = await fetch(`${baseUrl}/api/stocks/parallel?symbols=${symbolsParam}&interval=${interval}&workers=${workers}`, {
-      next: { revalidate: 30 }
-    });
-    if (res.ok) {
-      return await res.json();
-    }
+    const parallelFetchPromise = (async () => {
+      const res = await fetch(`${baseUrl}/api/stocks/parallel?symbols=${symbolsParam}&interval=${interval}&workers=${workers}`, {
+        next: { revalidate: 30 }
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      return null;
+    })();
+
+    return await withTimeout(parallelFetchPromise, 5000, 'Parallel stock fetch timed out after 5000ms');
   } catch (err) {
     console.warn('[stockDataService] Parallel fetch error:', err);
   }
   return null;
 }
-
-

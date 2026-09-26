@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { getSupavisorPoolerUrl } from './fallback';
 
 // Polyfill WebSocket in Node.js server runtime to prevent @supabase/realtime-js from crashing
 if (typeof globalThis.WebSocket === 'undefined') {
@@ -15,7 +16,8 @@ if (typeof globalThis.WebSocket === 'undefined') {
   } as any;
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'https://vxfyflltpdqkddnmpwdg.supabase.co';
+const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'https://vxfyflltpdqkddnmpwdg.supabase.co';
+const supabaseUrl = getSupavisorPoolerUrl(rawSupabaseUrl);
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '';
 
 /**
