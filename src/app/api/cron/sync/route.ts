@@ -48,14 +48,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: 'Supabase server secret is not configured' }, { status: 503 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const isForce = searchParams.get('force') === 'true';
+
     const activeMarkets: string[] = [];
-    if (getSetMarketStatus().isOpen) activeMarkets.push('SET', 'MAI');
-    if (getUsMarketStatus().isOpen) activeMarkets.push('US');
+    if (getSetMarketStatus().isOpen || isForce) activeMarkets.push('SET', 'MAI');
+    if (getUsMarketStatus().isOpen || isForce) activeMarkets.push('US');
     if (activeMarkets.length === 0) {
       return NextResponse.json({ success: true, message: 'No supported market is open', count: 0 });
     }
-
-    const { searchParams } = new URL(request.url);
     const requestedLimit = Number(searchParams.get('limit') || 50);
     if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > MAX_BATCH_SIZE) {
       return NextResponse.json({

@@ -1,5 +1,3 @@
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs';
 import YahooFinance from 'yahoo-finance2';
@@ -7,7 +5,6 @@ import { StockFundamentalSchema, type StockFundamental } from '../schemas/market
 import { fullMarketStocks } from '../../data/fullMarketStocks';
 import { SET100_TICKERS, THAI_7_GIANTS } from '../utils/stockTagHelper';
 
-const execAsync = promisify(exec);
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
 export function formatMarketCap(cap: number | undefined | null, currency: 'THB' | 'USD'): string {
@@ -58,26 +55,6 @@ export function sanitize52wRange(price: number, rawHigh?: number | null, rawLow?
 let cachedStocks: StockFundamental[] | null = null;
 let cacheTimestamp = 0;
 const CACHE_TTL_MS = 30_000; // 30 seconds
-let isRefreshingBackground = false;
-let activePythonCmd: string | null = null;
-
-async function detectPythonCommand(): Promise<string> {
-  if (activePythonCmd) return activePythonCmd;
-
-  const candidates = ['py -3.11', 'py', 'python'];
-  for (const cmd of candidates) {
-    try {
-      const { stdout } = await execAsync(`${cmd} -c "import yfinance, sys; print('OK')"`, { timeout: 3000 });
-      if (stdout.includes('OK')) {
-        activePythonCmd = cmd;
-        return cmd;
-      }
-    } catch {
-      // Continue to next candidate
-    }
-  }
-  return 'py';
-}
 
 export function loadMarketCacheFile(): StockFundamental[] | null {
   try {
@@ -108,40 +85,6 @@ export function loadMarketCacheFile(): StockFundamental[] | null {
     console.warn('[yfinanceBridge] market_cache.json read warning:', err);
   }
   return null;
-}
-
-async function triggerBackgroundRefresh() {
-  if (isRefreshingBackground || process.env.VERCEL === '1') return;
-  isRefreshingBackground = true;
-  try {
-    const pyCmd = await detectPythonCommand();
-    const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
-    const pythonCmd = `${pyCmd} "${scriptPath}" --action stocks`;
-
-    const { stdout } = await execAsync(pythonCmd, { timeout: 20000 });
-    const json = JSON.parse(stdout.trim());
-
-    if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-      const validated = json.data
-        .map((item: unknown) => {
-          try {
-            return StockFundamentalSchema.parse(item);
-          } catch {
-            return null;
-          }
-        })
-        .filter((i: StockFundamental | null): i is StockFundamental => i !== null);
-
-      if (validated.length > 0) {
-        cachedStocks = validated;
-        cacheTimestamp = Date.now();
-      }
-    }
-  } catch (err) {
-    console.warn('[yfinanceBridge] Background refresh warning:', err);
-  } finally {
-    isRefreshingBackground = false;
-  }
 }
 
 interface SupabaseRow {
@@ -699,33 +642,7 @@ export async function fetchSingleStockYFinance(symbol: string, market?: string, 
     }
   }
 
-  // 4. Query Yahoo Finance via Python Engine on Local runtime if available
-  if (process.env.VERCEL !== '1') {
-    try {
-      const pyCmd = await detectPythonCommand();
-      const scriptPath = path.resolve(process.cwd(), 'server', 'yfinance_engine.py');
-      const marketFlag = market && market !== 'ALL' ? `--market "${market}"` : '--market "auto"';
-      const pythonCmd = `${pyCmd} "${scriptPath}" --action single --symbol "${cleanSym}" ${marketFlag}`;
-      const { stdout } = await execAsync(pythonCmd, { timeout: 8000 });
-      const json = parseLastJsonLine(stdout);
-      if (json && json.success && json.data) {
-        const parsed = StockFundamentalSchema.parse(json.data);
-        if (cachedStocks) {
-          const existingIdx = cachedStocks.findIndex((s) => s.ticker.toUpperCase() === cleanSym);
-          if (existingIdx >= 0) {
-            cachedStocks[existingIdx] = parsed;
-          } else {
-            cachedStocks.unshift(parsed);
-          }
-        }
-        return parsed;
-      }
-    } catch (err) {
-      console.warn(`[yfinanceBridge] Live ticker query warning for ${cleanSym}:`, err);
-    }
-  }
-
-  // 5. Final Fallback: return cached record if available
+  // 4. Final Fallback: return cached record if available
   const finalCacheList = cachedStocks || loadMarketCacheFile() || loadBundledUniverseFiles();
   if (finalCacheList && finalCacheList.length > 0) {
     const match = finalCacheList.find((s) => s.ticker.toUpperCase() === cleanSym);
