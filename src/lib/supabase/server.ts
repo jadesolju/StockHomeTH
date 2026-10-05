@@ -15,11 +15,15 @@ if (typeof globalThis.WebSocket === 'undefined') {
   } as any;
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'https://vxfyflltpdqkddnmpwdg.supabase.co';
+import { getSupavisorPoolerUrl } from './fallback';
+
+const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'https://vxfyflltpdqkddnmpwdg.supabase.co';
+const supabaseUrl = getSupavisorPoolerUrl(rawSupabaseUrl);
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '';
 
 /**
  * Server-side Admin Supabase instance (Bypasses RLS).
+ * Configured to route via Supavisor connection pooler port (6543) in serverless environments.
  * NEVER expose this instance or SUPABASE_SERVICE_ROLE_KEY to the client-side!
  */
 export function createAdminClient() {
