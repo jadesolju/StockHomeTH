@@ -29,6 +29,18 @@ export async function GET(request: NextRequest) {
     const market = searchParams.get('market') || 'ALL';
     const forceLive = searchParams.get('forceLive') === 'true';
 
+    // Headers for Stale-While-Revalidate caching strategy vs strict un-cached live lookup
+    const responseHeaders: Record<string, string> = forceLive
+      ? {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          'Surrogate-Control': 'no-store',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      : {
+          'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=59',
+        };
+
     // 1. Instant Single Stock Live Lookup (Direct from Yahoo Finance & Webull Relay)
     if (singleTicker && (forceLive || !searchParams.has('page'))) {
       try {
@@ -43,12 +55,7 @@ export async function GET(request: NextRequest) {
               timestamp: new Date().toISOString()
             },
             {
-              headers: {
-                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-                'Surrogate-Control': 'no-store',
-                'Pragma': 'no-cache',
-                'Expires': '0',
-              },
+              headers: responseHeaders,
             }
           );
         }
@@ -254,22 +261,27 @@ export async function GET(request: NextRequest) {
     }
 
     if (fetchAll) {
-      return NextResponse.json({
-        success: true,
-        page: 1,
-        limit: filtered.length,
-        total: filtered.length,
-        totalPages: 1,
-        hasMore: false,
-        counts: {
-          total: totalCount,
-          set: setCount,
-          us: usCount,
-          filtered: filtered.length,
+      return NextResponse.json(
+        {
+          success: true,
+          page: 1,
+          limit: filtered.length,
+          total: filtered.length,
+          totalPages: 1,
+          hasMore: false,
+          counts: {
+            total: totalCount,
+            set: setCount,
+            us: usCount,
+            filtered: filtered.length,
+          },
+          timestamp: new Date().toISOString(),
+          data: filtered,
         },
-        timestamp: new Date().toISOString(),
-        data: filtered,
-      });
+        {
+          headers: responseHeaders,
+        }
+      );
     }
 
     // Paginate in chunks of limit (default 50)
@@ -280,22 +292,27 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(filtered.length / safeLimit);
     const hasMore = safePage < totalPages;
 
-    return NextResponse.json({
-      success: true,
-      page: safePage,
-      limit: safeLimit,
-      total: filtered.length,
-      totalPages,
-      hasMore,
-      counts: {
-        total: totalCount,
-        set: setCount,
-        us: usCount,
-        filtered: filtered.length,
+    return NextResponse.json(
+      {
+        success: true,
+        page: safePage,
+        limit: safeLimit,
+        total: filtered.length,
+        totalPages,
+        hasMore,
+        counts: {
+          total: totalCount,
+          set: setCount,
+          us: usCount,
+          filtered: filtered.length,
+        },
+        timestamp: new Date().toISOString(),
+        data: paginated,
       },
-      timestamp: new Date().toISOString(),
-      data: paginated,
-    });
+      {
+        headers: responseHeaders,
+      }
+    );
   } catch (error) {
     return NextResponse.json(
       {
