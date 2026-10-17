@@ -6,6 +6,7 @@
  */
 
 import { supabase } from '@/lib/supabase/client';
+import { withTimeout } from '@/lib/supabase/fallback';
 
 export type DigestCategory = 'stocks' | 'gold' | 'business';
 export type DeliveryRound = 'morning' | 'evening';
@@ -62,15 +63,21 @@ export async function registerOrGetSubscriber(
     return existingMem;
   }
 
-  // 2. Query Supabase
+  // 2. Query Supabase with timeout enforcement (1500ms limit)
   if (supabase) {
     try {
-      const { data, error } = await supabase
-        .from('bot_subscribers')
-        .select('*')
-        .eq('channel', channel)
-        .eq('channel_user_id', cId)
-        .maybeSingle();
+      const { data, error } = await withTimeout<any>(
+        Promise.resolve(
+          supabase
+            .from('bot_subscribers')
+            .select('*')
+            .eq('channel', channel)
+            .eq('channel_user_id', cId)
+            .maybeSingle()
+        ),
+        1500,
+        'Supabase subscriber lookup timeout'
+      );
 
       if (!error && data) {
         const sub: BotSubscriber = {
@@ -115,24 +122,30 @@ export async function registerOrGetSubscriber(
 
   memorySubscribers.set(key, newSub);
 
-  // Try persisting to Supabase
+  // Try persisting to Supabase with timeout enforcement
   if (supabase) {
     try {
-      await supabase.from('bot_subscribers').upsert(
-        {
-          channel,
-          channel_user_id: cId,
-          display_name: newSub.displayName,
-          username: newSub.username,
-          categories: newSub.categories,
-          delivery_rounds: newSub.deliveryRounds,
-          tier: newSub.tier,
-          is_active: newSub.isActive,
-          is_paused: newSub.isPaused,
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-        { onConflict: 'channel,channel_user_id' }
+      await withTimeout<any>(
+        Promise.resolve(
+          supabase.from('bot_subscribers').upsert(
+            {
+              channel,
+              channel_user_id: cId,
+              display_name: newSub.displayName,
+              username: newSub.username,
+              categories: newSub.categories,
+              delivery_rounds: newSub.deliveryRounds,
+              tier: newSub.tier,
+              is_active: newSub.isActive,
+              is_paused: newSub.isPaused,
+              created_at: nowIso,
+              updated_at: nowIso,
+            },
+            { onConflict: 'channel,channel_user_id' }
+          )
+        ),
+        1500,
+        'Supabase subscriber upsert timeout'
       );
     } catch (err) {
       console.warn('[botSubscriptionService] Supabase insert fallback:', err);
@@ -167,11 +180,17 @@ export async function toggleSubscriberCategory(
 
   if (supabase) {
     try {
-      await supabase
-        .from('bot_subscribers')
-        .update({ categories: nextCategories, updated_at: nowIso })
-        .eq('channel', channel)
-        .eq('channel_user_id', String(channelUserId));
+      await withTimeout<any>(
+        Promise.resolve(
+          supabase
+            .from('bot_subscribers')
+            .update({ categories: nextCategories, updated_at: nowIso })
+            .eq('channel', channel)
+            .eq('channel_user_id', String(channelUserId))
+        ),
+        1500,
+        'Supabase update category timeout'
+      );
     } catch {}
   }
 
@@ -202,11 +221,17 @@ export async function toggleSubscriberRound(
 
   if (supabase) {
     try {
-      await supabase
-        .from('bot_subscribers')
-        .update({ delivery_rounds: nextRounds, updated_at: nowIso })
-        .eq('channel', channel)
-        .eq('channel_user_id', String(channelUserId));
+      await withTimeout<any>(
+        Promise.resolve(
+          supabase
+            .from('bot_subscribers')
+            .update({ delivery_rounds: nextRounds, updated_at: nowIso })
+            .eq('channel', channel)
+            .eq('channel_user_id', String(channelUserId))
+        ),
+        1500,
+        'Supabase update round timeout'
+      );
     } catch {}
   }
 
@@ -230,11 +255,17 @@ export async function togglePauseSubscriber(
 
   if (supabase) {
     try {
-      await supabase
-        .from('bot_subscribers')
-        .update({ is_paused: sub.isPaused, updated_at: nowIso })
-        .eq('channel', channel)
-        .eq('channel_user_id', String(channelUserId));
+      await withTimeout<any>(
+        Promise.resolve(
+          supabase
+            .from('bot_subscribers')
+            .update({ is_paused: sub.isPaused, updated_at: nowIso })
+            .eq('channel', channel)
+            .eq('channel_user_id', String(channelUserId))
+        ),
+        1500,
+        'Supabase update pause status timeout'
+      );
     } catch {}
   }
 
@@ -262,11 +293,17 @@ export async function getActiveSubscribersForRound(
   // 2. From Supabase if available
   if (supabase) {
     try {
-      const { data, error } = await supabase
-        .from('bot_subscribers')
-        .select('*')
-        .eq('is_active', true)
-        .eq('is_paused', false);
+      const { data, error } = await withTimeout(
+        Promise.resolve(
+          supabase
+            .from('bot_subscribers')
+            .select('*')
+            .eq('is_active', true)
+            .eq('is_paused', false)
+        ),
+        1500,
+        'Supabase active subscribers query timeout'
+      );
 
       if (!error && data && data.length > 0) {
         for (const row of data) {
